@@ -1,0 +1,49 @@
+/*
+ * Tela de login (estilos.md §4, §7.1, §7.2, §7.6 e §14). Só classes fc- e variáveis --fc-*; sem reset global e
+ * sem medida da janela inteira (ADR 0002): a tela ocupa a altura que o hospedeiro der à raiz.
+ */
+
+.fc-entrar-raiz {
+  min-height: 100%;
+}
+
+.fc-entrar {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100%;
+  padding: 56px 16px;
+}
+
+.fc-entrar-caixa {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 360px;
+  padding: 24px;
+}
+
+.fc-entrar-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fc-entrar-titulo,
+.fc-entrar-subtitulo,
+.fc-entrar-ajuda {
+  margin: 0;
+}
+
+.fc-entrar-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.fc-entrar-enviar {
+  width: 100%;
+}

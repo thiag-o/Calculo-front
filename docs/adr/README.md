@@ -34,6 +34,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0012](0012-botao-desabilitado-so-com-motivo.md) | Botão desabilitado só com `motivoDesabilitado` (`aria-disabled`, focável, dica no portal) | aceita, revisar no checkpoint | 2026-11-15 |
 | [0013](0013-menu-desabilitado-so-com-motivo.md) | Item de menu desabilitado só com `motivoDesabilitado`, como o botão (complementa 0012) | aceita, revisar no checkpoint | 2026-11-15 |
 | [0014](0014-comportamento-modal-do-radix-no-hospedeiro.md) | Aceitar o comportamento modal do Radix (rolagem, `aria-hidden`, `z-index`) sobre a página do hospedeiro | aceita, revisar no checkpoint | 2026-11-15 |
+| [0015](0015-cache-na-troca-de-identidade-e-tenant.md) | Trocar identidade ou tenant: cancelar, gravar a sessão e reiniciar o cache, com `signal` em toda consulta (complementa 0008) | aceita, revisar no checkpoint | 2026-11-15 |
 
 ## Pendentes (sem ADR ainda)
 
