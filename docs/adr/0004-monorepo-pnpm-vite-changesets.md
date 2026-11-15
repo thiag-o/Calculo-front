@@ -12,7 +12,7 @@ O repositório tem duas coisas que evoluem juntas, o pacote `@fluxo/react` e o a
 ## Decisão
 
 - **pnpm workspaces**, com `packages/react` (o produto) e `apps/casca` (o hospedeiro zero). O casca usa o pacote por `workspace:*`, sem publicar.
-- **Node 24 LTS** e **pnpm 10**.
+- **Node 26** e **pnpm 10**. (Antes era Node 24 LTS; mudou para 26 pela resposta G6 do dono do produto, em 2026-11-15.)
 - **Vite em modo biblioteca** para o pacote: ESM e tipos `.d.ts`, com React fora do pacote (peer dependency).
 - **Changesets** para versão e CHANGELOG. Uma mudança incompatível só sai em versão maior. O casca fica fora do versionamento.
 - **GitHub Packages** como registro privado (`.npmrc`). Os hospedeiros instalam com um token `read:packages`.

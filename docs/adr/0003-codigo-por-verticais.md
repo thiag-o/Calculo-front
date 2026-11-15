@@ -37,6 +37,7 @@ O pacote `@fluxo/react` reúne muitas telas: editor de workflow, fórmulas, exec
   - dependências explícitas e verificadas;
   - fácil de dividir o trabalho entre pessoas e agentes (uma vertical por tarefa).
 - **Ruim:** é preciso decidir o que é "compartilhado" com cuidado, para o `design-system` não virar o antigo `utils/`. Algumas importações ficam mais longas.
+- **Complementada por:** [0007](0007-ferramentas-de-lint-e-typescript-6.md) (resolver TypeScript obrigatório).
 - **A fazer:** validar a configuração do `eslint-plugin-boundaries` quando as dependências forem instaladas (fase 1).
 
 ## Atualização (2026-11-15): reforço pelo artigo "The Vertical Codebase"

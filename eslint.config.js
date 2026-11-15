@@ -1,49 +1,58 @@
-// Fronteiras entre verticais do @fluxo/react (ADR 0003).
-// Esqueleto: as dependências (eslint, typescript-eslint, eslint-plugin-boundaries)
-// são instaladas na fase 1; a configuração deve ser validada nesse momento.
+// Fronteiras entre verticais do @fluxo/react (ADR 0003), com eslint-plugin-boundaries v7.
 import boundaries from 'eslint-plugin-boundaries';
 import tseslint from 'typescript-eslint';
 
 const src = 'packages/react/src';
 
+// Pastas por tipo: proibidas em qualquer nível, inclusive dentro de uma vertical (ADR 0003).
+const pastasPorTipo = ['components', 'hooks', 'types', 'utils', 'helpers', 'lib', 'shared', 'common'];
+
+// Padrões de um elemento até 6 níveis de pasta, nenhum deles uma pasta por tipo.
+// O que fica fora (pasta por tipo em qualquer nível) não casa com nenhum elemento e cai em boundaries/no-unknown-files.
+const naoPorTipo = `!(${pastasPorTipo.join('|')})`;
+function elementosDa(type, pasta, capture) {
+  return Array.from({ length: 6 }, (_, niveis) => ({
+    type,
+    pattern: `${src}/${pasta}/${Array(niveis).fill(naoPorTipo).map((p) => p + '/').join('')}*`,
+    mode: 'full',
+    ...(capture ? { capture } : {}),
+  }));
+}
+
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', '**/gerado/**'] },
   ...tseslint.configs.recommended,
   {
     files: [`${src}/**/*.{ts,tsx}`],
     plugins: { boundaries },
     settings: {
-      // A ordem importa: o primeiro padrão que casa define o tipo.
+      // Resolve imports sem extensão (como o Vite e o tsc), para as fronteiras enxergarem o arquivo de destino.
+      'import/resolver': { typescript: { project: ['packages/react/tsconfig.json'] } },
+      // O primeiro tipo que casa define o elemento do arquivo.
       'boundaries/elements': [
         { type: 'raiz', pattern: `${src}/index.ts`, mode: 'file' },
-        { type: 'design-system', pattern: `${src}/design-system` },
-        { type: 'api', pattern: `${src}/api` },
-        { type: 'vertical', pattern: `${src}/*`, capture: ['nome'] },
+        ...elementosDa('design-system', 'design-system'),
+        ...elementosDa('api', 'api'),
+        ...elementosDa('vertical', '*', ['nome']),
       ],
     },
     rules: {
-      // De fora, uma vertical só é acessada pelo index.ts dela (interface pública).
-      'boundaries/entry-point': [
+      'boundaries/dependencies': [
         'error',
         {
           default: 'disallow',
-          rules: [{ target: ['design-system', 'api', 'vertical'], allow: 'index.ts' }],
-        },
-      ],
-      // Quem pode depender de quem.
-      'boundaries/element-types': [
-        'error',
-        {
-          default: 'disallow',
-          rules: [
-            { from: 'raiz', allow: ['design-system', 'api', 'vertical'] },
-            { from: 'vertical', allow: ['design-system', 'api', 'vertical'] },
-            { from: 'api', allow: [] },
-            { from: 'design-system', allow: [] },
+          policies: [
+            // Entre elementos, só pela interface pública (index.ts) de design-system, api e verticais.
+            {
+              from: { element: { type: ['raiz', 'vertical'] } },
+              allow: { to: { element: { type: ['design-system', 'api', 'vertical'], fileInternalPath: 'index.{ts,tsx}' } } },
+            },
+            // design-system e api não importam ninguém.
+            { from: { element: { type: ['design-system', 'api'] } }, disallow: { to: { element: { type: ['raiz', 'vertical'] } } } },
           ],
         },
       ],
-      // Arquivos fora de uma vertical não são permitidos em src/.
+      // Arquivo dentro de src/ que não é de nenhum elemento (inclui pasta por tipo) é erro.
       'boundaries/no-unknown-files': 'error',
     },
   },

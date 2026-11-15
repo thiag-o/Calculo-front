@@ -22,7 +22,7 @@ frontend/
 
 | O quê | Versão |
 |---|---|
-| Node | 24 LTS (`.nvmrc`) |
+| Node | 26 (`.nvmrc`; mudança de 24 para 26 vinda da resposta G6 do dono do produto) |
 | pnpm | 10 (workspaces: `pnpm-workspace.yaml`) |
 | Registro do pacote | GitHub Packages (`.npmrc`) |
 

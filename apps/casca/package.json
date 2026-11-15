@@ -12,6 +12,8 @@
     "test": "echo \"casca: sem testes ainda\""
   },
   "dependencies": {
-    "@fluxo/react": "workspace:*"
+    "@fluxo/react": "workspace:*",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

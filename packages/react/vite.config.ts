@@ -1,8 +1,10 @@
-// Vite em modo biblioteca (ADR 0004). Esqueleto: os plugins (React, geração de .d.ts)
-// e o build do CSS com os tokens --fc-* entram na fase 1.
-import { defineConfig } from 'vite';
+// Vite em modo biblioteca (ADR 0004) e Vitest.
+import react from '@vitejs/plugin-react';
+import dts from 'vite-plugin-dts';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  plugins: [react(), dts({ tsconfigPath: './tsconfig.json', include: ['src'], exclude: ['src/**/*.test.*', 'src/**/*.spec.*'] })],
   build: {
     lib: {
       entry: 'src/index.ts',
@@ -10,9 +12,14 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      // React é peer dependency: nunca vai dentro do pacote.
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // Dependências de runtime e peers nunca vão dentro do pacote.
+      external: [/^react($|\/)/, /^react-dom($|\/)/, /^react-router/, /^@tanstack\//, /^@radix-ui\//, /^react-hook-form/, /^@hookform\//, /^zod/, /^openapi-fetch/, /^@fontsource/],
     },
     sourcemap: true,
+  },
+  test: {
+    environment: 'jsdom',
+    globals: false,
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 });

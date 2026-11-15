@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Front do Fluxo de Cálculo: pacote @fluxo/react e app casca (hospedeiro zero).",
   "engines": {
-    "node": ">=24",
+    "node": ">=26",
     "pnpm": ">=10"
   },
   "scripts": {
@@ -15,6 +15,28 @@
     "lint": "eslint .",
     "gerar:api": "pnpm --filter @fluxo/react gerar:api",
     "changeset": "changeset",
-    "release": "pnpm --filter @fluxo/react build && changeset publish"
+    "release": "pnpm --filter @fluxo/react build && changeset publish",
+    "e2e": "playwright test --project=simulado --pass-with-no-tests",
+    "e2e:real": "playwright test --project=real --pass-with-no-tests"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.10",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "eslint": "^10.15.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.4.3",
+    "jsdom": "^31.0.1",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.8",
+    "vite-plugin-dts": "^5.1.2",
+    "vitest": "^5.1.0"
   }
 }
