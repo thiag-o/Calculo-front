@@ -42,10 +42,12 @@ export default tseslint.config(
         {
           default: 'disallow',
           policies: [
-            // Entre elementos, só pela interface pública (index.ts) de design-system, api e verticais.
+            // Entre elementos, só pela interface pública de design-system, api e verticais: o index.ts da RAIZ
+            // delas (ADR 0003). Cada arquivo é um elemento próprio, então o index.ts de uma subpasta também tem
+            // fileInternalPath 'index.ts'; por isso o filtro é pelo caminho do elemento, fixo no primeiro nível.
             {
               from: { element: { type: ['raiz', 'vertical'] } },
-              allow: { to: { element: { type: ['design-system', 'api', 'vertical'], fileInternalPath: 'index.{ts,tsx}' } } },
+              allow: { to: { element: { type: ['design-system', 'api', 'vertical'], path: `${src}/*/index.{ts,tsx}` } } },
             },
             // Dentro do mesmo elemento a organização é livre (ADR 0003): imports internos são permitidos.
             // Cada arquivo é um elemento próprio (padrões terminam em `*`), então a regra precisa dizer isso.
