@@ -10,6 +10,7 @@ export default defineConfig({
       entry: 'src/index.ts',
       formats: ['es'],
       fileName: 'index',
+      cssFileName: 'estilos',
     },
     rollupOptions: {
       // Dependências de runtime e peers nunca vão dentro do pacote.

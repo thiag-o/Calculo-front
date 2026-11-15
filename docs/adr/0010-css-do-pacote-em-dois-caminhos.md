@@ -25,4 +25,4 @@ O pacote `@fluxo/react` é gerado pelo Vite em modo biblioteca. Ele precisa de C
 
 - **Bom:** pacote enxuto; o hospedeiro decide como empacotar as fontes.
 - **Ruim:** o hospedeiro precisa de um bundler que entenda `.css` e `.woff2` importados do JS. Quem criar import de efeito colateral novo precisa lembrar do `sideEffects`.
-- **A fazer:** o `package.json` exporta `./estilos.css` → `./dist/estilos.css`, mas o Vite emite `index.css`. Ajustar `build.lib.cssFileName` (pendência levada à F8 ou a uma tarefa de configuração).
+- **Resolvido pela F25:** o `package.json` exporta `./estilos.css` → `./dist/estilos.css`, mas o Vite emitia `index.css`. A F25 definiu `build.lib.cssFileName: 'estilos'` em `packages/react/vite.config.ts`. A emissão real de `dist/estilos.css` será reconferida quando `src/index.ts` exportar o módulo (F10/portão F12).
