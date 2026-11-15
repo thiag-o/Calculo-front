@@ -1,6 +1,6 @@
 # 0012. Botão desabilitado só com `motivoDesabilitado` (`aria-disabled`, focável, dica no portal)
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0013](0013-menu-desabilitado-so-com-motivo.md))
 - **Data:** 2026-11-15
 - **Quem decidiu:** orquestração (tarefa F4)
 - **Relacionadas:** [0003](0003-codigo-por-verticais.md), [0011](0011-tokens-raiz-e-portais-do-modulo.md)

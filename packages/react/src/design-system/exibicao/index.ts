@@ -1,0 +1,21 @@
+// Componentes de exibição e diálogos do design-system (estilos.md §4, §7.3 a §7.7 e §14).
+export { Caixa } from './Caixa';
+export type { CaixaProps, EspacoCaixa } from './Caixa';
+export { Status } from './Status';
+export type { CorStatus, StatusProps } from './Status';
+export { Selo } from './Selo';
+export type { CorSelo, SeloProps } from './Selo';
+export { Tabela } from './Tabela';
+export type { ColunaTabela, TabelaProps } from './Tabela';
+export { EstadoVazio } from './EstadoVazio';
+export type { EstadoVazioProps } from './EstadoVazio';
+export { Carregando, Esqueleto } from './Carregando';
+export type { CarregandoProps, EsqueletoProps } from './Carregando';
+export { Aviso } from './Aviso';
+export type { AvisoProps, TipoAviso } from './Aviso';
+export { Dialogo, FecharDialogo } from './Dialogo';
+export type { DialogoProps, FecharDialogoProps } from './Dialogo';
+export { Menu } from './Menu';
+export type { AcaoMenu, ItemMenu, MenuProps, SeparadorMenu } from './Menu';
+export { Dica } from './Dica';
+export type { DicaProps, LadoDica } from './Dica';

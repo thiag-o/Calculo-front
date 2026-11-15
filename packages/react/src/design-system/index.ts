@@ -21,3 +21,27 @@ export type {
   TipoMensagemCampo,
   VarianteBotao,
 } from './formulario';
+export { Aviso, Caixa, Carregando, Dialogo, Dica, Esqueleto, EstadoVazio, FecharDialogo, Menu, Selo, Status, Tabela } from './exibicao';
+export type {
+  AcaoMenu,
+  AvisoProps,
+  CaixaProps,
+  CarregandoProps,
+  ColunaTabela,
+  CorSelo,
+  CorStatus,
+  DialogoProps,
+  DicaProps,
+  EspacoCaixa,
+  EsqueletoProps,
+  EstadoVazioProps,
+  FecharDialogoProps,
+  ItemMenu,
+  LadoDica,
+  MenuProps,
+  SeloProps,
+  SeparadorMenu,
+  StatusProps,
+  TabelaProps,
+  TipoAviso,
+} from './exibicao';

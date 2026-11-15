@@ -1,0 +1,21 @@
+/*
+ * Caixa (estilos.md §7.6 e §4): background-100, borda 1px --fc-border, raio 12px, sem sombra.
+ * Só classes fc- e variáveis --fc-*; sem reset global (ADR 0002).
+ */
+
+.fc-caixa {
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--fc-border);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: none;
+  list-style: none;
+}
+
+.fc-caixa-sem-espaco {
+  padding: 0;
+}

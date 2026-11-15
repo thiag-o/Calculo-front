@@ -32,6 +32,8 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0010](0010-css-do-pacote-em-dois-caminhos.md) | CSS do pacote em dois caminhos: CSS extraído pelo Vite e fontes (`@fontsource`) como import externo | aceita, revisar no checkpoint | 2026-11-15 |
 | [0011](0011-tokens-raiz-e-portais-do-modulo.md) | Tokens `--fc-*` só na raiz do módulo, tema pela `RaizFluxo` e portais por `usePortalFluxo()` | aceita, revisar no checkpoint | 2026-11-15 |
 | [0012](0012-botao-desabilitado-so-com-motivo.md) | Botão desabilitado só com `motivoDesabilitado` (`aria-disabled`, focável, dica no portal) | aceita, revisar no checkpoint | 2026-11-15 |
+| [0013](0013-menu-desabilitado-so-com-motivo.md) | Item de menu desabilitado só com `motivoDesabilitado`, como o botão (complementa 0012) | aceita, revisar no checkpoint | 2026-11-15 |
+| [0014](0014-comportamento-modal-do-radix-no-hospedeiro.md) | Aceitar o comportamento modal do Radix (rolagem, `aria-hidden`, `z-index`) sobre a página do hospedeiro | aceita, revisar no checkpoint | 2026-11-15 |
 
 ## Pendentes (sem ADR ainda)
 
