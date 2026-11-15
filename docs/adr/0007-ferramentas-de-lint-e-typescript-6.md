@@ -1,6 +1,6 @@
 # 0007. Fixar TypeScript 6 e usar o resolver TypeScript no eslint-plugin-boundaries
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint. Complementada por [0009](0009-imports-internos-no-mesmo-elemento-das-fronteiras.md) (imports internos no mesmo elemento)
 - **Data:** 2026-11-15
 - **Quem decidiu:** orquestração (tarefa F1)
 - **Relacionadas:** [0003](0003-codigo-por-verticais.md), [0004](0004-monorepo-pnpm-vite-changesets.md)

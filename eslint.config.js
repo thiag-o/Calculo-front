@@ -47,6 +47,14 @@ export default tseslint.config(
               from: { element: { type: ['raiz', 'vertical'] } },
               allow: { to: { element: { type: ['design-system', 'api', 'vertical'], fileInternalPath: 'index.{ts,tsx}' } } },
             },
+            // Dentro do mesmo elemento a organização é livre (ADR 0003): imports internos são permitidos.
+            // Cada arquivo é um elemento próprio (padrões terminam em `*`), então a regra precisa dizer isso.
+            { from: { element: { type: 'design-system' } }, allow: { to: { element: { type: 'design-system' } } } },
+            { from: { element: { type: 'api' } }, allow: { to: { element: { type: 'api' } } } },
+            {
+              from: { element: { type: 'vertical' } },
+              allow: { to: { element: { type: 'vertical', captured: { nome: '{{ from.element.captured.nome }}' } } } },
+            },
             // design-system e api não importam ninguém.
             { from: { element: { type: ['design-system', 'api'] } }, disallow: { to: { element: { type: ['raiz', 'vertical'] } } } },
           ],
