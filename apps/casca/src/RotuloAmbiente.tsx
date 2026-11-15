@@ -1,0 +1,26 @@
+import { rotuloAmbiente } from './ambiente';
+
+/** Etiqueta fixa com o nome do ambiente; não aparece em produção. */
+export function RotuloAmbiente() {
+  if (rotuloAmbiente === null) return null;
+  return (
+    <div
+      role="status"
+      aria-label={`Ambiente: ${rotuloAmbiente}`}
+      style={{
+        position: 'fixed',
+        right: 12,
+        bottom: 12,
+        zIndex: 1000,
+        padding: '2px 8px',
+        borderRadius: 6,
+        font: '500 12px/20px system-ui, sans-serif',
+        color: '#fff',
+        background: '#6b6f76',
+        pointerEvents: 'none',
+      }}
+    >
+      {rotuloAmbiente}
+    </div>
+  );
+}
