@@ -1,0 +1,108 @@
+/*
+ * Caixa de seleção (estilos.md §7.2): 16px, raio 4px. Marcada: fundo --fc-primary e marca em --fc-on-primary.
+ * A borda desmarcada usa gray-700 para ter contraste de 3:1 com o fundo (estilos.md §11).
+ * Só classes fc- e variáveis --fc-*; sem reset global (ADR 0002).
+ */
+
+.fc-caixa-selecao {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-caixa-selecao-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-caixa-selecao-caixa {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-on-primary);
+  box-shadow: 0 0 0 1px var(--fc-gray-700);
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    background-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.fc-caixa-selecao-caixa:hover {
+  background-color: var(--fc-hover);
+}
+
+.fc-caixa-selecao-caixa[data-state='checked'],
+.fc-caixa-selecao-caixa[data-state='indeterminate'] {
+  background-color: var(--fc-primary);
+  box-shadow: 0 0 0 1px var(--fc-primary);
+}
+
+.fc-caixa-selecao-caixa[aria-invalid='true'] {
+  box-shadow: 0 0 0 1px var(--fc-red-700);
+}
+
+.fc-caixa-selecao-caixa:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-caixa-selecao-caixa:disabled,
+.fc-caixa-selecao-caixa:disabled:hover {
+  background-color: var(--fc-hover);
+  color: var(--fc-text-tertiary);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  cursor: not-allowed;
+}
+
+.fc-caixa-selecao-indicador {
+  display: inline-flex;
+}
+
+.fc-caixa-selecao-indicador svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Um só indicador: a marca quando marcada, o traço quando indeterminada. */
+.fc-caixa-selecao-indicador[data-state='checked'] .fc-caixa-selecao-traco,
+.fc-caixa-selecao-indicador[data-state='indeterminate'] .fc-caixa-selecao-marca {
+  display: none;
+}
+
+/* O rótulo amplia a área de clique para 28px de altura (estilos.md §11). */
+.fc-caixa-selecao-rotulo {
+  padding: 4px 0;
+  color: var(--fc-text);
+  cursor: pointer;
+}
+
+.fc-caixa-selecao-desabilitada .fc-caixa-selecao-rotulo {
+  color: var(--fc-text-tertiary);
+  cursor: not-allowed;
+}
+
+/* Mensagens alinhadas ao texto do rótulo: 16px da caixa + 8px de espaço. */
+.fc-caixa-selecao .fc-mensagem-campo {
+  padding-left: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-caixa-selecao-caixa {
+    transition: none;
+  }
+}

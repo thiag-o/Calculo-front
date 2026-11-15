@@ -5,3 +5,19 @@ export { RaizFluxo, usePortalFluxo } from './raiz';
 export type { RaizFluxoProps, TemaFluxo } from './raiz';
 export { Texto, classesTexto, estilosTexto } from './tipografia';
 export type { EstiloTexto, OpcoesTexto, TextoProps, TomTexto } from './tipografia';
+export { Botao, CaixaSelecao, CampoSenha, CampoTexto, MensagemCampo, Rotulo, Selecao } from './formulario';
+export type {
+  BotaoProps,
+  CaixaSelecaoProps,
+  CampoSenhaProps,
+  CampoTextoProps,
+  ExibicaoMotivo,
+  MensagemCampoProps,
+  OpcaoSelecao,
+  RotuloProps,
+  SelecaoProps,
+  TamanhoBotao,
+  TipoCampoTexto,
+  TipoMensagemCampo,
+  VarianteBotao,
+} from './formulario';

@@ -31,6 +31,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0009](0009-imports-internos-no-mesmo-elemento-das-fronteiras.md) | Permitir imports internos dentro do mesmo elemento nas fronteiras do eslint | aceita, revisar no checkpoint | 2026-11-15 |
 | [0010](0010-css-do-pacote-em-dois-caminhos.md) | CSS do pacote em dois caminhos: CSS extraído pelo Vite e fontes (`@fontsource`) como import externo | aceita, revisar no checkpoint | 2026-11-15 |
 | [0011](0011-tokens-raiz-e-portais-do-modulo.md) | Tokens `--fc-*` só na raiz do módulo, tema pela `RaizFluxo` e portais por `usePortalFluxo()` | aceita, revisar no checkpoint | 2026-11-15 |
+| [0012](0012-botao-desabilitado-so-com-motivo.md) | Botão desabilitado só com `motivoDesabilitado` (`aria-disabled`, focável, dica no portal) | aceita, revisar no checkpoint | 2026-11-15 |
 
 ## Pendentes (sem ADR ainda)
 

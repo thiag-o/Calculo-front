@@ -1,0 +1,157 @@
+/*
+ * Campos (estilos.md §7.2): rótulo acima (label-13 secundário), entrada de 32px com raio 6px e fundo background-100,
+ * ajuda abaixo (label-12 terciário) e erro com borda red-700 e mensagem red-900 com ícone.
+ * Só classes fc- e variáveis --fc-*; sem reset global (ADR 0002).
+ */
+
+.fc-campo {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fc-rotulo {
+  display: block;
+  margin: 0;
+  cursor: default;
+}
+
+.fc-mensagem-campo {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0;
+}
+
+.fc-mensagem-campo svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.fc-mensagem-campo-erro {
+  color: var(--fc-danger-text);
+}
+
+/* Entrada de texto. A borda é um box-shadow, para não somar altura (estilos.md §4). */
+.fc-campo-entrada {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  margin: 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  /* copy-14 */
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
+  appearance: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: box-shadow 150ms ease-out;
+}
+
+.fc-campo-entrada::placeholder {
+  color: var(--fc-text-tertiary);
+  opacity: 1;
+}
+
+.fc-campo-entrada:hover {
+  box-shadow: 0 0 0 1px var(--fc-border-hover);
+}
+
+/* Foco: a borda fica, e o anel azul de 2px vem afastado (estilos.md §11). */
+.fc-campo-entrada:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--fc-border-hover),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-campo-entrada[aria-invalid='true'] {
+  box-shadow: 0 0 0 1px var(--fc-red-700);
+}
+
+.fc-campo-entrada[aria-invalid='true']:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--fc-red-700),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-campo-entrada:disabled,
+.fc-campo-entrada:disabled:hover {
+  background-color: var(--fc-hover);
+  color: var(--fc-text-tertiary);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  cursor: not-allowed;
+}
+
+/* Senha: o botão de mostrar e ocultar fica dentro do campo, à direita (alvo de 28px, estilos.md §11). */
+.fc-campo-senha {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.fc-campo-senha .fc-campo-entrada {
+  padding-right: 32px;
+}
+
+.fc-campo-senha-alternar {
+  box-sizing: border-box;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--fc-text-secondary);
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.fc-campo-senha-alternar:hover {
+  background-color: var(--fc-hover);
+  color: var(--fc-text);
+}
+
+.fc-campo-senha-alternar:focus-visible {
+  box-shadow: 0 0 0 2px var(--fc-focus);
+}
+
+.fc-campo-senha-alternar:disabled,
+.fc-campo-senha-alternar:disabled:hover {
+  background-color: transparent;
+  color: var(--fc-text-tertiary);
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-campo-entrada,
+  .fc-campo-senha-alternar {
+    transition: none;
+  }
+}
