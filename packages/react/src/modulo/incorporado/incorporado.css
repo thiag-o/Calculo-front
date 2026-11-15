@@ -1,0 +1,70 @@
+/*
+ * Layout incorporado (estilos.md §7.7, §9 e §15): só as abas internas e o conteúdo, sem menu lateral nem barra.
+ * Aba ativa com texto 500 e sublinhado de 2px gray-1000; troca de aba em 150ms.
+ * Só classes fc- e variáveis --fc-*; sem reset global e sem z-index (ADR 0002).
+ */
+
+.fc-incorporado {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.fc-abas {
+  flex: none;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-abas-lista {
+  box-sizing: border-box;
+  display: flex;
+  gap: 4px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 14px;
+  overflow-x: auto;
+}
+
+.fc-aba {
+  box-sizing: border-box;
+  flex: none;
+  margin-bottom: -1px;
+  padding: 10px 10px 12px;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: var(--fc-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  text-decoration: none;
+  white-space: nowrap;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.fc-aba:hover {
+  color: var(--fc-text);
+}
+
+.fc-aba[aria-current='page'] {
+  border-bottom-color: var(--fc-gray-1000);
+  color: var(--fc-text);
+  font-weight: 500;
+}
+
+.fc-aba:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-aba {
+    transition: none;
+  }
+}

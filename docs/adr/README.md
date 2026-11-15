@@ -35,6 +35,10 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0013](0013-menu-desabilitado-so-com-motivo.md) | Item de menu desabilitado só com `motivoDesabilitado`, como o botão (complementa 0012) | aceita, revisar no checkpoint | 2026-11-15 |
 | [0014](0014-comportamento-modal-do-radix-no-hospedeiro.md) | Aceitar o comportamento modal do Radix (rolagem, `aria-hidden`, `z-index`) sobre a página do hospedeiro | aceita, revisar no checkpoint | 2026-11-15 |
 | [0015](0015-cache-na-troca-de-identidade-e-tenant.md) | Trocar identidade ou tenant: cancelar, gravar a sessão e reiniciar o cache, com `signal` em toda consulta (complementa 0008) | aceita, revisar no checkpoint | 2026-11-15 |
+| [0016](0016-isolar-roteador-do-modulo-com-contextos-unsafe.md) | Isolar o roteador do módulo do react-router do hospedeiro com contextos `UNSAFE_` (complementa 0006) | aceita, revisar no checkpoint | 2026-11-15 |
+| [0017](0017-modo-url-com-basename-fixo.md) | Modo `url` com `basename` fixo em `/`, sem prop (complementa 0006) | aceita, revisar no checkpoint | 2026-11-15 |
+| [0018](0018-faixas-de-largura-medidas-no-modulo.md) | Faixas de largura medidas no módulo com ResizeObserver, não na janela | aceita, revisar no checkpoint | 2026-11-15 |
+| [0019](0019-encerramento-de-sessao-no-modulo.md) | Encerrar sessão: avisar o hospedeiro uma vez por token e limpar o cache depois que o layout sai (complementa 0015) | aceita, revisar no checkpoint | 2026-11-15 |
 
 ## Pendentes (sem ADR ainda)
 

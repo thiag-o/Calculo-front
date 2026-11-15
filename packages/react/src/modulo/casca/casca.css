@@ -1,0 +1,302 @@
+/*
+ * Layout do app casca (estilos.md §4, §5, §7.7, §9 e §15; telas "D · …" do Superdesign).
+ * Menu lateral de 240px; só com ícones (64px) quando recolhido ou quando o módulo tem menos de 1180px.
+ * A largura vem do próprio módulo (medida no TypeScript), nunca da janela (ADR 0002).
+ * Só classes fc- e variáveis --fc-*; sem reset global e sem z-index.
+ */
+
+.fc-casca {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.fc-casca-compacto {
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+/* Menu lateral */
+.fc-menu-lateral {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--fc-background-100);
+  border-right: 1px solid var(--fc-border);
+}
+
+.fc-menu-lateral-topo {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-menu-lateral-nav {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+}
+
+/* Item de 32px: ícone 16px + label-14; ativo com fundo gray-200 e texto 500 (estilos.md §9). */
+.fc-menu-lateral-item {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--fc-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  text-decoration: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.fc-menu-lateral-item:hover {
+  background-color: var(--fc-hover);
+  color: var(--fc-text);
+}
+
+.fc-menu-lateral-item[aria-current='page'] {
+  background-color: var(--fc-active);
+  color: var(--fc-text);
+  font-weight: 500;
+}
+
+.fc-menu-lateral-item:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-menu-lateral-item-icone {
+  display: inline-flex;
+  flex: none;
+}
+
+.fc-menu-lateral-item-rotulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-menu-lateral-rodape {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--fc-border);
+}
+
+/* Seletor de cliente (estilos.md §9): marca, avatar, nome e ⇅. */
+.fc-seletor-cliente {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.fc-seletor-cliente-botao {
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-seletor-cliente-botao:hover,
+.fc-seletor-cliente-botao[data-state='open'] {
+  background-color: var(--fc-hover);
+}
+
+.fc-seletor-cliente-botao:focus-visible,
+.fc-usuario:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-seletor-cliente-nome {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-seletor-cliente-trocar {
+  display: inline-flex;
+  flex: none;
+  margin-left: auto;
+  color: var(--fc-text-tertiary);
+}
+
+.fc-seletor-cliente-trocar .fc-modulo-icone {
+  width: 14px;
+  height: 14px;
+}
+
+.fc-modulo-marca {
+  flex: none;
+  color: var(--fc-text);
+}
+
+/* Avatar (estilos.md §7.7): círculo de 20px (cliente) ou 24px (usuário), iniciais 9–10px/500. */
+.fc-modulo-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.fc-modulo-avatar-neutro {
+  background-color: var(--fc-active);
+  color: var(--fc-text);
+}
+
+.fc-modulo-avatar-forte {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+  background-color: var(--fc-primary);
+  color: var(--fc-on-primary);
+}
+
+/* Quem está logado, no rodapé: abre o menu da conta. */
+.fc-usuario {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 36px;
+  margin: 0;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  text-align: left;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-usuario:hover,
+.fc-usuario[data-state='open'] {
+  background-color: var(--fc-hover);
+}
+
+.fc-usuario-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fc-usuario-nome {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-usuario-email {
+  overflow: hidden;
+  color: var(--fc-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Só ícones (recolhido ou módulo com menos de 1180px): nomes na dica, rótulos só para o leitor de tela. */
+.fc-casca-compacto .fc-menu-lateral-topo,
+.fc-casca-compacto .fc-menu-lateral-rodape {
+  flex-direction: column;
+  align-items: center;
+}
+
+.fc-casca-compacto .fc-menu-lateral-item,
+.fc-casca-compacto .fc-seletor-cliente,
+.fc-casca-compacto .fc-usuario {
+  justify-content: center;
+  padding: 0;
+}
+
+.fc-casca-compacto .fc-seletor-cliente,
+.fc-casca-compacto .fc-usuario {
+  width: 40px;
+  height: 32px;
+  min-height: 32px;
+}
+
+.fc-casca-compacto .fc-modulo-marca,
+.fc-casca-compacto .fc-seletor-cliente-trocar {
+  display: none;
+}
+
+.fc-casca-compacto .fc-menu-lateral-item-rotulo,
+.fc-casca-compacto .fc-seletor-cliente-nome,
+.fc-casca-compacto .fc-usuario-texto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.fc-casca-estreito .fc-modulo-pagina {
+  padding: 24px 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-menu-lateral-item,
+  .fc-seletor-cliente-botao,
+  .fc-usuario {
+    transition: none;
+  }
+}

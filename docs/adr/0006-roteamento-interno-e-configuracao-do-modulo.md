@@ -1,6 +1,6 @@
 # 0006. Usar react-router com navegação por URL no casca e em memória quando incorporado; `apiUrl` como propriedade do módulo
 
-- **Status:** aceita
+- **Status:** aceita (complementada por [0016](0016-isolar-roteador-do-modulo-com-contextos-unsafe.md) e [0017](0017-modo-url-com-basename-fixo.md))
 - **Data:** 2026-11-15
 - **Quem decidiu:** dono do produto (resposta G7 do plano global, 2026-11-15)
 - **Relacionadas:** [0002](0002-pacote-react-sem-iframe.md), [0003](0003-codigo-por-verticais.md); design.md §3 e §15
