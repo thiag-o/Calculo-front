@@ -13,7 +13,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "eslint .",
-    "gerar:api": "pnpm --filter @fluxo/react gerar:api",
+    "gerar:api": "node scripts/gerar-api.mjs",
     "changeset": "changeset",
     "release": "pnpm --filter @fluxo/react build && changeset publish",
     "e2e": "playwright test --project=simulado --pass-with-no-tests",
