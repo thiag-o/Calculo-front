@@ -210,9 +210,28 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - o export `./estilos.css` do `package.json` resolve para um arquivo existente (evidência no relatório);
   - `pnpm lint`, `pnpm typecheck` e `pnpm test` continuam verdes.
 
+**F26 · Correção da integração do épico 1: modo real estável em paralelo**
+- dep: F11
+- modelo: opus
+- arquivos: `e2e/epico-1/`, `e2e/apoio/`, `playwright.config.ts`, `README.md`
+- Fazer: corrigir a falha do teste de integração do checkpoint 1. Relatório: `../backend/.claude/orquestracao/backend/relatorios/integracao-epico-1.md`.
+  - **A falha:** com o paralelismo padrão (`fullyParallel: true`), `pnpm e2e:real` falhou de forma intermitente. Quatro testes estouraram o tempo de 30 s: csrf, "sessão sobrevive a recarregar", "senha errada" e "cinco erros". Com `--workers=1`, os 8 passaram. No log da API houve 401, 423 e 200, sem 429.
+  - **Comece reproduzindo:** suba o back como em "Ambiente do teste de integração" no `../docs/plano-global.md` e rode `pnpm e2e:real` sem `--workers=1` até ver a falha. Guarde o trace do Playwright e o log da API. Ache a causa antes de mudar qualquer coisa.
+  - **Se a causa estiver nos testes** (contas, estado ou limite de login compartilhado entre testes paralelos): isole os testes. Por exemplo, dê uma conta própria a cada teste que muda estado, ou rode em série só os que dividem estado. Não troque o projeto inteiro para um worker só, e não aumente o tempo limite para esconder a falha.
+  - **Se a causa estiver no back** (a API falha ou demora com logins ao mesmo tempo): não contorne no front. Devolva `DUVIDA` com a evidência (trace, log, tempos), e a sessão global cria a correção no backend.
+  - **Também:**
+    - o `playwright.config.ts` repassa `E2E_API_URL` ao casca como `VITE_API_URL`, para não exigir as duas variáveis iguais à mão;
+    - o `README.md` documenta como rodar o modo real: back de pé, `E2E_API_URL`, e as contas `E2E_ADMIN_EMAIL`, `E2E_ADMIN_SENHA`, `E2E_DOIS_TENANTS_EMAIL` e `E2E_DOIS_TENANTS_SENHA` (tiradas do `preparar-local`), e a espera de 60 s entre rodadas por causa do limite de 20 logins por minuto por IP.
+- Aceite (evidência executada no relatório):
+  - a causa da falha descrita com a evidência que a confirma;
+  - `pnpm e2e:real` com o paralelismo padrão passa em 3 rodadas seguidas, com 60 s de espera entre elas;
+  - `pnpm e2e` (modo simulado) continua passando;
+  - com só `E2E_API_URL` definida, o casca fala com a mesma API;
+  - `pnpm lint` e `pnpm typecheck` verdes.
+
 **F12 · Portão do épico 1**
 - tipo: portao
-- dep: F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F24, F25
+- dep: F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F24, F25, F26
 - modelo: sonnet
 - Aceite:
   - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm e2e` verdes;
