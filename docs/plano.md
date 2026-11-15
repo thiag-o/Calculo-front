@@ -40,7 +40,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - `tela`: tela inicial.
   - `tema`: `'claro' | 'escuro' | 'sistema'` (padrão `'sistema'`).
   - `navegacao`:
-    - `'url'`, no casca: as rotas internas sincronizadas com a URL, com `basename`;
+    - `'url'`, no casca: as rotas internas sincronizadas com a URL, com `basename` fixo em `/` e sem prop (ADR 0017; decisão da sessão global no CK1: só vira prop quando um hospedeiro precisar montar o módulo fora da raiz);
     - `'memoria'`, padrão quando incorporado: não toca a URL do hospedeiro.
 - **Componentes por tela**, para quem quer só uma parte: épico 1 `<Inicio>`; épico 2 `<Administracao>` e `<Auditoria>`.
 - **Tela de login e de redefinição de senha:** exportadas para o casca (`<Entrar>`, `<RedefinirSenha>`).
@@ -336,8 +336,33 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 - Fazer: os fluxos do épico 2 do plano global (usuário Configurador sem Administração, papel personalizado, link de redefinição de uso único, chave de API e incorporação, chave revogada, configuração de segurança, auditoria de acessos). O CORS de domínio não autorizado só roda no modo real.
 - Aceite: `pnpm e2e` passa.
 
+**F27 · Design system: contraste dos hovers, tokens num lugar só e react-router fixo**
+- dep: F12
+- modelo: sonnet
+- arquivos: `packages/react/src/design-system/`, `packages/react/package.json`, `pnpm-lock.yaml`
+- Fazer (pendências adiáveis do épico 1, decididas pela sessão global no CK1):
+  - **Contraste:** os dois hovers abaixo de 4,5:1 (principal no tema claro, cerca de 4,1; perigo no escuro, cerca de 2,9) passam a ter no mínimo 4,5:1 contra o texto deles, mantendo o tom do `estilos.md`. Ponha no relatório os valores antigos, os novos e o contraste medido; a sessão global atualiza o `estilos.md` §7.1 com eles.
+  - **Tokens num lugar só:** `--fc-primary-hover`, `--fc-on-danger`, `--fc-shadow-menu`, `--fc-overlay` (preto 32% no claro e 64% no escuro, valor aceito) e `--fc-shadow-modal` vão para o `tokens.css` do design system. Nenhum token `--fc-*` fica declarado fora dele.
+  - **`DicaBotao`** reaproveita a `Dica` em vez de repetir a lógica.
+  - **react-router** fixo na versão exata instalada (sem `^`). O módulo usa contextos `UNSAFE_*` (ADR 0016), e até uma versão menor pode quebrá-los. Atualizar exige rodar o teste do hospedeiro com roteador próprio.
+  - Os ícones SVG repetidos ficam como estão, até haver demanda por uma biblioteca de ícones.
+- Aceite: contraste medido e registrado; `grep` sem `--fc-` declarado fora do `tokens.css`; `pnpm lint`, `typecheck`, `test`, `build` e `e2e` verdes; nenhuma mudança visual além dos dois hovers.
+
+**F28 · Guia de incorporação**
+- dep: F20
+- modelo: sonnet
+- arquivos: `docs/incorporacao.md`, `README.md`
+- Fazer: guia para quem incorpora o `@fluxo/react` num sistema hospedeiro, com link no `README.md`:
+  - instalação e o CSS `@fluxo/react/estilos.css`;
+  - as props do `<FluxoCalculo>` e os componentes por tela;
+  - modo token: troca da chave de API por token no back do hospedeiro (nunca no navegador), `onSessaoExpirada` e domínios autorizados (CORS);
+  - tema e sobrescrita de tokens `.fc-raiz { --fc-…: … }`;
+  - **convivência com a página** (ADR 0014): com diálogo ou menu aberto, o Radix trava a rolagem do `body` e põe `aria-hidden` no resto da página. Explique também o risco de `z-index` do hospedeiro e como evitá-lo;
+  - `navegacao="memoria"` e o `basename` fixo em `/` no modo `url`.
+- Aceite: cada prop e cada código de erro citado existe no código ou no contrato; os exemplos de código compilam (trecho testado ou copiado de um teste).
+
 **F22 · Portão do épico 2**
 - tipo: portao
-- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23
+- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 2.
