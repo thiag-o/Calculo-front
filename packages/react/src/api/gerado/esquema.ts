@@ -34,6 +34,11 @@ export interface paths {
         /**
          * Devolve a sessão atual
          * @description Devolve a sessão do cookie `fc_sessao` e renova a última atividade dela.
+         *
+         *     No modo incorporado, aceita `Authorization: Bearer <token>`: devolve a
+         *     sessão do token, com `tenants` e `tenant_atual` iguais ao tenant do token
+         *     e as permissões dos papéis informados na emissão. Token vencido,
+         *     adulterado ou com assinatura inválida: `401 sem_sessao`.
          */
         get: operations["sessao_atual"];
         put?: never;
@@ -81,6 +86,411 @@ export interface paths {
          *     Exige `X-CSRF-Token`.
          */
         put: operations["trocar_tenant"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/permissoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista o catálogo de permissões
+         * @description O catálogo inteiro, agrupado por `grupo`, com as permissões sensíveis
+         *     marcadas (`sensivel`), para montar a edição de papéis.
+         */
+        get: operations["listar_permissoes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/papeis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os papéis do tenant
+         * @description Todos os papéis do tenant atual, inclusive o Admin (`fixo: true`), sem paginação.
+         */
+        get: operations["listar_papeis"];
+        put?: never;
+        /**
+         * Cria um papel personalizado
+         * @description Cria um papel com as permissões escolhidas. O nome é único no tenant,
+         *     comparado sem os espaços das pontas e sem diferenciar maiúsculas
+         *     (guardado sem os espaços das pontas). Auditado como `papel_alterado`.
+         */
+        post: operations["criar_papel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/papeis/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Devolve um papel */
+        get: operations["obter_papel"];
+        /**
+         * Altera o nome e as permissões de um papel
+         * @description Substitui o nome e as permissões do papel. Os papéis iniciais podem ser
+         *     alterados; o Admin (`fixo: true`) não: `409 papel_fixo`. Nome repetido no
+         *     tenant: `409 papel_existente`. Auditado como `papel_alterado`.
+         */
+        put: operations["alterar_papel"];
+        post?: never;
+        /**
+         * Remove um papel
+         * @description Remove o papel. Os papéis iniciais podem ser removidos; o Admin não
+         *     (`409 papel_fixo`). Papel atribuído a algum usuário do tenant:
+         *     `409 papel_em_uso`. Auditado como `papel_alterado`.
+         */
+        delete: operations["remover_papel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/usuarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os usuários do tenant
+         * @description Os usuários do tenant atual, paginados, inclusive os inativos no tenant e
+         *     os criados pela incorporação (`externo: true`).
+         */
+        get: operations["listar_usuarios"];
+        put?: never;
+        /**
+         * Cria um usuário no tenant
+         * @description Acrescenta um usuário ao tenant atual, com os papéis informados (ids de
+         *     papel do tenant), ativo.
+         *     - E-mail que já é de um usuário de outro tenant: reaproveita esse usuário e o
+         *       acrescenta como membro, sem mudar o nome dele.
+         *     - E-mail que já é membro deste tenant: `409 usuario_existente`.
+         *     - Papel que não existe no tenant: `422 papel_inexistente`.
+         *
+         *     Devolve só o `Usuario`: o link para definir a senha sai depois, por
+         *     `POST /v1/usuarios/{id}/redefinicao`. Auditado como `usuario_alterado`.
+         */
+        post: operations["criar_usuario"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/usuarios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Devolve um usuário do tenant */
+        get: operations["obter_usuario"];
+        /**
+         * Altera o nome, os papéis e a situação de um usuário
+         * @description Substitui o nome, os papéis no tenant atual (ids de papel) e se está ativo.
+         *     - O `nome` é do usuário, não do vínculo: vale em todos os tenants dele.
+         *     - `ativo` vale só no tenant atual. Desativar derruba as sessões do usuário
+         *       nesse tenant.
+         *     - Tirar o papel Admin do último Admin ativo, ou desativá-lo:
+         *       `409 ultimo_admin`.
+         *     - Papel que não existe no tenant: `422 papel_inexistente`.
+         *
+         *     Auditado como `usuario_alterado`.
+         */
+        put: operations["alterar_usuario"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/usuarios/{id}/redefinicao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gera o link de redefinição de senha de um usuário
+         * @description Gera um link de uso único para a pessoa definir a senha, válido pela
+         *     validade do link do tenant atual (padrão 24 h). O link aparece só nesta
+         *     resposta; o servidor guarda só o resumo do token. Gerar um link novo
+         *     invalida os anteriores do usuário.
+         *     - Usuário inativo no tenant: `409 usuario_inativo`.
+         *     - Usuário criado pela incorporação: `409 usuario_externo`.
+         *
+         *     Auditado como `redefinicao_gerada`.
+         */
+        post: operations["gerar_link_redefinicao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/redefinicao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Troca a senha pelo link de redefinição
+         * @description Rota pública: a pessoa informa o token do link e a nova senha. O link é de
+         *     uso único. Token inexistente, já usado ou vencido: `410 link_invalido`.
+         *
+         *     A nova senha precisa cumprir a maior senha mínima entre os tenants do
+         *     usuário e não pode conter o e-mail: `422 senha_invalida` com
+         *     `campos.nova_senha`.
+         *
+         *     Troca a senha, marca o link como usado e encerra as outras sessões do
+         *     usuário. Não cria sessão (a pessoa entra depois pelo login). Auditado como
+         *     `senha_redefinida`.
+         *
+         *     Como o login, é isenta do CSRF e só aceita `Content-Type: application/json`:
+         *     sem `Content-Type` ou com outro tipo, `415 tipo_conteudo_invalido`.
+         */
+        post: operations["redefinir_senha"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chaves-api": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista as chaves de API do tenant
+         * @description As chaves do tenant atual, paginadas, inclusive as revogadas
+         *     (`revogada_em` preenchido). A chave inteira nunca volta: só o `prefixo`.
+         */
+        get: operations["listar_chaves_api"];
+        put?: never;
+        /**
+         * Cria uma chave de API
+         * @description Cria uma chave de API do tenant atual. A `chave` inteira aparece só nesta
+         *     resposta; o servidor guarda só o hash e o `prefixo` visível. Nomes
+         *     repetidos são permitidos. Auditado como `chave_api_criada`.
+         */
+        post: operations["criar_chave_api"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chaves-api/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoga uma chave de API
+         * @description Revoga a chave sem apagá-la (ela continua na lista, com `revogada_em`).
+         *     Revogar uma chave já revogada também responde `204`. Daí em diante a troca
+         *     por token com essa chave dá `401 chave_invalida`. Auditado como
+         *     `chave_api_revogada`.
+         */
+        delete: operations["revogar_chave_api"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dominios-autorizados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os domínios autorizados do tenant
+         * @description As origens que podem chamar a API pelo navegador com o token do tenant, sem paginação.
+         */
+        get: operations["listar_dominios_autorizados"];
+        put?: never;
+        /**
+         * Cadastra um domínio autorizado
+         * @description Cadastra uma origem no formato `https?://host[:porta]`, sem caminho,
+         *     consulta nem fragmento. Ela é guardada e devolvida normalizada: em
+         *     minúsculas, sem barra final e sem a porta padrão do esquema (80 no
+         *     `http`, 443 no `https`).
+         *     - Origem fora do formato: `422 origem_invalida` com `campos.origem`.
+         *     - Origem (já normalizada) repetida no tenant: `409 dominio_existente`.
+         */
+        post: operations["criar_dominio_autorizado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dominios-autorizados/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove um domínio autorizado
+         * @description Apaga o domínio de vez; a origem deixa de poder chamar a API com o token do tenant.
+         */
+        delete: operations["remover_dominio_autorizado"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/incorporacao/sessoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Troca a chave de API por um token de incorporação
+         * @description Chamada pelo backend do hospedeiro com `Authorization: Chave <chave>`.
+         *     Cria ou atualiza, no tenant da chave, o usuário externo identificado pelo
+         *     `id_externo` (e-mail, nome e papéis informados) e devolve um token de
+         *     incorporação para esse usuário, válido pela validade do token do tenant
+         *     (padrão 15 min). Registra o último uso da chave. Auditado como
+         *     `token_incorporacao_emitido`.
+         *     - Cabeçalho ausente ou malformado, chave inexistente ou revogada:
+         *       `401 chave_invalida`.
+         *     - `papeis` traz **nomes** de papel do tenant; nome que não existe:
+         *       `422 papel_inexistente`. Lista vazia é aceita (usuário sem permissões).
+         *     - E-mail que já pertence a outro usuário do sistema, não ligado a esse
+         *       `id_externo`: `409 email_em_uso` (o hospedeiro nunca assume uma conta
+         *       existente).
+         *
+         *     Não usa cookie nem CSRF.
+         */
+        post: operations["criar_sessao_incorporacao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auditoria/acessos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consulta a auditoria de acessos
+         * @description Os eventos de acesso do tenant atual, do mais recente para o mais antigo,
+         *     paginados. Entram também os eventos sem tenant (falha e bloqueio de login,
+         *     gravados antes de se saber o tenant) cujo `usuario_id` é membro do tenant
+         *     atual. E-mails sem conta nunca aparecem.
+         *
+         *     Filtros (todos opcionais, combinados com E):
+         *     - `tipo`: um ou mais tipos de evento (parâmetro repetido:
+         *       `?tipo=login_ok&tipo=login_falhou`). Os tipos são `login_ok`,
+         *       `login_falhou`, `login_bloqueado`, `logout`, `troca_tenant`,
+         *       `redefinicao_gerada`, `senha_redefinida`, `chave_api_criada`,
+         *       `chave_api_revogada`, `token_incorporacao_emitido`, `papel_alterado`,
+         *       `usuario_alterado` e `seguranca_alterada`. Tipo desconhecido:
+         *       `422 tipo_evento_invalido` com `campos.tipo`;
+         *     - `desde` (inclusivo) e `ate` (exclusivo), em ISO 8601. `desde` depois de
+         *       `ate`: `422 dados_invalidos` com `campos.ate`.
+         */
+        get: operations["listar_acessos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/configuracoes/seguranca": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve os parâmetros de segurança do tenant
+         * @description Os cinco parâmetros de sessão e senha do tenant atual. Cada um traz o
+         *     valor em vigor, o padrão e os limites aceitos. Tenant que nunca alterou os
+         *     parâmetros recebe os padrões.
+         *
+         *     | Campo | Unidade | Padrão | Limites |
+         *     |---|---|---|---|
+         *     | `inatividade_minutos` | minutos | 480 | 15 a 1440 |
+         *     | `duracao_maxima_dias` | dias | 7 | 1 a 30 |
+         *     | `senha_minima` | caracteres | 12 | 8 a 64 |
+         *     | `validade_link_horas` | horas | 24 | 1 a 72 |
+         *     | `validade_token_minutos` | minutos | 15 | 5 a 60 |
+         *
+         *     O bloqueio de login e o limite por IP são do sistema, não do tenant, e
+         *     não aparecem aqui.
+         */
+        get: operations["configuracao_seguranca"];
+        /**
+         * Altera os parâmetros de segurança do tenant
+         * @description Substitui os cinco parâmetros (todos obrigatórios, inteiros, nas unidades
+         *     do `GET`). Valor fora dos limites: `422 valor_fora_do_limite`, com um item
+         *     em `campos` para cada campo fora do limite, de uma vez só; nada é gravado.
+         *     Responde com o mesmo corpo do `GET`. Auditado como `seguranca_alterada`,
+         *     com o valor antigo e o novo.
+         */
+        put: operations["alterar_configuracao_seguranca"];
         post?: never;
         delete?: never;
         options?: never;
@@ -183,9 +593,201 @@ export interface components {
              */
             desbloqueia_em: string;
         };
+        /**
+         * @description Código de uma permissão do catálogo do RBAC.
+         * @enum {string}
+         */
+        CodigoPermissao: "usuarios.gerenciar" | "papeis.gerenciar" | "integracao.gerenciar" | "seguranca.gerenciar" | "conexoes.ver" | "conexoes.gerenciar" | "credenciais.gerenciar" | "datasets.gerenciar" | "sql_livre.usar" | "variaveis.gerenciar" | "workflows.ver" | "workflows.editar" | "testes.editar" | "teste.alterar_origem_cliente" | "versao.enviar_revisao" | "versao.aprovar" | "versao.publicar" | "execucoes.ver" | "execucoes.disparar" | "execucoes.agendar" | "execucao.reprocessar" | "erro.ignorar" | "simulacao.rodar" | "estados.ver" | "estado.ajustar" | "auditoria.ver" | "traces.ver";
+        /** @description Uma permissão do catálogo. */
+        Permissao: {
+            codigo: components["schemas"]["CodigoPermissao"];
+            /** @description Nome da permissão para a tela, em pt-BR. */
+            nome: string;
+            /** @description Grupo do catálogo (ex.: `Administração`, `Dados`). */
+            grupo: string;
+            /** @description Permissão sensível, para ser dada uma a uma e destacada na tela. */
+            sensivel: boolean;
+        };
+        ListaPermissoes: {
+            itens: components["schemas"]["Permissao"][];
+        };
+        /** @description Um papel do tenant (conjunto de permissões). */
+        Papel: {
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            permissoes: components["schemas"]["CodigoPermissao"][];
+            /** @description `true` só no Admin: tem todas as permissões e não pode ser alterado nem removido. */
+            fixo: boolean;
+            /** @description Quantos usuários do tenant têm o papel. */
+            total_usuarios: number;
+        };
+        ListaPapeis: {
+            itens: components["schemas"]["Papel"][];
+        };
+        /** @description Corpo da criação e da alteração de papel (a alteração substitui tudo). */
+        DadosPapel: {
+            nome: string;
+            permissoes: components["schemas"]["CodigoPermissao"][];
+        };
+        PapelResumo: {
+            /** Format: uuid */
+            id: string;
+            nome: string;
+        };
+        /** @description Um usuário, como membro do tenant atual. */
+        Usuario: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            nome: string;
+            /** @description Os papéis do usuário no tenant atual. */
+            papeis: components["schemas"]["PapelResumo"][];
+            /** @description Se o usuário está ativo no tenant atual. */
+            ativo: boolean;
+            /** @description `true` para o usuário criado pela incorporação (sem senha). */
+            externo: boolean;
+        };
+        ListaUsuarios: {
+            itens: components["schemas"]["Usuario"][];
+            proximo_cursor: string | null;
+        };
+        /** @description Corpo da criação de usuário. */
+        NovoUsuario: {
+            email: string;
+            nome: string;
+            /** @description Ids dos papéis do tenant. */
+            papeis: string[];
+        };
+        /** @description Corpo da alteração de usuário (substitui tudo). */
+        AlteracaoUsuario: {
+            nome: string;
+            /** @description Ids dos papéis do tenant. */
+            papeis: string[];
+            ativo: boolean;
+        };
+        /** @description O link de redefinição de senha, mostrado uma vez só. */
+        LinkRedefinicao: {
+            /** @description URL do casca com o token (`<FLUXO_URL_CASCA>/redefinir?token=...`). */
+            link: string;
+            /** Format: date-time */
+            expira_em: string;
+        };
+        /** @description Corpo da troca de senha pelo link. */
+        NovaSenha: {
+            token: string;
+            nova_senha: string;
+        };
+        /** @description Uma chave de API, sem a chave inteira. */
+        ChaveApi: {
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            /** @description O começo visível da chave, para reconhecê-la. */
+            prefixo: string;
+            /** Format: date-time */
+            criada_em: string;
+            ultimo_uso_em: string | null;
+            revogada_em: string | null;
+        };
+        ListaChavesApi: {
+            itens: components["schemas"]["ChaveApi"][];
+            proximo_cursor: string | null;
+        };
+        /** @description Corpo da criação de chave de API. */
+        NovaChaveApi: {
+            nome: string;
+        };
+        /** @description A chave recém-criada. A `chave` inteira só aparece aqui. */
+        ChaveApiCriada: {
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            prefixo: string;
+            /** @description A chave inteira, para `Authorization: Chave <chave>`. Não é mostrada de novo. */
+            chave: string;
+        };
+        DominioAutorizado: {
+            /** Format: uuid */
+            id: string;
+            /** @description Origem normalizada (ex.: `https://app.exemplo.com.br`, `http://localhost:5274`). */
+            origem: string;
+            /** Format: date-time */
+            criado_em: string;
+        };
+        ListaDominiosAutorizados: {
+            itens: components["schemas"]["DominioAutorizado"][];
+        };
+        /** @description Corpo do cadastro de domínio autorizado. */
+        NovoDominioAutorizado: {
+            /** @description Origem no formato `https?://host[:porta]`. */
+            origem: string;
+        };
+        /** @description Corpo da troca da chave de API por um token. */
+        NovaSessaoIncorporacao: {
+            /** @description Identificador do usuário no sistema hospedeiro. */
+            id_externo: string;
+            email: string;
+            nome: string;
+            /** @description Nomes de papéis do tenant (pode ser vazia). */
+            papeis: string[];
+        };
+        TokenIncorporacao: {
+            /** @description O token para `Authorization: Bearer <token>`. */
+            token: string;
+            /** Format: date-time */
+            expira_em: string;
+        };
+        /** @description Um evento da auditoria de acessos. */
+        EventoAcesso: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            ocorrido_em: string;
+            /** @description Tipo do evento (ex.: `login_ok`, `login_falhou`); a lista está em `GET /v1/auditoria/acessos`. */
+            tipo: string;
+            usuario_id: string | null;
+            email_informado: string;
+            ip: string | null;
+            detalhe: string | null;
+        };
+        ListaEventosAcesso: {
+            itens: components["schemas"]["EventoAcesso"][];
+            proximo_cursor: string | null;
+        };
+        /** @description Um parâmetro de segurança do tenant, com o padrão e os limites aceitos (inclusivos). */
+        ParametroSeguranca: {
+            valor: number;
+            padrao: number;
+            minimo: number;
+            maximo: number;
+        };
+        /** @description Os cinco parâmetros de sessão e senha do tenant atual. */
+        ConfiguracaoSeguranca: {
+            inatividade_minutos: components["schemas"]["ParametroSeguranca"];
+            duracao_maxima_dias: components["schemas"]["ParametroSeguranca"];
+            senha_minima: components["schemas"]["ParametroSeguranca"];
+            validade_link_horas: components["schemas"]["ParametroSeguranca"];
+            validade_token_minutos: components["schemas"]["ParametroSeguranca"];
+        };
+        /**
+         * @description Corpo da alteração dos parâmetros de segurança (os cinco, nas unidades do nome).
+         *     Os limites não estão no esquema: fora deles, a resposta é `422 valor_fora_do_limite`.
+         */
+        AlteracaoConfiguracaoSeguranca: {
+            inatividade_minutos: number;
+            duracao_maxima_dias: number;
+            senha_minima: number;
+            validade_link_horas: number;
+            validade_token_minutos: number;
+        };
     };
     responses: {
-        /** @description `sem_sessao`: sem sessão válida (ausente, revogada ou expirada). */
+        /**
+         * @description `sem_sessao`: sem sessão válida (ausente, revogada ou expirada) ou, com
+         *     `Authorization: Bearer`, token de incorporação vencido, adulterado ou com
+         *     assinatura inválida.
+         */
         SemSessao: {
             headers: {
                 [name: string]: unknown;
@@ -261,8 +863,181 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problema"];
             };
         };
+        /**
+         * @description - `sem_permissao`: a sessão não tem a permissão exigida pela rota;
+         *     - `origem_nao_autorizada`: com token de incorporação, a origem não está
+         *       entre os domínios autorizados do tenant do token.
+         */
+        ProibidoLeitura: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /**
+         * @description - `sem_permissao`: a sessão não tem a permissão exigida pela rota;
+         *     - `origem_nao_autorizada`: com token de incorporação, a origem não está
+         *       entre os domínios autorizados do tenant do token;
+         *     - `csrf_invalido`: com o cookie, falta o `X-CSRF-Token` ou ele não bate com o `fc_csrf`.
+         */
+        ProibidoMutacao: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /**
+         * @description `origem_nao_autorizada`: com token de incorporação, a origem não está entre
+         *     os domínios autorizados do tenant do token.
+         */
+        OrigemNaoAutorizada: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /** @description `nao_encontrado`: o recurso não existe ou não é do tenant atual. */
+        NaoEncontrado: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /** @description `dados_invalidos`: o `{id}` do caminho não é um UUID (`campos.id`). */
+        IdInvalido: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+            };
+        };
+        /**
+         * @description `dados_invalidos`: o `{id}` do caminho não é um UUID (`campos.id`) ou o corpo
+         *     não segue o esquema (`campos` com o erro de cada campo; `corpo` se não for
+         *     de um campo).
+         */
+        DadosInvalidosComId: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+            };
+        };
+        /**
+         * @description - `dados_invalidos`: `limite` fora de 1..200 (`campos.limite`);
+         *     - `cursor_invalido`: o cursor não foi gerado por esta lista ou foi alterado.
+         */
+        PaginacaoInvalida: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /**
+         * @description - `dados_invalidos`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+         *     - `papel_inexistente`: algum papel informado não existe no tenant.
+         */
+        DadosOuPapelInvalidos: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /** @description `papel_existente`: já há um papel com esse nome no tenant. */
+        PapelExistente: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /** @description `usuario_existente`: o e-mail já é de um membro do tenant. */
+        UsuarioExistente: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /**
+         * @description `ultimo_admin`: a alteração deixaria o tenant sem Admin ativo (tirar o papel
+         *     Admin do último Admin ativo ou desativá-lo).
+         */
+        UltimoAdmin: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /** @description `link_invalido`: o token do link não existe, já foi usado ou venceu. */
+        LinkInvalido: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /**
+         * @description `chave_invalida`: cabeçalho `Authorization: Chave <chave>` ausente ou
+         *     malformado, chave inexistente ou revogada.
+         */
+        ChaveInvalida: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /**
+         * @description `email_em_uso`: o e-mail já pertence a outro usuário do sistema, não ligado a
+         *     esse `id_externo`.
+         */
+        EmailEmUso: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /** @description `dominio_existente`: a origem (normalizada) já está cadastrada no tenant. */
+        DominioExistente: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
     };
-    parameters: never;
+    parameters: {
+        /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+        Id: string;
+        /** @description Quantos itens por página (1 a 200). */
+        Limite: number;
+        /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+        Cursor: string | null;
+    };
     requestBodies: never;
     headers: {
         /**
@@ -327,6 +1102,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["SemSessao"];
+            403: components["responses"]["OrigemNaoAutorizada"];
         };
     };
     criar_sessao: {
@@ -420,6 +1196,677 @@ export interface operations {
                 };
             };
             422: components["responses"]["DadosInvalidos"];
+        };
+    };
+    listar_permissoes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O catálogo de permissões. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaPermissoes"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+        };
+    };
+    listar_papeis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os papéis do tenant. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaPapeis"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+        };
+    };
+    criar_papel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DadosPapel"];
+            };
+        };
+        responses: {
+            /** @description Papel criado. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Papel"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            409: components["responses"]["PapelExistente"];
+            422: components["responses"]["DadosInvalidos"];
+        };
+    };
+    obter_papel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O papel. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Papel"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+            404: components["responses"]["NaoEncontrado"];
+            422: components["responses"]["IdInvalido"];
+        };
+    };
+    alterar_papel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DadosPapel"];
+            };
+        };
+        responses: {
+            /** @description Papel alterado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Papel"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            404: components["responses"]["NaoEncontrado"];
+            /**
+             * @description - `papel_fixo`: o Admin não pode ser alterado;
+             *     - `papel_existente`: já há outro papel com esse nome no tenant.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            422: components["responses"]["DadosInvalidosComId"];
+        };
+    };
+    remover_papel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Papel removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            404: components["responses"]["NaoEncontrado"];
+            /**
+             * @description - `papel_fixo`: o Admin não pode ser removido;
+             *     - `papel_em_uso`: o papel está atribuído a algum usuário do tenant.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            422: components["responses"]["IdInvalido"];
+        };
+    };
+    listar_usuarios: {
+        parameters: {
+            query?: {
+                /** @description Quantos itens por página (1 a 200). */
+                limite?: components["parameters"]["Limite"];
+                /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de usuários. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaUsuarios"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+            422: components["responses"]["PaginacaoInvalida"];
+        };
+    };
+    criar_usuario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovoUsuario"];
+            };
+        };
+        responses: {
+            /** @description Usuário criado (ou reaproveitado) como membro do tenant. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Usuario"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            409: components["responses"]["UsuarioExistente"];
+            422: components["responses"]["DadosOuPapelInvalidos"];
+        };
+    };
+    obter_usuario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O usuário. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Usuario"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+            404: components["responses"]["NaoEncontrado"];
+            422: components["responses"]["IdInvalido"];
+        };
+    };
+    alterar_usuario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlteracaoUsuario"];
+            };
+        };
+        responses: {
+            /** @description Usuário alterado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Usuario"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            404: components["responses"]["NaoEncontrado"];
+            409: components["responses"]["UltimoAdmin"];
+            422: components["responses"]["DadosOuPapelInvalidos"];
+        };
+    };
+    gerar_link_redefinicao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Link gerado. Mostrado uma vez só. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkRedefinicao"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            404: components["responses"]["NaoEncontrado"];
+            /**
+             * @description - `usuario_inativo`: o usuário está inativo no tenant;
+             *     - `usuario_externo`: o usuário foi criado pela incorporação e não tem senha.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            422: components["responses"]["IdInvalido"];
+        };
+    };
+    redefinir_senha: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovaSenha"];
+            };
+        };
+        responses: {
+            /** @description Senha trocada; as outras sessões do usuário foram encerradas. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            410: components["responses"]["LinkInvalido"];
+            415: components["responses"]["TipoConteudoInvalido"];
+            /**
+             * @description - `dados_invalidos`: o corpo não segue o esquema;
+             *     - `senha_invalida`: a nova senha não cumpre a política (`campos.nova_senha`).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                };
+            };
+        };
+    };
+    listar_chaves_api: {
+        parameters: {
+            query?: {
+                /** @description Quantos itens por página (1 a 200). */
+                limite?: components["parameters"]["Limite"];
+                /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de chaves de API. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaChavesApi"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+            422: components["responses"]["PaginacaoInvalida"];
+        };
+    };
+    criar_chave_api: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovaChaveApi"];
+            };
+        };
+        responses: {
+            /** @description Chave criada. A `chave` é mostrada uma vez só. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChaveApiCriada"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            422: components["responses"]["DadosInvalidos"];
+        };
+    };
+    revogar_chave_api: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chave revogada (ou já estava). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            404: components["responses"]["NaoEncontrado"];
+            422: components["responses"]["IdInvalido"];
+        };
+    };
+    listar_dominios_autorizados: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os domínios autorizados do tenant. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaDominiosAutorizados"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+        };
+    };
+    criar_dominio_autorizado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovoDominioAutorizado"];
+            };
+        };
+        responses: {
+            /** @description Domínio cadastrado, com a origem normalizada. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DominioAutorizado"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            409: components["responses"]["DominioExistente"];
+            /**
+             * @description - `dados_invalidos`: o corpo não segue o esquema;
+             *     - `origem_invalida`: a origem não segue `https?://host[:porta]` (`campos.origem`).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                };
+            };
+        };
+    };
+    remover_dominio_autorizado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Domínio removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            404: components["responses"]["NaoEncontrado"];
+            422: components["responses"]["IdInvalido"];
+        };
+    };
+    criar_sessao_incorporacao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovaSessaoIncorporacao"];
+            };
+        };
+        responses: {
+            /** @description Token emitido. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenIncorporacao"];
+                };
+            };
+            401: components["responses"]["ChaveInvalida"];
+            409: components["responses"]["EmailEmUso"];
+            422: components["responses"]["DadosOuPapelInvalidos"];
+        };
+    };
+    listar_acessos: {
+        parameters: {
+            query?: {
+                /** @description Tipos de evento (repita o parâmetro para mais de um). */
+                tipo?: string[] | null;
+                /** @description Só eventos a partir deste instante (inclusivo). */
+                desde?: string | null;
+                /** @description Só eventos antes deste instante (exclusivo). */
+                ate?: string | null;
+                /** @description Quantos itens por página (1 a 200). */
+                limite?: components["parameters"]["Limite"];
+                /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de eventos de acesso. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaEventosAcesso"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+            /**
+             * @description - `dados_invalidos`: `limite` fora de 1..200, data malformada ou
+             *       `desde` depois de `ate` (`campos.<parâmetro>`);
+             *     - `cursor_invalido`: o cursor não foi gerado por esta lista;
+             *     - `tipo_evento_invalido`: tipo de evento desconhecido (`campos.tipo`).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    configuracao_seguranca: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os parâmetros de segurança do tenant. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracaoSeguranca"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoLeitura"];
+        };
+    };
+    alterar_configuracao_seguranca: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlteracaoConfiguracaoSeguranca"];
+            };
+        };
+        responses: {
+            /** @description Parâmetros alterados. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracaoSeguranca"];
+                };
+            };
+            401: components["responses"]["SemSessao"];
+            403: components["responses"]["ProibidoMutacao"];
+            /**
+             * @description - `dados_invalidos`: o corpo não segue o esquema (campo faltando, valor
+             *       que não é inteiro);
+             *     - `valor_fora_do_limite`: um ou mais campos fora dos limites (um item
+             *       em `campos` para cada).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                };
+            };
         };
     };
 }
