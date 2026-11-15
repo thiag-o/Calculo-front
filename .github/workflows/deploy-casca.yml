@@ -1,0 +1,26 @@
+# Deploy do app casca (S3 + CloudFront).
+# ESQUELETO DESLIGADO: só roda quando a variável de repositório DEPLOY_HABILITADO for 'true'
+# (configurada na fase 1, junto com a infraestrutura).
+# Homologação: a cada push na main. Produção: a cada tag v*, com aprovação no environment "producao".
+name: Deploy casca
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # OIDC com a AWS, sem chave fixa guardada no GitHub
+
+jobs:
+  deploy:
+    if: ${{ vars.DEPLOY_HABILITADO == 'true' }}
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'producao' || 'homologacao' }}
+    steps:
+      - uses: actions/checkout@v5
+      # Fase 1: build do casca com vars.VITE_API_URL do environment, envio para vars.S3_BUCKET_CASCA
+      # e invalidação de vars.CLOUDFRONT_ID, assumindo vars.AWS_ROLE_ARN.
+      - run: echo "Deploy ainda não configurado (fase 1)."

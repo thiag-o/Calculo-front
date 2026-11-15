@@ -1,0 +1,38 @@
+# Publica o @fluxo/react no GitHub Packages com Changesets (ADR 0004).
+# Na main: abre/atualiza o PR "Versão do pacote"; ao aceitar esse PR, publica a nova versão.
+name: Publicar pacote
+
+on:
+  push:
+    branches: [main]
+
+concurrency: publicar-${{ github.ref }}
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: '@fluxo'
+      - run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: changesets/action@v1
+        with:
+          title: 'Versão do pacote'
+          commit: 'chore: versão do pacote'
+          publish: pnpm release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

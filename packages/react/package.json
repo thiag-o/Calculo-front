@@ -1,0 +1,29 @@
+{
+  "name": "@fluxo/react",
+  "version": "0.0.0",
+  "description": "Fluxo de Cálculo como módulo React incorporável (sem iframe).",
+  "type": "module",
+  "sideEffects": ["**/*.css"],
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./estilos.css": "./dist/estilos.css"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "gerar:api": "echo \"Fase 1: gerar src/api a partir do OpenAPI do backend (ADR 0005)\""
+  },
+  "peerDependencies": {
+    "react": "^18.3.0 || ^19.0.0",
+    "react-dom": "^18.3.0 || ^19.0.0"
+  }
+}

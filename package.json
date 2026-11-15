@@ -1,0 +1,20 @@
+{
+  "name": "fluxo-frontend",
+  "private": true,
+  "type": "module",
+  "description": "Front do Fluxo de Cálculo: pacote @fluxo/react e app casca (hospedeiro zero).",
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev": "pnpm --filter casca dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "eslint .",
+    "gerar:api": "pnpm --filter @fluxo/react gerar:api",
+    "changeset": "changeset",
+    "release": "pnpm --filter @fluxo/react build && changeset publish"
+  }
+}
