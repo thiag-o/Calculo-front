@@ -38,3 +38,12 @@ O pacote `@fluxo/react` reúne muitas telas: editor de workflow, fórmulas, exec
   - fácil de dividir o trabalho entre pessoas e agentes (uma vertical por tarefa).
 - **Ruim:** é preciso decidir o que é "compartilhado" com cuidado, para o `design-system` não virar o antigo `utils/`. Algumas importações ficam mais longas.
 - **A fazer:** validar a configuração do `eslint-plugin-boundaries` quando as dependências forem instaladas (fase 1).
+
+## Atualização (2026-11-15): reforço pelo artigo "The Vertical Codebase"
+
+O dono do produto reavaliou a alternativa "uma vertical por pacote de workspace" e decidiu **manter as verticais como pastas** dentro do `@fluxo/react`. O artigo também aceita esse caminho. Entram estas regras, tiradas do artigo:
+- **Como achar a vertical:** comece pela rota ou tela. O que uma tela usa fica na vertical dela. Um grupo vira **vertical própria** quando passa a ser usado por mais de uma rota ou cresce demais.
+- **Compartilhado com regra de negócio** (exemplo: sessão e permissões) vira vertical própria. **Compartilhado sem regra de negócio** vai para o `design-system`.
+- **Pastas por tipo proibidas em qualquer nível de `src/`:** `components`, `hooks`, `types`, `utils`, `helpers`, `lib`, `shared` e `common`. Nada de "utils" genérico, nem dentro de uma vertical. O lint recusa (tarefa F1).
+- **Outra vertical precisa de algo privado:** ou a dona expõe no `index.ts`, ou o código vira uma vertical nova, numa tarefa própria e com ADR. Nunca copiar e nunca importar o interior de outra vertical.
+- **Termo:** "vertical", não "feature" nem "domínio".

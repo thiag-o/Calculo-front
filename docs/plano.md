@@ -10,6 +10,7 @@ Executado pela skill `orquestrar-frente` (frente `frontend`), sob a orquestraç�
 - **Ferramentas:** Node (versão do `.nvmrc`), pnpm 10, Vite, Vitest com Testing Library, Playwright, ESLint com `eslint-plugin-boundaries`.
 - **Arquitetura** (ADRs 0002 e 0003):
   - verticais em `packages/react/src/<vertical>/`, com interface pública só pelo `index.ts`;
+  - regras do "The Vertical Codebase" (atualização da ADR 0003): a vertical nasce da rota ou tela; pastas por tipo (`components`, `hooks`, `types`, `utils`, `helpers`, `lib`, `shared`, `common`) são proibidas em qualquer nível; algo privado de outra vertical só por exposição no `index.ts` dela ou por vertical nova (tarefa própria e ADR);
   - `design-system` e `api` não importam ninguém;
   - sem iframe: classes com o prefixo `fc-`, nenhum reset global, portais Radix dentro da raiz do módulo, nada que dependa da janela inteira;
   - tipos da API sempre gerados do contrato (ADR 0005), nunca escritos à mão.
@@ -72,7 +73,8 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - **Node 26** (resposta G6): `.nvmrc` = `26`, `engines.node` = `>=26`, o CI usa o `.nvmrc`. Atualize o README e a ADR 0004 (onde diz Node 24), registrando que a mudança veio da resposta G6.
 - Aceite:
   - `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test` (um teste de fumaça) e `pnpm build` passam;
-  - um import proibido entre verticais, criado e apagado durante a tarefa, é recusado pelo `pnpm lint` (evidência no relatório).
+  - um import proibido entre verticais, criado e apagado durante a tarefa, é recusado pelo `pnpm lint` (evidência no relatório);
+  - uma pasta por tipo (por exemplo `packages/react/src/sessao/utils/x.ts`), criada e apagada durante a tarefa, é recusada pelo `pnpm lint` via `eslint-plugin-boundaries` (evidência no relatório).
 
 **F2 · Tipos da API do épico 1**
 - tipo: contrato

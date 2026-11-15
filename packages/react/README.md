@@ -12,6 +12,9 @@ O código fica agrupado **pelo que faz**, e não pelo tipo técnico. Em `src/` n
 - **Código compartilhado.** Vira uma vertical própria, como `design-system` e `api`, que não depende de nenhuma outra.
 - **Verificação automática.** O `eslint-plugin-boundaries` confere essas regras (veja `eslint.config.js` na raiz do repositório).
 - **Organização interna livre.** Dentro de uma vertical, as pastas ficam a critério de quem constrói. Se a vertical crescer demais, ela se divide em sub-verticais, nunca em pastas por tipo.
+- **Pastas por tipo proibidas em qualquer nível:** `components`, `hooks`, `types`, `utils`, `helpers`, `lib`, `shared`, `common`. O lint recusa.
+- **Achar a vertical certa:** comece pela rota ou tela que usa o código. Usado por mais de uma rota, ou grande demais, vira vertical própria. Compartilhado com regra de negócio vira vertical; sem regra de negócio vai para o `design-system`.
+- **Precisa de algo privado de outra vertical?** A dona expõe no `index.ts`, ou o código vira vertical nova (tarefa própria e ADR). Nunca copiar, nunca importar o interior.
 
 | Vertical | O que guarda |
 |---|---|
