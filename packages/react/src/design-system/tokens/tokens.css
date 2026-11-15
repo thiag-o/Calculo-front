@@ -1,0 +1,149 @@
+/*
+ * Tokens --fc-* do Fluxo de Cálculo (estilos.md §2), claro e escuro.
+ *
+ * Declarados só na raiz do módulo (.fc-raiz), nunca em :root, por causa da incorporação (ADR 0002).
+ * Tema: data-theme="light|dark" na raiz; sem o atributo, segue prefers-color-scheme.
+ * Os seletores usam :where() (especificidade zero) para o hospedeiro sobrescrever qualquer variável
+ * com um seletor simples, como `.fc-raiz { --fc-primary: … }`, nos dois temas.
+ */
+
+/* Claro (padrão) e aliases semânticos. */
+:where(.fc-raiz) {
+  color-scheme: light;
+
+  /* 2.1 Fundos */
+  --fc-background-100: #ffffff;
+  --fc-background-200: #fafafa;
+
+  /* 2.2 Escala de cinza */
+  --fc-gray-100: #f2f2f2;
+  --fc-gray-200: #ebebeb;
+  --fc-gray-300: #e6e6e6;
+  --fc-gray-400: #ebebeb;
+  --fc-gray-500: #c9c9c9;
+  --fc-gray-600: #a8a8a8;
+  --fc-gray-700: #8f8f8f;
+  --fc-gray-800: #7d7d7d;
+  --fc-gray-900: #4d4d4d;
+  --fc-gray-1000: #171717;
+
+  /* 2.3 Cores */
+  --fc-blue-100: #ebf5ff;
+  --fc-blue-700: #006bff;
+  --fc-blue-900: #0059d6;
+  --fc-red-100: #ffebeb;
+  --fc-red-700: #e5484d;
+  --fc-red-900: #c62a2f;
+  --fc-amber-100: #fff4d6;
+  --fc-amber-700: #ffb224;
+  --fc-amber-900: #a35200;
+  --fc-green-100: #eafbea;
+  --fc-green-700: #45a557;
+  --fc-green-900: #297a3a;
+
+  /* 2.4 Categorias de bloco */
+  --fc-cat-source: #0072f5;
+  --fc-cat-multi: #0b8a7a;
+  --fc-cat-calc: #c26a00;
+  --fc-cat-decision: #7c3aed;
+  --fc-cat-group: #d6336c;
+  --fc-cat-state: #5c8a00;
+  --fc-cat-output: #666666;
+
+  /* 2.5 Aliases semânticos (o que os componentes usam). Seguem o tema pelas variáveis de base. */
+  --fc-text: var(--fc-gray-1000);
+  --fc-text-secondary: var(--fc-gray-900);
+  --fc-text-tertiary: var(--fc-gray-700);
+  --fc-border: var(--fc-gray-400);
+  --fc-border-hover: var(--fc-gray-500);
+  --fc-hover: var(--fc-gray-100);
+  --fc-active: var(--fc-gray-200);
+  --fc-primary: var(--fc-gray-1000);
+  --fc-on-primary: var(--fc-background-100);
+  --fc-link: var(--fc-blue-900);
+  --fc-focus: var(--fc-blue-700);
+  --fc-danger-bg: var(--fc-red-100);
+  --fc-danger-text: var(--fc-red-900);
+}
+
+/* Escuro escolhido explicitamente. */
+:where(.fc-raiz[data-theme='dark']) {
+  color-scheme: dark;
+
+  --fc-background-100: #0a0a0a;
+  --fc-background-200: #000000;
+
+  --fc-gray-100: #1a1a1a;
+  --fc-gray-200: #1f1f1f;
+  --fc-gray-300: #292929;
+  --fc-gray-400: #2e2e2e;
+  --fc-gray-500: #454545;
+  --fc-gray-600: #878787;
+  --fc-gray-700: #8f8f8f;
+  --fc-gray-800: #7d7d7d;
+  --fc-gray-900: #a1a1a1;
+  --fc-gray-1000: #ededed;
+
+  --fc-blue-100: #0a1a33;
+  --fc-blue-700: #0070f3;
+  --fc-blue-900: #52a8ff;
+  --fc-red-100: #2a1314;
+  --fc-red-700: #e5484d;
+  --fc-red-900: #ff6166;
+  --fc-amber-100: #271a00;
+  --fc-amber-700: #ffb224;
+  --fc-amber-900: #f1a10d;
+  --fc-green-100: #0f2614;
+  --fc-green-700: #45a557;
+  --fc-green-900: #62c073;
+
+  --fc-cat-source: #52a8ff;
+  --fc-cat-multi: #3fc1b0;
+  --fc-cat-calc: #f1a10d;
+  --fc-cat-decision: #a68cf2;
+  --fc-cat-group: #f06292;
+  --fc-cat-state: #9bc53d;
+  --fc-cat-output: #a1a1a1;
+}
+
+/* Sem data-theme (tema "sistema"): segue o sistema operacional. Mesmos valores do bloco escuro acima. */
+@media (prefers-color-scheme: dark) {
+  :where(.fc-raiz:not([data-theme])) {
+    color-scheme: dark;
+
+    --fc-background-100: #0a0a0a;
+    --fc-background-200: #000000;
+
+    --fc-gray-100: #1a1a1a;
+    --fc-gray-200: #1f1f1f;
+    --fc-gray-300: #292929;
+    --fc-gray-400: #2e2e2e;
+    --fc-gray-500: #454545;
+    --fc-gray-600: #878787;
+    --fc-gray-700: #8f8f8f;
+    --fc-gray-800: #7d7d7d;
+    --fc-gray-900: #a1a1a1;
+    --fc-gray-1000: #ededed;
+
+    --fc-blue-100: #0a1a33;
+    --fc-blue-700: #0070f3;
+    --fc-blue-900: #52a8ff;
+    --fc-red-100: #2a1314;
+    --fc-red-700: #e5484d;
+    --fc-red-900: #ff6166;
+    --fc-amber-100: #271a00;
+    --fc-amber-700: #ffb224;
+    --fc-amber-900: #f1a10d;
+    --fc-green-100: #0f2614;
+    --fc-green-700: #45a557;
+    --fc-green-900: #62c073;
+
+    --fc-cat-source: #52a8ff;
+    --fc-cat-multi: #3fc1b0;
+    --fc-cat-calc: #f1a10d;
+    --fc-cat-decision: #a68cf2;
+    --fc-cat-group: #f06292;
+    --fc-cat-state: #9bc53d;
+    --fc-cat-output: #a1a1a1;
+  }
+}

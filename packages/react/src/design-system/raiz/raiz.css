@@ -1,0 +1,22 @@
+/*
+ * Raiz do módulo (ADR 0002): o único lugar onde o Fluxo de Cálculo define a base de texto e o fundo.
+ * Nada de reset global: o estilo vale só dentro de .fc-raiz e é herdado pelos filhos e pelos portais.
+ */
+
+.fc-raiz {
+  background-color: var(--fc-background-200);
+  color: var(--fc-text);
+  /* copy-14, o texto padrão (estilos.md §3). */
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Contêiner dos portais (Radix): dentro da raiz, herda tema e fonte; não ocupa espaço no layout. */
+.fc-portais {
+  display: contents;
+}
