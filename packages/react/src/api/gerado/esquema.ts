@@ -267,11 +267,16 @@ export interface components {
     headers: {
         /**
          * @description Dois cabeçalhos `Set-Cookie`:
-         *     - `fc_sessao=<identificador opaco>; HttpOnly; Secure; SameSite=Lax; Path=/`;
-         *     - `fc_csrf=<token>`, **sem** `HttpOnly`, para o front ler e repetir no `X-CSRF-Token`.
+         *     - `fc_sessao=<identificador opaco>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=<segundos>`;
+         *     - `fc_csrf=<token>; Secure; SameSite=Lax; Path=/; Max-Age=<segundos>`, **sem** `HttpOnly`,
+         *       para o front ler e repetir no `X-CSRF-Token`.
+         *
+         *     O `Max-Age` é o tempo, em segundos, que falta para a duração máxima da sessão
+         *     (no login, a duração inteira; na troca de tenant, recalculado com os parâmetros
+         *     do novo tenant). A troca de tenant mantém o token e o valor do `fc_csrf`.
          */
         SetCookieLogin: string;
-        /** @description Dois cabeçalhos `Set-Cookie` que apagam os cookies `fc_sessao` e `fc_csrf`. */
+        /** @description Dois cabeçalhos `Set-Cookie` que apagam os cookies `fc_sessao` e `fc_csrf` (`Max-Age=0`). */
         SetCookieLogout: string;
     };
     pathItems: never;
@@ -387,9 +392,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Tenant trocado. Devolve a sessão já no novo tenant. */
+            /**
+             * @description Tenant trocado. Devolve a sessão já no novo tenant e reemite os
+             *     cookies com o `Max-Age` recalculado.
+             */
             200: {
                 headers: {
+                    "Set-Cookie": components["headers"]["SetCookieLogin"];
                     [name: string]: unknown;
                 };
                 content: {
