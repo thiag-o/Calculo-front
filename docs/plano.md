@@ -169,7 +169,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 - Aceite: testes dos estados vazios.
 
 **F10 · Integração do épico 1: interface pública e app casca**
-- dep: F7, F8, F9
+- dep: F7, F8, F9, F25
 - modelo: sonnet
 - arquivos: `packages/react/src/index.ts`, `apps/casca/src/`, `apps/casca/index.html`, `apps/casca/.env.example`
 - Fazer:
@@ -199,9 +199,20 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - as regras que já existiam (import profundo, pasta por tipo, arquivo solto em `src/`, `design-system` e `api` sem dependências) continuam recusando;
   - `pnpm lint` passa no código atual.
 
+**F25 · Build do pacote: CSS publicado como `estilos.css`**
+- dep: F1
+- modelo: sonnet
+- arquivos: `packages/react/vite.config.ts`
+- Fazer: corrigir o nome do CSS gerado no build (achado na F7/F8). Hoje o build emite `dist/index.css`, mas o `packages/react/package.json` exporta `./estilos.css` → `./dist/estilos.css` (ADR 0010 do front, item "a fazer"). Quem importa `@fluxo/react/estilos.css` não acha o arquivo. Use `build.lib.cssFileName: 'estilos'`.
+- Aceite:
+  - `pnpm build` gera `packages/react/dist/estilos.css`, e não `index.css`;
+  - o CSS gerado continua sem seletor global (`*`, `html`, `body`, `:root`);
+  - o export `./estilos.css` do `package.json` resolve para um arquivo existente (evidência no relatório);
+  - `pnpm lint`, `pnpm typecheck` e `pnpm test` continuam verdes.
+
 **F12 · Portão do épico 1**
 - tipo: portao
-- dep: F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F24
+- dep: F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F24, F25
 - modelo: sonnet
 - Aceite:
   - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm e2e` verdes;
