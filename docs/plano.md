@@ -187,9 +187,21 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - O fluxo "requisição sem CSRF é recusada" só roda no modo real.
 - Aceite: `pnpm e2e` passa. O modo real é exercitado no teste de integração do checkpoint.
 
+**F24 · Lint: entrada em outra vertical só pelo `index.ts` da raiz**
+- dep: F1
+- modelo: opus
+- arquivos: `eslint.config.js`
+- Fazer: corrigir a brecha achada na F3. Hoje um arquivo em `src/sessao/` importando `../design-system/tipografia` (o `index.ts` de uma **subpasta** de outra vertical) passa no lint. A ADR 0003 só permite entrar em outra vertical pelo `index.ts` da **raiz** dela. Dentro da própria vertical, os imports entre subpastas continuam livres.
+- Aceite (com evidência executada no relatório, arquivos de teste criados e apagados durante a tarefa):
+  - importar o `index.ts` de subpasta de outra vertical é recusado pelo `pnpm lint`;
+  - importar o `index.ts` da raiz de outra vertical continua aceito;
+  - import entre subpastas da mesma vertical continua aceito;
+  - as regras que já existiam (import profundo, pasta por tipo, arquivo solto em `src/`, `design-system` e `api` sem dependências) continuam recusando;
+  - `pnpm lint` passa no código atual.
+
 **F12 · Portão do épico 1**
 - tipo: portao
-- dep: F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11
+- dep: F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F24
 - modelo: sonnet
 - Aceite:
   - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` e `pnpm e2e` verdes;
