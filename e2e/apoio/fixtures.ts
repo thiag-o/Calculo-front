@@ -77,7 +77,7 @@ export function modoDoProjeto(testInfo: TestInfo): ModoE2E {
 }
 
 function apiUrlReal(): string {
-  return variavel('E2E_API_URL', 'endereço da API do back, sem o /v1, o mesmo do VITE_API_URL do casca').replace(/\/+$/, '');
+  return variavel('E2E_API_URL', 'endereço da API do back, sem o /v1; o playwright.config.ts o repassa ao casca como VITE_API_URL').replace(/\/+$/, '');
 }
 
 function emailSemConta(): string {
@@ -105,7 +105,8 @@ export const test = base.extend<{ api: ApiE2E }>({
         return;
       }
 
-      // Modo real: o casca precisa estar apontado (VITE_API_URL) para a mesma API de E2E_API_URL.
+      // Modo real: o casca precisa falar com a mesma API de E2E_API_URL. O casca que o Playwright sobe já recebe
+      // E2E_API_URL como VITE_API_URL; um casca já aberto (reaproveitado) pode estar apontado para outra.
       const apiUrl = apiUrlReal();
       const origemApi = new URL(apiUrl).origin;
       const outrasOrigens = new Set<string>();
@@ -127,7 +128,7 @@ export const test = base.extend<{ api: ApiE2E }>({
       if (outrasOrigens.size > 0) {
         throw new Error(
           `O casca chamou a API em ${[...outrasOrigens].join(', ')}, mas E2E_API_URL é ${origemApi}. ` +
-            'Suba o casca com VITE_API_URL igual a E2E_API_URL.',
+            'Feche o casca já aberto (o Playwright sobe outro com VITE_API_URL = E2E_API_URL) ou suba-o com VITE_API_URL igual a E2E_API_URL.',
         );
       }
     },

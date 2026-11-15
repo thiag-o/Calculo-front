@@ -57,3 +57,39 @@ pnpm dev
 | `pnpm test` | Testes (Vitest) |
 | `pnpm changeset` | Registra uma mudança do pacote para a próxima versão |
 | `pnpm gerar:api` | Gera os tipos da API a partir do OpenAPI do backend (ADR 0005) |
+| `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** |
+| `pnpm e2e:real` | Os mesmos testes contra o back de verdade (veja abaixo) |
+
+## Testes ponta a ponta no modo real
+
+O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, com o paralelismo padrão do Playwright.
+
+1. Suba o back (veja `../backend/README.md`): `docker compose up -d` e depois os comandos abaixo, na pasta `backend`.
+
+```bash
+uv run python -m fluxo.inicializacao migrar
+uv run python -m fluxo.inicializacao preparar-local
+uv run python -m fluxo.inicializacao api
+```
+
+2. Exporte o endereço da API (sem o `/v1`) e as contas que o `preparar-local` imprime (também em `../backend/docs/ambientes.md`):
+
+```bash
+export E2E_API_URL=http://localhost:8000
+export E2E_ADMIN_EMAIL=admin@demo.local
+export E2E_ADMIN_SENHA=demo-admin-local
+export E2E_DOIS_TENANTS_EMAIL=dois.tenants@demo.local
+export E2E_DOIS_TENANTS_SENHA=demo-dois-tenants-local
+```
+
+No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
+
+3. Rode:
+
+```bash
+pnpm e2e:real
+```
+
+- **Só `E2E_API_URL` basta.** O `playwright.config.ts` sobe o casca com `VITE_API_URL` igual a `E2E_API_URL`. Se já houver um casca aberto em `localhost:5173`, o Playwright o reaproveita com o `VITE_API_URL` que ele tiver; se for outra API, os testes reprovam e dizem isso. Nesse caso, feche esse casca.
+- **Espere 60 s entre duas rodadas.** O back aceita 20 tentativas de login por minuto vindas de um mesmo IP, e uma rodada faz cerca de 13. A segunda rodada logo em seguida recebe `429 muitas_tentativas`. As tentativas ficam gravadas no banco, então reiniciar a API não zera a contagem.
+- **O teste de bloqueio não atinge as contas acima.** Ele erra a senha de um e-mail novo a cada rodada.
