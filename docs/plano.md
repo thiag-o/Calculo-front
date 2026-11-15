@@ -42,7 +42,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - `navegacao`:
     - `'url'`, no casca: as rotas internas sincronizadas com a URL, com `basename` fixo em `/` e sem prop (ADR 0017; decisão da sessão global no CK1: só vira prop quando um hospedeiro precisar montar o módulo fora da raiz);
     - `'memoria'`, padrão quando incorporado: não toca a URL do hospedeiro.
-- **Componentes por tela**, para quem quer só uma parte: épico 1 `<Inicio>`; épico 2 `<Administracao>` e `<Auditoria>`.
+- **Componentes por tela**, para quem quer só uma parte: épico 1 `<Inicio>`; épico 2 `<Administracao>` e `<Auditoria>`; épico 3 `<Catalogo>`.
 - **Tela de login e de redefinição de senha:** exportadas para o casca (`<Entrar>`, `<RedefinirSenha>`).
 - **Roteamento:** `react-router` (modo memória quando incorporado).
 - **Estado do servidor:** TanStack Query.
@@ -366,3 +366,108 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 - dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 2.
+
+### Épico 3 — Conexões e catálogo
+
+As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back (`../backend/docs/plano.md`, épico 3). O contrato é o da B26. Telas, decididas pela sessão global:
+- rota `/catalogo`, com as abas Conexões, Datasets e Arquivos;
+- detalhe do dataset em `/catalogo/datasets/:id`, com colunas e variáveis;
+- vertical `catalogo/`, com as sub-verticais `conexoes/`, `datasets/` (as variáveis ficam dentro, porque são editadas na tela do dataset) e `arquivos/`.
+
+**F29 · Tipos da API do épico 3**
+- tipo: contrato
+- dep: F22, B26
+- modelo: sonnet
+- arquivos: `packages/react/src/api/gerado/`
+- Aceite: `pnpm gerar:api` atualizado e compilando.
+
+**F30 · Catálogo: conexões**
+- dep: F29
+- modelo: opus
+- arquivos: `packages/react/src/catalogo/conexoes/`
+- Fazer:
+  - **lista:** nome, tipo e último teste (ponto + palavra: "ok", "falhou", "não testada", com a data);
+  - **nova conexão** (só com `conexoes.gerenciar` e `credenciais.gerenciar`):
+    - campos tipo, nome, host, porta (padrão 5432 ou 1433 conforme o tipo), banco, usuário e senha (`type="password"`);
+    - "Testar" antes de "Salvar", mostrando versão, TLS, somente leitura e tempo;
+    - erros por `codigo`: `conexao_nao_somente_leitura` com a lista de privilégios, `conexao_sem_tls`, `conexao_falhou` e `conexao_existente`;
+  - **detalhe:** renomear; testar a conexão salva; remover com confirmação (`conexao_em_uso`);
+  - **trocar credencial** (só `credenciais.gerenciar`): o `destino` aparece preenchido e a senha vazia, e salvar exige os cinco campos;
+  - **sem `credenciais.gerenciar`:** não aparecem nem o destino nem as ações de credencial.
+  - **Campo só de escrita (design §4):** a credencial nunca vai para o cache do TanStack Query, para o `localStorage` nem para a URL. O estado do formulário é apagado ao salvar, cancelar ou fechar.
+- Aceite:
+  - testes de cada ação e de cada erro;
+  - estados vazio, carregando e erro;
+  - um teste prova que, depois de salvar ou cancelar, a senha digitada não está no cache de consultas nem no DOM.
+
+**F31 · Catálogo: datasets de tabela e de SQL**
+- dep: F29
+- modelo: opus
+- arquivos: `packages/react/src/catalogo/datasets/`
+- Fazer:
+  - **lista de datasets:** nome, tipo, origem e data das colunas;
+  - **novo de tabela:**
+    - escolher a conexão;
+    - navegar pelos objetos, com busca e "Carregar mais" (cursor);
+    - ver as colunas antes de criar;
+    - dar o nome;
+  - **novo de SQL** (só `sql_livre.usar`): área de texto monoespaçada (o Monaco entra no épico 4); `sql_invalido` mostra o motivo no campo;
+  - **detalhe do dataset:**
+    - colunas com nome, tipo de origem, tipo e anulável; coluna com `tipo: null` aparece como "sem suporte";
+    - "Atualizar colunas";
+    - renomear;
+    - remover com confirmação, que avisa que as variáveis também saem.
+- Aceite: testes de cada fluxo e de cada erro (`objeto_inexistente`, `dataset_existente`, `sql_invalido`); estados vazio, carregando e erro.
+
+**F32 · Catálogo: arquivos Excel**
+- dep: F29
+- modelo: opus
+- arquivos: `packages/react/src/catalogo/arquivos/`
+- Fazer:
+  - **envio:** arrastar e soltar, ou botão; só `.xlsx`; o limite de 20 MB é conferido também no cliente; progresso do envio;
+  - **erros:** `arquivo_grande`, `arquivo_invalido` e `cabecalho_invalido`, este com as colunas apontadas;
+  - **lista de arquivos;**
+  - **detalhe do arquivo:** abas com colunas e tipos inferidos, e "Criar dataset desta aba" (`POST /v1/datasets` com `tipo: excel`);
+  - **remover** com confirmação (`arquivo_em_uso`).
+- Aceite: testes do envio (sucesso, cada erro e limite no cliente), das abas e da criação do dataset; estados vazio, carregando e erro.
+
+**F33 · Catálogo: variáveis no detalhe do dataset**
+- dep: F31
+- modelo: opus
+- arquivos: `packages/react/src/catalogo/datasets/`
+- Fazer:
+  - no detalhe do dataset, cada coluna com tipo suportado pode virar variável: nome de negócio, tipo (só as conversões aceitas pela E3-10) e casas para `decimal`;
+  - editar e remover variáveis;
+  - erros por `codigo`: `variavel_existente`, `tipo_incompativel` e `nome_variavel_invalido`; a regra do nome também é conferida no cliente;
+  - sem `variaveis.gerenciar`, as variáveis aparecem só para leitura.
+- Aceite: testes de criar, editar e remover; cada erro; o seletor de tipo oferece só as conversões aceitas.
+
+**F34 · Integração do épico 3: menu Catálogo, rotas e interface pública**
+- dep: F30, F32, F33
+- modelo: sonnet
+- arquivos: `packages/react/src/catalogo/index.ts`, `packages/react/src/modulo/`, `packages/react/src/index.ts`
+- Fazer:
+  - `catalogo/index.ts` exporta `<Catalogo>`, com as abas (cada uma com a sua permissão), e o detalhe do dataset;
+  - item "Catálogo" no menu, com `conexoes.ver`;
+  - rotas `/catalogo`, `/catalogo/conexoes/:id`, `/catalogo/datasets/:id` e `/catalogo/arquivos/:id`;
+  - a prop `tela` aceita `catalogo`;
+  - o pacote exporta `<Catalogo>` (Contratos: componentes por tela).
+- Aceite: testes por papel (o Integrador vê e edita tudo; o Configurador vê o catálogo só para leitura, sem credenciais; o Auditor também só lê); `pnpm build` gera o pacote com o export novo.
+
+**F35 · Testes ponta a ponta do épico 3**
+- dep: F34
+- modelo: opus
+- arquivos: `e2e/epico-3/`, `e2e/apoio/`
+- Fazer:
+  - os fluxos do épico 3 do plano global: conexão Postgres de exemplo (testar, objetos e colunas com tipos), dataset com nome de negócio nas colunas (variáveis), envio de Excel com aba e tipos inferidos, e a credencial que nunca volta para o front;
+  - no modo real:
+    - usar o `postgres-exemplo` do back, com as credenciais por variáveis `E2E_EXEMPLO_*`, documentadas no README;
+    - provar que nenhuma resposta da API depois de salvar contém a senha (interceptando as respostas no Playwright);
+    - provar que a conexão com o `exemplo_escrita` é recusada.
+- Aceite: `pnpm e2e` passa.
+
+**F36 · Portão do épico 3**
+- tipo: portao
+- dep: F29, F30, F31, F32, F33, F34, F35
+- modelo: sonnet
+- Aceite: o mesmo do F12, com as telas do épico 3.
