@@ -361,9 +361,22 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - `navegacao="memoria"` e o `basename` fixo em `/` no modo `url`.
 - Aceite: cada prop e cada código de erro citado existe no código ou no contrato; os exemplos de código compilam (trecho testado ou copiado de um teste).
 
+**F37 · Design system: diálogo devolve o foco a um elemento informado**
+- dep: F14, F16, F27
+- modelo: sonnet
+- arquivos: `packages/react/src/design-system/exibicao/`, `packages/react/src/administracao/usuarios/`, `packages/react/src/administracao/integracao/`
+- Fazer (decisão da sessão global; gatilho de repetição da ADR 0022):
+  - o `Dialogo` ganha uma prop opcional com a referência do elemento que recebe o foco ao fechar (para diálogos abertos por um item de `Menu`, cujo gatilho some ao fechar o menu). Sem a prop, mantém o comportamento atual do Radix;
+  - a F14 (pelo `data-*` do gatilho) e a F16 (pelo hook `useFocoDeVolta`) passam a usar a prop; o código repetido sai;
+  - a ADR 0022 recebe uma atualização apontando a prop nova. As telas seguintes (épicos 2 e 3) usam só a prop.
+- Aceite:
+  - teste do `Dialogo`: com a prop, o foco volta ao elemento informado ao fechar por Esc, pelo botão de fechar e por "Cancelar";
+  - os testes da F14 e da F16 continuam verdes sem o código antigo;
+  - `pnpm lint`, `typecheck`, `test` e `build` verdes.
+
 **F22 · Portão do épico 2**
 - tipo: portao
-- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28
+- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28, F37
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 2.
 
