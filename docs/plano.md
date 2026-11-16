@@ -19,6 +19,11 @@ Executado pela skill `orquestrar-frente` (frente `frontend`), sob a orquestraç�
   - testes junto com o código, verificando o comportamento visível;
   - toda tela com os estados completos (vazio, carregando, erro, desabilitado com motivo) e acessível (rótulos, foco visível, teclado);
   - textos em pt-BR.
+- **Idioma (regra do dono de 2026-11-16; decisões E3-15 a E3-20):**
+  - **todo o código em inglês:** pastas, arquivos, componentes, hooks, funções, variáveis, tipos, props, comentários, nomes de token e de classe CSS, rotas da URL, scripts do `package.json` e nomes de arquivo de teste;
+  - **em pt-BR ficam só os textos para pessoas:** rótulos, títulos, mensagens, `aria-label`, as descrições de `describe` e `it`, e a documentação (`docs/`, ADRs, README e este plano);
+  - dicionários: `../backend/docs/glossario.md` (API) e `docs/glossario.md` (front, tarefa F41). Até a F42 terminar, o código ainda tem nomes em português; código novo usa os nomes dos glossários;
+  - os nomes desta seção e da seção "Contratos" (`apps/casca`, `api/gerado`, `pnpm gerar:api`, `<FluxoCalculo tela tema navegacao onEvento …>`, `<Inicio>`, `<Catalogo>` etc.) valem, depois da F41 e da F42, pela tradução do glossário (lista no começo do épico 3).
 - **Nunca agir com dúvida** (skill orquestrar-frente §3).
 
 ## Contratos
@@ -420,22 +425,60 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 
 ### Épico 3 — Conexões e catálogo
 
-As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back (`../backend/docs/plano.md`, épico 3). O contrato é o da B26. Telas, decididas pela sessão global:
-- rota `/catalogo`, com as abas Conexões, Datasets e Arquivos;
-- detalhe do dataset em `/catalogo/datasets/:id`, com colunas e variáveis;
-- vertical `catalogo/`, com as sub-verticais `conexoes/`, `datasets/` (as variáveis ficam dentro, porque são editadas na tela do dataset) e `arquivos/`.
+As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back (`../backend/docs/plano.md`, épico 3). O contrato é o da B26. Telas, decididas pela sessão global:
+- rota `/catalog`, com as abas Conexões, Datasets e Arquivos (os rótulos ficam em português; o caminho é código);
+- detalhe do dataset em `/catalog/datasets/:id`, com colunas e variáveis;
+- vertical `catalog/`, com as sub-verticais `connections/`, `datasets/` (as variáveis ficam dentro, porque são editadas na tela do dataset) e `files/`.
+
+**Código em inglês (regra do dono de 2026-11-16; decisões E3-15 a E3-19 do back, e esta, E3-20, do front).** Todo o código vai para o inglês; os textos para pessoas continuam em pt-BR (veja "Idioma" no Contexto). Os nomes de código citados nas tarefas F29 a F35 (por exemplo `<Catalogo>`, a prop `tela`, os `codigo` de erro, as permissões e `E2E_EXEMPLO_*`) foram escritos antes da regra e valem pelo conceito: o nome a usar é o do glossário (`../backend/docs/glossario.md` para a API e `docs/glossario.md` para o front). Exemplos: `<Catalogo>` → `<Catalog>`; `tela` → `screen`; `conexao_em_uso` → `connection_in_use`; `conexoes.ver` → `connections.view`. Os rótulos da tela ("Nova conexão", "Salvar", "Testar") não mudam. Nomes estruturais fixados agora, por causa da posse de arquivos:
+- verticais: `administracao` → `admin`, `auditoria` → `audit`, `catalogo` → `catalog`, `estados` → `states`, `execucoes` → `executions`, `inicio` → `home`, `modulo` → `module`, `notificacoes` → `notifications`, `sessao` → `session`, `testes` → `test-cases`; `api`, `design-system`, `editor`, `formula` e `workflows` ficam;
+- subpastas: `api/gerado` → `api/generated`, `api/cliente` → `api/client`, `api/consultas` → `api/queries`; `design-system/{exibicao,formulario,raiz,tipografia}` → `{display,form,root,typography}`; `modulo/{avulso,casca,incorporado,roteador}` → `module/{standalone,shell,embedded,router}`; `sessao/{entrar,redefinir}` → `session/{sign-in,reset-password}`; `administracao/{integracao,papeis,seguranca,usuarios}` → `admin/{integration,roles,security,users}`; `auditoria/acessos` → `audit/access`;
+- app: `apps/casca` → `apps/shell` (pacote `shell`);
+- ponta a ponta: `e2e/epico-<n>` → `e2e/epic-<n>`, `e2e/apoio` → `e2e/support`;
+- comandos: `pnpm gerar:api` → `pnpm generate:api`;
+- exceções: o nome do produto (`@fluxo/react`, `<FluxoCalculo>`) e os prefixos `fc-` das classes e `--fc-` dos tokens (o resto do nome do token vai para o inglês).
+
+**F41 · Código TypeScript em inglês**
+- dep: F22, B46
+- modelo: opus
+- arquivos: `packages/`, `apps/`, `e2e/`, `scripts/`, `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `eslint.config.js`, `playwright.config.ts`, `tsconfig.base.json`, `.changeset/`, `README.md`, `docs/`, `.claude/rules/`
+- Fazer:
+  - `docs/glossario.md` do front: os termos que não são da API (verticais, componentes, props, hooks, tokens `--fc-*`, classes `fc-`, rotas da URL, scripts), sem contrariar a lista acima nem o glossário do back;
+  - renomear para o glossário: pastas, arquivos, componentes, hooks, funções, variáveis, tipos, props, comentários, nomes de token e de classe, rotas da URL e scripts do `package.json`;
+  - **a interface pública muda de nome** (`<Inicio>` → `<Home>`, `<Administracao>` → `<Admin>`, `<Auditoria>` → `<Audit>`, `<Entrar>` → `<SignIn>`, `<RedefinirSenha>` → `<ResetPassword>`, props `tela`, `tema` (`'claro' | 'escuro' | 'sistema'`), `navegacao` (`'url' | 'memoria'`), `onEvento`, `onSessaoExpirada`, o CSS publicado `estilos.css` → `styles.css`, e os nomes de eventos): atualizar o `docs/incorporacao.md`, o README e a página de teste de incorporação, e criar um changeset `major` com a lista;
+  - **sem mudar a API:** os tipos gerados só mudam de pasta (`api/generated/`); campos, caminhos e códigos da API continuam os de hoje até a F42;
+  - textos que a pessoa lê (rótulos, títulos, mensagens, `aria-label`) e as descrições de `describe` e `it` ficam em português;
+  - **nesta tarefa, o implementador usa `git mv`**, só nos arquivos da tarefa, para manter o histórico. Nada de `git add -A` nem `git add .`;
+  - a ADR "código em inglês" do front, apontando a do back.
+- Aceite:
+  - `pnpm lint` (com as fronteiras atualizadas), `typecheck`, `test`, `build` e `e2e` verdes, com o mesmo número de testes de antes;
+  - um `git grep` com a lista de termos em português dos dois glossários em `packages/`, `apps/` e `e2e/` só acha textos para pessoas, nomes da API (que a F42 troca) e as exceções. O comando e o resultado vão no relatório.
+
+**F42 · Tipos e chamadas da API em inglês**
+- tipo: contrato
+- dep: F41, B48, B49
+- modelo: opus
+- arquivos: `packages/react/src/`, `e2e/`, `scripts/`, `package.json`, `README.md`, `docs/incorporacao.md`
+- Fazer:
+  - `pnpm generate:api` a partir de `../backend/contracts/openapi.yaml`;
+  - chamadas, campos, códigos de erro, permissões, nomes de evento e cookie (`fc_session`) no código, nos testes e nos exemplos do modo simulado;
+  - no modo real: os comandos do back (`prepare-local`), as variáveis de ambiente novas do back e as do e2e em inglês (`E2E_SAMPLE_*` no lugar de `E2E_EXEMPLO_*`), documentadas no README.
+- Aceite:
+  - `pnpm lint`, `typecheck`, `test`, `build` e `e2e` verdes;
+  - `pnpm e2e:real` verde contra o back depois da B49 (ambiente em `../docs/plano-global.md`, "Ambiente do teste de integração");
+  - nenhum campo, caminho ou código da API em português no código (`git grep` com a lista do glossário do back).
 
 **F29 · Tipos da API do épico 3**
 - tipo: contrato
-- dep: F22, B26
+- dep: F42, B26
 - modelo: sonnet
-- arquivos: `packages/react/src/api/gerado/`
-- Aceite: `pnpm gerar:api` atualizado e compilando.
+- arquivos: `packages/react/src/api/generated/`
+- Aceite: `pnpm generate:api` atualizado e compilando.
 
 **F30 · Catálogo: conexões**
 - dep: F29
 - modelo: opus
-- arquivos: `packages/react/src/catalogo/conexoes/`
+- arquivos: `packages/react/src/catalog/connections/`
 - Fazer:
   - **lista:** nome, tipo e último teste (ponto + palavra: "ok", "falhou", "não testada", com a data);
   - **nova conexão** (só com `conexoes.gerenciar` e `credenciais.gerenciar`):
@@ -454,7 +497,7 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 **F31 · Catálogo: datasets de tabela e de SQL**
 - dep: F29
 - modelo: opus
-- arquivos: `packages/react/src/catalogo/datasets/`
+- arquivos: `packages/react/src/catalog/datasets/`
 - Fazer:
   - **lista de datasets:** nome, tipo, origem e data das colunas;
   - **novo de tabela:**
@@ -473,7 +516,7 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 **F32 · Catálogo: arquivos Excel**
 - dep: F29
 - modelo: opus
-- arquivos: `packages/react/src/catalogo/arquivos/`
+- arquivos: `packages/react/src/catalog/files/`
 - Fazer:
   - **envio:** arrastar e soltar, ou botão; só `.xlsx`; o limite de 20 MB é conferido também no cliente; progresso do envio;
   - **erros:** `arquivo_grande`, `arquivo_invalido` e `cabecalho_invalido`, este com as colunas apontadas;
@@ -485,7 +528,7 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 **F33 · Catálogo: variáveis no detalhe do dataset**
 - dep: F31
 - modelo: opus
-- arquivos: `packages/react/src/catalogo/datasets/`
+- arquivos: `packages/react/src/catalog/datasets/`
 - Fazer:
   - no detalhe do dataset, cada coluna com tipo suportado pode virar variável: nome de negócio, tipo (só as conversões aceitas pela E3-10) e casas para `decimal`;
   - editar e remover variáveis;
@@ -496,7 +539,7 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 **F34 · Integração do épico 3: menu Catálogo, rotas e interface pública**
 - dep: F30, F32, F33, F40
 - modelo: sonnet
-- arquivos: `packages/react/src/catalogo/index.ts`, `packages/react/src/modulo/`, `packages/react/src/index.ts`
+- arquivos: `packages/react/src/catalog/index.ts`, `packages/react/src/module/`, `packages/react/src/index.ts`
 - Fazer:
   - `catalogo/index.ts` exporta `<Catalogo>`, com as abas (cada uma com a sua permissão), e o detalhe do dataset;
   - item "Catálogo" no menu, com `conexoes.ver`;
@@ -508,7 +551,7 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 **F35 · Testes ponta a ponta do épico 3**
 - dep: F34
 - modelo: opus
-- arquivos: `e2e/epico-3/`, `e2e/apoio/`
+- arquivos: `e2e/epic-3/`, `e2e/support/`
 - Fazer:
   - os fluxos do épico 3 do plano global: conexão Postgres de exemplo (testar, objetos e colunas com tipos), dataset com nome de negócio nas colunas (variáveis), envio de Excel com aba e tipos inferidos, e a credencial que nunca volta para o front;
   - no modo real:
@@ -518,9 +561,9 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 - Aceite: `pnpm e2e` passa.
 
 **F40 · Manutenção: abas no design system, títulos e estilos crus**
-- dep: F22
+- dep: F42
 - modelo: opus
-- arquivos: `packages/react/src/design-system/`, `packages/react/src/administracao/`, `packages/react/src/modulo/`, `packages/react/src/auditoria/`, `packages/react/src/inicio/`, `packages/react/src/sessao/`, `apps/casca/src/`
+- arquivos: `packages/react/src/design-system/`, `packages/react/src/admin/`, `packages/react/src/module/`, `packages/react/src/audit/`, `packages/react/src/home/`, `packages/react/src/session/`, `apps/shell/src/`
 - Fazer (pendências adiáveis do CK2, decididas pela sessão global):
   - **componente `Abas` no design system** (Radix Tabs, estilo do `estilos.md`), no lugar das abas repetidas em `administracao/` e `modulo/`. O `<Catalogo>` do épico 3 vai usá-lo;
   - **Administração uma vez só no casca:** o menu lateral mostra um item "Administração", e as áreas (Usuários, Papéis, Integração, Segurança) ficam só nas abas internas, como no incorporado. A ADR 0027 recebe uma atualização;
@@ -531,6 +574,6 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 
 **F36 · Portão do épico 3**
 - tipo: portao
-- dep: F29, F30, F31, F32, F33, F34, F35, F40
+- dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 3.
