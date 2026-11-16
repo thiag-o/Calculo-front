@@ -48,6 +48,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0026](0026-dialogo-recebe-foco-ao-fechar.md) | `Dialogo` recebe `focoAoFechar` (referência ou função) para devolver o foco; substitui a 0022 | aceita, revisar no checkpoint | 2026-11-16 |
 | [0027](0027-telas-de-abas-controladas-e-secoes-do-menu.md) | Telas de abas controláveis pela rota (`aba`/`aoTrocarAba`) e seção do menu como uma aba no incorporado (complementa 0006) | aceita, revisar no checkpoint (complementada por 0028) | 2026-11-16 |
 | [0028](0028-telas-avulsas-com-provedor-interno.md) | Telas avulsas funcionam sozinhas, com provedor interno do módulo (complementa 0027) | aceita, revisar no checkpoint | 2026-11-16 |
+| [0029](0029-e2e-apoio-por-epico-e-contrato-unico.md) | Testes e2e: `apoio/` por épico com fixture estendida e cópia única dos exemplos do contrato | aceita, revisar no checkpoint | 2026-11-16 |
 
 ## Pendentes (sem ADR ainda)
 
