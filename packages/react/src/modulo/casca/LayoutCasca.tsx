@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router';
 import { Aviso, Botao, Dica } from '../../design-system';
 import type { Sessao } from '../../sessao';
 import { IconeExpandirMenu, IconeRecolherMenu } from '../icones';
-import type { DefinicaoTela } from '../telas';
+import { agruparPorSecao, type DefinicaoTela, type GrupoMenu } from '../telas';
 import { mensagemErroSair, mensagemErroTroca } from './mensagens';
 import { MenuUsuario } from './MenuUsuario';
 import { SeletorCliente } from './SeletorCliente';
@@ -28,6 +28,7 @@ export function LayoutCasca({ sessao, telas }: LayoutCascaProps) {
   const [aviso, setAviso] = useState<string | null>(null);
   const idNavegacao = useId();
   const compacto = estreito || recolhido;
+  const { soltas, secoes } = agruparPorSecao(telas);
 
   const classes = ['fc-casca', compacto ? 'fc-casca-compacto' : null, estreito ? 'fc-casca-estreito' : null]
     .filter(Boolean)
@@ -45,8 +46,11 @@ export function LayoutCasca({ sessao, telas }: LayoutCascaProps) {
         </div>
 
         <nav id={idNavegacao} className="fc-menu-lateral-nav" aria-label="Navegação principal">
-          {telas.map((tela) => (
+          {soltas.map((tela) => (
             <ItemMenuLateral key={tela.id} tela={tela} compacto={compacto} />
+          ))}
+          {secoes.map((grupo) => (
+            <SecaoMenuLateral key={grupo.secao} grupo={grupo} compacto={compacto} />
           ))}
         </nav>
 
@@ -86,6 +90,24 @@ export function LayoutCasca({ sessao, telas }: LayoutCascaProps) {
           <Outlet />
         </div>
       </main>
+    </div>
+  );
+}
+
+/**
+ * Seção do menu (ex.: Administração, no rodapé do menu): rótulo `label-12` terciário acima dos itens (estilos.md §9).
+ * Só com ícones, o rótulo some da vista (estilos.md §15), mas continua dando nome ao grupo para o leitor de tela.
+ */
+function SecaoMenuLateral({ grupo, compacto }: { grupo: GrupoMenu; compacto: boolean }) {
+  const idRotulo = useId();
+  return (
+    <div className="fc-menu-lateral-secao" role="group" aria-labelledby={idRotulo}>
+      <span id={idRotulo} className="fc-menu-lateral-secao-rotulo">
+        {grupo.rotulo}
+      </span>
+      {grupo.telas.map((tela) => (
+        <ItemMenuLateral key={tela.id} tela={tela} compacto={compacto} />
+      ))}
     </div>
   );
 }

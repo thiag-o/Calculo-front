@@ -9,7 +9,7 @@ import { ContextoEncerrarSessao } from './encerramento';
 import { CarregandoModulo, ErroModulo, SemTelas, SessaoEncerrada } from './EstadosModulo';
 import { LayoutIncorporado } from './incorporado/LayoutIncorporado';
 import { Roteador, type NavegacaoFluxo } from './roteador/Roteador';
-import { TELAS, telasPermitidas, type DefinicaoTela, type TelaFluxo } from './telas';
+import { agruparPorSecao, telaInicial, TELAS, telasPermitidas, type DefinicaoTela, type TelaFluxo } from './telas';
 import './modulo.css';
 
 /**
@@ -52,7 +52,7 @@ export function FluxoCalculo(props: FluxoCalculoProps) {
 export interface ModuloFluxoProps extends Omit<FluxoCalculoProps, 'tela'> {
   /** As telas do módulo, na ordem do menu. O `<FluxoCalculo>` passa as do produto; os testes passam outras. */
   telas: readonly DefinicaoTela[];
-  /** O `id` da tela inicial, entre as `telas`. */
+  /** O `id` da tela inicial, entre as `telas`, ou de uma seção (abre a primeira tela dela). */
   tela?: string;
 }
 
@@ -132,7 +132,7 @@ function ConteudoModulo({ incorporado, navegacao, tela, telas }: ConteudoModuloP
   }
 
   const visiveis = telasPermitidas(telas, sessao.temPermissao);
-  const inicial = visiveis.find((definicao) => definicao.id === tela) ?? visiveis[0];
+  const inicial = telaInicial(visiveis, tela);
   if (!inicial) return <SemTelas />;
 
   return (
@@ -150,17 +150,25 @@ interface RotasDoModuloProps {
 }
 
 /**
- * Uma rota por tela permitida. Rota sem permissão ou desconhecida (inclusive depois de trocar de cliente) volta para
- * a tela inicial.
+ * Uma rota por tela permitida, e uma por seção, que abre a primeira tela permitida dela. Rota sem permissão ou
+ * desconhecida (inclusive depois de trocar de cliente) volta para a tela inicial.
  */
 function RotasDoModulo({ incorporado, sessao, telas, inicial }: RotasDoModuloProps) {
   const paraInicial = <Navigate to={`/${inicial.caminho}`} replace />;
+  const { secoes } = agruparPorSecao(telas);
   return (
     <Routes>
       <Route element={incorporado ? <LayoutIncorporado telas={telas} /> : <LayoutCasca sessao={sessao} telas={telas} />}>
         <Route index element={paraInicial} />
         {telas.map((definicao) => (
           <Route key={definicao.id} path={definicao.caminho} element={definicao.conteudo} />
+        ))}
+        {secoes.map((grupo) => (
+          <Route
+            key={`secao-${grupo.secao}`}
+            path={grupo.caminho}
+            element={<Navigate to={`/${grupo.telas[0]?.caminho ?? inicial.caminho}`} replace />}
+          />
         ))}
         <Route path="*" element={paraInicial} />
       </Route>

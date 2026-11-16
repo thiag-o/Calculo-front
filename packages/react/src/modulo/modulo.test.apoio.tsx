@@ -20,6 +20,35 @@ export const sessaoFilial: Sessao = { ...sessaoMatriz, tenant_atual: TENANT_FILI
 
 export const sessaoUmCliente: Sessao = { ...sessaoMatriz, tenants: [TENANT_MATRIZ] };
 
+// Sessões por papel inicial (backend/docs/plano.md, papéis iniciais), para as telas reais do <FluxoCalculo>.
+export const PERMISSOES_ADMIN = [
+  'workflows.ver',
+  'workflows.editar',
+  'execucoes.ver',
+  'conexoes.ver',
+  'auditoria.ver',
+  'traces.ver',
+  'usuarios.gerenciar',
+  'papeis.gerenciar',
+  'integracao.gerenciar',
+  'seguranca.gerenciar',
+];
+export const PERMISSOES_CONFIGURADOR = [
+  'workflows.ver',
+  'workflows.editar',
+  'testes.editar',
+  'versao.enviar_revisao',
+  'simulacao.rodar',
+  'conexoes.ver',
+  'execucoes.ver',
+];
+export const PERMISSOES_AUDITOR = ['workflows.ver', 'conexoes.ver', 'execucoes.ver', 'auditoria.ver', 'traces.ver'];
+
+/** Sessão no tenant Matriz com as permissões dadas. */
+export function sessaoCom(permissoes: string[]): Sessao {
+  return { ...sessaoMatriz, permissoes };
+}
+
 /** Telas de exemplo: uma livre, uma por `workflows.ver` e uma por `auditoria.ver`. */
 export const telasDeTeste: readonly DefinicaoTela[] = [
   { id: 'inicio', rotulo: 'Início', caminho: 'inicio', icone: null, conteudo: <h1>Tela Início</h1> },

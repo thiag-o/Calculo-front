@@ -95,6 +95,27 @@
   white-space: nowrap;
 }
 
+/* Seção do menu (Administração): no rodapé do menu, com o rótulo label-12 terciário acima dos itens (§9). */
+.fc-menu-lateral-secao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.fc-menu-lateral-secao-rotulo {
+  padding: 0 8px 4px;
+  overflow: hidden;
+  color: var(--fc-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fc-menu-lateral-rodape {
   display: flex;
   align-items: center;
@@ -276,6 +297,7 @@
 }
 
 .fc-casca-compacto .fc-menu-lateral-item-rotulo,
+.fc-casca-compacto .fc-menu-lateral-secao-rotulo,
 .fc-casca-compacto .fc-seletor-cliente-nome,
 .fc-casca-compacto .fc-usuario-texto {
   position: absolute;
