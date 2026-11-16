@@ -65,7 +65,11 @@ pnpm dev
 
 ## Testes ponta a ponta no modo real
 
-O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, com o paralelismo padrão do Playwright.
+O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, com **2 workers**, fixados no próprio script do `package.json`. Nesta máquina, 6 navegadores em paralelo, o Vite dev e a API juntos saturam CPU e memória, e os logins estouram o tempo limite. Rode o comando como está, sem mudar os workers na mão. No modo real, cada teste e cada `expect` têm 60 s de tempo limite, porque o fluxo da auditoria chegou a 33 s sozinho, com a máquina carregada. O `pnpm e2e` (simulado) segue com o paralelismo padrão e os tempos limite padrão.
+
+O Playwright sobe dois servidores, nos dois modos:
+- o casca em `http://localhost:5173`;
+- a página de teste de incorporação em `http://localhost:5274` (`apps/casca/vite.incorporacao.config.ts`). Ela é o "hospedeiro" dos testes de incorporação, numa origem diferente da do casca. É a origem que o `preparar-local` do back cadastra como domínio autorizado.
 
 1. Suba o back (veja `../backend/README.md`): `docker compose up -d` e depois os comandos abaixo, na pasta `backend`.
 
@@ -93,6 +97,6 @@ No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
 pnpm e2e:real
 ```
 
-- **Só `E2E_API_URL` basta.** O `playwright.config.ts` sobe o casca com `VITE_API_URL` igual a `E2E_API_URL`. Se já houver um casca aberto em `localhost:5173`, o Playwright o reaproveita com o `VITE_API_URL` que ele tiver; se for outra API, os testes reprovam e dizem isso. Nesse caso, feche esse casca.
-- **Espere 60 s entre duas rodadas.** O back aceita 20 tentativas de login por minuto vindas de um mesmo IP, e uma rodada faz cerca de 13. A segunda rodada logo em seguida recebe `429 muitas_tentativas`. As tentativas ficam gravadas no banco, então reiniciar a API não zera a contagem.
+- **Só `E2E_API_URL` basta.** O `playwright.config.ts` sobe o casca e a página de teste com `VITE_API_URL` igual a `E2E_API_URL`. Se já houver um casca aberto em `localhost:5173`, ou uma página de teste em `localhost:5274`, o Playwright os reaproveita com o `VITE_API_URL` que tiverem. Se o casca chamar outra API, os testes reprovam e dizem isso. Nesse caso, feche esse servidor.
+- **Limite de logins por IP.** A suíte faz cerca de 27 logins por minuto do mesmo IP, e o back aceita 20 por padrão. Suba a `api` com `FLUXO_LOGIN_LIMITE_IP_MIN=1000`: nenhum fluxo testa esse limite. Com o limite padrão, parte dos logins recebe `429 muitas_tentativas`. As tentativas ficam gravadas no banco, então reiniciar a API não zera a contagem.
 - **O teste de bloqueio não atinge as contas acima.** Ele erra a senha de um e-mail novo a cada rodada.

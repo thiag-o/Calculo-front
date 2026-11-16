@@ -7,6 +7,20 @@ import { EXEMPLOS, type CorpoErro, type Esquemas, type Sessao } from './contrato
 
 type TenantResumo = Esquemas['TenantResumo'];
 
+/**
+ * O filtro das rotas simuladas, em glob (texto) e não em função: o Playwright confere o glob sem passar pelo processo
+ * do teste, e só as chamadas a `/v1/` chegam ao `responder`. Com uma função, cada um dos ~40 módulos que o Vite dev
+ * serve a cada página aberta ia e voltava do processo do teste antes de seguir (cerca de 115 idas e voltas no teste da
+ * auditoria, medido na F39). O `ehChamadaDaApi` refina o glob: só `/v1/...` e fora da origem do casca.
+ */
+export const ROTAS_DA_API = '**/v1/**';
+
+/** A chamada é à API (`/v1/...`) e não ao próprio casca. */
+export function ehChamadaDaApi(route: Route, origemCasca: string): boolean {
+  const url = new URL(route.request().url());
+  return url.pathname.startsWith('/v1/') && url.origin !== origemCasca;
+}
+
 /** Uma conta da simulação: credenciais, usuário e permissões por tenant. */
 export interface ContaSimulada {
   email: string;
@@ -64,9 +78,8 @@ export class ApiSimulada {
   /** Liga a simulação na página: toda chamada a `/v1/...` fora da origem do casca cai aqui. */
   async instalar(page: Page, origemCasca: string): Promise<void> {
     const context = page.context();
-    await page.route(
-      (url) => url.pathname.startsWith('/v1/') && url.origin !== origemCasca,
-      (route) => this.responder(route, context, origemCasca),
+    await page.route(ROTAS_DA_API, (route) =>
+      ehChamadaDaApi(route, origemCasca) ? this.responder(route, context, origemCasca) : route.fallback(),
     );
   }
 

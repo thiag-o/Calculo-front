@@ -17,8 +17,9 @@
     "changeset": "changeset",
     "release": "pnpm --filter @fluxo/react build && changeset publish",
     "e2e": "playwright test --project=simulado --pass-with-no-tests",
-    "e2e:real": "playwright test --project=real --pass-with-no-tests"
+    "e2e:real": "playwright test --project=real --workers=2 --pass-with-no-tests"
   },
+  "//": "e2e:real roda com 2 workers: nesta máquina, 6 navegadores, o Vite dev e a API juntos saturam CPU e memória e os logins estouram o tempo limite (decisão da sessão global, F39). O e2e (simulado) segue com o paralelismo padrão.",
   "devDependencies": {
     "@playwright/test": "^1.65.1",
     "@testing-library/jest-dom": "^7.0.1",

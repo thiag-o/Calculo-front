@@ -1,6 +1,6 @@
 # 0029. Testes e2e: `apoio/` por épico com fixture estendida e cópia única dos exemplos do contrato
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0030](0030-simulacao-e2e-intercepta-por-glob-com-fallback.md))
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F21)
 - **Relacionadas:** ADR 0005 (tipos pelo OpenAPI)

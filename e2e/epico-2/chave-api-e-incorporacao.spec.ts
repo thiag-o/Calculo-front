@@ -1,6 +1,6 @@
 // Épico 2 · chave de API e incorporação: o Admin cria a chave (mostrada uma vez) e cadastra o domínio; o "hospedeiro"
-// (a página de teste de incorporação do casca) troca a chave por um token e abre o módulo incorporado, com abas e sem
-// menu lateral; com a chave revogada, a troca falha (os dois modos).
+// (a página de teste de incorporação do casca, em outra origem: http://localhost:5274) troca a chave por um token e abre
+// o módulo incorporado, com abas e sem menu lateral; com a chave revogada, a troca falha (os dois modos).
 import type { Page } from '@playwright/test';
 import type { Esquemas } from '../apoio/contrato';
 import { entrar, respostaDaApi } from '../apoio/telas';
@@ -43,7 +43,10 @@ test.describe('chave de API e incorporação', () => {
     epico2,
   }) => {
     const nomeChave = `E2E Hospedeiro ${sufixo()}`;
-    const origem = epico2.origemCasca;
+    const origem = epico2.origemHospedeiro;
+    // Modo real: o `preparar-local` já cadastra a origem do hospedeiro. O teste a remove e cadastra de novo pela tela e,
+    // no fim, a deixa como encontrou.
+    let dominioJaCadastrado = false;
     let chave = '';
     let chaveCriada: Esquemas['ChaveApiCriada'] | undefined;
 
@@ -75,8 +78,9 @@ test.describe('chave de API e incorporação', () => {
 
     await test.step('o Admin cadastra a origem do hospedeiro como domínio autorizado', async () => {
       await expect(tabelaDominios(page)).not.toHaveAttribute('aria-busy', 'true');
-      // Modo real: uma rodada anterior interrompida pode ter deixado o domínio cadastrado.
-      if ((await linha(tabelaDominios(page), origem).count()) > 0) await removerDominio(page, origem);
+      // Modo real: cadastrado pelo `preparar-local` (ou por uma rodada anterior interrompida).
+      dominioJaCadastrado = (await linha(tabelaDominios(page), origem).count()) > 0;
+      if (dominioJaCadastrado) await removerDominio(page, origem);
 
       await page.getByRole('button', { name: 'Novo domínio' }).first().click();
       const dialogo = page.getByRole('dialog', { name: 'Novo domínio' });
@@ -92,7 +96,8 @@ test.describe('chave de API e incorporação', () => {
     const hospedeiro = await epico2.novaPagina();
 
     await test.step('o hospedeiro troca a chave por um token e abre o módulo incorporado, com abas e sem menu lateral', async () => {
-      await hospedeiro.goto(PAGINA_DE_TESTE);
+      await hospedeiro.goto(`${origem}${PAGINA_DE_TESTE}`);
+      expect(new URL(hospedeiro.url()).origin, 'o hospedeiro fica fora da origem do casca').not.toBe(new URL(page.url()).origin);
 
       const troca = await trocarChavePorToken(hospedeiro, chave, 'Auditor');
 
@@ -142,8 +147,8 @@ test.describe('chave de API e incorporação', () => {
       await expect(hospedeiro.getByRole('navigation', { name: 'Telas do Fluxo de Cálculo' })).toHaveCount(0);
     });
 
-    await test.step('o Admin remove o domínio cadastrado no teste', async () => {
-      await removerDominio(page, origem);
+    await test.step('o Admin remove o domínio cadastrado no teste (se ele não existia antes)', async () => {
+      if (!dominioJaCadastrado) await removerDominio(page, origem);
     });
   });
 });

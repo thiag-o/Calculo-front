@@ -1,6 +1,7 @@
 // Épico 2 · o Auditor vê logins, falhas, bloqueios e redefinições na auditoria de acessos (os dois modos).
 import type { Locator } from '@playwright/test';
-import { entrar, enviarLogin } from '../apoio/telas';
+import type { Sessao } from '../apoio/contrato';
+import { entrar, enviarLogin, esperarModulo } from '../apoio/telas';
 import { expect, test } from './apoio/fixtures';
 import {
   abrirNoMenu,
@@ -52,7 +53,11 @@ test.describe('auditoria de acessos', () => {
     });
 
     await test.step('o Auditor entra e abre a Auditoria', async () => {
-      await entrar(pagina, { email: auditor.email, senha: auditor.senha });
+      // A página já está no login (o link levou a ele, e o bloqueio não sai dele): entra por ali mesmo, sem o `entrar`,
+      // que abriria /entrar de novo e recarregaria o casca inteiro à toa (cerca de 1 s no Vite dev).
+      const resposta = await enviarLogin(pagina, { email: auditor.email, senha: auditor.senha });
+      expect(resposta.status(), 'o login do Auditor').toBe(200);
+      await esperarModulo(pagina, (await resposta.json()) as Sessao);
       // O Auditor vê a Auditoria, mas não a Administração.
       await expect(navegacaoPrincipal(pagina).getByRole('group', { name: 'Administração' })).toHaveCount(0);
       await abrirNoMenu(pagina, 'Auditoria');

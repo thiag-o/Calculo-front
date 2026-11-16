@@ -6,6 +6,7 @@
 // estado entre as páginas de um teste: o Admin cria um usuário numa página e a pessoa entra em outra.
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { BrowserContext, Page, Request, Route } from '@playwright/test';
+import { ehChamadaDaApi, ROTAS_DA_API } from '../../apoio/api-simulada';
 import { EXEMPLOS, type CorpoErro, type Esquemas, type Sessao } from '../../apoio/contrato';
 
 type CodigoPermissao = Esquemas['CodigoPermissao'];
@@ -266,9 +267,8 @@ export class SimulacaoEpico2 {
   async instalar(page: Page): Promise<void> {
     const contexto = page.context();
     const origemCasca = new URL(this.urlCasca).origin;
-    await page.route(
-      (url) => url.pathname.startsWith('/v1/') && url.origin !== origemCasca,
-      (route) => this.responder(route, contexto),
+    await page.route(ROTAS_DA_API, (route) =>
+      ehChamadaDaApi(route, origemCasca) ? this.responder(route, contexto) : route.fallback(),
     );
   }
 
