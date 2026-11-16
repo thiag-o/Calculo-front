@@ -26,4 +26,5 @@ Quando um diálogo abre a partir de um item de `Menu`, o `Dialogo` do design sys
 
 - **Bom:** foco volta ao ponto certo sem mexer no design system.
 - **Ruim:** cada tela repete um pouco de código; o `data-*` é convenção, sem verificação automática.
-- **A fazer:** avaliar a referência de retorno no `Dialogo` se a F16 ou outras telas repetirem o caso.
+- **Atualização (tarefa F16):** o gatilho de repetição foi atingido. A tela de integração (F16) é a segunda a devolver o foco pelo `data-*`, agora num hook local `useFocoDeVolta`. A decisão continua valendo e a ADR segue aceita; a mudança no `Dialogo` fica para uma tarefa própria do design system (que substituirá esta ADR). Uma terceira tela deve esperar essa tarefa, não copiar o hook.
+- **A fazer:** tarefa do design system para o `Dialogo` aceitar a referência do elemento de retorno.
