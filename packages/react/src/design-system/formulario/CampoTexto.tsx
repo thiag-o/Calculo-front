@@ -3,8 +3,11 @@ import { MensagensCampo, juntarClasses, useIdsCampo, type PropsCampo } from './e
 import { Rotulo } from './Rotulo';
 import './campo.css';
 
-/** Tipos de texto aceitos. Senha usa o CampoSenha. */
-export type TipoCampoTexto = 'text' | 'email' | 'search' | 'tel' | 'url' | 'number';
+/**
+ * Tipos de texto aceitos. Senha usa o CampoSenha. `date` usa o calendário do navegador: o valor é `aaaa-mm-dd` (vazio
+ * enquanto a data está incompleta) e a tela mostra no formato do idioma de quem usa.
+ */
+export type TipoCampoTexto = 'text' | 'email' | 'search' | 'tel' | 'url' | 'number' | 'date';
 
 export interface CampoTextoProps extends PropsCampo, Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size' | 'children'> {
   /** Padrão: `text`. */

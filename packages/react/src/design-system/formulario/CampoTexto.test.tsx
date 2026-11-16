@@ -93,6 +93,32 @@ describe('CampoTexto', () => {
     expect(screen.getByRole('textbox', { name: 'E-mail' })).toBeRequired();
   });
 
+  it('data: calendário do navegador, com o rótulo, o valor aaaa-mm-dd e o erro', async () => {
+    const usuario = userEvent.setup();
+    const aoMudar = vi.fn();
+    render(
+      <CampoTexto
+        rotulo="Até"
+        type="date"
+        min="2026-11-01"
+        onChange={(evento) => aoMudar(evento.target.value)}
+        erro="A data final vem antes da inicial. Ajuste o período."
+      />,
+    );
+    const campo = screen.getByLabelText('Até');
+    expect(campo).toHaveAttribute('type', 'date');
+    expect(campo).toHaveAttribute('min', '2026-11-01');
+    expect(campo).toHaveClass('fc-campo-entrada');
+    expect(campo).toHaveAttribute('aria-invalid', 'true');
+    expect(campo).toHaveAccessibleDescription('A data final vem antes da inicial. Ajuste o período.');
+
+    await usuario.tab();
+    expect(campo).toHaveFocus();
+    await usuario.type(campo, '2026-11-05');
+    expect(campo).toHaveValue('2026-11-05');
+    expect(aoMudar).toHaveBeenLastCalledWith('2026-11-05');
+  });
+
   it('repassa a ref ao input e funciona com react-hook-form e zod', async () => {
     const usuario = userEvent.setup();
     const esquema = z.object({ email: z.email('Informe um e-mail válido') });
