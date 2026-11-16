@@ -5,6 +5,8 @@ O backend fica num repositório separado (`../backend`). O desenho do produto es
 
 > **Estado atual: só scaffold.** Ainda não há código de produto nem dependências instaladas; isso começa na fase 1 (Fundação).
 
+Para incorporar o módulo num sistema hospedeiro, veja o [guia de incorporação](docs/incorporacao.md).
+
 ## Estrutura
 
 ```
@@ -13,6 +15,7 @@ frontend/
 ├── apps/casca/       app próprio: login + layout, usando o pacote (ADR 0002)
 ├── docs/
 │   ├── ambientes.md  local, homologação, produção e variáveis
+│   ├── incorporacao.md  guia para quem incorpora o @fluxo/react
 │   └── adr/          decisões de arquitetura (índice em docs/adr/README.md)
 ├── .changeset/       versões do pacote (Changesets)
 └── .github/workflows ci.yml · publicar.yml · deploy-casca.yml (desligado)
