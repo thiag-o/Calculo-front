@@ -16,3 +16,6 @@ Thumbs.db
 .claude/orquestracao/
 test-results/
 playwright-report/
+
+# Cache do Vitest (reporter JSON)
+.vitest/
