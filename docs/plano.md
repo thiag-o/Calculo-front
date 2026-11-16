@@ -290,9 +290,10 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 - Aceite: testes de edição, validação nos limites (no cliente e pela resposta da API) e estados.
 
 **F17 · Sessão: redefinição de senha e modo token**
-- dep: F13
+- dep: F13, B40
 - modelo: opus
-- arquivos: `packages/react/src/sessao/`
+- arquivos: `packages/react/src/sessao/`, `packages/react/src/api/gerado/`
+- Resposta D4 (sessão global): a tela consulta `POST /v1/redefinicao/verificacao` (B40) ao abrir e mostra a senha mínima exata e o prazo do link. `410 link_invalido` mostra a mensagem de link inválido e não mostra o formulário. Regenere os tipos (`pnpm gerar:api`) com o contrato da B40. O envio do formulário é "Salvar" (§13).
 - Fazer:
   - tela `<RedefinirSenha token>` (nova senha e confirmação; regras da senha mostradas; `link_invalido`);
   - no modo token, a sessão vem de `GET /v1/sessao` com Bearer, e o token vencido chama `onSessaoExpirada`.
@@ -301,7 +302,11 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 **F18 · Auditoria: acessos**
 - dep: F13
 - modelo: opus
-- arquivos: `packages/react/src/auditoria/`
+- arquivos: `packages/react/src/auditoria/`, `packages/react/src/design-system/formulario/CampoTexto.tsx`, `packages/react/src/design-system/formulario/CampoTexto.test.tsx`
+- Resposta D3 (sessão global):
+  - período com "De" e "Até" no calendário do navegador: `date` entra em `TipoCampoTexto`, com o teste. "Até" inclui o dia inteiro: envie `ate` como o início do dia seguinte, no fuso do navegador, porque o `ate` da API é exclusivo;
+  - ponto de status: `login_ok` verde, `login_falhou` âmbar, `login_bloqueado` vermelho e os demais cinza, com a tabela de rótulos do relatório da F18;
+  - um tipo por vez, num `Selecao`.
 - Fazer: tela de acessos com filtro por tipo e por período, paginação por cursor, e status por ponto + palavra para os tipos de evento.
 - Aceite: testes dos filtros, da paginação e dos estados.
 
