@@ -4,6 +4,7 @@
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F15)
 - **Relacionadas:** ADRs 0003, 0008, 0015
+- **Complementada por:** [0023](0023-parametros-de-seguranca-gravam-resposta-sem-invalidar-prefixo.md) (mutação que só a própria aba exibe não invalida o prefixo)
 
 ## Contexto
 

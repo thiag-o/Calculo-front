@@ -42,6 +42,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0020](0020-chaves-de-cache-sob-administracao.md) | Chaves de cache da Administração sob `['administracao', …]`, invalidadas pelo prefixo | aceita, revisar no checkpoint | 2026-11-16 |
 | [0021](0021-segredo-mostrado-uma-vez-sem-cache.md) | Segredo mostrado uma vez: mutação com `gcTime: 0`, presa ao diálogo | aceita, revisar no checkpoint | 2026-11-16 |
 | [0022](0022-foco-de-volta-em-dialogo-aberto-por-menu.md) | Diálogo aberto por item de Menu: a tela devolve o foco pelo `data-*` do gatilho | aceita, revisar no checkpoint | 2026-11-16 |
+| [0023](0023-parametros-de-seguranca-gravam-resposta-sem-invalidar-prefixo.md) | Parâmetros de segurança: salvar grava a resposta do PUT e não invalida o prefixo (complementa 0020) | aceita, revisar no checkpoint | 2026-11-16 |
 
 ## Pendentes (sem ADR ainda)
 
