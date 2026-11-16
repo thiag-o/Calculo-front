@@ -38,7 +38,8 @@ export interface paths {
          *     No modo incorporado, aceita `Authorization: Bearer <token>`: devolve a
          *     sessão do token, com `tenants` e `tenant_atual` iguais ao tenant do token
          *     e as permissões dos papéis informados na emissão. Token vencido,
-         *     adulterado ou com assinatura inválida: `401 sem_sessao`.
+         *     adulterado, com assinatura inválida ou de um membro desativado no tenant:
+         *     `401 sem_sessao`.
          */
         get: operations["sessao_atual"];
         put?: never;
@@ -444,6 +445,13 @@ export interface paths {
          *     - E-mail que já pertence a outro usuário do sistema, não ligado a esse
          *       `id_externo`: `409 email_em_uso` (o hospedeiro nunca assume uma conta
          *       existente).
+         *     - Usuário externo desativado no tenant (pelo Admin): `409 usuario_inativo`.
+         *       Os tokens emitidos antes da desativação deixam de valer na hora
+         *       (`401 sem_sessao`).
+         *     - A incorporação não dá nem tira o papel Admin: Admin em `papeis` é
+         *       `422 papel_nao_permitido` (`campos.papeis`). Se o usuário externo já é
+         *       Admin (dado pela tela de usuários), a atualização mantém o Admin e troca
+         *       só os demais papéis.
          *
          *     Não usa cookie nem CSRF.
          */
@@ -827,8 +835,8 @@ export interface components {
     responses: {
         /**
          * @description `sem_sessao`: sem sessão válida (ausente, revogada ou expirada) ou, com
-         *     `Authorization: Bearer`, token de incorporação vencido, adulterado ou com
-         *     assinatura inválida.
+         *     `Authorization: Bearer`, token de incorporação vencido, adulterado, com
+         *     assinatura inválida ou de um membro desativado no tenant.
          */
         SemSessao: {
             headers: {
@@ -1051,10 +1059,25 @@ export interface components {
             };
         };
         /**
-         * @description `email_em_uso`: o e-mail já pertence a outro usuário do sistema, não ligado a
-         *     esse `id_externo`.
+         * @description - `email_em_uso`: o e-mail já pertence a outro usuário do sistema, não ligado
+         *       a esse `id_externo`;
+         *     - `usuario_inativo`: o usuário externo está desativado no tenant.
          */
-        EmailEmUso: {
+        ConflitoIncorporacao: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problema"];
+            };
+        };
+        /**
+         * @description - `dados_invalidos`: o corpo não segue o esquema;
+         *     - `papel_inexistente`: algum papel informado não existe no tenant;
+         *     - `papel_nao_permitido` (`campos.papeis`): a lista traz o papel Admin, que a
+         *       incorporação não pode dar nem tirar.
+         */
+        IncorporacaoInvalida: {
             headers: {
                 [name: string]: unknown;
             };
@@ -1833,8 +1856,8 @@ export interface operations {
                 };
             };
             401: components["responses"]["ChaveInvalida"];
-            409: components["responses"]["EmailEmUso"];
-            422: components["responses"]["DadosOuPapelInvalidos"];
+            409: components["responses"]["ConflitoIncorporacao"];
+            422: components["responses"]["IncorporacaoInvalida"];
         };
     };
     listar_acessos: {
