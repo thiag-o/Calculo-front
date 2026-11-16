@@ -1,0 +1,132 @@
+/*
+ * Administração › Papéis (estilos.md §4, §7.2, §7.4, §7.6, §7.7, §9 e §14). Só classes fc- e variáveis --fc-*;
+ * sem reset global e sem medida da janela inteira (ADR 0002).
+ */
+
+.fc-papeis {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fc-papeis-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fc-papeis-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fc-papeis-titulo h2,
+.fc-papeis-titulo p {
+  margin: 0;
+}
+
+/* Linha de duas linhas de texto (estilos.md §7.6): nome em cima, resumo ou motivo embaixo. */
+.fc-papeis-papel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-papeis-nome {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-papeis-motivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fc-papeis-motivo svg {
+  flex: none;
+}
+
+.fc-papeis-numero {
+  font-variant-numeric: tabular-nums;
+}
+
+/* O cadeado no lugar do menu "…" (28px, como o botão pequeno). */
+.fc-papeis-travado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--fc-text-tertiary);
+}
+
+/* Diálogo de criar e editar: um pouco mais largo, para o catálogo. */
+.fc-dialogo.fc-papeis-dialogo {
+  width: min(560px, calc(100% - 32px));
+}
+
+.fc-papeis-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.fc-papeis-catalogo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.fc-papeis-catalogo-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fc-papeis-ajuda,
+.fc-papeis-sem-permissoes {
+  margin: 0;
+}
+
+.fc-papeis-ajuda .fc-selo {
+  vertical-align: middle;
+}
+
+/* Cada grupo do catálogo: uma caixa com a divisória desenhada uma vez só (estilos.md §4). */
+.fc-papeis-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 16px 16px;
+  border: 1px solid var(--fc-border);
+  border-radius: 12px;
+}
+
+.fc-papeis-grupo-legenda {
+  padding: 0 4px;
+  margin-left: -4px;
+}
+
+.fc-papeis-permissao {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
