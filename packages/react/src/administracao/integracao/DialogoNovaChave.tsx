@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Aviso, Botao, CampoTexto, Dialogo, FecharDialogo, Texto } from '../../design-system';
+import { Aviso, Botao, CampoTexto, Dialogo, FecharDialogo, type DialogoProps, Texto } from '../../design-system';
 import { useCriarChave } from './consultas';
 import { IconeCopiar } from './icones';
 import { erroNovaChave } from './mensagens';
@@ -19,6 +19,8 @@ type DadosNovaChave = z.infer<typeof esquema>;
 export interface DialogoNovaChaveProps {
   /** Chamado ao fechar. A chave some junto com o diálogo: monte-o só enquanto aberto. */
   aoFechar: () => void;
+  /** Elemento que recebe o foco ao fechar (ver `Dialogo`). */
+  focoAoFechar?: DialogoProps['focoAoFechar'];
 }
 
 /**
@@ -26,7 +28,7 @@ export interface DialogoNovaChaveProps {
  * mostrada de novo. A chave fica só no resultado da mutação deste diálogo (`gcTime: 0`, ADR 0021): fechar desmonta
  * o diálogo e a descarta; ela não vai para o cache de consultas, para estado de fora nem para o armazenamento.
  */
-export function DialogoNovaChave({ aoFechar }: DialogoNovaChaveProps) {
+export function DialogoNovaChave({ aoFechar, focoAoFechar }: DialogoNovaChaveProps) {
   const idFormulario = useId();
   const criar = useCriarChave();
   const [copia, setCopia] = useState<'copiado' | 'falhou' | undefined>(undefined);
@@ -58,6 +60,7 @@ export function DialogoNovaChave({ aoFechar }: DialogoNovaChaveProps) {
   return (
     <Dialogo
       aberto
+      focoAoFechar={focoAoFechar}
       aoMudarAberto={(aberto) => {
         if (!aberto) aoFechar();
       }}

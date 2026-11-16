@@ -1,6 +1,6 @@
 # 0022. Diálogo aberto por item de Menu: a tela devolve o foco pelo `data-*` do gatilho
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** substituída por [0026](0026-dialogo-recebe-foco-ao-fechar.md)
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F14)
 - **Relacionadas:** ADRs 0003, 0012, 0013, 0014

@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { useRef, type ReactElement, type ReactNode } from 'react';
+import { useRef, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { Botao } from '../formulario';
 import { usePortalFluxo } from '../raiz';
 import { classesTexto } from '../tipografia';
@@ -30,6 +30,12 @@ export interface DialogoProps {
   aoMudarAberto?: (aberto: boolean) => void;
   /** Elemento que abre o diálogo (um `Botao`). Recebe o foco de volta ao fechar. */
   gatilho?: ReactElement;
+  /**
+   * Quem recebe o foco ao fechar: uma referência ao elemento ou uma função que o devolve (chamada só ao fechar, para
+   * achar um elemento que ainda não existia). Serve aos diálogos abertos por um item de `Menu`, cujo gatilho some
+   * quando o menu fecha. Sem elemento (ou sem a prop), vale o comportamento do Radix: o gatilho.
+   */
+  focoAoFechar?: RefObject<HTMLElement | null> | (() => HTMLElement | null | undefined);
   /** Classes extras do painel. */
   className?: string;
 }
@@ -49,6 +55,7 @@ export function Dialogo({
   abertoInicial,
   aoMudarAberto,
   gatilho,
+  focoAoFechar,
   className,
 }: DialogoProps) {
   const portal = usePortalFluxo();
@@ -73,6 +80,12 @@ export function Dialogo({
                 evento.preventDefault();
                 painel.current.focus();
               }
+            }}
+            onCloseAutoFocus={(evento) => {
+              const alvo = typeof focoAoFechar === 'function' ? focoAoFechar() : focoAoFechar?.current;
+              if (!alvo) return;
+              evento.preventDefault();
+              alvo.focus();
             }}
             {...semDescricao}
           >

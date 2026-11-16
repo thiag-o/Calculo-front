@@ -12,6 +12,7 @@ import {
   FecharDialogo,
   MensagemCampo,
   classesTexto,
+  type DialogoProps,
 } from '../../design-system';
 import { useAlterarUsuario, useCriarUsuario, usePapeisDisponiveis, type Papel, type Usuario } from './consultas';
 import { erroDoFormulario, mensagemErroPapeis } from './mensagens';
@@ -42,13 +43,15 @@ export interface DialogoUsuarioProps {
   usuario?: Usuario;
   /** Chamado ao fechar (Cancelar, Esc, "Fechar" ou depois de salvar). */
   aoFechar: () => void;
+  /** Elemento que recebe o foco ao fechar (ver `Dialogo`). */
+  focoAoFechar?: DialogoProps['focoAoFechar'];
 }
 
 /**
  * Diálogo de criar ou editar um usuário: e-mail (só na criação), nome, papéis e, na edição, se está ativo.
  * Monte-o só enquanto aberto: cada abertura começa do zero.
  */
-export function DialogoUsuario({ usuario, aoFechar }: DialogoUsuarioProps) {
+export function DialogoUsuario({ usuario, aoFechar, focoAoFechar }: DialogoUsuarioProps) {
   const edicao = usuario !== undefined;
   const idFormulario = useId();
   const idErroPapeis = useId();
@@ -92,6 +95,7 @@ export function DialogoUsuario({ usuario, aoFechar }: DialogoUsuarioProps) {
   return (
     <Dialogo
       aberto
+      focoAoFechar={focoAoFechar}
       aoMudarAberto={(aberto) => {
         if (!aberto) aoFechar();
       }}

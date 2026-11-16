@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ErroApi } from '../../api';
-import { Aviso, Botao, CampoTexto, Dialogo, FecharDialogo, Texto } from '../../design-system';
+import { Aviso, Botao, CampoTexto, Dialogo, FecharDialogo, Texto, type DialogoProps } from '../../design-system';
 import { useGerarLinkRedefinicao, type Usuario } from './consultas';
 import { IconeCopiar } from './icones';
 import { mensagemErroLink } from './mensagens';
@@ -29,13 +29,15 @@ export interface DialogoLinkRedefinicaoProps {
   usuario: Usuario;
   /** Chamado ao fechar. O link some junto com o diálogo: monte-o só enquanto aberto. */
   aoFechar: () => void;
+  /** Elemento que recebe o foco ao fechar (ver `Dialogo`). */
+  focoAoFechar?: DialogoProps['focoAoFechar'];
 }
 
 /**
  * "Gerar link de redefinição": confirma, gera e mostra o link uma única vez, com "Copiar".
  * O link fica só no estado deste diálogo (a mutação sai do cache ao desmontar); fechar o descarta.
  */
-export function DialogoLinkRedefinicao({ usuario, aoFechar }: DialogoLinkRedefinicaoProps) {
+export function DialogoLinkRedefinicao({ usuario, aoFechar, focoAoFechar }: DialogoLinkRedefinicaoProps) {
   const gerar = useGerarLinkRedefinicao();
   const [copia, setCopia] = useState<'copiado' | 'falhou' | undefined>(undefined);
   const link = gerar.data;
@@ -55,6 +57,7 @@ export function DialogoLinkRedefinicao({ usuario, aoFechar }: DialogoLinkRedefin
   return (
     <Dialogo
       aberto
+      focoAoFechar={focoAoFechar}
       aoMudarAberto={(aberto) => {
         if (!aberto) aoFechar();
       }}

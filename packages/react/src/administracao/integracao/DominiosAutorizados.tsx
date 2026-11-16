@@ -5,7 +5,6 @@ import { useListaDominios, type DominioAutorizado } from './consultas';
 import { dia } from './datas';
 import { DialogoNovoDominio } from './DialogoNovoDominio';
 import { DialogoRemoverDominio } from './DialogoRemoverDominio';
-import { useFocoDeVolta } from './focoDeVolta';
 import { IconeGlobo, IconeMaisAcoes } from './icones';
 import { mensagemErroConsulta } from './mensagens';
 import './integracao.css';
@@ -27,13 +26,20 @@ export function DominiosAutorizados() {
   const lista = useListaDominios();
   const secao = useRef<HTMLElement>(null);
   const botaoNovo = useRef<HTMLButtonElement>(null);
-  const devolverFoco = useFocoDeVolta(secao, ATRIBUTO_ACOES, botaoNovo);
   const [dialogo, setDialogo] = useState<DialogoAberto | null>(null);
 
   function fechar() {
-    const anterior = dialogo;
     setDialogo(null);
-    devolverFoco(anterior?.tipo === 'remover' ? anterior.dominio.id : undefined);
+  }
+
+  // O diálogo vem do menu da linha, cujo gatilho some ao fechar: o foco volta ao "…" da linha ou, se ela sumiu (ou o
+  // diálogo era de criar), ao botão principal. Procurado só dentro da seção (ADR 0002).
+  function focoAoFechar() {
+    const linha =
+      dialogo?.tipo === 'remover'
+        ? secao.current?.querySelector<HTMLElement>(`[${ATRIBUTO_ACOES}="${dialogo.dominio.id}"]`)
+        : null;
+    return linha ?? botaoNovo.current;
   }
 
   const dominios = lista.data;
@@ -153,9 +159,9 @@ export function DominiosAutorizados() {
         </Aviso>
       ) : null}
 
-      {dialogo?.tipo === 'novo' ? <DialogoNovoDominio aoFechar={fechar} /> : null}
+      {dialogo?.tipo === 'novo' ? <DialogoNovoDominio aoFechar={fechar} focoAoFechar={focoAoFechar} /> : null}
       {dialogo?.tipo === 'remover' ? (
-        <DialogoRemoverDominio key={dialogo.dominio.id} dominio={dialogo.dominio} aoFechar={fechar} />
+        <DialogoRemoverDominio key={dialogo.dominio.id} dominio={dialogo.dominio} aoFechar={fechar} focoAoFechar={focoAoFechar} />
       ) : null}
     </section>
   );

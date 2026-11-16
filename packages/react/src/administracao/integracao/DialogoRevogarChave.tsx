@@ -1,4 +1,4 @@
-import { Aviso, Botao, Dialogo, FecharDialogo } from '../../design-system';
+import { Aviso, Botao, Dialogo, FecharDialogo, type DialogoProps } from '../../design-system';
 import { erroComCodigo, useRevogarChave, type ChaveApi } from './consultas';
 import { mensagemErroRevogacao } from './mensagens';
 
@@ -9,10 +9,12 @@ export interface DialogoRevogarChaveProps {
   chave: ChaveApi;
   /** Chamado ao fechar (Cancelar, Esc, "Fechar" ou depois de revogar). */
   aoFechar: () => void;
+  /** Elemento que recebe o foco ao fechar (ver `Dialogo`). */
+  focoAoFechar?: DialogoProps['focoAoFechar'];
 }
 
 /** Confirmação de revogar uma chave de API. A ação perigosa fica em vermelho (estilos.md §7.7). */
-export function DialogoRevogarChave({ chave, aoFechar }: DialogoRevogarChaveProps) {
+export function DialogoRevogarChave({ chave, aoFechar, focoAoFechar }: DialogoRevogarChaveProps) {
   const revogar = useRevogarChave();
   const erro = revogar.error;
   // Depois desse erro, tentar de novo não muda nada: o botão fica desabilitado, com o motivo.
@@ -21,6 +23,7 @@ export function DialogoRevogarChave({ chave, aoFechar }: DialogoRevogarChaveProp
   return (
     <Dialogo
       aberto
+      focoAoFechar={focoAoFechar}
       aoMudarAberto={(aberto) => {
         if (!aberto) aoFechar();
       }}

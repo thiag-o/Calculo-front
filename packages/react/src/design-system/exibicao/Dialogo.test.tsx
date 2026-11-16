@@ -2,11 +2,11 @@ import '@testing-library/jest-dom/vitest';
 import '../formulario/jsdom.test.apoio';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Botao, CampoTexto } from '../formulario';
 import { RaizFluxo } from '../raiz';
-import { Dialogo, FecharDialogo } from '.';
+import { Dialogo, FecharDialogo, type DialogoProps } from '.';
 
 afterEach(cleanup);
 
@@ -179,4 +179,56 @@ describe('Dialogo', () => {
     );
     expect(await screen.findByRole('dialog', { name: 'Sessão expirada' })).toBeInTheDocument();
   });
+});
+
+// Abre por um botão que não é gatilho do Radix (como o item de um Menu) e informa onde o foco volta.
+function DialogoComFocoInformado({ comFuncao = false }: { comFuncao?: boolean }) {
+  const [aberto, setAberto] = useState(false);
+  const destino = useRef<HTMLButtonElement>(null);
+  const foco: DialogoProps['focoAoFechar'] = comFuncao ? () => destino.current : destino;
+  return (
+    <RaizFluxo>
+      <Botao onClick={() => setAberto(true)}>Abrir de fora</Botao>
+      <Botao ref={destino}>Destino</Botao>
+      <Dialogo
+        aberto={aberto}
+        aoMudarAberto={setAberto}
+        titulo="Ajustar valor"
+        focoAoFechar={foco}
+        acoes={
+          <FecharDialogo>
+            <Botao>Cancelar</Botao>
+          </FecharDialogo>
+        }
+      >
+        <CampoTexto rotulo="Motivo" />
+      </Dialogo>
+    </RaizFluxo>
+  );
+}
+
+describe('Dialogo com focoAoFechar', () => {
+  const formas = [
+    ['referência', false],
+    ['função', true],
+  ] as const;
+  const jeitos = [
+    ['Esc', async (usuario: ReturnType<typeof userEvent.setup>) => usuario.keyboard('{Escape}')],
+    ['o botão Fechar', async (usuario: ReturnType<typeof userEvent.setup>) => usuario.click(screen.getByRole('button', { name: 'Fechar' }))],
+    ['Cancelar', async (usuario: ReturnType<typeof userEvent.setup>) => usuario.click(screen.getByRole('button', { name: 'Cancelar' }))],
+  ] as const;
+
+  for (const [forma, comFuncao] of formas) {
+    for (const [jeito, fechar] of jeitos) {
+      it(`devolve o foco ao elemento informado (${forma}) ao fechar por ${jeito}`, async () => {
+        const usuario = userEvent.setup();
+        render(<DialogoComFocoInformado comFuncao={comFuncao} />);
+        await usuario.click(screen.getByRole('button', { name: 'Abrir de fora' }));
+        await screen.findByRole('dialog');
+        await fechar(usuario);
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Destino' })).toHaveFocus());
+      });
+    }
+  }
 });

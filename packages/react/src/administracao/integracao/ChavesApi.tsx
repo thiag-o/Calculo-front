@@ -5,7 +5,6 @@ import { useListaChaves, type ChaveApi } from './consultas';
 import { dia, diaHora } from './datas';
 import { DialogoNovaChave } from './DialogoNovaChave';
 import { DialogoRevogarChave } from './DialogoRevogarChave';
-import { useFocoDeVolta } from './focoDeVolta';
 import { IconeChave, IconeMaisAcoes } from './icones';
 import { mensagemErroConsulta } from './mensagens';
 import './integracao.css';
@@ -37,13 +36,20 @@ export function ChavesApi() {
   const lista = useListaChaves();
   const secao = useRef<HTMLElement>(null);
   const botaoNova = useRef<HTMLButtonElement>(null);
-  const devolverFoco = useFocoDeVolta(secao, ATRIBUTO_ACOES, botaoNova);
   const [dialogo, setDialogo] = useState<DialogoAberto | null>(null);
 
   function fechar() {
-    const anterior = dialogo;
     setDialogo(null);
-    devolverFoco(anterior?.tipo === 'revogar' ? anterior.chave.id : undefined);
+  }
+
+  // O diálogo vem do menu da linha, cujo gatilho some ao fechar: o foco volta ao "…" da linha ou, se ela sumiu (ou o
+  // diálogo era de criar), ao botão principal. Procurado só dentro da seção (ADR 0002).
+  function focoAoFechar() {
+    const linha =
+      dialogo?.tipo === 'revogar'
+        ? secao.current?.querySelector<HTMLElement>(`[${ATRIBUTO_ACOES}="${dialogo.chave.id}"]`)
+        : null;
+    return linha ?? botaoNova.current;
   }
 
   const chaves = lista.data;
@@ -217,8 +223,10 @@ export function ChavesApi() {
         </div>
       ) : null}
 
-      {dialogo?.tipo === 'nova' ? <DialogoNovaChave aoFechar={fechar} /> : null}
-      {dialogo?.tipo === 'revogar' ? <DialogoRevogarChave key={dialogo.chave.id} chave={dialogo.chave} aoFechar={fechar} /> : null}
+      {dialogo?.tipo === 'nova' ? <DialogoNovaChave aoFechar={fechar} focoAoFechar={focoAoFechar} /> : null}
+      {dialogo?.tipo === 'revogar' ? (
+        <DialogoRevogarChave key={dialogo.chave.id} chave={dialogo.chave} aoFechar={fechar} focoAoFechar={focoAoFechar} />
+      ) : null}
     </section>
   );
 }

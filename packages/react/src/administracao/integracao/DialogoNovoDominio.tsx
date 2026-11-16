@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Aviso, Botao, CampoTexto, Dialogo, FecharDialogo } from '../../design-system';
+import { Aviso, Botao, CampoTexto, Dialogo, FecharDialogo, type DialogoProps } from '../../design-system';
 import { useCriarDominio } from './consultas';
 import { erroNovoDominio } from './mensagens';
 import { problemaDaOrigem } from './origem';
@@ -22,13 +22,15 @@ type DadosNovoDominio = z.infer<typeof esquema>;
 export interface DialogoNovoDominioProps {
   /** Chamado ao fechar (Cancelar, Esc, "Fechar" ou depois de salvar). */
   aoFechar: () => void;
+  /** Elemento que recebe o foco ao fechar (ver `Dialogo`). */
+  focoAoFechar?: DialogoProps['focoAoFechar'];
 }
 
 /**
  * "Novo domínio": cadastra a origem de onde o módulo incorporado pode chamar a API com o token do tenant. A origem é
  * validada no cliente (`https?://host[:porta]`) e de novo pela API, que a guarda normalizada.
  */
-export function DialogoNovoDominio({ aoFechar }: DialogoNovoDominioProps) {
+export function DialogoNovoDominio({ aoFechar, focoAoFechar }: DialogoNovoDominioProps) {
   const idFormulario = useId();
   const criar = useCriarDominio();
 
@@ -48,6 +50,7 @@ export function DialogoNovoDominio({ aoFechar }: DialogoNovoDominioProps) {
   return (
     <Dialogo
       aberto
+      focoAoFechar={focoAoFechar}
       aoMudarAberto={(aberto) => {
         if (!aberto) aoFechar();
       }}

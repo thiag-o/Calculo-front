@@ -29,18 +29,18 @@ export function Usuarios() {
   const botaoNovo = useRef<HTMLButtonElement>(null);
   const [dialogo, setDialogo] = useState<DialogoAberto | null>(null);
 
-  // O diálogo é aberto sem gatilho do Radix (vem do menu da linha), então o foco volta à mão: ao menu "…" da linha
-  // ou, se ela sumiu (ou o diálogo era de criar), ao "Novo usuário". Procurado só dentro da tela (ADR 0002).
+  // O diálogo vem do menu da linha, cujo gatilho some ao fechar: o foco volta ao "…" da linha ou, se ela sumiu (ou o
+  // diálogo era de criar), ao "Novo usuário". Procurado só dentro da tela (ADR 0002).
+  function focoAoFechar() {
+    const linha =
+      dialogo && dialogo.tipo !== 'novo'
+        ? secao.current?.querySelector<HTMLElement>(`[data-fc-acoes-usuario="${dialogo.usuario.id}"]`)
+        : null;
+    return linha ?? botaoNovo.current;
+  }
+
   function fechar() {
-    const anterior = dialogo;
     setDialogo(null);
-    setTimeout(() => {
-      const linha =
-        anterior && anterior.tipo !== 'novo'
-          ? secao.current?.querySelector<HTMLElement>(`[data-fc-acoes-usuario="${anterior.usuario.id}"]`)
-          : null;
-      (linha ?? botaoNovo.current)?.focus();
-    }, 0);
   }
 
   const usuarios = lista.data;
@@ -195,9 +195,9 @@ export function Usuarios() {
         </div>
       ) : null}
 
-      {dialogo?.tipo === 'novo' ? <DialogoUsuario aoFechar={fechar} /> : null}
-      {dialogo?.tipo === 'editar' ? <DialogoUsuario key={dialogo.usuario.id} usuario={dialogo.usuario} aoFechar={fechar} /> : null}
-      {dialogo?.tipo === 'link' ? <DialogoLinkRedefinicao key={dialogo.usuario.id} usuario={dialogo.usuario} aoFechar={fechar} /> : null}
+      {dialogo?.tipo === 'novo' ? <DialogoUsuario aoFechar={fechar} focoAoFechar={focoAoFechar} /> : null}
+      {dialogo?.tipo === 'editar' ? <DialogoUsuario key={dialogo.usuario.id} usuario={dialogo.usuario} aoFechar={fechar} focoAoFechar={focoAoFechar} /> : null}
+      {dialogo?.tipo === 'link' ? <DialogoLinkRedefinicao key={dialogo.usuario.id} usuario={dialogo.usuario} aoFechar={fechar} focoAoFechar={focoAoFechar} /> : null}
     </section>
   );
 }

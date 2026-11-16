@@ -1,4 +1,4 @@
-import { Aviso, Botao, Dialogo, FecharDialogo } from '../../design-system';
+import { Aviso, Botao, Dialogo, FecharDialogo, type DialogoProps } from '../../design-system';
 import { erroComCodigo, useRemoverDominio, type DominioAutorizado } from './consultas';
 import { mensagemErroRemocao } from './mensagens';
 
@@ -8,10 +8,12 @@ export interface DialogoRemoverDominioProps {
   dominio: DominioAutorizado;
   /** Chamado ao fechar (Cancelar, Esc, "Fechar" ou depois de remover). */
   aoFechar: () => void;
+  /** Elemento que recebe o foco ao fechar (ver `Dialogo`). */
+  focoAoFechar?: DialogoProps['focoAoFechar'];
 }
 
 /** Confirmação de remover um domínio autorizado. A ação perigosa fica em vermelho (estilos.md §7.7). */
-export function DialogoRemoverDominio({ dominio, aoFechar }: DialogoRemoverDominioProps) {
+export function DialogoRemoverDominio({ dominio, aoFechar, focoAoFechar }: DialogoRemoverDominioProps) {
   const remover = useRemoverDominio();
   const erro = remover.error;
   const motivoDesabilitado = erroComCodigo(erro, ['nao_encontrado']) ? MOTIVO_REMOCAO_NAO_ENCONTRADO : undefined;
@@ -19,6 +21,7 @@ export function DialogoRemoverDominio({ dominio, aoFechar }: DialogoRemoverDomin
   return (
     <Dialogo
       aberto
+      focoAoFechar={focoAoFechar}
       aoMudarAberto={(aberto) => {
         if (!aberto) aoFechar();
       }}
