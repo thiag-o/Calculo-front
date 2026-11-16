@@ -394,9 +394,13 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 - Aceite: testes que montam cada tela avulsa só com `apiUrl` (cookie) e com `token`, com tema e portais (diálogo) funcionando; `pnpm build` gera os exports; o `<FluxoCalculo>` continua passando nos testes atuais.
 
 **F39 · Correção da integração do épico 2: hospedeiro em 5274 e modo real com 2 workers**
-- dep: F21
+- dep: F21, B44
 - modelo: opus
-- arquivos: `playwright.config.ts`, `package.json`, `e2e/epico-2/`, `e2e/apoio/`
+- arquivos: `playwright.config.ts`, `package.json`, `e2e/epico-2/`, `e2e/apoio/`, `README.md`
+- Resposta D8 (sessão global):
+  - (1) o CORS da troca com `Authorization: Chave` é corrigido no back, na B44;
+  - (2) só no projeto `real`, o timeout de teste e de `expect` sobe para 60 s. No simulado, investigue por que a auditoria leva de 11 a 15 s sozinha: se houver espera fixa, debounce ou paginação desnecessária no teste, corrija. Nada de `test.slow()` genérico;
+  - o `README.md` passa a citar a porta 5274 e os 2 workers do modo real, no lugar de "paralelismo padrão".
 - Fazer: corrigir as falhas do teste de integração do CK2 (relatório em `../backend/.claude/orquestracao/backend/relatorios/integracao-epico-2.md`).
   - **Hospedeiro errado:** o teste de chave de API e incorporação usa a origem do casca (5173) como se fosse o hospedeiro. Para o back, 5173 é o casca, cujo CORS não aceita `Authorization`, e por isso o preflight dá 400. Comece reproduzindo a falha no modo real. Depois:
     - o `playwright.config.ts` passa a subir também a página de teste de incorporação em `http://localhost:5274` (`vite.incorporacao.config.ts`), como um segundo `webServer`, nos dois modos;
