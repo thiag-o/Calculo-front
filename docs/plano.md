@@ -338,7 +338,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 **F21 · Testes ponta a ponta do épico 2**
 - dep: F20
 - modelo: opus
-- arquivos: `e2e/epico-2/`
+- arquivos: `e2e/epico-2/`, `e2e/apoio/` (o `e2e/apoio/` pela resposta D7)
 - Fazer: os fluxos do épico 2 do plano global (usuário Configurador sem Administração, papel personalizado, link de redefinição de uso único, chave de API e incorporação, chave revogada, configuração de segurança, auditoria de acessos). O CORS de domínio não autorizado só roda no modo real.
 - Aceite: `pnpm e2e` passa.
 
