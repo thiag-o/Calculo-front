@@ -383,7 +383,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 **F38 · Componentes por tela funcionando sozinhos**
 - dep: F20, F28
 - modelo: opus
-- arquivos: `packages/react/src/modulo/`, `packages/react/src/index.ts`, `docs/incorporacao.md`, `apps/casca/teste-incorporacao.html`
+- arquivos: `packages/react/src/modulo/`, `packages/react/src/index.ts`, `docs/incorporacao.md`, `apps/casca/teste-incorporacao.html`, `apps/casca/src/teste-incorporacao.tsx`
 - Fazer: decisão da sessão global (opção A do problema relatado na F28). `<Inicio>`, `<Administracao>` e `<Auditoria>`, exportados pelo pacote, passam a funcionar fora do `<FluxoCalculo>`:
   - a montagem de raiz, API e cache (`RaizFluxo`, `ProvedorApi`, `QueryClient`) sai do `ModuloFluxo` para um provedor interno do `modulo/`, usado pelo `<FluxoCalculo>` e pelas versões avulsas das telas;
   - as versões avulsas ficam no `modulo/` e recebem `apiUrl`, `token?`, `tema?`, `onEvento?` e `onSessaoExpirada?`. A navegação é sempre em memória. Sem permissão para a tela, aparece o estado de "sem acesso" do `estilos.md`;
