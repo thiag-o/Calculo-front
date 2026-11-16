@@ -42,7 +42,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - `navegacao`:
     - `'url'`, no casca: as rotas internas sincronizadas com a URL, com `basename` fixo em `/` e sem prop (ADR 0017; decisão da sessão global no CK1: só vira prop quando um hospedeiro precisar montar o módulo fora da raiz);
     - `'memoria'`, padrão quando incorporado: não toca a URL do hospedeiro.
-- **Componentes por tela**, para quem quer só uma parte: épico 1 `<Inicio>`; épico 2 `<Administracao>` e `<Auditoria>`; épico 3 `<Catalogo>`.
+- **Componentes por tela**, para quem quer só uma parte: épico 1 `<Inicio>`; épico 2 `<Administracao>` e `<Auditoria>`; épico 3 `<Catalogo>`. Cada um funciona sozinho: recebe as mesmas props do `<FluxoCalculo>` (`apiUrl`, `token?`, `tema?`, `onEvento?`, `onSessaoExpirada?`), monta internamente a raiz, a API e o cache, e navega sempre em memória (decisão da sessão global no épico 2, tarefa F38).
 - **Tela de login e de redefinição de senha:** exportadas para o casca (`<Entrar>`, `<RedefinirSenha>`).
 - **Roteamento:** `react-router` (modo memória quando incorporado).
 - **Estado do servidor:** TanStack Query.
@@ -380,9 +380,22 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - os testes da F14 e da F16 continuam verdes sem o código antigo;
   - `pnpm lint`, `typecheck`, `test` e `build` verdes.
 
+**F38 · Componentes por tela funcionando sozinhos**
+- dep: F20, F28
+- modelo: opus
+- arquivos: `packages/react/src/modulo/`, `packages/react/src/index.ts`, `docs/incorporacao.md`, `apps/casca/teste-incorporacao.html`
+- Fazer: decisão da sessão global (opção A do problema relatado na F28). `<Inicio>`, `<Administracao>` e `<Auditoria>`, exportados pelo pacote, passam a funcionar fora do `<FluxoCalculo>`:
+  - a montagem de raiz, API e cache (`RaizFluxo`, `ProvedorApi`, `QueryClient`) sai do `ModuloFluxo` para um provedor interno do `modulo/`, usado pelo `<FluxoCalculo>` e pelas versões avulsas das telas;
+  - as versões avulsas ficam no `modulo/` e recebem `apiUrl`, `token?`, `tema?`, `onEvento?` e `onSessaoExpirada?`. A navegação é sempre em memória. Sem permissão para a tela, aparece o estado de "sem acesso" do `estilos.md`;
+  - o `src/index.ts` exporta as versões avulsas no lugar das telas cruas; os provedores continuam internos;
+  - o guia `docs/incorporacao.md` explica o uso avulso;
+  - a página de teste de incorporação ganha um exemplo com `<Administracao>` avulso;
+  - ADR registrando a decisão.
+- Aceite: testes que montam cada tela avulsa só com `apiUrl` (cookie) e com `token`, com tema e portais (diálogo) funcionando; `pnpm build` gera os exports; o `<FluxoCalculo>` continua passando nos testes atuais.
+
 **F22 · Portão do épico 2**
 - tipo: portao
-- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28, F37
+- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28, F37, F38
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 2.
 
