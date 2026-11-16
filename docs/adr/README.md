@@ -40,6 +40,8 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0018](0018-faixas-de-largura-medidas-no-modulo.md) | Faixas de largura medidas no módulo com ResizeObserver, não na janela | aceita, revisar no checkpoint | 2026-11-15 |
 | [0019](0019-encerramento-de-sessao-no-modulo.md) | Encerrar sessão: avisar o hospedeiro uma vez por token e limpar o cache depois que o layout sai (complementa 0015) | aceita, revisar no checkpoint | 2026-11-15 |
 | [0020](0020-chaves-de-cache-sob-administracao.md) | Chaves de cache da Administração sob `['administracao', …]`, invalidadas pelo prefixo | aceita, revisar no checkpoint | 2026-11-16 |
+| [0021](0021-segredo-mostrado-uma-vez-sem-cache.md) | Segredo mostrado uma vez: mutação com `gcTime: 0`, presa ao diálogo | aceita, revisar no checkpoint | 2026-11-16 |
+| [0022](0022-foco-de-volta-em-dialogo-aberto-por-menu.md) | Diálogo aberto por item de Menu: a tela devolve o foco pelo `data-*` do gatilho | aceita, revisar no checkpoint | 2026-11-16 |
 
 ## Pendentes (sem ADR ainda)
 
