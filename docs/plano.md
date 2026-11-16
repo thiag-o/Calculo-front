@@ -494,7 +494,7 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
 - Aceite: testes de criar, editar e remover; cada erro; o seletor de tipo oferece só as conversões aceitas.
 
 **F34 · Integração do épico 3: menu Catálogo, rotas e interface pública**
-- dep: F30, F32, F33
+- dep: F30, F32, F33, F40
 - modelo: sonnet
 - arquivos: `packages/react/src/catalogo/index.ts`, `packages/react/src/modulo/`, `packages/react/src/index.ts`
 - Fazer:
@@ -517,8 +517,20 @@ As decisões E3-1 a E3-14 e as permissões de cada rota estão no plano do back 
     - provar que a conexão com o `exemplo_escrita` é recusada.
 - Aceite: `pnpm e2e` passa.
 
+**F40 · Manutenção: abas no design system, títulos e estilos crus**
+- dep: F22
+- modelo: opus
+- arquivos: `packages/react/src/design-system/`, `packages/react/src/administracao/`, `packages/react/src/modulo/`, `packages/react/src/auditoria/`, `packages/react/src/inicio/`, `packages/react/src/sessao/`, `apps/casca/src/`
+- Fazer (pendências adiáveis do CK2, decididas pela sessão global):
+  - **componente `Abas` no design system** (Radix Tabs, estilo do `estilos.md`), no lugar das abas repetidas em `administracao/` e `modulo/`. O `<Catalogo>` do épico 3 vai usá-lo;
+  - **Administração uma vez só no casca:** o menu lateral mostra um item "Administração", e as áreas (Usuários, Papéis, Integração, Segurança) ficam só nas abas internas, como no incorporado. A ADR 0027 recebe uma atualização;
+  - **h1 em toda tela**, com a hierarquia de títulos coerente (o h2 da F19 vira subtítulo onde couber);
+  - **sem valores crus:** os px de layout de `acessos.css` e as cores e estilos inline de `apps/casca/src/teste-incorporacao.tsx` passam a usar tokens `--fc-*`;
+  - **confirmado como está:** o Admin sem menu de ações e o selo "Sensível" em âmbar (F15); datas absolutas e o "…" desabilitado com motivo na chave revogada (F16); rótulos e cores dos 13 tipos de evento (F18).
+- Aceite: testes do `Abas` (teclado, foco, permissões); as telas de Administração e Auditoria continuam passando; `pnpm lint`, `typecheck`, `test`, `build` e `e2e` verdes; nenhum `--fc-` declarado fora do `tokens.css` e nenhum px de layout cru nos arquivos citados.
+
 **F36 · Portão do épico 3**
 - tipo: portao
-- dep: F29, F30, F31, F32, F33, F34, F35
+- dep: F29, F30, F31, F32, F33, F34, F35, F40
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 3.
