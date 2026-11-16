@@ -394,7 +394,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 - Aceite: testes que montam cada tela avulsa só com `apiUrl` (cookie) e com `token`, com tema e portais (diálogo) funcionando; `pnpm build` gera os exports; o `<FluxoCalculo>` continua passando nos testes atuais.
 
 **F39 · Correção da integração do épico 2: hospedeiro em 5274 e modo real com 2 workers**
-- dep: F21, B44
+- dep: F21
 - modelo: opus
 - arquivos: `playwright.config.ts`, `package.json`, `e2e/epico-2/`, `e2e/apoio/`, `README.md`
 - Resposta D8 (sessão global):
@@ -408,7 +408,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - **Instabilidade, decisão da sessão global:** sozinha, a API atende 6 logins paralelos em menos de 1,5 s. Os timeouts vêm da máquina saturada (6 Chromes, o Vite dev e a API na mesma máquina). O `e2e:real` passa a rodar com `--workers=2` no próprio script do `package.json`, com um comentário do motivo. O simulado continua com o paralelismo padrão.
 - Aceite:
   - evidência da falha antes da correção (preflight 400 com `Origin` 5173) e do sucesso depois;
-  - `pnpm e2e:real` (o comando oficial, já com 2 workers) passa em 2 rodadas seguidas contra um banco recém-preparado;
+  - o `pnpm e2e:real` completo (comando oficial, já com 2 workers) fica para o teste de integração do CK2, que só roda depois da B44 do back. Na F39, basta rodar o modo real dos testes que não dependem da troca de chave;
   - `pnpm e2e` continua passando;
   - `pnpm lint` e `pnpm typecheck` verdes.
 
