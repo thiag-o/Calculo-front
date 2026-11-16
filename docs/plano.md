@@ -313,7 +313,8 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 **F19 · Módulo: menu por permissão, rotas e abas**
 - dep: F14, F15, F16, F18, F23
 - modelo: opus
-- arquivos: `packages/react/src/modulo/`, `packages/react/src/administracao/index.ts`
+- arquivos: `packages/react/src/modulo/`, `packages/react/src/administracao/index.ts`, `packages/react/src/administracao/Administracao.tsx`, `packages/react/src/administracao/administracao.css`, `packages/react/src/administracao/Administracao.test.tsx`
+- Resposta D6 (sessão global): no modo incorporado, as abas de topo são os mesmos itens do menu lateral (Início, Auditoria, Administração e, nos próximos épicos, Catálogo e os demais). A aba "Administração" mostra o `<Administracao>`, com sub-abas Usuários, Papéis, Integração e Segurança, cada uma com a sua permissão. Ela some quando o usuário não tem nenhuma delas. O mesmo `<Administracao>` é usado no casca e no incorporado.
 - Fazer:
   - o `administracao/index.ts` reexporta `usuarios`, `papeis`, `integracao` e `seguranca`, e a tela `<Administracao>` com as abas internas;
   - rotas e itens de Administração (Usuários, Papéis, Integração, Segurança) e de Auditoria, cada um com a sua permissão;
