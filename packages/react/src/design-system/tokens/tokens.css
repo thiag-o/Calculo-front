@@ -11,6 +11,10 @@
 :where(.fc-raiz) {
   color-scheme: light;
 
+  /* 3 Famílias tipográficas */
+  --fc-font-sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
+  --fc-font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, monospace;
+
   /* 2.1 Fundos */
   --fc-background-100: #ffffff;
   --fc-background-200: #fafafa;
@@ -64,6 +68,14 @@
   --fc-focus: var(--fc-blue-700);
   --fc-danger-bg: var(--fc-red-100);
   --fc-danger-text: var(--fc-red-900);
+
+  /* Controles de formulário e diálogos (estilos.md §4 e §7.1) */
+  --fc-primary-hover: #737373;
+  --fc-on-danger: #ffffff;
+  --fc-danger-hover: var(--fc-red-900);
+  --fc-shadow-menu: 0 0 0 1px var(--fc-border), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --fc-shadow-modal: 0 0 0 1px var(--fc-border), 0 16px 40px rgba(0, 0, 0, 0.12);
+  --fc-overlay: rgba(0, 0, 0, 0.32);
 }
 
 /* Escuro escolhido explicitamente. */
@@ -104,6 +116,12 @@
   --fc-cat-group: #f06292;
   --fc-cat-state: #9bc53d;
   --fc-cat-output: #a1a1a1;
+
+  --fc-primary-hover: var(--fc-gray-900);
+  --fc-danger-hover: #d93036;
+  --fc-shadow-menu: 0 0 0 1px var(--fc-border);
+  --fc-shadow-modal: 0 0 0 1px var(--fc-border);
+  --fc-overlay: rgba(0, 0, 0, 0.64);
 }
 
 /* Sem data-theme (tema "sistema"): segue o sistema operacional. Mesmos valores do bloco escuro acima. */
@@ -145,5 +163,11 @@
     --fc-cat-group: #f06292;
     --fc-cat-state: #9bc53d;
     --fc-cat-output: #a1a1a1;
+
+    --fc-primary-hover: var(--fc-gray-900);
+    --fc-danger-hover: #d93036;
+    --fc-shadow-menu: 0 0 0 1px var(--fc-border);
+    --fc-shadow-modal: 0 0 0 1px var(--fc-border);
+    --fc-overlay: rgba(0, 0, 0, 0.64);
   }
 }

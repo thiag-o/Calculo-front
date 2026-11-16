@@ -1,6 +1,6 @@
 /*
  * Menu suspenso (estilos.md §4, §5 e §7.7): background-100, raio 12px, sombra de menus (--fc-shadow-menu, declarado
- * em formulario/tokens-formulario.css), itens de 32px com raio 6px e hover --fc-hover; ação perigosa em vermelho.
+ * em tokens/tokens.css), itens de 32px com raio 6px e hover --fc-hover; ação perigosa em vermelho.
  * Só classes fc- e variáveis --fc-*; sem reset global (ADR 0002).
  */
 

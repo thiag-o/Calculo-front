@@ -4,7 +4,6 @@ import { Botao } from '../formulario';
 import { usePortalFluxo } from '../raiz';
 import { classesTexto } from '../tipografia';
 import { IconeFechar } from './icones';
-import './tokens-exibicao.css';
 import './dialogo.css';
 
 // Elementos que o Tab alcança (aproximação suficiente para decidir o foco inicial).

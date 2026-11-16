@@ -127,7 +127,7 @@
 }
 
 .fc-botao-perigo:hover {
-  background-color: var(--fc-red-900);
+  background-color: var(--fc-danger-hover);
 }
 
 /* Foco: anel azul de 2px afastado 2px (estilos.md §7.1 e §11). O secundário mantém a borda. */
@@ -207,37 +207,14 @@
   flex-shrink: 0;
 }
 
-/* Dica (tooltip) do botão: fundo gray-1000, texto background-100, 12px, raio 6px (estilos.md §7.7). */
-.fc-dica-botao {
-  box-sizing: border-box;
+/* Conteúdo da dica do botão: nome e motivo em coluna. O visual da dica vem de .fc-dica (exibicao/dica.css). */
+.fc-dica-botao-conteudo {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-width: 240px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background-color: var(--fc-gray-1000);
-  color: var(--fc-background-100);
-  font-family: var(--fc-font-sans);
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 400;
-  overflow-wrap: break-word;
-  animation: fc-botao-surgir 150ms ease-out;
 }
 
 .fc-dica-botao-nome {
   font-weight: 500;
 }
 
-@keyframes fc-botao-surgir {
-  from {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fc-dica-botao {
-    animation: none;
-  }
-}

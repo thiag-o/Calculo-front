@@ -20,7 +20,7 @@ const folhasDaExibicao = readdirSync(pastaExibicao)
   .filter((arquivo) => arquivo.endsWith('.css'))
   .map((arquivo) => ({ arquivo, css: ler(join(pastaExibicao, arquivo)) }));
 
-const folhasDeTokens = ['tokens/tokens.css', 'tipografia/tipografia.css', 'formulario/tokens-formulario.css'].map((arquivo) =>
+const folhasDeTokens = ['tokens/tokens.css', 'tipografia/tipografia.css'].map((arquivo) =>
   ler(join(pastaDesignSystem, arquivo)),
 );
 
@@ -71,7 +71,6 @@ describe('CSS dos componentes de exibição', () => {
       'marcadores.css',
       'menu.css',
       'tabela.css',
-      'tokens-exibicao.css',
     ]);
   });
 

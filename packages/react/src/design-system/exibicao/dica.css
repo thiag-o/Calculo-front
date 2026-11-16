@@ -1,6 +1,6 @@
 /*
  * Dica (tooltip, estilos.md §7.7): fundo gray-1000, texto background-100, 12px, raio 6px.
- * Mesmo visual da dica do Botao (formulario/botao.css, .fc-dica-botao), sem sombra: o estilos.md põe a sombra de
+ * Mesmo visual da dica do Botao (formulario/DicaBotao.tsx), sem sombra: o estilos.md põe a sombra de
  * menus em menus, popovers e barra de ferramentas (§4), não na dica.
  * Só classes fc- e variáveis --fc-*; sem reset global (ADR 0002).
  */

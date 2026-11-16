@@ -61,7 +61,6 @@ describe('CSS dos controles de formulário', () => {
       'caixa-selecao.css',
       'campo.css',
       'selecao.css',
-      'tokens-formulario.css',
     ]);
   });
 

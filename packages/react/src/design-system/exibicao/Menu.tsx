@@ -1,7 +1,6 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useId, type ReactElement, type ReactNode } from 'react';
 import { usePortalFluxo } from '../raiz';
-import '../formulario/tokens-formulario.css';
 import './menu.css';
 
 export interface AcaoMenu {

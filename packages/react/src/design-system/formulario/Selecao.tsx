@@ -4,7 +4,6 @@ import { usePortalFluxo } from '../raiz';
 import { MensagensCampo, juntarClasses, useIdsCampo, type PropsCampo } from './estruturaCampo';
 import { IconeMarca, IconeSetaBaixo } from './icones';
 import { Rotulo } from './Rotulo';
-import './tokens-formulario.css';
 import './campo.css';
 import './selecao.css';
 

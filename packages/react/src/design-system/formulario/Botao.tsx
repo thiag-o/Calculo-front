@@ -2,7 +2,6 @@ import { forwardRef, useId, type ButtonHTMLAttributes, type MouseEvent, type Rea
 import { classesTexto } from '../tipografia';
 import { DicaBotao } from './DicaBotao';
 import { IconeCarregando, IconeInfo } from './icones';
-import './tokens-formulario.css';
 import './botao.css';
 
 /** Variantes do estilos.md §7.1. Uma ação principal por área. */
