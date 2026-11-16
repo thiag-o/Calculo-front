@@ -124,6 +124,8 @@ export interface paths {
         /**
          * Lista os papéis do tenant
          * @description Todos os papéis do tenant atual, inclusive o Admin (`fixo: true`), sem paginação.
+         *     Aceita `papeis.gerenciar` **ou** `usuarios.gerenciar` (requisitos alternativos),
+         *     porque a tela de usuários lista os papéis para atribuí-los.
          */
         get: operations["listar_papeis"];
         put?: never;
@@ -284,6 +286,35 @@ export interface paths {
          *     sem `Content-Type` ou com outro tipo, `415 tipo_conteudo_invalido`.
          */
         post: operations["redefinir_senha"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/redefinicao/verificacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Consulta o link de redefinição antes de trocar a senha
+         * @description Rota pública: a tela de redefinição consulta o link para mostrar a senha
+         *     mínima, que varia por tenant. Não consome o link.
+         *
+         *     O token vai no corpo, e não no caminho, para não aparecer em log de acesso.
+         *     `senha_minima` é a maior senha mínima entre os tenants do usuário.
+         *     Token inexistente, já usado ou vencido: `410 link_invalido`.
+         *
+         *     Como `POST /v1/redefinicao`, é isenta do CSRF e só aceita
+         *     `Content-Type: application/json`: sem `Content-Type` ou com outro tipo,
+         *     `415 tipo_conteudo_invalido`.
+         */
+        post: operations["verificar_link_redefinicao"];
         delete?: never;
         options?: never;
         head?: never;
@@ -677,6 +708,17 @@ export interface components {
         NovaSenha: {
             token: string;
             nova_senha: string;
+        };
+        /** @description Corpo da consulta do link de redefinição. */
+        VerificacaoLink: {
+            token: string;
+        };
+        /** @description O que a tela de redefinição precisa saber do link. */
+        LinkVerificado: {
+            /** @description A maior senha mínima (em caracteres) entre os tenants do usuário. */
+            senha_minima: number;
+            /** Format: date-time */
+            expira_em: string;
         };
         /** @description Uma chave de API, sem a chave inteira. */
         ChaveApi: {
@@ -1557,6 +1599,41 @@ export interface operations {
              * @description - `dados_invalidos`: o corpo não segue o esquema;
              *     - `senha_invalida`: a nova senha não cumpre a política (`campos.nova_senha`).
              */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                };
+            };
+        };
+    };
+    verificar_link_redefinicao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificacaoLink"];
+            };
+        };
+        responses: {
+            /** @description O link vale; nada foi consumido. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkVerificado"];
+                };
+            };
+            410: components["responses"]["LinkInvalido"];
+            415: components["responses"]["TipoConteudoInvalido"];
+            /** @description `dados_invalidos`: o corpo não segue o esquema. */
             422: {
                 headers: {
                     [name: string]: unknown;

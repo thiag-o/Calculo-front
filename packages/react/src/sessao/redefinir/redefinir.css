@@ -1,0 +1,72 @@
+/*
+ * Tela de nova senha (estilos.md §4, §7.1, §7.2, §7.6 e §14), com a mesma forma da tela de login. Só classes fc- e
+ * variáveis --fc-*; sem reset global e sem medida da janela inteira (ADR 0002): a tela ocupa a altura que o
+ * hospedeiro der à raiz.
+ */
+
+.fc-redefinir-raiz {
+  min-height: 100%;
+}
+
+.fc-redefinir {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100%;
+  padding: 56px 16px;
+}
+
+.fc-redefinir-caixa {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 360px;
+  padding: 24px;
+}
+
+.fc-redefinir-titulo,
+.fc-redefinir-subtitulo {
+  margin: 0;
+}
+
+.fc-redefinir-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 8px 0 0;
+}
+
+.fc-redefinir-enviar {
+  width: 100%;
+}
+
+/* Recebe o foco só por programa, depois do envio; o anel é o mesmo dos botões (estilos.md §7.1 e §11). */
+.fc-redefinir-resultado {
+  border-radius: 6px;
+}
+
+.fc-redefinir-resultado:focus {
+  outline: none;
+}
+
+.fc-redefinir-resultado:focus-visible {
+  box-shadow: 0 0 0 2px var(--fc-background-100), 0 0 0 4px var(--fc-focus);
+}
+
+.fc-redefinir-esqueleto-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fc-redefinir-esqueleto-entrada {
+  height: 32px;
+  border-radius: 6px;
+}
+
+.fc-redefinir-esqueleto-botao {
+  height: 40px;
+  border-radius: 6px;
+}

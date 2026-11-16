@@ -1,28 +1,11 @@
-import { notifyManager, useMutation, useQueryClient, type QueryClient, type UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { dadosOuErro, ErroApi, useClienteApi, type Esquemas } from '../api';
-import { CHAVE_SESSAO, type Sessao } from './useSessao';
+import { CHAVE_SESSAO, trocarSessaoNoCache, type Sessao } from './cacheSessao';
 
 /** E-mail e senha do login (gerado do contrato). */
 export type Credenciais = Esquemas['Credenciais'];
 
 const SEM_ACESSO_AO_TENANT = 'sem_acesso_ao_tenant';
-
-/**
- * A sessão passou a ser de outra identidade (login) ou de outro tenant (troca). Nada do cache anterior pode
- * aparecer na tela nem voltar de uma requisição atrasada:
- * - cancela as consultas em andamento (a resposta delas seria da identidade ou do tenant anterior);
- * - grava a sessão nova, que a API já devolveu;
- * - reinicia as demais consultas: os dados somem e as consultas montadas buscam de novo, já no tenant novo.
- */
-async function trocarSessaoNoCache(queryClient: QueryClient, sessao: Sessao): Promise<void> {
-  await queryClient.cancelQueries();
-  // Num lote só: a tela nunca renderiza a sessão nova ao lado dos dados antigos.
-  notifyManager.batch(() => {
-    queryClient.setQueryData(CHAVE_SESSAO, sessao);
-    // Sem await: a mutação termina já com a sessão nova; as consultas reiniciadas buscam em paralelo.
-    void queryClient.resetQueries({ predicate: (consulta) => consulta.queryKey[0] !== CHAVE_SESSAO[0] });
-  });
-}
 
 /**
  * Login com e-mail e senha (`POST /v1/sessao`, modo cookie). No sucesso, a sessão devolvida vira a sessão atual

@@ -43,6 +43,8 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0021](0021-segredo-mostrado-uma-vez-sem-cache.md) | Segredo mostrado uma vez: mutação com `gcTime: 0`, presa ao diálogo | aceita, revisar no checkpoint | 2026-11-16 |
 | [0022](0022-foco-de-volta-em-dialogo-aberto-por-menu.md) | Diálogo aberto por item de Menu: a tela devolve o foco pelo `data-*` do gatilho | aceita, revisar no checkpoint | 2026-11-16 |
 | [0023](0023-parametros-de-seguranca-gravam-resposta-sem-invalidar-prefixo.md) | Parâmetros de segurança: salvar grava a resposta do PUT e não invalida o prefixo (complementa 0020) | aceita, revisar no checkpoint | 2026-11-16 |
+| [0024](0024-troca-de-token-confere-a-sessao.md) | Troca de token no modo token: conferir a sessão e descartar o cache se a identidade mudar (complementa 0019) | aceita, revisar no checkpoint | 2026-11-16 |
+| [0025](0025-post-sem-efeito-como-consulta.md) | POST que só lê ou verifica vira `useQuery` com `staleTime: Infinity` | aceita, revisar no checkpoint | 2026-11-16 |
 
 ## Pendentes (sem ADR ainda)
 

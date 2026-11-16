@@ -13,3 +13,7 @@ export type { Credenciais } from './mutacoes';
 // Tela de login do app casca.
 export { Entrar } from './entrar/Entrar';
 export type { EntrarProps } from './entrar/Entrar';
+
+// Tela pública de nova senha pelo link de redefinição.
+export { RedefinirSenha } from './redefinir/RedefinirSenha';
+export type { RedefinirSenhaProps } from './redefinir/RedefinirSenha';
