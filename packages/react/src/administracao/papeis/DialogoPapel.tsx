@@ -100,7 +100,7 @@ export function DialogoPapel({ papel, aoFechar }: DialogoPapelProps) {
             <Botao>Cancelar</Botao>
           </FecharDialogo>
           <Botao type="submit" form={idFormulario} variante="principal" carregando={mutacao.isPending} motivoDesabilitado={motivoDesabilitado}>
-            {edicao ? 'Salvar alterações' : 'Criar papel'}
+            Salvar
           </Botao>
         </>
       }

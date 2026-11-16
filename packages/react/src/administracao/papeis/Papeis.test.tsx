@@ -185,7 +185,7 @@ describe('Papéis: criar', () => {
     await usuario.click(within(catalogo).getByRole('checkbox', { name: 'Ver auditoria' }));
     await usuario.click(within(catalogo).getByRole('checkbox', { name: 'Aprovar versões Sensível' }));
     expect(within(catalogo).getByText('2 de 9 marcadas')).toBeInTheDocument();
-    await usuario.click(within(dialogo).getByRole('button', { name: 'Criar papel' }));
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     const [criacao] = api.chamadasDe('POST /v1/papeis');
@@ -204,7 +204,7 @@ describe('Papéis: criar', () => {
     const dialogo = await screen.findByRole('dialog', { name: 'Novo papel' });
     await within(dialogo).findByRole('group', { name: 'Administração' });
     await usuario.type(within(dialogo).getByRole('textbox', { name: 'Nome' }), '   ');
-    await usuario.click(within(dialogo).getByRole('button', { name: 'Criar papel' }));
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(dialogo).findByRole('textbox', { name: 'Nome' })).toHaveAccessibleDescription('Informe o nome do papel');
     expect(api.chamadasDe('POST /v1/papeis')).toHaveLength(0);
@@ -220,7 +220,7 @@ describe('Papéis: criar', () => {
     await usuario.click(screen.getByRole('button', { name: 'Novo papel' }));
     const dialogo = await screen.findByRole('dialog', { name: 'Novo papel' });
     expect(within(dialogo).getByText('Carregando o catálogo de permissões')).toBeInTheDocument();
-    const salvar = within(dialogo).getByRole('button', { name: 'Criar papel' });
+    const salvar = within(dialogo).getByRole('button', { name: 'Salvar' });
     expect(salvar).toHaveAttribute('aria-disabled', 'true');
     expect(salvar).toHaveAccessibleDescription(MOTIVO_CATALOGO_CARREGANDO);
 
@@ -230,7 +230,7 @@ describe('Papéis: criar', () => {
 
     pendente.liberar();
     await within(dialogo).findByRole('group', { name: 'Dados' });
-    expect(within(dialogo).getByRole('button', { name: 'Criar papel' })).not.toHaveAttribute('aria-disabled');
+    expect(within(dialogo).getByRole('button', { name: 'Salvar' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('mostra o erro do catálogo, com "Tentar de novo", e não deixa salvar', async () => {
@@ -243,11 +243,11 @@ describe('Papéis: criar', () => {
     const dialogo = await screen.findByRole('dialog', { name: 'Novo papel' });
     const alerta = await within(dialogo).findByRole('alert');
     expect(alerta).toHaveTextContent('Não foi possível carregar o catálogo de permissões');
-    expect(within(dialogo).getByRole('button', { name: 'Criar papel' })).toHaveAccessibleDescription(MOTIVO_CATALOGO_COM_ERRO);
+    expect(within(dialogo).getByRole('button', { name: 'Salvar' })).toHaveAccessibleDescription(MOTIVO_CATALOGO_COM_ERRO);
 
     await usuario.click(within(dialogo).getByRole('button', { name: 'Tentar de novo' }));
     expect(await within(dialogo).findByRole('group', { name: 'Workflows' })).toBeInTheDocument();
-    expect(within(dialogo).getByRole('button', { name: 'Criar papel' })).not.toHaveAttribute('aria-disabled');
+    expect(within(dialogo).getByRole('button', { name: 'Salvar' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('papel_existente: mostra o erro no nome e mantém o diálogo aberto', async () => {
@@ -261,7 +261,7 @@ describe('Papéis: criar', () => {
     const dialogo = await screen.findByRole('dialog', { name: 'Novo papel' });
     await within(dialogo).findByRole('group', { name: 'Dados' });
     await usuario.type(within(dialogo).getByRole('textbox', { name: 'Nome' }), 'configurador');
-    await usuario.click(within(dialogo).getByRole('button', { name: 'Criar papel' }));
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() =>
       expect(within(dialogo).getByRole('textbox', { name: 'Nome' })).toHaveAccessibleDescription(MENSAGEM_PAPEL_EXISTENTE),
@@ -282,7 +282,7 @@ describe('Papéis: criar', () => {
     const catalogo = await within(dialogo).findByRole('group', { name: 'Permissões' });
     await usuario.type(within(dialogo).getByRole('textbox', { name: 'Nome' }), 'Leitura');
     await usuario.click(within(catalogo).getByRole('checkbox', { name: 'Ver workflows' }));
-    await usuario.click(within(dialogo).getByRole('button', { name: 'Criar papel' }));
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(catalogo).toHaveAccessibleDescription(/Permissão desconhecida\./));
     expect(within(dialogo).getByRole('alert')).toHaveTextContent('Confira os campos destacados e tente de novo.');
@@ -316,7 +316,7 @@ describe('Papéis: editar', () => {
     await usuario.type(nome, 'Configurador sênior');
     await usuario.click(within(catalogo).getByRole('checkbox', { name: 'Editar workflows' }));
     await usuario.click(within(catalogo).getByRole('checkbox', { name: 'Aprovar versões Sensível' }));
-    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar alterações' }));
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     const [alteracao] = api.chamadasDe(`PUT /v1/papeis/${PAPEL_CONFIGURADOR.id}`);
@@ -336,7 +336,7 @@ describe('Papéis: editar', () => {
     await usuario.click(within(menu).getByRole('menuitem', { name: 'Editar papel' }));
     const dialogo = await screen.findByRole('dialog', { name: 'Editar papel' });
     await within(dialogo).findByRole('group', { name: 'Dados' });
-    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar alterações' }));
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(dialogo).findByRole('alert')).toHaveTextContent(MENSAGEM_PAPEL_NAO_ENCONTRADO);
     await waitFor(() => expect(api.chamadasDe('GET /v1/papeis')).toHaveLength(2));
