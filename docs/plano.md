@@ -393,9 +393,24 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - ADR registrando a decisão.
 - Aceite: testes que montam cada tela avulsa só com `apiUrl` (cookie) e com `token`, com tema e portais (diálogo) funcionando; `pnpm build` gera os exports; o `<FluxoCalculo>` continua passando nos testes atuais.
 
+**F39 · Correção da integração do épico 2: hospedeiro em 5274 e modo real com 2 workers**
+- dep: F21
+- modelo: opus
+- arquivos: `playwright.config.ts`, `package.json`, `e2e/epico-2/`, `e2e/apoio/`
+- Fazer: corrigir as falhas do teste de integração do CK2 (relatório em `../backend/.claude/orquestracao/backend/relatorios/integracao-epico-2.md`).
+  - **Hospedeiro errado:** o teste de chave de API e incorporação usa a origem do casca (5173) como se fosse o hospedeiro. Para o back, 5173 é o casca, cujo CORS não aceita `Authorization`, e por isso o preflight dá 400. Comece reproduzindo a falha no modo real. Depois:
+    - o `playwright.config.ts` passa a subir também a página de teste de incorporação em `http://localhost:5274` (`vite.incorporacao.config.ts`), como um segundo `webServer`, nos dois modos;
+    - o hospedeiro do teste passa a ser 5274, a origem que o `preparar-local` cadastra; no simulado, a fixture faz o mesmo.
+  - **Instabilidade, decisão da sessão global:** sozinha, a API atende 6 logins paralelos em menos de 1,5 s. Os timeouts vêm da máquina saturada (6 Chromes, o Vite dev e a API na mesma máquina). O `e2e:real` passa a rodar com `--workers=2` no próprio script do `package.json`, com um comentário do motivo. O simulado continua com o paralelismo padrão.
+- Aceite:
+  - evidência da falha antes da correção (preflight 400 com `Origin` 5173) e do sucesso depois;
+  - `pnpm e2e:real` (o comando oficial, já com 2 workers) passa em 2 rodadas seguidas contra um banco recém-preparado;
+  - `pnpm e2e` continua passando;
+  - `pnpm lint` e `pnpm typecheck` verdes.
+
 **F22 · Portão do épico 2**
 - tipo: portao
-- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28, F37, F38
+- dep: F13, F14, F15, F16, F17, F18, F19, F20, F21, F23, F27, F28, F37, F38, F39
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 2.
 
