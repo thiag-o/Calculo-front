@@ -1,16 +1,12 @@
-import { QueryClientProvider } from '@tanstack/react-query';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import { criarQueryClient, ProvedorApi } from '../api';
-import { RaizFluxo, type TemaFluxo } from '../design-system';
+import type { TemaFluxo } from '../design-system';
 import { useSessao, type Sessao } from '../sessao';
 import { LayoutCasca } from './casca/LayoutCasca';
-import { ContextoEncerrarSessao } from './encerramento';
-import { CarregandoModulo, ErroModulo, SemTelas, SessaoEncerrada } from './EstadosModulo';
+import { CarregandoModulo, ErroModulo, SemTelas } from './EstadosModulo';
 import { LayoutIncorporado } from './incorporado/LayoutIncorporado';
+import { ProvedorModulo } from './ProvedorModulo';
 import { Roteador, type NavegacaoFluxo } from './roteador/Roteador';
 import { agruparPorSecao, telaInicial, TELAS, telasPermitidas, type DefinicaoTela, type TelaFluxo } from './telas';
-import './modulo.css';
 
 /**
  * Eventos que o módulo avisa ao hospedeiro (design.md §3: execução concluída, versão publicada…), só para informar.
@@ -56,59 +52,17 @@ export interface ModuloFluxoProps extends Omit<FluxoCalculoProps, 'tela'> {
   tela?: string;
 }
 
-/** Encerramento da sessão para um token: vale até o hospedeiro passar outro token. */
-interface Encerramento {
-  token: string | undefined;
-}
-
+/**
+ * O módulo com as telas dadas: o provedor interno (raiz, API, cache e encerramento da sessão) e, dentro dele, o
+ * roteador e o layout do modo (casca ou incorporado).
+ */
 export function ModuloFluxo({ apiUrl, token, tela, tema, navegacao, onSessaoExpirada, telas }: ModuloFluxoProps) {
-  const [queryClient] = useState(criarQueryClient);
   const incorporado = token !== undefined;
   const modoNavegacao: NavegacaoFluxo = navegacao ?? (incorporado ? 'memoria' : 'url');
-
-  const [encerramento, setEncerramento] = useState<Encerramento | null>(null);
-  const encerrada = encerramento !== null && encerramento.token === token;
-
-  // Valores mais recentes, sem recriar o `encerrar` (e a inscrição no cliente) a cada renderização.
-  const tokenAtual = useRef(token);
-  const avisarHospedeiro = useRef(onSessaoExpirada);
-  const ultimoEncerramento = useRef<Encerramento | null>(null);
-  useLayoutEffect(() => {
-    tokenAtual.current = token;
-    avisarHospedeiro.current = onSessaoExpirada;
-  }, [token, onSessaoExpirada]);
-
-  const encerrar = useCallback(() => {
-    const atual = tokenAtual.current;
-    // Várias consultas podem receber o 401 juntas: o hospedeiro é avisado uma vez por token.
-    if (ultimoEncerramento.current !== null && ultimoEncerramento.current.token === atual) return;
-    ultimoEncerramento.current = { token: atual };
-    setEncerramento({ token: atual });
-    avisarHospedeiro.current?.();
-  }, []);
-
-  // Sem sessão, nada do usuário anterior fica no cache (ADR 0008 e 0015). Roda depois que o layout saiu da tela,
-  // para nenhuma consulta montada buscar de novo.
-  useEffect(() => {
-    if (!encerrada) return;
-    void queryClient.cancelQueries();
-    queryClient.clear();
-  }, [encerrada, queryClient]);
-
   return (
-    <RaizFluxo tema={tema} className="fc-modulo-raiz">
-      <ProvedorApi apiUrl={apiUrl} token={token} onSessaoExpirada={encerrar}>
-        <QueryClientProvider client={queryClient}>
-          <ContextoEncerrarSessao.Provider value={encerrar}>
-            {encerrada ? (
-              <SessaoEncerrada />
-            ) : (
-              <ConteudoModulo incorporado={incorporado} navegacao={modoNavegacao} tela={tela} telas={telas} />
-            )}
-          </ContextoEncerrarSessao.Provider>
-        </QueryClientProvider>
-      </ProvedorApi>
-    </RaizFluxo>
+    <ProvedorModulo apiUrl={apiUrl} token={token} tema={tema} onSessaoExpirada={onSessaoExpirada}>
+      <ConteudoModulo incorporado={incorporado} navegacao={modoNavegacao} tela={tela} telas={telas} />
+    </ProvedorModulo>
   );
 }
 

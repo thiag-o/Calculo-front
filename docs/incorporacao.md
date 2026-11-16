@@ -65,7 +65,41 @@ A aba Administração tem sub-abas, cada uma com a sua permissão, e some se o u
 
 ### Componentes por tela
 
-O pacote também exporta `<Inicio>`, `<Auditoria>` e `<Administracao>` (props `aba?` e `aoTrocarAba?`). Eles são as telas que o módulo monta por dentro. `<Auditoria>` e `<Administracao>` dependem do cliente da API, do cache e da raiz do módulo, que só o `<FluxoCalculo>` monta. Por isso, hoje, a forma de mostrar só uma parte é o `<FluxoCalculo tela="auditoria">` (ou outra `tela`), não o componente solto.
+Para mostrar só uma parte do produto, sem as abas do módulo, o pacote exporta `<Inicio>`, `<Auditoria>` e `<Administracao>`. Cada um funciona sozinho, fora do `<FluxoCalculo>`: monta a própria raiz (tokens, tema e portais), o cliente da API e o cache.
+
+```tsx
+import { Administracao } from '@fluxo/react';
+import '@fluxo/react/estilos.css';
+
+export function ConfiguracoesDoFluxo({ token, aoExpirar }: { token: string; aoExpirar: () => void }) {
+  return <Administracao apiUrl="https://api.exemplo.com.br" token={token} tema="sistema" onSessaoExpirada={aoExpirar} />;
+}
+```
+
+Props, iguais às do `<FluxoCalculo>` (tipos `InicioProps`, `AuditoriaProps`, `AdministracaoProps` e `TelaAvulsaProps`):
+
+| Prop | Tipo | O que faz |
+|---|---|---|
+| `apiUrl` | `string` (obrigatória) | Endereço da API, **sem** o `/v1`. |
+| `token` | `string` | Com ele, `Authorization: Bearer` (seção 3). Sem ele, o cookie de sessão. |
+| `tema` | `'claro' \| 'escuro' \| 'sistema'` | Padrão `'sistema'` (seção 5). |
+| `onEvento` | `(evento: EventoFluxo) => void` | Como no `<FluxoCalculo>`; nenhum evento hoje. |
+| `onSessaoExpirada` | `() => void` | Como no `<FluxoCalculo>`: uma vez por token, depois de `401 sem_sessao`. |
+
+Não há `tela` nem `navegacao`:
+
+- **A navegação é sempre em memória.** As sub-abas da Administração trocam sem mexer na URL nem no histórico do hospedeiro. Se o hospedeiro usa `react-router`, o componente pode ficar dentro de uma rota dele sem interferir no roteador.
+- **Sem permissão para a tela**, aparece o aviso "Você não tem acesso à Auditoria" (ou "à Administração"), com o pedido para falar com o administrador do cliente, e nada da tela é buscado na API.
+
+| Componente | Permissão |
+|---|---|
+| `<Inicio>` | nenhuma |
+| `<Auditoria>` | `auditoria.ver` |
+| `<Administracao>` | pelo menos uma de `usuarios.gerenciar`, `papeis.gerenciar`, `integracao.gerenciar` e `seguranca.gerenciar`; só as sub-abas permitidas aparecem |
+
+Enquanto a sessão carrega, a tela mostra o esqueleto; se a sessão não abre (por exemplo `403 origem_nao_autorizada`), mostra o motivo e **Tentar de novo**; depois de `401 sem_sessao`, o aviso de sessão encerrada.
+
+Cada componente é independente: dois na mesma página têm cada um a sua raiz, o seu tema e o seu cache, e cada um confere a sessão (`GET /v1/sessao`). Para várias telas com cache e sessão comuns, use o `<FluxoCalculo>`. Os diálogos e menus abrem no portal da raiz de cada componente; valem para eles as regras da seção 6.
 
 `<Entrar>` e `<RedefinirSenha>` (props `apiUrl`, `tema?`; a segunda também `token?` e `onSalvar?`) são telas públicas do app casca e não servem à incorporação.
 
@@ -159,7 +193,7 @@ O repositório traz uma página que faz o papel do backend do hospedeiro, só pa
 pnpm --filter casca exec vite --config vite.incorporacao.config.ts
 ```
 
-Ela sobe em `http://localhost:5274`, que precisa estar nos domínios autorizados do tenant. Você informa a chave de API, o e-mail, o nome e os papéis; ela troca a chave por um token e monta `<FluxoCalculo token navegacao="memoria">`.
+Ela sobe em `http://localhost:5274`, que precisa estar nos domínios autorizados do tenant. Você informa a chave de API, o e-mail, o nome e os papéis e escolhe o que montar; ela troca a chave por um token e monta `<FluxoCalculo token navegacao="memoria">` ou só a `<Administracao token>` avulsa.
 
 ## 4. Erros que o módulo mostra
 

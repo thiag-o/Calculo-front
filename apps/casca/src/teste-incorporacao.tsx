@@ -1,6 +1,7 @@
 // Página de teste de incorporação (só uso local; não entra no build de produção).
-// Faz o papel do backend de um hospedeiro: troca a chave de API por um token e monta <FluxoCalculo token>.
-import { FluxoCalculo } from '@fluxo/react';
+// Faz o papel do backend de um hospedeiro: troca a chave de API por um token e monta <FluxoCalculo token> ou, para
+// testar o uso avulso, só a tela <Administracao token> (raiz, API e cache próprios; navegação em memória).
+import { Administracao, FluxoCalculo } from '@fluxo/react';
 import '@fluxo/react/estilos.css';
 import { StrictMode, useState, type FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -32,8 +33,12 @@ async function trocarChave(chave: string, corpo: object): Promise<Estado> {
 
 const CAMPO = { display: 'block', width: '100%' } as const;
 
+/** O que a página monta com o token: o módulo inteiro ou só a tela Administração, avulsa. */
+type Montagem = 'modulo' | 'administracao';
+
 function Pagina() {
   const [estado, setEstado] = useState<Estado>({ fase: 'inicio' });
+  const [montagem, setMontagem] = useState<Montagem>('modulo');
   const [chave, setChave] = useState('');
   const [email, setEmail] = useState('teste@hospedeiro.local');
   const [nome, setNome] = useState('Pessoa de Teste');
@@ -86,19 +91,29 @@ function Pagina() {
           Papéis (nomes, separados por vírgula)
           <input value={papeis} onChange={(e) => setPapeis(e.target.value)} style={CAMPO} />
         </label>
+        <label>
+          O que montar
+          <select value={montagem} onChange={(e) => setMontagem(e.target.value as Montagem)} style={CAMPO}>
+            <option value="modulo">Módulo inteiro (&lt;FluxoCalculo&gt;)</option>
+            <option value="administracao">Só a Administração, avulsa (&lt;Administracao&gt;)</option>
+          </select>
+        </label>
         <button type="submit" disabled={trocando || chave.trim() === ''}>
-          {trocando ? 'Trocando…' : 'Obter token e montar o módulo'}
+          {trocando ? 'Trocando…' : 'Obter token e montar'}
         </button>
         {estado.fase === 'erro' && <p role="alert">{estado.mensagem}</p>}
       </form>
-      {estado.fase === 'pronto' && (
-        <FluxoCalculo
-          apiUrl={apiUrl}
-          token={estado.token}
-          navegacao="memoria"
-          onSessaoExpirada={() => setEstado({ fase: 'inicio' })}
-        />
-      )}
+      {estado.fase === 'pronto' &&
+        (montagem === 'administracao' ? (
+          <Administracao apiUrl={apiUrl} token={estado.token} onSessaoExpirada={() => setEstado({ fase: 'inicio' })} />
+        ) : (
+          <FluxoCalculo
+            apiUrl={apiUrl}
+            token={estado.token}
+            navegacao="memoria"
+            onSessaoExpirada={() => setEstado({ fase: 'inicio' })}
+          />
+        ))}
     </main>
   );
 }

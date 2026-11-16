@@ -1,6 +1,6 @@
 # 0027. Telas de abas controláveis pela rota e seção do menu como uma aba no incorporado
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0028](0028-telas-avulsas-com-provedor-interno.md): na interface pública, `aba?`/`aoTrocarAba?` ficam só na tela crua interna)
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F19), a partir da resposta D6 do dono do produto
 - **Relacionadas:** [0003](0003-codigo-por-verticais.md), [0006](0006-roteamento-interno-e-configuracao-do-modulo.md) (complementa)
