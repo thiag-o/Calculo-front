@@ -69,7 +69,7 @@ test.describe('usuário Configurador e link de redefinição', () => {
 
       const navigation = mainNavigation(otherPage);
       await expect(navigation.getByRole('link', { name: 'Início', exact: true })).toBeVisible();
-      await expect(navigation.getByRole('group', { name: 'Administração' })).toHaveCount(0);
+      await expect(navigation.getByRole('link', { name: 'Administração', exact: true })).toHaveCount(0);
       for (const area of ADMIN_AREAS) {
         await expect(navigation.getByRole('link', { name: area, exact: true })).toHaveCount(0);
       }

@@ -3,18 +3,21 @@ import { useNavigate } from 'react-router';
 import { Admin, ADMIN_TAB_PERMISSIONS, type AdminTab } from '../admin';
 import { Audit } from '../audit';
 import { Home } from '../home';
-import { AuditIcon, HomeIcon, IntegrationIcon, RolesIcon, SecurityIcon, UsersIcon } from './icons';
+import { AdminIcon, AuditIcon, HomeIcon } from './icons';
 
 /** Sidebar sections (estilos.md §9). Screens without a section stay at the top of the menu. */
 export type MenuSection = 'admin';
 
 /**
- * Each section:
- * - `label`: in the shell, above its items (tertiary `label-12`); in embedded mode, the name of its tab;
- * - `path`: route that opens the section's first allowed screen (the embedded mode tab points to it).
+ * Each section is a single item of the sidebar (shell) and a single tab (embedded mode); its screens switch through the
+ * screen's own internal tabs (ADR 0027):
+ * - `label`: name of the item and of the tab;
+ * - `path`: route that opens the section's first allowed screen (the item and the tab point to it, and stay active on any
+ *   screen of the section);
+ * - `icon`: 16px Lucide icon of the sidebar item.
  */
-export const SECTIONS: Record<MenuSection, { label: string; path: string }> = {
-  admin: { label: 'Administração', path: 'admin' },
+export const SECTIONS: Record<MenuSection, { label: string; path: string; icon: ReactNode }> = {
+  admin: { label: 'Administração', path: 'admin', icon: <AdminIcon /> },
 };
 
 /**
@@ -34,13 +37,13 @@ export interface ScreenDefinition {
   label: string;
   /** Path of the internal route, without the leading slash. */
   path: string;
-  /** 16px Lucide icon of the sidebar item. */
-  icon: ReactNode;
+  /** 16px Lucide icon of the sidebar item. A screen inside a section has no item of its own (the section has the icon). */
+  icon?: ReactNode;
   /** Required permission (e.g. `audit.view`). Without it, the screen shows neither in the menu nor in the tabs, and the route does not open. */
   permission?: string;
   /**
-   * Section the screen belongs to. In the shell, the section groups the items in the sidebar (e.g. Administração, in the footer). In
-   * embedded mode, the whole section is a single tab, and the screen itself navigates between its screens.
+   * Section the screen belongs to. The whole section is a single sidebar item (shell, in the menu footer) and a single tab
+   * (embedded mode), and the screen itself navigates between its screens with internal tabs.
    */
   section?: MenuSection;
   content: ReactNode;
@@ -58,13 +61,12 @@ function RoutedAdmin({ tab }: { tab: AdminTab }) {
   return <Admin tab={tab} onTabChange={(other) => void navigate(`/${adminPath(other)}`)} />;
 }
 
-/** An Admin area: section item in the sidebar and route with its permission. */
-function adminArea(id: AdminTab, label: string, icon: ReactNode): ScreenDefinition & { id: FluxoScreen } {
+/** An Admin area: route with its permission, inside the Administração section (internal tab of `<Admin>`). */
+function adminArea(id: AdminTab, label: string): ScreenDefinition & { id: FluxoScreen } {
   return {
     id,
     label,
     path: adminPath(id),
-    icon,
     permission: ADMIN_TAB_PERMISSIONS[id],
     section: 'admin',
     content: <RoutedAdmin tab={id} />,
@@ -73,8 +75,8 @@ function adminArea(id: AdminTab, label: string, icon: ReactNode): ScreenDefiniti
 
 /**
  * The module screens, in menu order (design.md §15): Início and Auditoria; then the Administração section, with
- * Usuários, Papéis, Integração and Segurança, each with its area's permission. In embedded mode, the tabs are
- * Início, Auditoria and Administração.
+ * Usuários, Papéis, Integração and Segurança, each with its area's permission. The sidebar items and the embedded mode
+ * tabs are the same: Início, Auditoria and Administração.
  */
 export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
   { id: 'home', label: 'Início', path: 'home', icon: <HomeIcon />, content: <Home /> },
@@ -86,10 +88,10 @@ export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
     permission: 'audit.view',
     content: <Audit />,
   },
-  adminArea('users', 'Usuários', <UsersIcon />),
-  adminArea('roles', 'Papéis', <RolesIcon />),
-  adminArea('integration', 'Integração', <IntegrationIcon />),
-  adminArea('security', 'Segurança', <SecurityIcon />),
+  adminArea('users', 'Usuários'),
+  adminArea('roles', 'Papéis'),
+  adminArea('integration', 'Integração'),
+  adminArea('security', 'Segurança'),
 ];
 
 /** The screens the user can see in the current tenant. Items without permission do not show (design.md §15). */
@@ -105,12 +107,13 @@ export interface MenuGroup {
   label: string;
   /** Section route, which opens its first screen. */
   path: string;
+  icon: ReactNode;
   screens: readonly ScreenDefinition[];
 }
 
 /**
  * Splits the sidebar screens: the ones without a section, in the order they come, and the sections that have some screen, in the order of
- * each one's first screen. A section without allowed screens disappears entirely, with its label.
+ * each one's first screen. A section without allowed screens disappears: no sidebar item and no tab.
  */
 export function groupBySection(screens: readonly ScreenDefinition[]): {
   unsectioned: readonly ScreenDefinition[];

@@ -59,7 +59,7 @@ test.describe('auditoria de acessos', () => {
       expect(response.status(), 'o login do Auditor').toBe(200);
       await waitForModule(otherPage, (await response.json()) as Session);
       // The Auditor sees the Audit, but not the Admin.
-      await expect(mainNavigation(otherPage).getByRole('group', { name: 'Administração' })).toHaveCount(0);
+      await expect(mainNavigation(otherPage).getByRole('link', { name: 'Administração', exact: true })).toHaveCount(0);
       await openFromMenu(otherPage, 'Auditoria');
     });
 

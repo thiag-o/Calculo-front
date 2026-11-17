@@ -1,6 +1,6 @@
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ApiError } from '../api';
-import { Notice, Button, Card, Loading, EmptyState } from '../design-system';
+import { Notice, Button, Card, Loading, EmptyState, Tabs, Text } from '../design-system';
 import { useSession } from '../session';
 import { Integration } from './integration';
 import { Roles } from './roles';
@@ -47,8 +47,9 @@ export interface AdminProps {
 }
 
 /**
- * The whole Admin: internal tabs Usuários, Papéis, Integração and Segurança, each one only for whoever has its
- * permission (`ADMIN_TAB_PERMISSIONS`). It is the same screen in the shell menu, in the embedded mode tab and standalone.
+ * The whole Admin: the "Administração" title (h1) and the internal tabs Usuários, Papéis, Integração and Segurança, each
+ * one only for whoever has its permission (`ADMIN_TAB_PERMISSIONS`); each area opens with its own h2. It is the same screen
+ * in the shell sidebar item, in the embedded mode tab and standalone.
  * Standalone, the tabs do not touch the URL. Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals
  * of dialogs and menus).
  */
@@ -56,15 +57,13 @@ export function Admin({ tab, onTabChange }: AdminProps = {}) {
   const session = useSession();
   const [localChoice, setLocalChoice] = useState<AdminTab | null>(null);
   const chosen = tab ?? localChoice;
-  const baseId = useId();
-  const buttons = useRef(new Map<AdminTab, HTMLButtonElement>());
 
   // With a session in the cache, an error on a new fetch does not take the screen down; without it, shows the fetch state.
   if (!session.data) {
     if (session.isError) {
       const detail = session.error instanceof ApiError ? session.error.message : 'Tente de novo em instantes.';
       return (
-        <div className="fc-admin">
+        <AdminFrame>
           <Notice
             type="error"
             title="Não foi possível abrir a Administração"
@@ -76,13 +75,13 @@ export function Admin({ tab, onTabChange }: AdminProps = {}) {
           >
             {detail}
           </Notice>
-        </div>
+        </AdminFrame>
       );
     }
     return (
-      <div className="fc-admin">
+      <AdminFrame>
         <Loading label="Carregando a Administração" rows={4} />
-      </div>
+      </AdminFrame>
     );
   }
 
@@ -92,87 +91,47 @@ export function Admin({ tab, onTabChange }: AdminProps = {}) {
 
   if (!current) {
     return (
-      <div className="fc-admin">
+      <AdminFrame>
         <Card as="div">
           <EmptyState
             title="Nenhuma área da Administração disponível para você"
             description="Peça ao administrador do cliente as permissões de que precisa."
           />
         </Card>
-      </div>
+      </AdminFrame>
     );
   }
 
-  const tabId = (id: AdminTab) => `${baseId}-aba-${id}`;
-  const panelId = `${baseId}-painel`;
-
   // Choosing the tab that is already open notifies nobody (in the module, it does not push the same route onto the history).
   function choose(id: AdminTab) {
-    if (id === current?.id) return;
     setLocalChoice(id);
     onTabChange?.(id);
   }
 
-  function activate(destination: TabDefinition) {
-    choose(destination.id);
-    buttons.current.get(destination.id)?.focus();
-  }
-
-  // Tab keyboard (WAI-ARIA, automatic activation): arrows move and choose, Home and End go to the ends.
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const index = visible.findIndex((item) => item.id === current?.id);
-    const destinations: Record<string, number> = {
-      ArrowRight: (index + 1) % visible.length,
-      ArrowLeft: (index - 1 + visible.length) % visible.length,
-      Home: 0,
-      End: visible.length - 1,
-    };
-    const destination = destinations[event.key];
-    const target = destination === undefined ? undefined : visible[destination];
-    if (!target) return;
-    event.preventDefault();
-    activate(target);
-  }
-
   return (
-    <div className="fc-admin">
-      <div className="fc-admin-tabs">
-        <div className="fc-admin-tabs-list" role="tablist" aria-label="Administração" onKeyDown={handleKeyDown}>
-          {visible.map((item) => {
-            const selected = item.id === current.id;
-            return (
-              <button
-                key={item.id}
-                ref={(element) => {
-                  if (element) buttons.current.set(item.id, element);
-                  else buttons.current.delete(item.id);
-                }}
-                type="button"
-                role="tab"
-                id={tabId(item.id)}
-                className="fc-admin-tab"
-                aria-selected={selected}
-                aria-controls={panelId}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => choose(item.id)}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {/* The panel starts with a title, which does not take focus: the panel itself enters the Tab order. */}
-      <div
-        key={current.id}
-        id={panelId}
-        role="tabpanel"
-        aria-labelledby={tabId(current.id)}
-        tabIndex={0}
-        className="fc-admin-panel"
+    <AdminFrame>
+      <Tabs<AdminTab>
+        label="Administração"
+        size="small"
+        className="fc-admin-tabs"
+        items={visible.map((item) => ({ value: item.id, label: item.label }))}
+        value={current.id}
+        onValueChange={choose}
       >
         {current.content()}
-      </div>
+      </Tabs>
+    </AdminFrame>
+  );
+}
+
+/** The screen title (h1), the same in every state, and below it the state or the tabs. */
+function AdminFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="fc-admin">
+      <Text as="h1" variant="heading-24">
+        Administração
+      </Text>
+      {children}
     </div>
   );
 }

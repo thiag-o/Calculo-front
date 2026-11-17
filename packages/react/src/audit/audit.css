@@ -1,12 +1,13 @@
 /*
- * Audit screen (estilos.md §9: 32px between sections). Only fc- classes and --fc-* variables;
- * no global reset and no full-window measurement (ADR 0002).
+ * Audit screen (estilos.md §9): the h1 title 16px above the Access section, the only one in epic 2. When the configuration
+ * log comes in, the sections go into their own column, 32px apart. Only fc- classes and --fc-* variables; no global reset
+ * and no full-window measurement (ADR 0002).
  */
 
 .fc-audit {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 16px;
   min-width: 0;
 }

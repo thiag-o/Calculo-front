@@ -28,7 +28,7 @@ export function newPassword(): string {
 
 export const mainNavigation = (page: Page) => page.getByRole('navigation', { name: 'Navegação principal' });
 
-/** The Admin and Audit screens: the sidebar item and the title the screen shows. */
+/** The Admin and Audit screens: the title (h2) the screen shows. */
 const SCREENS = {
   Usuários: 'Usuários',
   Papéis: 'Papéis',
@@ -37,9 +37,21 @@ const SCREENS = {
   Auditoria: 'Acessos',
 } as const;
 
-/** Opens a screen through the shell sidebar item and waits for its title. */
+/** The Admin areas: internal tabs of the screen opened by the "Administração" sidebar item. */
+const ADMIN_AREAS: readonly (keyof typeof SCREENS)[] = ['Usuários', 'Papéis', 'Integração', 'Segurança'];
+
+/**
+ * Opens a screen through the shell sidebar and waits for its title. Auditoria is a sidebar item; an Admin area is a tab
+ * of the screen the "Administração" item opens.
+ */
 export async function openFromMenu(page: Page, item: keyof typeof SCREENS): Promise<void> {
-  await mainNavigation(page).getByRole('link', { name: item, exact: true }).click();
+  if (ADMIN_AREAS.includes(item)) {
+    await mainNavigation(page).getByRole('link', { name: 'Administração', exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Administração', exact: true })).toBeVisible();
+    await page.getByRole('tablist', { name: 'Administração' }).getByRole('tab', { name: item, exact: true }).click();
+  } else {
+    await mainNavigation(page).getByRole('link', { name: item, exact: true }).click();
+  }
   await expect(page.getByRole('heading', { level: 2, name: SCREENS[item], exact: true })).toBeVisible();
 }
 

@@ -1,6 +1,7 @@
 /*
- * Embedded layout (estilos.md §7.7, §9 and §15): only the internal tabs and the content, no sidebar and no bar.
- * Active tab with 500 text and a 2px gray-1000 underline; tab switch in 150ms.
+ * Embedded layout (estilos.md §7.7, §9 and §15): only the internal tabs (design system `Tabs`) and the content, no sidebar
+ * and no bar. Here only the layout: the module height, the tab list aligned with the 1200px content, and the scroll of
+ * the panel.
  * Only fc- classes and --fc-* variables; no global reset and no z-index (ADR 0002).
  */
 
@@ -12,59 +13,17 @@
   min-height: 0;
 }
 
-.fc-tabs {
-  flex: none;
-  border-bottom: 1px solid var(--fc-border);
+.fc-embedded-tabs {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-.fc-tabs-list {
-  box-sizing: border-box;
-  display: flex;
-  gap: 4px;
+.fc-embedded-tabs-list {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 14px;
-  overflow-x: auto;
 }
 
-.fc-tab {
-  box-sizing: border-box;
-  flex: none;
-  margin-bottom: -1px;
-  padding: 10px 10px 12px;
-  border-bottom: 2px solid transparent;
-  border-radius: 6px 6px 0 0;
-  color: var(--fc-text-secondary);
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 400;
-  text-decoration: none;
-  white-space: nowrap;
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  transition:
-    color 150ms ease-out,
-    border-color 150ms ease-out;
-}
-
-.fc-tab:hover {
-  color: var(--fc-text);
-}
-
-.fc-tab[aria-current='page'] {
-  border-bottom-color: var(--fc-gray-1000);
-  color: var(--fc-text);
-  font-weight: 500;
-}
-
-.fc-tab:focus-visible {
-  box-shadow:
-    0 0 0 2px var(--fc-background-100),
-    0 0 0 4px var(--fc-focus);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fc-tab {
-    transition: none;
-  }
+.fc-embedded-panel {
+  flex: 1 1 auto;
 }

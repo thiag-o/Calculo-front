@@ -65,7 +65,25 @@ const aliases: Record<string, string> = {
   '--fc-danger-text': '--fc-red-900',
 };
 
-const allVariables = [...Object.keys(tokens), ...Object.keys(aliases), '--fc-font-sans', '--fc-font-mono'];
+// estilos.md §4 (4px grid) and layout widths: the same value in both themes.
+const layout: Record<string, string> = {
+  '--fc-space-2': '2px',
+  '--fc-space-4': '4px',
+  '--fc-space-6': '6px',
+  '--fc-space-8': '8px',
+  '--fc-space-12': '12px',
+  '--fc-space-16': '16px',
+  '--fc-space-20': '20px',
+  '--fc-space-24': '24px',
+  '--fc-space-32': '32px',
+  '--fc-space-48': '48px',
+  '--fc-space-56': '56px',
+  '--fc-field-width-date': '168px',
+  '--fc-field-width-select': '260px',
+  '--fc-form-width': '360px',
+};
+
+const allVariables = [...Object.keys(tokens), ...Object.keys(aliases), ...Object.keys(layout), '--fc-font-sans', '--fc-font-mono'];
 
 function value(element: Element, variable: string): string {
   return getComputedStyle(element).getPropertyValue(variable).trim().toLowerCase();
@@ -120,6 +138,13 @@ describe.each([
     const { inside } = renderWithTheme(theme);
     for (const [variable, values] of Object.entries(tokens)) {
       expect(value(inside, variable), variable).toBe(values[index].toLowerCase());
+    }
+  });
+
+  it('resolve os espaços da grade de 4px e as larguras de layout', () => {
+    const { inside } = renderWithTheme(theme);
+    for (const [variable, expected] of Object.entries(layout)) {
+      expect(value(inside, variable), variable).toBe(expected);
     }
   });
 

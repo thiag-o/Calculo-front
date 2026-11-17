@@ -10,7 +10,7 @@ import type { ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { Button } from '../form';
 import { FluxoRoot, type FluxoTheme } from '../root';
-import { Notice, Card, Loading, Dialog, Tooltip, Menu, Badge, Status, Table, type BadgeTone, type StatusTone, type NoticeType } from '.';
+import { Notice, Card, Loading, Dialog, Tooltip, Menu, Badge, Status, Table, Tabs, type BadgeTone, type StatusTone, type NoticeType } from '.';
 
 const displayFolder = dirname(fileURLToPath(import.meta.url));
 const designSystemFolder = join(displayFolder, '..');
@@ -70,6 +70,7 @@ describe('CSS dos componentes de exibição', () => {
       'menu.css',
       'notice.css',
       'table.css',
+      'tabs.css',
       'tooltip.css',
     ]);
   });
@@ -329,5 +330,45 @@ describe('medidas do estilos.md', () => {
     const item = getComputedStyle(screen.getByRole('menuitem', { name: 'Baixar CSV' }));
     expect(item.minHeight).toBe('32px');
     expect(item.borderRadius).toBe('6px');
+  });
+  it.each([
+    ['light', '#171717', '#4d4d4d'],
+    ['dark', '#ededed', '#a1a1a1'],
+  ] as const)('abas no tema %s: aberta com texto 500 e sublinhado de 2px gray-1000; as outras em texto secundário', (theme, open, other) => {
+    render(
+      inTheme(
+        theme,
+        <Tabs
+          label="Painel"
+          items={[
+            { value: 'tests', label: 'Testes' },
+            { value: 'preview', label: 'Prévia' },
+          ]}
+        >
+          <p>conteúdo</p>
+        </Tabs>,
+      ),
+    );
+    const active = getComputedStyle(screen.getByRole('tab', { name: 'Testes' }));
+    expect(active.fontWeight).toBe('500');
+    expect(active.borderBottomWidth).toBe('2px');
+    expect(active.borderBottomColor).toBe(rgb(open));
+    expect(active.color).toBe(rgb(open));
+    expect(active.fontSize).toBe('14px');
+    const inactive = getComputedStyle(screen.getByRole('tab', { name: 'Prévia' }));
+    expect(inactive.fontWeight).toBe('400');
+    expect(inactive.color).toBe(rgb(other));
+  });
+
+  it('abas pequenas, dentro de painéis: texto 13px (estilos.md §7.7)', () => {
+    render(
+      inTheme(
+        'light',
+        <Tabs label="Painel" size="small" items={[{ value: 'tests', label: 'Testes' }]}>
+          <p>conteúdo</p>
+        </Tabs>,
+      ),
+    );
+    expect(getComputedStyle(screen.getByRole('tab', { name: 'Testes' })).fontSize).toBe('13px');
   });
 });

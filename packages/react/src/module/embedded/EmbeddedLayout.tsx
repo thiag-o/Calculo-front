@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router';
+import { Outlet, useLocation, useNavigate } from 'react-router';
+import { Tabs } from '../../design-system';
 import { groupBySection, type ScreenDefinition } from '../screens';
 import './embedded.css';
 
@@ -10,33 +11,40 @@ export interface EmbeddedLayoutProps {
 /**
  * Embedded layout (design.md §15, estilos.md §9 and §15): no sidebar and no top bar of its own, only the internal tabs
  * and the content. The width is whatever the host app gives; the theme comes from the --fc-* variables.
- * The tabs are the shell sidebar items: each loose screen is a tab, and each section (e.g. Admin) is a
- * single tab, which opens its first allowed screen and stays active on any screen of the section. A section without allowed
- * screens has no tab.
- * The content is a named region, not a `main`: the host app page already has its own.
+ * The tabs (design system `Tabs`) are the shell sidebar items: each loose screen is a tab, and each section (e.g. Admin)
+ * is a single tab, which opens its first allowed screen and stays open on any screen of the section. A section without
+ * allowed screens has no tab. Choosing a tab navigates to its route; the open screen is the tab panel.
+ * The module is a named region, not a `main`: the host app page already has its own.
  */
 export function EmbeddedLayout({ screens }: EmbeddedLayoutProps) {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { unsectioned, sections } = groupBySection(screens);
   const tabs = [
-    ...unsectioned.map((screen) => ({ id: screen.id, label: screen.label, path: screen.path })),
-    ...sections.map((group) => ({ id: `section-${group.section}`, label: group.label, path: group.path })),
+    ...unsectioned.map((screen) => ({ value: screen.id, label: screen.label, path: screen.path })),
+    ...sections.map((group) => ({ value: `section-${group.section}`, label: group.label, path: group.path })),
   ];
+  // The open tab is the one whose route contains the current address (a section tab stays open on any of its screens).
+  const open = tabs.find((tab) => pathname === `/${tab.path}` || pathname.startsWith(`/${tab.path}/`));
+
   return (
-    <div className="fc-embedded">
-      <div className="fc-tabs">
-        <nav className="fc-tabs-list" aria-label="Telas do Fluxo de Cálculo">
-          {tabs.map((tab) => (
-            <NavLink key={tab.id} to={`/${tab.path}`} className="fc-tab">
-              {tab.label}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-      <section className="fc-module-content" aria-label="Fluxo de Cálculo">
+    <section className="fc-embedded" aria-label="Fluxo de Cálculo">
+      <Tabs
+        label="Telas do Fluxo de Cálculo"
+        items={tabs}
+        value={open?.value}
+        onValueChange={(value) => {
+          const tab = tabs.find((candidate) => candidate.value === value);
+          if (tab) void navigate(`/${tab.path}`);
+        }}
+        className="fc-embedded-tabs"
+        listClassName="fc-embedded-tabs-list"
+        panelClassName="fc-module-content fc-embedded-panel"
+      >
         <div className="fc-module-page">
           <Outlet />
         </div>
-      </section>
-    </div>
+      </Tabs>
+    </section>
   );
 }

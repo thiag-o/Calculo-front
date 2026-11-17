@@ -6,6 +6,7 @@ import '@fluxo/react/styles.css';
 import { StrictMode, useState, type FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { apiUrl } from './environment';
+import './embed-test.css';
 
 type State =
   | { phase: 'home' }
@@ -30,8 +31,6 @@ async function exchangeApiKey(apiKey: string, body: object): Promise<State> {
     return { phase: 'error', message: `Não foi possível falar com a API em ${apiUrl}.` };
   }
 }
-
-const FIELD = { display: 'block', width: '100%' } as const;
 
 /** What the page mounts with the token: the whole module or only the standalone Admin screen. */
 type Mount = 'module' | 'admin';
@@ -62,12 +61,12 @@ function EmbedTestPage() {
 
   const switching = state.phase === 'switching';
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 16 }}>
-      <p role="note" style={{ background: '#fff4d6', border: '1px solid #d9a400', padding: 12, margin: '0 0 16px' }}>
+    <main className="fc-root embed-test">
+      <p role="note" className="embed-test-note">
         Página só para teste local. Em produção, quem troca a chave de API por um token é o backend do hospedeiro; a
         chave nunca vai para o navegador.
       </p>
-      <form onSubmit={(e) => void submit(e)} style={{ display: 'grid', gap: 8, maxWidth: 420, marginBottom: 16 }}>
+      <form onSubmit={(e) => void submit(e)} className="embed-test-form">
         <label>
           Chave de API
           <input
@@ -76,24 +75,30 @@ function EmbedTestPage() {
             onChange={(e) => setApiKey(e.target.value)}
             autoComplete="off"
             required
-            style={FIELD}
+            className="embed-test-field"
           />
         </label>
         <label>
           E-mail do usuário
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={FIELD} />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="embed-test-field"
+          />
         </label>
         <label>
           Nome
-          <input value={name} onChange={(e) => setName(e.target.value)} required style={FIELD} />
+          <input value={name} onChange={(e) => setName(e.target.value)} required className="embed-test-field" />
         </label>
         <label>
           Papéis (nomes, separados por vírgula)
-          <input value={roles} onChange={(e) => setRoles(e.target.value)} style={FIELD} />
+          <input value={roles} onChange={(e) => setRoles(e.target.value)} className="embed-test-field" />
         </label>
         <label>
           O que montar
-          <select value={mount} onChange={(e) => setMount(e.target.value as Mount)} style={FIELD}>
+          <select value={mount} onChange={(e) => setMount(e.target.value as Mount)} className="embed-test-field">
             <option value="module">Módulo inteiro (&lt;FluxoCalculo&gt;)</option>
             <option value="admin">Só a Administração, avulsa (&lt;Admin&gt;)</option>
           </select>
@@ -101,7 +106,11 @@ function EmbedTestPage() {
         <button type="submit" disabled={switching || apiKey.trim() === ''}>
           {switching ? 'Trocando…' : 'Obter token e montar'}
         </button>
-        {state.phase === 'error' && <p role="alert">{state.message}</p>}
+        {state.phase === 'error' && (
+          <p role="alert" className="embed-test-error">
+            {state.message}
+          </p>
+        )}
       </form>
       {state.phase === 'ready' &&
         (mount === 'admin' ? (

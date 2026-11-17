@@ -103,10 +103,10 @@ test.describe('chave de API e incorporação', () => {
 
       expect(exchange.status()).toBe(201);
       // The module tabs, from the Auditor role's permissions; nothing of the shell layout.
-      const tabs = hostApp.getByRole('navigation', { name: 'Telas do Fluxo de Cálculo' });
-      await expect(tabs.getByRole('link', { name: 'Início', exact: true })).toBeVisible();
-      await expect(tabs.getByRole('link', { name: 'Auditoria', exact: true })).toBeVisible();
-      await expect(tabs.getByRole('link', { name: 'Administração', exact: true })).toHaveCount(0);
+      const tabs = hostApp.getByRole('tablist', { name: 'Telas do Fluxo de Cálculo' });
+      await expect(tabs.getByRole('tab', { name: 'Início', exact: true })).toBeVisible();
+      await expect(tabs.getByRole('tab', { name: 'Auditoria', exact: true })).toBeVisible();
+      await expect(tabs.getByRole('tab', { name: 'Administração', exact: true })).toHaveCount(0);
       await expect(hostApp.getByRole('complementary', { name: 'Menu lateral' })).toHaveCount(0);
       await expect(hostApp.getByRole('navigation', { name: 'Navegação principal' })).toHaveCount(0);
       await expect(hostApp.getByRole('heading', { level: 1, name: 'Início' })).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('chave de API e incorporação', () => {
       // Switching tabs uses the token (Bearer) of the authorized origin and does not touch the host app URL.
       const [accessEvents] = await Promise.all([
         apiResponse(hostApp, 'GET', '/v1/audit/access-events'),
-        tabs.getByRole('link', { name: 'Auditoria', exact: true }).click(),
+        tabs.getByRole('tab', { name: 'Auditoria', exact: true }).click(),
       ]);
       expect(accessEvents.status()).toBe(200);
       expect(await accessEvents.request().headerValue('authorization')).toMatch(/^Bearer /);

@@ -128,7 +128,7 @@ export function Users() {
     <section ref={section} className="fc-users" aria-labelledby={titleId}>
       <header className="fc-users-top">
         <div className="fc-users-title">
-          <Text as="h2" variant="heading-24" id={titleId}>
+          <Text as="h2" variant="heading-16" id={titleId}>
             Usuários
           </Text>
           <Text as="p" variant="label-14" emphasis="secondary">

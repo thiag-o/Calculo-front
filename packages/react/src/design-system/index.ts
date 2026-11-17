@@ -21,7 +21,7 @@ export type {
   FieldMessageType,
   ButtonVariant,
 } from './form';
-export { Notice, Card, Loading, Dialog, Tooltip, Skeleton, EmptyState, DialogClose, Menu, Badge, Status, Table } from './display';
+export { Notice, Card, Loading, Dialog, Tooltip, Skeleton, EmptyState, DialogClose, Menu, Badge, Status, Table, Tabs } from './display';
 export type {
   MenuAction,
   NoticeProps,
@@ -44,4 +44,7 @@ export type {
   StatusProps,
   TableProps,
   NoticeType,
+  TabItem,
+  TabsProps,
+  TabsSize,
 } from './display';

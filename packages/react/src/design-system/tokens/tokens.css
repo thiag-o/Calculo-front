@@ -76,6 +76,25 @@
   --fc-shadow-menu: 0 0 0 1px var(--fc-border), 0 4px 12px rgba(0, 0, 0, 0.06);
   --fc-shadow-modal: 0 0 0 1px var(--fc-border), 0 16px 40px rgba(0, 0, 0, 0.12);
   --fc-overlay: rgba(0, 0, 0, 0.32);
+
+  /* 4 Spacing: the 4px grid and the spaces estilos.md uses (2…56). The same in both themes. */
+  --fc-space-2: 2px;
+  --fc-space-4: 4px;
+  --fc-space-6: 6px;
+  --fc-space-8: 8px;
+  --fc-space-12: 12px;
+  --fc-space-16: 16px;
+  --fc-space-20: 20px;
+  --fc-space-24: 24px;
+  --fc-space-32: 32px;
+  --fc-space-48: 48px;
+  --fc-space-56: 56px;
+
+  /* Layout widths: fields side by side in a filter bar (a date fits "dd/mm/aaaa" and the calendar icon; a select fits
+     the longest option of a filter) and a short form (sign-in, new password). */
+  --fc-field-width-date: 168px;
+  --fc-field-width-select: 260px;
+  --fc-form-width: 360px;
 }
 
 /* Escuro escolhido explicitamente. */

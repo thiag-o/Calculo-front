@@ -84,6 +84,15 @@ describe('CSS do pacote sem estilo global', () => {
     },
   );
 
+  it('só o tokens.css declara variáveis --fc-*', () => {
+    // A declaration is `--fc-name:` at the start of a declaration (a `var(--fc-name)` usage is not followed by a colon).
+    const declares = (css: string) => /(^|[\s{;])--fc-[a-z0-9-]+\s*:/.test(css.replace(/\/\*[\s\S]*?\*\//g, ''));
+    const declaring = cssFiles
+      .filter((file) => declares(readFileSync(file, 'utf8')))
+      .map((file) => relative(srcFolder, file).replaceAll('\\', '/'));
+    expect(declaring).toEqual(['design-system/tokens/tokens.css']);
+  });
+
   it('a verificação recusa seletores globais e tokens fora da raiz', () => {
     expect(problemsOf(':root { --fc-text: red; }')).toContain('seletor global: :root');
     expect(problemsOf('html, body { margin: 0; }')).toEqual(expect.arrayContaining(['seletor global: html', 'seletor global: body']));

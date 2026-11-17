@@ -1,0 +1,84 @@
+/*
+ * Tabs (estilos.md §5 and §7.7): list over a 1px divider; open tab with 500 text and a 2px gray-1000 underline;
+ * tab switch in 150ms. `default` (14px) for the module's own tabs; `small` (13px) for tabs inside a screen or panel.
+ * The layout (width of the list, space up to the panel, scroll of the panel) comes from whoever uses the component.
+ * Only fc- classes and --fc-* variables; no global reset and no z-index (ADR 0002).
+ */
+
+.fc-tabs {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fc-tabs-bar {
+  flex: none;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-tabs-list {
+  box-sizing: border-box;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.fc-tab {
+  box-sizing: border-box;
+  flex: none;
+  margin: 0 0 -1px;
+  padding: 10px 10px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background-color: transparent;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.fc-tabs-small .fc-tab {
+  padding: 8px 10px 10px;
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.fc-tab:hover {
+  color: var(--fc-text);
+}
+
+.fc-tab[data-state='active'] {
+  border-bottom-color: var(--fc-gray-1000);
+  color: var(--fc-text);
+  font-weight: 500;
+}
+
+.fc-tab:focus-visible,
+.fc-tabs-panel:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-tabs-panel {
+  min-width: 0;
+  border-radius: 6px;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-tab {
+    transition: none;
+  }
+}

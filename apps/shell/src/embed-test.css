@@ -1,0 +1,36 @@
+/*
+ * Embed test page (local use only). The page plays the host app, but uses the module's look: its element gets the
+ * `.fc-root` class, the documented place of the --fc-* tokens (docs/incorporacao.md), so colors, spaces and widths come
+ * from the tokens and nothing is written raw. Only classes of the page; no global selector.
+ */
+
+.embed-test {
+  box-sizing: border-box;
+  padding: var(--fc-space-16);
+}
+
+.embed-test-note {
+  margin: 0 0 var(--fc-space-16);
+  padding: var(--fc-space-12);
+  border: 1px solid var(--fc-amber-700);
+  background-color: var(--fc-amber-100);
+  color: var(--fc-amber-900);
+}
+
+.embed-test-form {
+  display: grid;
+  gap: var(--fc-space-8);
+  max-width: var(--fc-form-width);
+  margin-bottom: var(--fc-space-16);
+}
+
+.embed-test-field {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.embed-test-error {
+  margin: 0;
+  color: var(--fc-danger-text);
+}

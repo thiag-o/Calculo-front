@@ -1,6 +1,6 @@
 # 0027. Telas de abas controláveis pela rota e seção do menu como uma aba no incorporado
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0028](0028-telas-avulsas-com-provedor-interno.md): na interface pública, `aba?`/`aoTrocarAba?` ficam só na tela crua interna)
+- **Status:** aceita, revisar no checkpoint (complementada por [0028](0028-telas-avulsas-com-provedor-interno.md): na interface pública, `aba?`/`aoTrocarAba?` ficam só na tela crua interna); atualizada na F40 (veja o fim)
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F19), a partir da resposta D6 do dono do produto
 - **Relacionadas:** [0003](0003-codigo-por-verticais.md), [0006](0006-roteamento-interno-e-configuracao-do-modulo.md) (complementa)
@@ -28,3 +28,10 @@ A resposta D6 pede que, no modo incorporado, as abas de topo sejam os mesmos ite
 - **Bom:** um componente só para casca, incorporado e avulso; endereço, menu e abas andam juntos; padrão pronto para o Catálogo.
 - **Ruim:** no casca a área aparece duas vezes (menu e aba). O CSS das abas está repetido entre `administracao` e o incorporado.
 - **A fazer:** componente `Abas` no design system, numa tarefa própria. A F20 exporta `Administracao` e o novo `TelaFluxo`.
+
+## Atualização (2026-11-17, tarefa F40): Administração uma vez só no casca e componente `Tabs`
+
+Pendências do CK2, decididas pela sessão global:
+- **No casca, a seção também vira um item só.** O menu lateral mostra um item "Administração" no rodapé (ícone Lucide `settings`), que abre a primeira área permitida e fica ativo em qualquer área. Usuários, Papéis, Integração e Segurança ficam só nas abas internas da `<Admin>`, como no incorporado. Sai o rótulo de seção acima dos itens e a alternativa "casca sem abas internas" fica descartada. Menu, abas e endereço continuam juntos pela rota (`/admin/<área>`).
+- **Componente `Tabs` no design system** (Radix Tabs; estilos.md §5 e §7.7): resolve o "Ruim" do CSS repetido. Usado nas abas internas da `<Admin>` (tamanho `small`, 13px) e nas abas de topo do incorporado (`default`, 14px), que passam de links (`nav`) a abas (`tablist`/`tab`), com a tela aberta como painel e a troca de aba navegando para a rota. Controlável (`value`/`onValueChange`) ou sozinho (`defaultValue`); recebe só as abas permitidas e, com um valor fora da lista, abre a primeira. O `<Catalog>` do épico 3 usa o mesmo componente.
+- **Títulos:** toda tela tem um `h1` (Início, Auditoria, Administração); a área ou seção aberta é `h2`, em `heading-16`.

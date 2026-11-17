@@ -19,3 +19,5 @@ export { Menu } from './Menu';
 export type { MenuAction, MenuItem, MenuProps, MenuSeparator } from './Menu';
 export { Tooltip } from './Tooltip';
 export type { TooltipProps, TooltipSide } from './Tooltip';
+export { Tabs } from './Tabs';
+export type { TabItem, TabsProps, TabsSize } from './Tabs';

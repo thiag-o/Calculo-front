@@ -1,7 +1,7 @@
 /*
- * Admin screen (estilos.md §5, §7.7 and §9): internal tabs and the chosen area, 32px between them.
- * Tabs inside the content (§7.7): 13px text; active with 500 text and a 2px gray-1000 underline; tab switch in
- * 150ms. In embedded mode they sit below the module tabs (14px), one level below them.
+ * Admin screen (estilos.md §3, §7.7 and §9): the h1 title, 16px above the internal tabs, and the chosen area 32px below
+ * them. The tabs come from the design system (`Tabs`, small size: 13px, inside the screen); in embedded mode they sit
+ * below the module tabs (14px), one level below them.
  * Only fc- classes and --fc-* variables; no global reset, no z-index and no full-window measurement (ADR 0002).
  */
 
@@ -9,70 +9,10 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 16px;
   min-width: 0;
 }
 
 .fc-admin-tabs {
-  border-bottom: 1px solid var(--fc-border);
-}
-
-.fc-admin-tabs-list {
-  box-sizing: border-box;
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-}
-
-.fc-admin-tab {
-  box-sizing: border-box;
-  flex: none;
-  margin: 0 0 -1px;
-  padding: 8px 10px 10px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 6px 6px 0 0;
-  background-color: transparent;
-  color: var(--fc-text-secondary);
-  font-family: var(--fc-font-sans);
-  font-size: 13px;
-  line-height: 16px;
-  font-weight: 400;
-  white-space: nowrap;
-  cursor: pointer;
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  transition:
-    color 150ms ease-out,
-    border-color 150ms ease-out;
-}
-
-.fc-admin-tab:hover {
-  color: var(--fc-text);
-}
-
-.fc-admin-tab[aria-selected='true'] {
-  border-bottom-color: var(--fc-gray-1000);
-  color: var(--fc-text);
-  font-weight: 500;
-}
-
-.fc-admin-tab:focus-visible,
-.fc-admin-panel:focus-visible {
-  box-shadow:
-    0 0 0 2px var(--fc-background-100),
-    0 0 0 4px var(--fc-focus);
-}
-
-.fc-admin-panel {
-  min-width: 0;
-  border-radius: 6px;
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fc-admin-tab {
-    transition: none;
-  }
+  gap: 32px;
 }

@@ -39,7 +39,7 @@ function renderModule(props: Partial<FluxoModuleProps> = {}) {
 
 const sidebar = () => screen.queryByRole('complementary', { name: 'Menu lateral' });
 const mainNavigation = () => screen.getByRole('navigation', { name: 'Navegação principal' });
-const tabs = () => screen.queryByRole('navigation', { name: 'Telas do Fluxo de Cálculo' });
+const tabs = () => screen.queryByRole('tablist', { name: 'Telas do Fluxo de Cálculo' });
 
 describe('<FluxoCalculo>', () => {
   it('no casca (sem token), monta a raiz com o tema, chama a API com o cookie e abre o Início com o menu lateral', async () => {
@@ -153,9 +153,14 @@ describe('<FluxoCalculo>', () => {
       expect(screen.queryByRole('button', { name: /opções da conta/ })).not.toBeInTheDocument();
       expect(screen.queryByRole('main')).not.toBeInTheDocument();
 
-      const tab = within(tabs() as HTMLElement).getByRole('link', { name: 'Início' });
-      expect(tab).toHaveAttribute('aria-current', 'page');
-      expect(screen.getByRole('region', { name: 'Fluxo de Cálculo' })).toBeInTheDocument();
+      const tab = within(tabs() as HTMLElement).getByRole('tab', { name: 'Início' });
+      expect(tab).toHaveAttribute('aria-selected', 'true');
+      const region = screen.getByRole('region', { name: 'Fluxo de Cálculo' });
+      expect(region).toContainElement(tabs());
+      // The open screen is the panel of its tab.
+      expect(within(region).getByRole('tabpanel', { name: 'Início' })).toContainElement(
+        screen.getByRole('heading', { level: 1, name: 'Início' }),
+      );
 
       expect(api.request(0).headers.get('Authorization')).toBe('Bearer token-do-hospedeiro');
       expect(api.request(0).credentials).toBe('omit');
@@ -167,12 +172,34 @@ describe('<FluxoCalculo>', () => {
 
       await screen.findByRole('heading', { name: 'Tela Início' });
       const list = tabs() as HTMLElement;
-      expect(within(list).getAllByRole('link').map((link) => link.textContent)).toEqual(['Início', 'Workflows']);
-      expect(within(list).queryByRole('link', { name: 'Auditoria' })).not.toBeInTheDocument();
+      expect(within(list).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Início', 'Workflows']);
+      expect(within(list).queryByRole('tab', { name: 'Auditoria' })).not.toBeInTheDocument();
 
-      await user.click(within(list).getByRole('link', { name: 'Workflows' }));
+      await user.click(within(list).getByRole('tab', { name: 'Workflows' }));
       expect(await screen.findByRole('heading', { name: 'Tela Workflows' })).toBeInTheDocument();
-      expect(within(list).getByRole('link', { name: 'Workflows' })).toHaveAttribute('aria-current', 'page');
+      expect(within(list).getByRole('tab', { name: 'Workflows' })).toHaveAttribute('aria-selected', 'true');
+      expect(within(list).getByRole('tab', { name: 'Início' })).toHaveAttribute('aria-selected', 'false');
+      expect(screen.getByRole('tabpanel', { name: 'Workflows' })).toContainElement(
+        screen.getByRole('heading', { name: 'Tela Workflows' }),
+      );
+    });
+
+    it('pelo teclado, as setas trocam de tela e o foco continua nas abas', async () => {
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
+      const { user } = renderModule({ token: 'token' });
+
+      await screen.findByRole('heading', { name: 'Tela Início' });
+      await user.tab();
+      const start = within(tabs() as HTMLElement).getByRole('tab', { name: 'Início' });
+      expect(start).toHaveFocus();
+
+      await user.keyboard('{ArrowRight}');
+      expect(await screen.findByRole('heading', { name: 'Tela Workflows' })).toBeInTheDocument();
+      expect(within(tabs() as HTMLElement).getByRole('tab', { name: 'Workflows' })).toHaveFocus();
+
+      await user.keyboard('{Home}');
+      expect(await screen.findByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();
+      expect(start).toHaveFocus();
     });
   });
 
@@ -195,7 +222,7 @@ describe('<FluxoCalculo>', () => {
       const { user } = renderModule({ token: 'token' });
 
       await screen.findByRole('heading', { name: 'Tela Início' });
-      await user.click(within(tabs() as HTMLElement).getByRole('link', { name: 'Workflows' }));
+      await user.click(within(tabs() as HTMLElement).getByRole('tab', { name: 'Workflows' }));
       await screen.findByRole('heading', { name: 'Tela Workflows' });
 
       expect(`${window.location.pathname}${window.location.search}${window.location.hash}`).toBe(HOST_APP_URL);
@@ -250,9 +277,9 @@ describe('<FluxoCalculo>', () => {
       );
 
       expect(await screen.findByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();
-      await user.click(within(tabs() as HTMLElement).getByRole('link', { name: 'Workflows' }));
+      await user.click(within(tabs() as HTMLElement).getByRole('tab', { name: 'Workflows' }));
       expect(await screen.findByRole('heading', { name: 'Tela Workflows' })).toBeInTheDocument();
-      expect(within(tabs() as HTMLElement).getByRole('link', { name: 'Workflows' })).toHaveAttribute('href', '/workflows');
+      expect(within(tabs() as HTMLElement).getByRole('tab', { name: 'Workflows' })).toHaveAttribute('aria-selected', 'true');
       expect(screen.getByText('Hospedeiro em /relatorios/calculo')).toBeInTheDocument();
     });
   });

@@ -21,7 +21,7 @@
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  max-width: 360px;
+  max-width: var(--fc-form-width);
   padding: 24px;
 }
 

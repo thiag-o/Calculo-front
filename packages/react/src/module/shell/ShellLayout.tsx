@@ -1,9 +1,9 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { Notice, Button, Tooltip } from '../../design-system';
 import type { Session } from '../../session';
 import { ExpandMenuIcon, CollapseMenuIcon } from '../icons';
-import { groupBySection, type ScreenDefinition, type MenuGroup } from '../screens';
+import { groupBySection, type ScreenDefinition } from '../screens';
 import { signOutErrorMessage, switchErrorMessage } from './messages';
 import { UserMenu } from './UserMenu';
 import { TenantSelector } from './TenantSelector';
@@ -18,8 +18,9 @@ export interface ShellLayoutProps {
 
 /**
  * Shell app layout (design.md §15, estilos.md §9 and §15): single 240px sidebar, with the tenant selector at the
- * top, the items by permission and whoever is signed in at the footer. The menu can be collapsed and becomes icons only (64px,
- * name in the tooltip) when the module is narrower than 1180px.
+ * top, the items by permission and whoever is signed in at the footer. Each section (Administração) is a single item at the
+ * menu footer; its areas are the screen's internal tabs, as in embedded mode (ADR 0027). The menu can be collapsed and
+ * becomes icons only (64px, name in the tooltip) when the module is narrower than 1180px.
  */
 export function ShellLayout({ session, screens }: ShellLayoutProps) {
   const reference = useRef<HTMLDivElement>(null);
@@ -47,11 +48,15 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
 
         <nav id={navigationId} className="fc-sidebar-nav" aria-label="Navegação principal">
           {unsectioned.map((screen) => (
-            <SidebarItem key={screen.id} screen={screen} compact={compact} />
+            <SidebarItem key={screen.id} item={screen} compact={compact} />
           ))}
-          {sections.map((group) => (
-            <SidebarSection key={group.section} group={group} compact={compact} />
-          ))}
+          {sections.length > 0 ? (
+            <div className="fc-sidebar-sections">
+              {sections.map((group) => (
+                <SidebarItem key={group.section} item={group} compact={compact} />
+              ))}
+            </div>
+          ) : null}
         </nav>
 
         <div className="fc-sidebar-footer">
@@ -94,36 +99,19 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
   );
 }
 
-/**
- * Menu section (e.g. Administração, in the menu footer): tertiary `label-12` label above the items (estilos.md §9).
- * With icons only, the label goes out of view (estilos.md §15), but still names the group for the screen reader.
- */
-function SidebarSection({ group, compact }: { group: MenuGroup; compact: boolean }) {
-  const labelId = useId();
-  return (
-    <div className="fc-sidebar-section" role="group" aria-labelledby={labelId}>
-      <span id={labelId} className="fc-sidebar-section-label">
-        {group.label}
-      </span>
-      {group.screens.map((screen) => (
-        <SidebarItem key={screen.id} screen={screen} compact={compact} />
-      ))}
-    </div>
-  );
-}
-
-function SidebarItem({ screen, compact }: { screen: ScreenDefinition; compact: boolean }) {
+/** A sidebar item: a screen, or a whole section, active on any of its screens. */
+function SidebarItem({ item, compact }: { item: { label: string; path: string; icon?: ReactNode }; compact: boolean }) {
   const link = (
-    <NavLink to={`/${screen.path}`} className="fc-sidebar-item">
+    <NavLink to={`/${item.path}`} className="fc-sidebar-item">
       <span className="fc-sidebar-item-icon" aria-hidden="true">
-        {screen.icon}
+        {item.icon}
       </span>
-      <span className="fc-sidebar-item-label">{screen.label}</span>
+      <span className="fc-sidebar-item-label">{item.label}</span>
     </NavLink>
   );
   // With icons only, the name shows in the tooltip (estilos.md §15); the label stays on the link for the screen reader.
   return compact ? (
-    <Tooltip content={screen.label} side="right">
+    <Tooltip content={item.label} side="right">
       {link}
     </Tooltip>
   ) : (

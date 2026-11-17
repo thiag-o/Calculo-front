@@ -101,7 +101,7 @@ export function AuthorizedDomains() {
     <section ref={section} className="fc-integration-section" aria-labelledby={titleId}>
       <header className="fc-integration-top">
         <div className="fc-integration-title">
-          <Text as="h2" variant="heading-24" id={titleId}>
+          <Text as="h2" variant="heading-16" id={titleId}>
             Domínios autorizados
           </Text>
           <Text as="p" variant="label-14" emphasis="secondary">
