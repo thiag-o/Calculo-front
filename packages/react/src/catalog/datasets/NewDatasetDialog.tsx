@@ -20,6 +20,8 @@ export const CONNECTIONS_LOADING_REASON = 'Aguarde a lista de conexões';
 export const CONNECTIONS_ERROR_REASON = 'Carregue a lista de conexões para salvar';
 export const NO_CONNECTIONS_PERMISSION_REASON = 'Peça a permissão de ver conexões para criar um dataset';
 export const NO_CONNECTIONS_REASON = 'Cadastre uma conexão na aba Conexões para criar um dataset';
+/** Discreet note below the picker when fetching the connections again failed: the list already loaded still holds. */
+export const CONNECTIONS_STALE_NOTE = 'Não foi possível atualizar a lista de conexões; ela mostra a última carregada.';
 
 /** The maximum SQL length the API accepts. */
 const SQL_MAX_LENGTH = 100_000;
@@ -87,16 +89,21 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }:
   const object = useWatch({ control, name: 'object' });
 
   const apiError = create.error ? createError(create.error) : undefined;
-  const connectionsForbidden = connections.error instanceof ApiError && connections.error.code === 'no_permission';
+  // A failed refetch in the background keeps the list already loaded: it still holds, with a discreet warning. Only a
+  // list that never arrived blocks the picker and "Salvar".
+  const connectionList = connections.data;
+  const connectionsFailed = connections.isError && connectionList === undefined;
+  const connectionsForbidden =
+    connectionsFailed && connections.error instanceof ApiError && connections.error.code === 'no_permission';
   const disabledReason = connections.isPending
     ? CONNECTIONS_LOADING_REASON
     : connectionsForbidden
       ? NO_CONNECTIONS_PERMISSION_REASON
-      : connections.isError
+      : connectionsFailed
         ? CONNECTIONS_ERROR_REASON
-      : connections.data?.length === 0
-        ? NO_CONNECTIONS_REASON
-        : undefined;
+        : connectionList?.length === 0
+          ? NO_CONNECTIONS_REASON
+          : undefined;
 
   const submit = handleSubmit((data) => {
     if (disabledReason) return;
@@ -117,9 +124,9 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }:
   }
 
   let connectionField;
-  if (connections.isPending) {
+  if (connectionList === undefined && !connectionsFailed) {
     connectionField = <Loading label="Carregando conexões" rows={1} />;
-  } else if (connections.isError) {
+  } else if (connectionList === undefined) {
     connectionField = (
       <Notice
         type="error"
@@ -135,7 +142,7 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }:
         {connectionsForbidden ? NO_CONNECTIONS_PERMISSION_MESSAGE : queryErrorMessage(connections.error, UNKNOWN_CONNECTION_MESSAGE)}
       </Notice>
     );
-  } else if (connections.data.length === 0) {
+  } else if (connectionList.length === 0) {
     connectionField = (
       <Notice type="warning" title="Nenhuma conexão ainda">
         Cadastre uma conexão com o banco do cliente na aba Conexões e volte para criar o dataset.
@@ -150,7 +157,8 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }:
           <Select
             ref={field.ref}
             label="Conexão"
-            options={connections.data.map((connection) => ({ value: connection.id, label: connection.name }))}
+            options={connectionList.map((connection) => ({ value: connection.id, label: connection.name }))}
+            tooltip={connections.isError ? CONNECTIONS_STALE_NOTE : undefined}
             value={field.value}
             onValueChange={(value) => {
               field.onChange(value);

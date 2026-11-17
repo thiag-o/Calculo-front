@@ -1,15 +1,17 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../api';
-import { Notice, Button, Badge, EmptyState, Loading, Text } from '../../design-system';
+import { Notice, Button, Badge, EmptyState, Loading, Skeleton, Text, type TableColumn } from '../../design-system';
 import { useSession } from '../../session';
-import { ColumnsTable } from '../columns';
+import { ColumnsTable, type Column } from '../columns';
 import {
   useDataset,
   useDatasetConnections,
   useDatasetExcelFiles,
+  useDatasetVariables,
   useRefreshDatasetColumns,
   type Dataset,
 } from './queries';
+import { DatasetVariables } from './DatasetVariables';
 import { DATASET_TYPE_LABELS, dateTime, datasetOrigin } from './origin';
 import { RenameDatasetDialog } from './RenameDatasetDialog';
 import { DeleteDatasetDialog } from './DeleteDatasetDialog';
@@ -31,9 +33,10 @@ export interface DatasetDetailProps {
 type OpenDialog = 'rename' | 'delete' | null;
 
 /**
- * Catalog › dataset detail: name, type, origin and the columns with name, source type, type and nullable (a column
- * without a supported type shows "Sem suporte"). With `datasets.manage`: "Atualizar colunas", rename and delete
- * (the variables go along). Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals of dialogs).
+ * Catalog › dataset detail: name, type, origin and the columns with name, source type, type, nullable and the variables
+ * over each one (a column without a supported type shows "Sem suporte"). With `datasets.manage`: "Atualizar colunas",
+ * rename and delete (the variables go along). Below, the "Variáveis" section: read only, or with create, edit and delete
+ * under `variables.manage`. Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals of dialogs).
  */
 export function DatasetDetail({ datasetId, onBack, onDeleted }: DatasetDetailProps) {
   const session = useSession();
@@ -88,6 +91,7 @@ export function DatasetDetail({ datasetId, onBack, onDeleted }: DatasetDetailPro
       dataset={dataset}
       back={back}
       canManage={session.hasPermission('datasets.manage')}
+      canManageVariables={session.hasPermission('variables.manage')}
       onDeleted={() => {
         setDeleted(true);
         onDeleted?.();
@@ -100,11 +104,13 @@ function LoadedDetail({
   dataset,
   back,
   canManage,
+  canManageVariables,
   onDeleted,
 }: {
   dataset: Dataset;
   back: ReactNode;
   canManage: boolean;
+  canManageVariables: boolean;
   onDeleted: () => void;
 }) {
   const columnsTitleId = useId();
@@ -112,6 +118,7 @@ function LoadedDetail({
   const connections = useDatasetConnections(dataset.type !== 'excel');
   const excelFiles = useDatasetExcelFiles(dataset.type === 'excel');
   const refresh = useRefreshDatasetColumns();
+  const variables = useDatasetVariables(dataset.id);
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const renameButton = useRef<HTMLButtonElement>(null);
   const deleteButton = useRef<HTMLButtonElement>(null);
@@ -124,6 +131,27 @@ function LoadedDetail({
     setDialog(next);
   }
   const columnCount = dataset.columns.length;
+
+  // The variables over each column, next to the column (the "Variáveis" section below has the details and the actions).
+  const variableColumn: TableColumn<Column> = {
+    key: 'variables',
+    title: 'Variáveis',
+    skeletonWidth: 100,
+    cell: (column) => {
+      if (variables.isPending) return <Skeleton width={80} />;
+      const names = (variables.data ?? []).filter((variable) => variable.column === column.name).map((variable) => variable.name);
+      if (names.length === 0) return null;
+      return (
+        <span className="fc-datasets-column-variables">
+          {names.map((name) => (
+            <Text key={name} variant="mono-13" className="fc-datasets-variable-name">
+              {name}
+            </Text>
+          ))}
+        </span>
+      );
+    },
+  };
 
   return (
     <DetailFrame title={dataset.name} back={back}>
@@ -197,6 +225,7 @@ function LoadedDetail({
         <ColumnsTable
           caption={`Colunas do dataset ${dataset.name}`}
           columns={dataset.columns}
+          extraColumns={[variableColumn]}
           empty={
             <EmptyState
               icon={<TableIcon />}
@@ -210,6 +239,8 @@ function LoadedDetail({
           }
         />
       </section>
+
+      <DatasetVariables dataset={dataset} canManage={canManageVariables} />
 
       {dialog === 'rename' ? (
         <RenameDatasetDialog dataset={dataset} focusOnClose={renameButton} onClose={() => setDialog(null)} />

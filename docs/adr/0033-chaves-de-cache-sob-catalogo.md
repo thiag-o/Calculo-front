@@ -4,6 +4,7 @@
 - **Data:** 2026-11-17
 - **Quem decidiu:** orquestração (tarefa F31)
 - **Relacionadas:** ADRs 0003, 0008, 0015, 0020, 0023
+- **Complementada por:** [0034](0034-dados-filhos-do-dataset-sob-a-chave-do-detalhe.md)
 
 ## Contexto
 

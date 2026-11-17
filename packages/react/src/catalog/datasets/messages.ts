@@ -124,3 +124,75 @@ export function deleteErrorMessage(error: unknown): string {
       return error.message;
   }
 }
+
+/** Fields of the variable form. */
+export type VariableField = 'column' | 'name' | 'type' | 'scale';
+
+/** What the variable form shows for an error: a general note (optional) and the error of each field. */
+export interface VariableScreenError {
+  message?: string;
+  fields: Partial<Record<VariableField, string>>;
+}
+
+export const VARIABLES_NO_PERMISSION_MESSAGE = 'Você não tem permissão para gerenciar variáveis neste tenant. Peça acesso a um Admin.';
+export const VARIABLE_ALREADY_EXISTS_MESSAGE = 'Já existe uma variável com esse nome neste dataset. Escolha outro nome.';
+export const INVALID_VARIABLE_NAME_MESSAGE =
+  'Use de 1 a 63 caracteres: letras minúsculas sem acento, números e _, começando por uma letra.';
+export const INCOMPATIBLE_TYPE_MESSAGE = 'A coluna não pode virar uma variável desse tipo. Escolha um dos tipos da lista.';
+export const UNKNOWN_COLUMN_MESSAGE = 'A coluna não está mais no dataset; a lista de colunas foi atualizada.';
+export const VARIABLE_NOT_FOUND_MESSAGE = 'Esta variável não existe mais neste dataset.';
+
+/** API field name (problem+json `fields`) -> variable form field. */
+const VARIABLE_FIELDS: Readonly<Record<string, VariableField>> = {
+  column: 'column',
+  name: 'name',
+  type: 'type',
+  scale: 'scale',
+};
+
+/**
+ * Error creating (`POST /v1/datasets/{id}/variables`) or changing (`PUT /v1/variables/{id}`) a variable, by `code`.
+ * `editing` tells what a `404 not_found` means: the variable is gone (change) or the dataset is gone (creation).
+ */
+export function variableError(error: unknown, editing: boolean): VariableScreenError {
+  if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE, fields: {} };
+  switch (error.code) {
+    case 'variable_already_exists':
+      return { fields: { name: VARIABLE_ALREADY_EXISTS_MESSAGE } };
+    case 'invalid_variable_name':
+      return { fields: { name: INVALID_VARIABLE_NAME_MESSAGE } };
+    case 'incompatible_type':
+      return { fields: { type: INCOMPATIBLE_TYPE_MESSAGE } };
+    case 'unknown_column':
+      // Editing has no column field (the column stays): the error goes to the general note.
+      return editing ? { message: UNKNOWN_COLUMN_MESSAGE, fields: {} } : { fields: { column: UNKNOWN_COLUMN_MESSAGE } };
+    case 'not_found':
+      return { message: editing ? VARIABLE_NOT_FOUND_MESSAGE : DATASET_NOT_FOUND_MESSAGE, fields: {} };
+    case 'no_permission':
+      return { message: VARIABLES_NO_PERMISSION_MESSAGE, fields: {} };
+    case 'invalid_data': {
+      const fields: Partial<Record<VariableField, string>> = {};
+      for (const [apiField, message] of Object.entries(error.fields)) {
+        const field = VARIABLE_FIELDS[apiField];
+        if (field !== undefined && fields[field] === undefined) fields[field] = message;
+      }
+      if (editing && fields.column !== undefined) return { message: fields.column, fields: {} };
+      return Object.keys(fields).length > 0 ? { fields } : { message: error.message, fields: {} };
+    }
+    default:
+      return { message: error.message, fields: {} };
+  }
+}
+
+/** Error deleting a variable (`DELETE /v1/variables/{id}`). */
+export function deleteVariableErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
+  switch (error.code) {
+    case 'not_found':
+      return VARIABLE_NOT_FOUND_MESSAGE;
+    case 'no_permission':
+      return VARIABLES_NO_PERMISSION_MESSAGE;
+    default:
+      return error.message;
+  }
+}

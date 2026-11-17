@@ -36,7 +36,15 @@ beforeEach(() => {
   api.respond('GET /v1/connections', json({ items: [POSTGRES, SQL_SERVER] }));
   api.respond('GET /v1/excel-files', json({ items: [EXCEL_FILE] }));
   api.respond(DETAIL, json(TABLE_DATASET));
+  respondNoVariables(api);
 });
+
+/** Every dataset of these tests starts without variables (DatasetVariables.test.tsx covers them). */
+function respondNoVariables(simulated: SimulatedApi) {
+  for (const dataset of [TABLE_DATASET, SQL_DATASET, EXCEL_DATASET]) {
+    simulated.respond(`GET /v1/datasets/${dataset.id}/variables`, json({ items: [] }));
+  }
+}
 
 afterEach(() => {
   cleanup();
@@ -63,7 +71,7 @@ describe('Detalhe do dataset', () => {
     expect(screen.getByText('3 colunas')).toBeInTheDocument();
 
     const headers = within(columnsTable()).getAllByRole('columnheader').map((header) => header.textContent);
-    expect(headers).toEqual(['Nome', 'Tipo de origem', 'Tipo', 'Anulável']);
+    expect(headers).toEqual(['Nome', 'Tipo de origem', 'Tipo', 'Anulável', 'Variáveis']);
     const decimal = within(columnsTable()).getByRole('row', { name: /vl_itm/ });
     expect(within(decimal).getByText('numeric(12,2)')).toBeInTheDocument();
     expect(within(decimal).getByText('Decimal (2 casas)')).toBeInTheDocument();
@@ -122,6 +130,7 @@ describe('Detalhe do dataset', () => {
     api = simulateApi(READ_ONLY_PERMISSIONS);
     api.respond('GET /v1/connections', json({ items: [POSTGRES] }));
     api.respond(DETAIL, json(TABLE_DATASET));
+    respondNoVariables(api);
     renderScreen(<DatasetDetail datasetId={TABLE_DATASET.id} />);
 
     expect(await screen.findByText('vl_itm')).toBeInTheDocument();

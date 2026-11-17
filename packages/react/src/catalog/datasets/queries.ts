@@ -11,6 +11,12 @@ export type DatabaseObject = Schemas['DatabaseObject'];
 export type Connection = Schemas['Connection'];
 /** An uploaded Excel file (generated from the contract). */
 export type ExcelFile = Schemas['ExcelFile'];
+/** A business variable over a dataset column (generated from the contract). */
+export type Variable = Schemas['Variable'];
+/** Body for creating a variable (generated from the contract). */
+export type NewVariable = Schemas['NewVariable'];
+/** Body for changing a variable: name, type and scale (generated from the contract). */
+export type VariableUpdate = Schemas['VariableUpdate'];
 
 /** How many objects each page of the object browser brings. */
 export const OBJECT_PAGE_SIZE = 50;
@@ -31,6 +37,14 @@ const OBJECT_COLUMNS_KEY = [...DATASETS_KEY, 'object-columns'] as const;
 
 export function datasetKey(id: string) {
   return [...DATASETS_KEY, 'detail', id] as const;
+}
+
+/**
+ * The variables of a dataset sit under its detail: deleting, renaming or refreshing the dataset keeps the detail out of
+ * the catalog refetch (ADR 0033), and the variables go along (they do not change with those actions).
+ */
+export function variablesKey(datasetId: string) {
+  return [...datasetKey(datasetId), 'variables'] as const;
 }
 
 function objectsKey(connectionId: string, search: string) {
@@ -194,6 +208,80 @@ export function useDeleteDataset() {
     // The detail is gone: fetching it again would only give 404 (the screen shows the removal by itself). A later visit
     // fetches it again on mount and shows "não existe mais".
     onSuccess: (_data, id) => refreshCatalog(queryClient, datasetKey(id)),
+  });
+}
+
+/** The variables of a dataset (`GET /v1/datasets/{id}/variables`), whole, without pagination. */
+export function useDatasetVariables(datasetId: string) {
+  const client = useApiClient();
+  return useQuery({
+    queryKey: variablesKey(datasetId),
+    queryFn: ({ signal }) =>
+      dataOrError(client.GET('/v1/datasets/{id}/variables', { params: { path: { id: datasetId } }, signal })),
+    select: (data) => data.items,
+  });
+}
+
+type VariableList = Schemas['VariableList'];
+
+/**
+ * After a variable change: the list in the cache gets the answer right away (`change`), and the rest of the catalog is
+ * fetched again, except the dataset detail and its variables (ADR 0033).
+ */
+function afterVariableChange(queryClient: QueryClient, datasetId: string, change: (items: Variable[]) => Variable[]) {
+  queryClient.setQueryData<VariableList>(variablesKey(datasetId), (list) => (list ? { items: change(list.items) } : list));
+  return refreshCatalog(queryClient, datasetKey(datasetId));
+}
+
+/**
+ * The column or its type changed in the dataset since the screen read it (someone used "Atualizar colunas"): the
+ * dataset is fetched again, so the columns and the accepted types are the current ones.
+ */
+function refreshDatasetOnColumnError(queryClient: QueryClient, datasetId: string, error: unknown) {
+  if (errorWithCode(error, ['incompatible_type', 'unknown_column'])) {
+    void queryClient.invalidateQueries({ queryKey: datasetKey(datasetId), exact: true });
+  }
+}
+
+/** Creates a variable over a column of the dataset (`POST /v1/datasets/{id}/variables`). */
+export function useCreateVariable(datasetId: string) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: NewVariable) =>
+      dataOrError(client.POST('/v1/datasets/{id}/variables', { params: { path: { id: datasetId } }, body })),
+    onSuccess: (variable) => afterVariableChange(queryClient, datasetId, (items) => [...items, variable]),
+    onError: (error) => refreshDatasetOnColumnError(queryClient, datasetId, error),
+  });
+}
+
+/** Changes the name, type and scale of a variable (`PUT /v1/variables/{id}`); the column stays. */
+export function useUpdateVariable(datasetId: string) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: VariableUpdate }) =>
+      dataOrError(client.PUT('/v1/variables/{id}', { params: { path: { id } }, body })),
+    onSuccess: (variable) =>
+      afterVariableChange(queryClient, datasetId, (items) => items.map((item) => (item.id === variable.id ? variable : item))),
+    onError: (error) => {
+      refreshDatasetOnColumnError(queryClient, datasetId, error);
+      // The variable is gone (someone deleted it): the list is fetched again.
+      if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: variablesKey(datasetId) });
+    },
+  });
+}
+
+/** Deletes a variable (`DELETE /v1/variables/{id}`); the column stays in the dataset. */
+export function useDeleteVariable(datasetId: string) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => dataOrError(client.DELETE('/v1/variables/{id}', { params: { path: { id } } })),
+    onSuccess: (_data, id) => afterVariableChange(queryClient, datasetId, (items) => items.filter((item) => item.id !== id)),
+    onError: (error) => {
+      if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: variablesKey(datasetId) });
+    },
   });
 }
 

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/re
 import type { UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Datasets } from '.';
-import { NO_CONNECTIONS_PERMISSION_REASON, NO_CONNECTIONS_REASON } from './NewDatasetDialog';
+import { CONNECTIONS_STALE_NOTE, NO_CONNECTIONS_PERMISSION_REASON, NO_CONNECTIONS_REASON } from './NewDatasetDialog';
 import { DATASET_ALREADY_EXISTS_MESSAGE, NO_CONNECTIONS_PERMISSION_MESSAGE, UNKNOWN_OBJECT_MESSAGE } from './messages';
 import {
   ITEM_COLUMNS,
@@ -275,6 +275,37 @@ describe('Novo dataset de tabela', () => {
     expect(await within(dialog).findByText(NO_CONNECTIONS_PERMISSION_MESSAGE)).toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Salvar' })).toHaveAccessibleDescription(NO_CONNECTIONS_PERMISSION_REASON);
+  });
+
+  it('falha ao recarregar as conexões em segundo plano: o seletor continua, com um aviso discreto, e o Salvar segue habilitado', async () => {
+    api.respond('GET /v1/connections', json({ items: [POSTGRES, SQL_SERVER] }), problem(503, 'unavailable'));
+    // The chosen connection is gone: the API refuses it, and the screen fetches the connections again (which fails).
+    api.respond(
+      'POST /v1/datasets',
+      problem(422, 'invalid_data', { fields: { connection_id: 'Conexão inexistente.' } }),
+      json(TABLE_DATASET, 201),
+    );
+    api.respond(`GET /v1/connections/${SQL_SERVER.id}/objects`, json({ items: [object('itens_nf')], next_cursor: null }));
+    api.respond(`GET /v1/connections/${SQL_SERVER.id}/objects/columns`, json({ items: ITEM_COLUMNS }));
+    const { user } = renderScreen(<Datasets />);
+    const dialog = await openDialog(user);
+    await choose(user, 'Conexão', 'Postgres de exemplo');
+    await user.click(await within(dialog).findByRole('radio', { name: 'public.itens_nf Tabela' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(api.callsTo('GET /v1/connections').length).toBeGreaterThanOrEqual(2));
+    const picker = within(dialog).getByRole('combobox', { name: 'Conexão' });
+    await waitFor(() => expect(picker).toHaveAccessibleDescription(new RegExp(CONNECTIONS_STALE_NOTE)));
+    expect(within(dialog).queryByText('Não foi possível carregar as conexões')).not.toBeInTheDocument();
+    const save = within(dialog).getByRole('button', { name: 'Salvar' });
+    expect(save).not.toHaveAttribute('aria-disabled');
+
+    // The list already loaded still holds: another connection can be chosen and saved.
+    await choose(user, 'Conexão', 'ERP SQL Server');
+    expect(picker).toHaveAccessibleDescription(new RegExp(CONNECTIONS_STALE_NOTE));
+    await user.click(await within(dialog).findByRole('radio', { name: 'public.itens_nf Tabela' }));
+    await user.click(save);
+    await waitFor(() => expect(api.callsTo('POST /v1/datasets')).toHaveLength(2));
   });
 
   it('Cancelar fecha sem salvar e devolve o foco ao Novo dataset', async () => {

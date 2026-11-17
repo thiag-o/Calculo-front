@@ -201,3 +201,13 @@ export function renderScreen(screenElement: ReactElement): Screen {
 export function setCsrfCookie(value: string) {
   document.cookie = `fc_csrf=${value}; path=/`;
 }
+
+/** A variable over `vl_itm` of the table dataset. */
+export const ITEM_VALUE_VARIABLE: Schemas['Variable'] = {
+  id: '70000000-0000-0000-0000-000000000001',
+  dataset_id: TABLE_DATASET.id,
+  column: 'vl_itm',
+  name: 'valor_item',
+  type: 'decimal',
+  scale: 2,
+};

@@ -274,6 +274,44 @@
   font-family: var(--fc-font-mono);
 }
 
+/* Variables: the names in mono (estilos.md §3), wrapping long names; several per column, one per line. */
+.fc-datasets-variable-name {
+  overflow-wrap: anywhere;
+}
+
+.fc-datasets-column-variables {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-datasets-variable-column {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+/* A read-only fact in a form (the column of the variable being edited): label-13 label above the value. */
+.fc-datasets-fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-datasets-fact p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-datasets-fact-detail {
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fc-datasets-sql,
   .fc-datasets-object-option {
