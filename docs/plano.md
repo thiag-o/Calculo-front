@@ -489,6 +489,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - **detalhe:** renomear; testar a conexão salva; remover com confirmação (`conexao_em_uso`);
   - **trocar credencial** (só `credenciais.gerenciar`): o `destino` aparece preenchido e a senha vazia, e salvar exige os cinco campos;
   - **sem `credenciais.gerenciar`:** não aparecem nem o destino nem as ações de credencial.
+  - **D34 do back (segurança do teste de conexão):** o erro `connection_target_not_allowed` (destino bloqueado) aparece como os outros, com a mensagem da API; as mensagens de erro do teste são textos fixos da API, mostrados como vêm; sem `credentials.manage`, o `last_test` traz só `ok`, `tested_at` e `error`, e a tela mostra só o ponto, a palavra e a data (versão, TLS, somente leitura e tempo aparecem só no resultado do botão "Testar").
   - **Campo só de escrita (design §4):** a credencial nunca vai para o cache do TanStack Query, para o `localStorage` nem para a URL. O estado do formulário é apagado ao salvar, cancelar ou fechar.
 - Aceite:
   - testes de cada ação e de cada erro;
