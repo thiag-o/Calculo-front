@@ -486,7 +486,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - **lista:** nome, tipo e último teste (ponto + palavra: "ok", "falhou", "não testada", com a data);
   - **nova conexão** (só com `conexoes.gerenciar` e `credenciais.gerenciar`):
     - campos tipo, nome, host, porta (padrão 5432 ou 1433 conforme o tipo), banco, usuário e senha (`type="password"`);
-    - "Testar" antes de "Salvar", mostrando versão, TLS, somente leitura e tempo;
+    - "Testar" antes de "Salvar", mostrando versão, TLS, somente leitura e tempo. O "Salvar" fica habilitado sem teste prévio: a API testa ao salvar e não grava se falhar (decisão da sessão global na F30);
     - erros por `codigo`: `conexao_nao_somente_leitura` com a lista de privilégios, `conexao_sem_tls`, `conexao_falhou` e `conexao_existente`;
   - **detalhe:** renomear; testar a conexão salva; remover com confirmação (`conexao_em_uso`);
   - **trocar credencial** (só `credenciais.gerenciar`): o `destino` aparece preenchido e a senha vazia, e salvar exige os cinco campos;
@@ -544,7 +544,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F34 · Integração do épico 3: menu Catálogo, rotas e interface pública**
 - dep: F30, F32, F33, F40
 - modelo: sonnet
-- arquivos: `packages/react/src/catalog/`, `packages/react/src/module/`, `packages/react/src/index.ts`, `apps/shell/src/`, `docs/incorporacao.md`, `README.md`, `.changeset/`
+- arquivos: `packages/react/src/catalog/`, `packages/react/src/module/`, `packages/react/src/index.ts`, `apps/shell/src/`, `docs/incorporacao.md`, `README.md`, `.changeset/`, `docs/glossario.md` (os nomes novos do catálogo, como `Connections`, `ConnectionList` e `ConnectionDetail`)
 - Fazer:
   - `catalogo/index.ts` exporta `<Catalogo>`, com as abas (cada uma com a sua permissão), e o detalhe do dataset;
   - item "Catálogo" no menu, com `conexoes.ver`;
