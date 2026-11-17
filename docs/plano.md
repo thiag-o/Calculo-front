@@ -462,7 +462,8 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 - Fazer:
   - `pnpm generate:api` a partir de `../backend/contracts/openapi.yaml`;
   - chamadas, campos, códigos de erro, permissões, nomes de evento e cookie (`fc_session`) no código, nos testes e nos exemplos do modo simulado;
-  - no modo real: os comandos do back (`prepare-local`), as variáveis de ambiente novas do back e as do e2e em inglês (`E2E_SAMPLE_*` no lugar de `E2E_EXEMPLO_*`), documentadas no README.
+  - no modo real: os comandos do back (`prepare-local`), as variáveis de ambiente novas do back e as do e2e em inglês (`E2E_SAMPLE_*` no lugar de `E2E_EXEMPLO_*`), documentadas no README;
+  - sai a rota legada `/redefinir` do shell (a B49 passa a gerar o link com `/reset-password`), e o estado simulado do e2e vai para o inglês (exceções da F41 no `docs/glossario.md`).
 - Aceite:
   - `pnpm lint`, `typecheck`, `test`, `build` e `e2e` verdes;
   - `pnpm e2e:real` verde contra o back depois da B49 (ambiente em `../docs/plano-global.md`, "Ambiente do teste de integração");
