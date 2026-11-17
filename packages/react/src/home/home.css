@@ -1,0 +1,36 @@
+/* Home screen (estilos.md §16). Only fc- classes and --fc-* variables; no global reset (ADR 0002). */
+.fc-home {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+
+.fc-home-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fc-home-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fc-home-title p,
+.fc-home-title h1,
+.fc-home-section h2 {
+  margin: 0;
+}
+
+.fc-home-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}

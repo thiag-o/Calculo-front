@@ -2,6 +2,8 @@
 
 Para quem põe o Fluxo de Cálculo dentro de um sistema hospedeiro (React). O módulo vive na página do hospedeiro, sem iframe (ADR [0002](adr/0002-pacote-react-sem-iframe.md)).
 
+Os nomes da interface pública (componentes, props e seus valores, tipos, CSS publicado e rotas) estão em inglês desde a versão maior da F41 (ADR [0031](adr/0031-codigo-em-ingles.md)); a lista do que mudou está no changeset `.changeset/f41-codigo-em-ingles.md`. Os caminhos, campos e códigos da API (`/v1/...`, `id_externo`, `codigo`…) continuam em português até a migração da API (F42).
+
 ## 1. Instalação e CSS
 
 O pacote sai no GitHub Packages (`.npmrc` na raiz do repositório; o `NODE_AUTH_TOKEN` precisa de `read:packages`).
@@ -13,25 +15,25 @@ pnpm add @fluxo/react
 Importe o CSS uma vez, no ponto de entrada do hospedeiro:
 
 ```ts
-import '@fluxo/react/estilos.css';
+import '@fluxo/react/styles.css';
 ```
 
-O CSS usa só classes com o prefixo `fc-` e variáveis `--fc-*` declaradas em `.fc-raiz`. Ele não tem reset global e não mexe em `:root`, `body` nem em elementos do hospedeiro.
+O CSS usa só classes com o prefixo `fc-` e variáveis `--fc-*` declaradas em `.fc-root`. Ele não tem reset global e não mexe em `:root`, `body` nem em elementos do hospedeiro.
 
 ## 2. Montar o módulo
 
 ```tsx
 import { FluxoCalculo } from '@fluxo/react';
-import '@fluxo/react/estilos.css';
+import '@fluxo/react/styles.css';
 
-export function TelaFluxo({ token, aoExpirar }: { token: string; aoExpirar: () => void }) {
+export function FluxoScreenOnHost({ token, onExpire }: { token: string; onExpire: () => void }) {
   return (
     <FluxoCalculo
       apiUrl="https://api.exemplo.com.br"
       token={token}
-      navegacao="memoria"
-      tema="sistema"
-      onSessaoExpirada={aoExpirar}
+      navigation="memory"
+      theme="system"
+      onSessionExpired={onExpire}
     />
   );
 }
@@ -43,65 +45,65 @@ export function TelaFluxo({ token, aoExpirar }: { token: string; aoExpirar: () =
 |---|---|---|
 | `apiUrl` | `string` (obrigatória) | Endereço da API, **sem** o `/v1`. |
 | `token` | `string` | Token de incorporação (seção 3). Com ele, o módulo usa `Authorization: Bearer` e o layout incorporado (abas, sem menu lateral). Sem ele, usa o cookie de sessão (modo do app casca). |
-| `tela` | `TelaFluxo` | Tela em que o módulo abre: `'inicio'`, `'auditoria'`, `'administracao'`, `'usuarios'`, `'papeis'`, `'integracao'` ou `'seguranca'`. Sem a permissão da tela, abre na primeira tela permitida. |
-| `tema` | `'claro' \| 'escuro' \| 'sistema'` | Padrão `'sistema'`. Veja a seção 5. |
-| `navegacao` | `'url' \| 'memoria'` | Padrão `'memoria'` com `token`, `'url'` sem. Veja a seção 7. |
-| `onEvento` | `(evento: EventoFluxo) => void` | Avisos ao hospedeiro. Nenhum evento é emitido hoje (`EventoFluxo` é `never`); cada épico acrescenta os seus. |
-| `onSessaoExpirada` | `() => void` | Chamado quando não há mais sessão. Veja a seção 3. |
+| `screen` | `FluxoScreen` | Tela em que o módulo abre: `'home'`, `'audit'`, `'admin'`, `'users'`, `'roles'`, `'integration'` ou `'security'`. Sem a permissão da tela, abre na primeira tela permitida. |
+| `theme` | `'light' \| 'dark' \| 'system'` | Padrão `'system'`. Veja a seção 5. |
+| `navigation` | `'url' \| 'memory'` | Padrão `'memory'` com `token`, `'url'` sem. Veja a seção 7. |
+| `onEvent` | `(event: FluxoEvent) => void` | Avisos ao hospedeiro. Nenhum evento é emitido hoje (`FluxoEvent` é `never`); cada épico acrescenta os seus. |
+| `onSessionExpired` | `() => void` | Chamado quando não há mais sessão. Veja a seção 3. |
 
-Os tipos `FluxoCalculoProps`, `TelaFluxo`, `NavegacaoFluxo`, `EventoFluxo` e `TemaFluxo` também saem do pacote.
+Os tipos `FluxoCalculoProps`, `FluxoScreen`, `FluxoNavigation`, `FluxoEvent` e `FluxoTheme` também saem do pacote.
 
 ### Telas
 
 No modo incorporado, as abas são as telas a que o usuário tem permissão; as sem permissão não aparecem.
 
-| Aba | Permissão | Valores de `tela` |
+| Aba | Permissão | Valores de `screen` |
 |---|---|---|
-| Início | nenhuma | `inicio` |
-| Auditoria | `auditoria.ver` | `auditoria` |
-| Administração | a de cada área | `administracao` (primeira área permitida), `usuarios`, `papeis`, `integracao`, `seguranca` |
+| Início | nenhuma | `home` |
+| Auditoria | `auditoria.ver` | `audit` |
+| Administração | a de cada área | `admin` (primeira área permitida), `users`, `roles`, `integration`, `security` |
 
 A aba Administração tem sub-abas, cada uma com a sua permissão, e some se o usuário não tem nenhuma. Quais permissões o usuário tem vem dos papéis que o hospedeiro informa ao pedir o token.
 
 ### Componentes por tela
 
-Para mostrar só uma parte do produto, sem as abas do módulo, o pacote exporta `<Inicio>`, `<Auditoria>` e `<Administracao>`. Cada um funciona sozinho, fora do `<FluxoCalculo>`: monta a própria raiz (tokens, tema e portais), o cliente da API e o cache.
+Para mostrar só uma parte do produto, sem as abas do módulo, o pacote exporta `<Home>`, `<Audit>` e `<Admin>`. Cada um funciona sozinho, fora do `<FluxoCalculo>`: monta a própria raiz (tokens, tema e portais), o cliente da API e o cache.
 
 ```tsx
-import { Administracao } from '@fluxo/react';
-import '@fluxo/react/estilos.css';
+import { Admin } from '@fluxo/react';
+import '@fluxo/react/styles.css';
 
-export function ConfiguracoesDoFluxo({ token, aoExpirar }: { token: string; aoExpirar: () => void }) {
-  return <Administracao apiUrl="https://api.exemplo.com.br" token={token} tema="sistema" onSessaoExpirada={aoExpirar} />;
+export function FluxoSettings({ token, onExpire }: { token: string; onExpire: () => void }) {
+  return <Admin apiUrl="https://api.exemplo.com.br" token={token} theme="system" onSessionExpired={onExpire} />;
 }
 ```
 
-Props, iguais às do `<FluxoCalculo>` (tipos `InicioProps`, `AuditoriaProps`, `AdministracaoProps` e `TelaAvulsaProps`):
+Props, iguais às do `<FluxoCalculo>` (tipos `HomeProps`, `AuditProps`, `AdminProps` e `StandaloneScreenProps`):
 
 | Prop | Tipo | O que faz |
 |---|---|---|
 | `apiUrl` | `string` (obrigatória) | Endereço da API, **sem** o `/v1`. |
 | `token` | `string` | Com ele, `Authorization: Bearer` (seção 3). Sem ele, o cookie de sessão. |
-| `tema` | `'claro' \| 'escuro' \| 'sistema'` | Padrão `'sistema'` (seção 5). |
-| `onEvento` | `(evento: EventoFluxo) => void` | Como no `<FluxoCalculo>`; nenhum evento hoje. |
-| `onSessaoExpirada` | `() => void` | Como no `<FluxoCalculo>`: uma vez por token, depois de `401 sem_sessao`. |
+| `theme` | `'light' \| 'dark' \| 'system'` | Padrão `'system'` (seção 5). |
+| `onEvent` | `(event: FluxoEvent) => void` | Como no `<FluxoCalculo>`; nenhum evento hoje. |
+| `onSessionExpired` | `() => void` | Como no `<FluxoCalculo>`: uma vez por token, depois de `401 sem_sessao`. |
 
-Não há `tela` nem `navegacao`:
+Não há `screen` nem `navigation`:
 
 - **A navegação é sempre em memória.** As sub-abas da Administração trocam sem mexer na URL nem no histórico do hospedeiro. Se o hospedeiro usa `react-router`, o componente pode ficar dentro de uma rota dele sem interferir no roteador.
 - **Sem permissão para a tela**, aparece o aviso "Você não tem acesso à Auditoria" (ou "à Administração"), com o pedido para falar com o administrador do cliente, e nada da tela é buscado na API.
 
 | Componente | Permissão |
 |---|---|
-| `<Inicio>` | nenhuma |
-| `<Auditoria>` | `auditoria.ver` |
-| `<Administracao>` | pelo menos uma de `usuarios.gerenciar`, `papeis.gerenciar`, `integracao.gerenciar` e `seguranca.gerenciar`; só as sub-abas permitidas aparecem |
+| `<Home>` | nenhuma |
+| `<Audit>` | `auditoria.ver` |
+| `<Admin>` | pelo menos uma de `usuarios.gerenciar`, `papeis.gerenciar`, `integracao.gerenciar` e `seguranca.gerenciar`; só as sub-abas permitidas aparecem |
 
 Enquanto a sessão carrega, a tela mostra o esqueleto; se a sessão não abre (por exemplo `403 origem_nao_autorizada`), mostra o motivo e **Tentar de novo**; depois de `401 sem_sessao`, o aviso de sessão encerrada.
 
 Cada componente é independente: dois na mesma página têm cada um a sua raiz, o seu tema e o seu cache, e cada um confere a sessão (`GET /v1/sessao`). Para várias telas com cache e sessão comuns, use o `<FluxoCalculo>`. Os diálogos e menus abrem no portal da raiz de cada componente; valem para eles as regras da seção 6.
 
-`<Entrar>` e `<RedefinirSenha>` (props `apiUrl`, `tema?`; a segunda também `token?` e `onSalvar?`) são telas públicas do app casca e não servem à incorporação.
+`<SignIn>` e `<ResetPassword>` (props `apiUrl`, `theme?`; a primeira também `onSignIn?`, a segunda `token?` e `onSave?`) são telas públicas do app casca e não servem à incorporação.
 
 ## 3. Modo token
 
@@ -123,26 +125,26 @@ Cada componente é independente: dois na mesma página têm cada um a sua raiz, 
 Exemplo do backend do hospedeiro (Node):
 
 ```ts
-export async function obterTokenFluxo(
+export async function getFluxoToken(
   apiUrl: string,
-  chaveApi: string, // vem do ambiente do servidor, nunca do navegador
-  usuario: { idExterno: string; email: string; nome: string; papeis: string[] },
+  apiKey: string, // comes from the server environment, never from the browser
+  user: { externalId: string; email: string; name: string; roles: string[] },
 ): Promise<{ token: string; expira_em: string }> {
-  const resposta = await fetch(`${apiUrl}/v1/incorporacao/sessoes`, {
+  const response = await fetch(`${apiUrl}/v1/incorporacao/sessoes`, {
     method: 'POST',
-    headers: { Authorization: `Chave ${chaveApi}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Chave ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      id_externo: usuario.idExterno,
-      email: usuario.email,
-      nome: usuario.nome,
-      papeis: usuario.papeis,
+      id_externo: user.externalId,
+      email: user.email,
+      nome: user.name,
+      papeis: user.roles,
     }),
   });
-  if (resposta.status !== 201) {
-    const problema = (await resposta.json().catch(() => ({}))) as { codigo?: string };
-    throw new Error(`Falha ao obter o token (${resposta.status} ${problema.codigo ?? ''})`);
+  if (response.status !== 201) {
+    const problem = (await response.json().catch(() => ({}))) as { codigo?: string };
+    throw new Error(`Falha ao obter o token (${response.status} ${problem.codigo ?? ''})`);
   }
-  return (await resposta.json()) as { token: string; expira_em: string };
+  return (await response.json()) as { token: string; expira_em: string };
 }
 ```
 
@@ -155,29 +157,29 @@ Códigos de erro dessa troca (problem+json, campo `codigo`):
 | 422 | `papel_inexistente` | Um nome em `papeis` não existe no tenant. |
 | 422 | `dados_invalidos` | Corpo malformado ou campo faltando (`campos` traz o erro de cada um). |
 
-### Renovar o token e `onSessaoExpirada`
+### Renovar o token e `onSessionExpired`
 
 O token vence (15 minutos por padrão). Duas formas de renovar:
 
 - **Antes de vencer:** o backend devolve `expira_em`; o hospedeiro pede outro token e passa no `token`. O módulo confere a sessão com `GET /v1/sessao`. Se for a mesma pessoa e o mesmo tenant, mantém a tela e os dados; se for outra pessoa ou outro tenant, descarta o cache (ADR [0024](adr/0024-troca-de-token-confere-a-sessao.md)).
-- **Depois de vencer:** a API responde `401 sem_sessao` e o módulo chama `onSessaoExpirada`, **uma vez por token** (ADR [0019](adr/0019-encerramento-de-sessao-no-modulo.md)). O módulo mostra o aviso de sessão encerrada e limpa o cache. O hospedeiro pede um token novo e o passa em `token`.
+- **Depois de vencer:** a API responde `401 sem_sessao` e o módulo chama `onSessionExpired`, **uma vez por token** (ADR [0019](adr/0019-encerramento-de-sessao-no-modulo.md)). O módulo mostra o aviso de sessão encerrada e limpa o cache. O hospedeiro pede um token novo e o passa em `token`.
 
-O mesmo `onSessaoExpirada` é chamado quando a pessoa usa "Sair" do módulo.
+O mesmo `onSessionExpired` é chamado quando a pessoa usa "Sair" do módulo.
 
 ```tsx
 import { FluxoCalculo } from '@fluxo/react';
 import { useCallback, useEffect, useState } from 'react';
 
-// `pedirToken` chama o backend do hospedeiro, que usa a função da seção anterior.
-export function FluxoDoHospedeiro({ pedirToken }: { pedirToken: () => Promise<string> }) {
+// `requestToken` calls the host app backend, which uses the function from the previous section.
+export function HostAppFluxo({ requestToken }: { requestToken: () => Promise<string> }) {
   const [token, setToken] = useState<string | null>(null);
-  const renovar = useCallback(() => {
-    void pedirToken().then(setToken);
-  }, [pedirToken]);
-  useEffect(renovar, [renovar]);
+  const renew = useCallback(() => {
+    void requestToken().then(setToken);
+  }, [requestToken]);
+  useEffect(renew, [renew]);
 
   if (token === null) return <p>Carregando…</p>;
-  return <FluxoCalculo apiUrl="https://api.exemplo.com.br" token={token} onSessaoExpirada={renovar} />;
+  return <FluxoCalculo apiUrl="https://api.exemplo.com.br" token={token} onSessionExpired={renew} />;
 }
 ```
 
@@ -190,26 +192,26 @@ Com token, a API confere o cabeçalho `Origin` da requisição: ele precisa esta
 O repositório traz uma página que faz o papel do backend do hospedeiro, só para uso local (ela mostra um aviso: a chave não deve ir ao navegador em produção):
 
 ```bash
-pnpm --filter casca exec vite --config vite.incorporacao.config.ts
+pnpm --filter shell exec vite --config vite.embed.config.ts
 ```
 
-Ela sobe em `http://localhost:5274`, que precisa estar nos domínios autorizados do tenant. Você informa a chave de API, o e-mail, o nome e os papéis e escolhe o que montar; ela troca a chave por um token e monta `<FluxoCalculo token navegacao="memoria">` ou só a `<Administracao token>` avulsa.
+Ela sobe em `http://localhost:5274/embed-test.html`, que precisa estar nos domínios autorizados do tenant. Você informa a chave de API, o e-mail, o nome e os papéis e escolhe o que montar; ela troca a chave por um token e monta `<FluxoCalculo token navigation="memory">` ou só a `<Admin token>` avulsa.
 
 ## 4. Erros que o módulo mostra
 
-Os códigos gerais das rotas protegidas são `401 sem_sessao` (leva ao `onSessaoExpirada`), `403 sem_permissao` e `403 origem_nao_autorizada`. A lista completa está no contrato (`backend/contratos/openapi.yaml`). As telas decidem pelo `codigo`, nunca pelo texto.
+Os códigos gerais das rotas protegidas são `401 sem_sessao` (leva ao `onSessionExpired`), `403 sem_permissao` e `403 origem_nao_autorizada`. A lista completa está no contrato (`backend/contratos/openapi.yaml`). As telas decidem pelo `codigo`, nunca pelo texto.
 
 ## 5. Tema e sobrescrita de tokens
 
-`tema` define o esquema de cores:
+`theme` define o esquema de cores:
 
-- `'claro'` e `'escuro'` fixam o tema (atributo `data-theme` na raiz do módulo);
-- `'sistema'` (padrão) segue `prefers-color-scheme`.
+- `'light'` e `'dark'` fixam o tema (atributo `data-theme` na raiz do módulo);
+- `'system'` (padrão) segue `prefers-color-scheme`.
 
-Os tokens `--fc-*` ficam em `.fc-raiz`, com especificidade zero (`:where()`), então um seletor simples do hospedeiro vence nos dois temas:
+Os tokens `--fc-*` ficam em `.fc-root`, com especificidade zero (`:where()`), então um seletor simples do hospedeiro vence nos dois temas:
 
 ```css
-.fc-raiz {
+.fc-root {
   --fc-primary: #0b5fff;
   --fc-primary-hover: #0a4fd6;
 }
@@ -241,7 +243,7 @@ Isso é de propósito: é o que mantém o diálogo acessível. O módulo não de
 
 ## 7. Navegação
 
-- **`navegacao="memoria"`** (padrão com `token`): as rotas internas ficam na memória do módulo. A URL do hospedeiro não muda, o botão voltar do navegador não navega dentro do módulo e o hospedeiro não precisa reservar rotas. A tela em que o módulo abre vem de `tela`.
-- **`navegacao="url"`** (padrão sem `token`, usado pelo app casca): as rotas internas ficam sincronizadas com a URL, com `basename` fixo em `/` e **sem prop** para mudá-lo (ADR 0017). Só serve a um hospedeiro que monte o módulo na raiz do site e reserve as rotas `/inicio`, `/auditoria` e `/administracao/*`. Se um hospedeiro precisar montar fora da raiz, o `basename` vira prop numa decisão futura.
+- **`navigation="memory"`** (padrão com `token`): as rotas internas ficam na memória do módulo. A URL do hospedeiro não muda, o botão voltar do navegador não navega dentro do módulo e o hospedeiro não precisa reservar rotas. A tela em que o módulo abre vem de `screen`.
+- **`navigation="url"`** (padrão sem `token`, usado pelo app casca): as rotas internas ficam sincronizadas com a URL, com `basename` fixo em `/` e **sem prop** para mudá-lo (ADR 0017). Só serve a um hospedeiro que monte o módulo na raiz do site e reserve as rotas `/home`, `/audit` e `/admin/*`. Se um hospedeiro precisar montar fora da raiz, o `basename` vira prop numa decisão futura.
 
-Para incorporar, use `memoria`.
+Para incorporar, use `memory`.

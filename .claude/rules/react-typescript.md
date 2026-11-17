@@ -7,6 +7,10 @@ paths:
 
 Adaptado das regras `typescript`, `react` e `web` do ECC (github.com/affaan-m/ECC, licença MIT), filtradas pelas ADRs deste repositório. Se algo aqui conflitar com uma ADR aceita ou com o `docs/estilos.md`, valem a ADR e o `estilos.md`. A organização de pastas segue só a ADR 0003 (verticais): nenhuma pasta `hooks`, `utils`, `components` etc.
 
+## Idioma
+- Código em inglês (ADR 0031): pastas, arquivos, identificadores, props e seus valores, comentários, classes `fc-`, rotas e chaves de cache, com os nomes de `docs/glossario.md` (front) e `../backend/docs/glossario.md` (API). Textos para pessoas ficam em pt-BR.
+- Até a F42, os nomes da API (caminhos, campos, códigos, permissões) continuam em português; a tradução entre o formulário e o corpo da API fica num ponto só.
+
 ## TypeScript
 - Sem `any`. Dado externo chega como `unknown` e é estreitado antes do uso.
 - Tipos explícitos de parâmetro e retorno em tudo que é exportado; deixe o resto ser inferido.

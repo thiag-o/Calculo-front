@@ -1,0 +1,49 @@
+/*
+ * Sign-in screen (estilos.md §4, §7.1, §7.2, §7.6 and §14). Only fc- classes and --fc-* variables; no global reset and
+ * no full-window measurement (ADR 0002): the screen takes the height the host app gives the root.
+ */
+
+.fc-sign-in-root {
+  min-height: 100%;
+}
+
+.fc-sign-in {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100%;
+  padding: 56px 16px;
+}
+
+.fc-sign-in-box {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 360px;
+  padding: 24px;
+}
+
+.fc-sign-in-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fc-sign-in-title,
+.fc-sign-in-subtitle,
+.fc-sign-in-help {
+  margin: 0;
+}
+
+.fc-sign-in-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.fc-sign-in-submit {
+  width: 100%;
+}

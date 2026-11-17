@@ -4,14 +4,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { RaizFluxo, type TemaFluxo } from '../raiz';
+import { FluxoRoot, type FluxoTheme } from '../root';
 
-// O Vitest não processa CSS; as folhas do design-system são aplicadas no jsdom a partir dos arquivos.
-const pastaDesignSystem = join(dirname(fileURLToPath(import.meta.url)), '..');
-const [cssTokens, ...outrasFolhas] = ['tokens/tokens.css', 'tipografia/tipografia.css', 'raiz/raiz.css'].map(
-  (arquivo) => readFileSync(join(pastaDesignSystem, arquivo), 'utf8'),
+// Vitest does not process CSS; the design-system stylesheets are applied in jsdom from the files.
+const designSystemFolder = join(dirname(fileURLToPath(import.meta.url)), '..');
+const [cssTokens, ...otherStylesheets] = ['tokens/tokens.css', 'typography/typography.css', 'root/root.css'].map(
+  (file) => readFileSync(join(designSystemFolder, file), 'utf8'),
 );
-const folhas = [cssTokens!, ...outrasFolhas];
+const stylesheets = [cssTokens!, ...otherStylesheets];
 
 // estilos.md §2.1 a §2.4: [claro, escuro].
 const tokens: Record<string, [string, string]> = {
@@ -48,7 +48,7 @@ const tokens: Record<string, [string, string]> = {
   '--fc-cat-output': ['#666666', '#A1A1A1'],
 };
 
-// estilos.md §2.5: alias -> token de base.
+// estilos.md §2.5: alias -> base token.
 const aliases: Record<string, string> = {
   '--fc-text': '--fc-gray-1000',
   '--fc-text-secondary': '--fc-gray-900',
@@ -65,128 +65,128 @@ const aliases: Record<string, string> = {
   '--fc-danger-text': '--fc-red-900',
 };
 
-const todasAsVariaveis = [...Object.keys(tokens), ...Object.keys(aliases), '--fc-font-sans', '--fc-font-mono'];
+const allVariables = [...Object.keys(tokens), ...Object.keys(aliases), '--fc-font-sans', '--fc-font-mono'];
 
-function valor(elemento: Element, variavel: string): string {
-  return getComputedStyle(elemento).getPropertyValue(variavel).trim().toLowerCase();
+function value(element: Element, variable: string): string {
+  return getComputedStyle(element).getPropertyValue(variable).trim().toLowerCase();
 }
 
-function estiloCompleto(elemento: Element): string[] {
-  const estilo = getComputedStyle(elemento);
-  return Array.from(estilo, (propriedade) => `${propriedade}: ${estilo.getPropertyValue(propriedade)}`);
+function fullStyle(element: Element): string[] {
+  const style = getComputedStyle(element);
+  return Array.from(style, (property) => `${property}: ${style.getPropertyValue(property)}`);
 }
 
-function aplicarFolhas(...conteudos: string[]): HTMLStyleElement[] {
-  return conteudos.map((conteudo) => {
-    const estilo = document.createElement('style');
-    estilo.textContent = conteudo;
-    document.head.appendChild(estilo);
-    return estilo;
+function applyStylesheets(...contents: string[]): HTMLStyleElement[] {
+  return contents.map((content) => {
+    const style = document.createElement('style');
+    style.textContent = content;
+    document.head.appendChild(style);
+    return style;
   });
 }
 
-function declaracoes(regra: CSSStyleRule): Record<string, string> {
-  return Object.fromEntries(Array.from(regra.style, (p) => [p, regra.style.getPropertyValue(p).trim()]));
+function declarations(rule: CSSStyleRule): Record<string, string> {
+  return Object.fromEntries(Array.from(rule.style, (p) => [p, rule.style.getPropertyValue(p).trim()]));
 }
 
-function renderizarComTema(tema: TemaFluxo) {
+function renderWithTheme(theme: FluxoTheme) {
   render(
     <>
-      <p data-testid="fora">fora do módulo</p>
-      <RaizFluxo tema={tema}>
-        <p data-testid="dentro">dentro do módulo</p>
-      </RaizFluxo>
+      <p data-testid="outside">fora do módulo</p>
+      <FluxoRoot theme={theme}>
+        <p data-testid="inside">dentro do módulo</p>
+      </FluxoRoot>
     </>,
   );
-  return { dentro: screen.getByTestId('dentro'), fora: screen.getByTestId('fora') };
+  return { inside: screen.getByTestId('inside'), outside: screen.getByTestId('outside') };
 }
 
-let estilosAplicados: HTMLStyleElement[] = [];
+let appliedStyles: HTMLStyleElement[] = [];
 
 beforeEach(() => {
-  estilosAplicados = aplicarFolhas(...folhas);
+  appliedStyles = applyStylesheets(...stylesheets);
 });
 
 afterEach(() => {
   cleanup();
-  estilosAplicados.forEach((estilo) => estilo.remove());
+  appliedStyles.forEach((style) => style.remove());
 });
 
 describe.each([
-  ['claro', 0],
-  ['escuro', 1],
-] as const)('dentro da raiz, tema %s', (tema, indice) => {
+  ['light', 0],
+  ['dark', 1],
+] as const)('dentro da raiz, tema %s', (theme, index) => {
   it('resolve todos os tokens de base com os valores do estilos.md', () => {
-    const { dentro } = renderizarComTema(tema);
-    for (const [variavel, valores] of Object.entries(tokens)) {
-      expect(valor(dentro, variavel), variavel).toBe(valores[indice].toLowerCase());
+    const { inside } = renderWithTheme(theme);
+    for (const [variable, values] of Object.entries(tokens)) {
+      expect(value(inside, variable), variable).toBe(values[index].toLowerCase());
     }
   });
 
   it('resolve os aliases semânticos para o token do mesmo tema', () => {
-    const { dentro } = renderizarComTema(tema);
+    const { inside } = renderWithTheme(theme);
     for (const [alias, base] of Object.entries(aliases)) {
-      expect(valor(dentro, alias), alias).toBe(tokens[base]![indice].toLowerCase());
+      expect(value(inside, alias), alias).toBe(tokens[base]![index].toLowerCase());
     }
   });
 });
 
 describe('tema sistema', () => {
   it('não fixa data-theme e, sem preferência escura, usa o claro', () => {
-    const { dentro } = renderizarComTema('sistema');
-    expect(dentro.closest('.fc-raiz')?.hasAttribute('data-theme')).toBe(false);
-    expect(valor(dentro, '--fc-background-100')).toBe('#ffffff');
+    const { inside } = renderWithTheme('system');
+    expect(inside.closest('.fc-root')?.hasAttribute('data-theme')).toBe(false);
+    expect(value(inside, '--fc-background-100')).toBe('#ffffff');
   });
 
   it('com prefers-color-scheme escuro, declara os mesmos valores do tema escuro explícito', () => {
-    const [folha] = aplicarFolhas(cssTokens!);
-    const regras = Array.from(folha!.sheet!.cssRules);
-    folha!.remove();
+    const [stylesheet] = applyStylesheets(cssTokens!);
+    const rules = Array.from(stylesheet!.sheet!.cssRules);
+    stylesheet!.remove();
 
-    const escuro = regras.find((r) => r instanceof CSSStyleRule && /data-theme=['"]dark['"]/.test(r.selectorText));
-    const midia = regras.find((r) => r instanceof CSSMediaRule);
-    expect(escuro).toBeInstanceOf(CSSStyleRule);
-    expect(midia).toBeInstanceOf(CSSMediaRule);
+    const dark = rules.find((r) => r instanceof CSSStyleRule && /data-theme=['"]dark['"]/.test(r.selectorText));
+    const media = rules.find((r) => r instanceof CSSMediaRule);
+    expect(dark).toBeInstanceOf(CSSStyleRule);
+    expect(media).toBeInstanceOf(CSSMediaRule);
 
-    const regraDaMidia = (midia as CSSMediaRule).cssRules[0] as CSSStyleRule;
-    expect((midia as CSSMediaRule).conditionText).toContain('prefers-color-scheme: dark');
-    expect(regraDaMidia.selectorText).toContain('.fc-raiz:not([data-theme])');
-    expect(declaracoes(regraDaMidia)).toEqual(declaracoes(escuro as CSSStyleRule));
+    const mediaRule = (media as CSSMediaRule).cssRules[0] as CSSStyleRule;
+    expect((media as CSSMediaRule).conditionText).toContain('prefers-color-scheme: dark');
+    expect(mediaRule.selectorText).toContain('.fc-root:not([data-theme])');
+    expect(declarations(mediaRule)).toEqual(declarations(dark as CSSStyleRule));
   });
 });
 
 describe('fora da raiz', () => {
   it('nenhuma variável --fc-* existe fora do módulo, nem no html e no body', () => {
-    const { fora } = renderizarComTema('escuro');
-    for (const elemento of [fora, document.body, document.documentElement]) {
-      for (const variavel of todasAsVariaveis) {
-        expect(valor(elemento, variavel), `${variavel} em <${elemento.tagName.toLowerCase()}>`).toBe('');
+    const { outside } = renderWithTheme('dark');
+    for (const element of [outside, document.body, document.documentElement]) {
+      for (const variable of allVariables) {
+        expect(value(element, variable), `${variable} em <${element.tagName.toLowerCase()}>`).toBe('');
       }
     }
   });
 
   it('o estilo do html, do body e dos elementos do hospedeiro não muda', () => {
-    estilosAplicados.forEach((estilo) => estilo.remove());
-    const sem = renderizarComTema('escuro');
-    const estiloSemModulo = [document.documentElement, document.body, sem.fora].map(estiloCompleto);
+    appliedStyles.forEach((style) => style.remove());
+    const withoutTheme = renderWithTheme('dark');
+    const styleWithoutModule = [document.documentElement, document.body, withoutTheme.outside].map(fullStyle);
     cleanup();
 
-    estilosAplicados = aplicarFolhas(...folhas);
-    const com = renderizarComTema('escuro');
-    const estiloComModulo = [document.documentElement, document.body, com.fora].map(estiloCompleto);
+    appliedStyles = applyStylesheets(...stylesheets);
+    const withTheme = renderWithTheme('dark');
+    const styleWithModule = [document.documentElement, document.body, withTheme.outside].map(fullStyle);
 
-    expect(estiloComModulo).toEqual(estiloSemModulo);
-    // Prova de que as folhas estão ativas: dentro da raiz o estilo muda.
-    expect(valor(com.dentro, '--fc-text')).toBe('#ededed');
+    expect(styleWithModule).toEqual(styleWithoutModule);
+    // Proof that the stylesheets are active: inside the root the style changes.
+    expect(value(withTheme.inside, '--fc-text')).toBe('#ededed');
   });
 });
 
 describe('sobrescrita pelo hospedeiro', () => {
-  it.each(['claro', 'escuro'] as const)('um seletor simples na raiz vence os tokens no tema %s', (tema) => {
-    const [folhaHospedeiro] = aplicarFolhas('.fc-raiz { --fc-gray-1000: #123456; }');
-    const { dentro } = renderizarComTema(tema);
-    expect(valor(dentro, '--fc-gray-1000')).toBe('#123456');
-    expect(valor(dentro, '--fc-text')).toBe('#123456');
-    folhaHospedeiro!.remove();
+  it.each(['light', 'dark'] as const)('um seletor simples na raiz vence os tokens no tema %s', (theme) => {
+    const [hostAppStylesheet] = applyStylesheets('.fc-root { --fc-gray-1000: #123456; }');
+    const { inside } = renderWithTheme(theme);
+    expect(value(inside, '--fc-gray-1000')).toBe('#123456');
+    expect(value(inside, '--fc-text')).toBe('#123456');
+    hostAppStylesheet!.remove();
   });
 });

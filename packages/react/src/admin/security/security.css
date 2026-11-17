@@ -1,0 +1,133 @@
+/*
+ * Admin › Security (estilos.md §4, §7.2, §7.6, §7.7, §9 and §14). Only fc- classes and --fc-* variables;
+ * no global reset and no full-window measurement (ADR 0002).
+ */
+
+.fc-security {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fc-security-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fc-security-title h2,
+.fc-security-title p {
+  margin: 0;
+}
+
+.fc-security-form {
+  margin: 0;
+  min-width: 0;
+}
+
+/* A box with the groups separated by a single divider (estilos.md §4). */
+.fc-security-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.fc-security-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+/* The float takes the legend out of the fieldset border: it becomes the first flex item, inside the group's space. */
+.fc-security-caption {
+  float: left;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Field and "Voltar ao padrão" side by side; the button lines up with the input (16px label + 6px of space). */
+.fc-security-parameter {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.fc-security-field {
+  flex: 0 1 320px;
+}
+
+.fc-security-reset {
+  margin-top: 24px;
+}
+
+.fc-security-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.fc-security-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fc-security-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+}
+
+.fc-security-note svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* Confirmation dialog: each changed parameter on two lines (estilos.md §7.6). */
+.fc-security-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-security-change {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-security-number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skeleton with the shape of the form. */
+.fc-security-skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fc-security-skeleton-group + .fc-security-skeleton-group {
+  margin-top: 24px;
+}
+
+.fc-security-skeleton-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

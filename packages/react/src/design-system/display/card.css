@@ -1,0 +1,21 @@
+/*
+ * Card (estilos.md §7.6 and §4): background-100, 1px --fc-border border, 12px radius, no shadow.
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-card {
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--fc-border);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: none;
+  list-style: none;
+}
+
+.fc-card-no-padding {
+  padding: 0;
+}

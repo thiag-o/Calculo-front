@@ -1,0 +1,46 @@
+/*
+ * Empty state (estilos.md §7.7 and §14; screen "D · Guia de design"): 16px icon in a 1px outline circle
+ * (no color), the sentence in 14px/500, the help in secondary label-13 and one action.
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-empty-state {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.fc-empty-state-icon {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--fc-border);
+  color: var(--fc-text-secondary);
+}
+
+.fc-empty-state-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fc-empty-state-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-empty-state-text p {
+  margin: 0;
+}
+
+.fc-empty-state-title {
+  color: var(--fc-text);
+}

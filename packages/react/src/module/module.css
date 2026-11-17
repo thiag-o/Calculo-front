@@ -1,0 +1,42 @@
+/*
+ * Module frame (estilos.md §9 and §14): root with the height the host app gives, content area with a max width
+ * of 1200px, 32px 24px padding and 32px between sections. No full-window measurement (ADR 0002).
+ * Only fc- classes and --fc-* variables; no global reset.
+ */
+
+.fc-module-root {
+  height: 100%;
+}
+
+.fc-module-content {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.fc-module-page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.fc-module-icon {
+  flex: none;
+}
+
+/* Text for the screen reader only. */
+.fc-module-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

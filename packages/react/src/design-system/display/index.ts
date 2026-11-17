@@ -1,0 +1,21 @@
+// Display components and dialogs of the design-system (estilos.md §4, §7.3 to §7.7 and §14).
+export { Card } from './Card';
+export type { CardProps, CardPadding } from './Card';
+export { Status } from './Status';
+export type { StatusTone, StatusProps } from './Status';
+export { Badge } from './Badge';
+export type { BadgeTone, BadgeProps } from './Badge';
+export { Table } from './Table';
+export type { TableColumn, TableProps } from './Table';
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+export { Loading, Skeleton } from './Loading';
+export type { LoadingProps, SkeletonProps } from './Loading';
+export { Notice } from './Notice';
+export type { NoticeProps, NoticeType } from './Notice';
+export { Dialog, DialogClose } from './Dialog';
+export type { DialogProps, DialogCloseProps } from './Dialog';
+export { Menu } from './Menu';
+export type { MenuAction, MenuItem, MenuProps, MenuSeparator } from './Menu';
+export { Tooltip } from './Tooltip';
+export type { TooltipProps, TooltipSide } from './Tooltip';

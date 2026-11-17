@@ -1,17 +1,17 @@
 /*
- * Tokens --fc-* do Fluxo de Cálculo (estilos.md §2), claro e escuro.
+ * Fluxo de Cálculo --fc-* tokens (estilos.md §2), light and dark.
  *
- * Declarados só na raiz do módulo (.fc-raiz), nunca em :root, por causa da incorporação (ADR 0002).
- * Tema: data-theme="light|dark" na raiz; sem o atributo, segue prefers-color-scheme.
- * Os seletores usam :where() (especificidade zero) para o hospedeiro sobrescrever qualquer variável
- * com um seletor simples, como `.fc-raiz { --fc-primary: … }`, nos dois temas.
+ * Declared only on the module root (.fc-root), never on :root, because of embedding (ADR 0002).
+ * Theme: data-theme="light|dark" on the root; without the attribute, follows prefers-color-scheme.
+ * The selectors use :where() (zero specificity) so the host app can override any variable
+ * with a simple selector, like `.fc-root { --fc-primary: … }`, in both themes.
  */
 
-/* Claro (padrão) e aliases semânticos. */
-:where(.fc-raiz) {
+/* Light (default) and semantic aliases. */
+:where(.fc-root) {
   color-scheme: light;
 
-  /* 3 Famílias tipográficas */
+  /* 3 Font families */
   --fc-font-sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
   --fc-font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, monospace;
 
@@ -19,7 +19,7 @@
   --fc-background-100: #ffffff;
   --fc-background-200: #fafafa;
 
-  /* 2.2 Escala de cinza */
+  /* 2.2 Gray scale */
   --fc-gray-100: #f2f2f2;
   --fc-gray-200: #ebebeb;
   --fc-gray-300: #e6e6e6;
@@ -45,7 +45,7 @@
   --fc-green-700: #45a557;
   --fc-green-900: #297a3a;
 
-  /* 2.4 Categorias de bloco */
+  /* 2.4 Block categories */
   --fc-cat-source: #0072f5;
   --fc-cat-multi: #0b8a7a;
   --fc-cat-calc: #c26a00;
@@ -54,7 +54,7 @@
   --fc-cat-state: #5c8a00;
   --fc-cat-output: #666666;
 
-  /* 2.5 Aliases semânticos (o que os componentes usam). Seguem o tema pelas variáveis de base. */
+  /* 2.5 Semantic aliases (what the components use). They follow the theme through the base variables. */
   --fc-text: var(--fc-gray-1000);
   --fc-text-secondary: var(--fc-gray-900);
   --fc-text-tertiary: var(--fc-gray-700);
@@ -69,7 +69,7 @@
   --fc-danger-bg: var(--fc-red-100);
   --fc-danger-text: var(--fc-red-900);
 
-  /* Controles de formulário e diálogos (estilos.md §4 e §7.1) */
+  /* Form controls and dialogs (estilos.md §4 and §7.1) */
   --fc-primary-hover: #737373;
   --fc-on-danger: #ffffff;
   --fc-danger-hover: var(--fc-red-900);
@@ -79,7 +79,7 @@
 }
 
 /* Escuro escolhido explicitamente. */
-:where(.fc-raiz[data-theme='dark']) {
+:where(.fc-root[data-theme='dark']) {
   color-scheme: dark;
 
   --fc-background-100: #0a0a0a;
@@ -124,9 +124,9 @@
   --fc-overlay: rgba(0, 0, 0, 0.64);
 }
 
-/* Sem data-theme (tema "sistema"): segue o sistema operacional. Mesmos valores do bloco escuro acima. */
+/* Without data-theme ("system" theme): follows the operating system. Same values as the dark block above. */
 @media (prefers-color-scheme: dark) {
-  :where(.fc-raiz:not([data-theme])) {
+  :where(.fc-root:not([data-theme])) {
     color-scheme: dark;
 
     --fc-background-100: #0a0a0a;

@@ -1,10 +1,10 @@
-// Interface pública do pacote @fluxo/react (design.md §3 "Front incorporável").
-// Reexporta sempre do index.ts de cada vertical; nada de caminho interno.
-export { FluxoCalculo } from './modulo';
-export type { EventoFluxo, FluxoCalculoProps, NavegacaoFluxo, TelaFluxo } from './modulo';
-// Componentes por tela, cada um funcionando sozinho (raiz, API e cache próprios; navegação em memória).
-export { Administracao, Auditoria, Inicio } from './modulo';
-export type { AdministracaoProps, AuditoriaProps, InicioProps, TelaAvulsaProps } from './modulo';
-export { Entrar, RedefinirSenha } from './sessao';
-export type { EntrarProps, RedefinirSenhaProps, Sessao } from './sessao';
-export type { TemaFluxo } from './design-system';
+// Public interface of the @fluxo/react package (design.md §3 "Front incorporável").
+// Always re-exports from each vertical's index.ts; no internal paths.
+export { FluxoCalculo } from './module';
+export type { FluxoEvent, FluxoCalculoProps, FluxoNavigation, FluxoScreen } from './module';
+// Per-screen components, each working on its own (own root, API and cache; in-memory navigation).
+export { Admin, Audit, Home } from './module';
+export type { AdminProps, AuditProps, HomeProps, StandaloneScreenProps } from './module';
+export { SignIn, ResetPassword } from './session';
+export type { SignInProps, ResetPasswordProps, Session } from './session';
+export type { FluxoTheme } from './design-system';

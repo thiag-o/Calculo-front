@@ -1,0 +1,12 @@
+/*
+ * Audit screen (estilos.md §9: 32px between sections). Only fc- classes and --fc-* variables;
+ * no global reset and no full-window measurement (ADR 0002).
+ */
+
+.fc-audit {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}

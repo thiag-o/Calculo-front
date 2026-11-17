@@ -1,0 +1,108 @@
+/*
+ * Checkbox (estilos.md §7.2): 16px, 4px radius. Checked: --fc-primary background and mark in --fc-on-primary.
+ * The unchecked border uses gray-700 to have 3:1 contrast with the background (estilos.md §11).
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-checkbox {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-checkbox-box {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-on-primary);
+  box-shadow: 0 0 0 1px var(--fc-gray-700);
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    background-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.fc-checkbox-box:hover {
+  background-color: var(--fc-hover);
+}
+
+.fc-checkbox-box[data-state='checked'],
+.fc-checkbox-box[data-state='indeterminate'] {
+  background-color: var(--fc-primary);
+  box-shadow: 0 0 0 1px var(--fc-primary);
+}
+
+.fc-checkbox-box[aria-invalid='true'] {
+  box-shadow: 0 0 0 1px var(--fc-red-700);
+}
+
+.fc-checkbox-box:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-checkbox-box:disabled,
+.fc-checkbox-box:disabled:hover {
+  background-color: var(--fc-hover);
+  color: var(--fc-text-tertiary);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  cursor: not-allowed;
+}
+
+.fc-checkbox-indicator {
+  display: inline-flex;
+}
+
+.fc-checkbox-indicator svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* A single indicator: the mark when checked, the dash when indeterminate. */
+.fc-checkbox-indicator[data-state='checked'] .fc-checkbox-dash,
+.fc-checkbox-indicator[data-state='indeterminate'] .fc-checkbox-mark {
+  display: none;
+}
+
+/* The label widens the click area to 28px of height (estilos.md §11). */
+.fc-checkbox-label {
+  padding: 4px 0;
+  color: var(--fc-text);
+  cursor: pointer;
+}
+
+.fc-checkbox-disabled .fc-checkbox-label {
+  color: var(--fc-text-tertiary);
+  cursor: not-allowed;
+}
+
+/* Messages aligned with the label text: 16px of the box + 8px of space. */
+.fc-checkbox .fc-field-message {
+  padding-left: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-checkbox-box {
+    transition: none;
+  }
+}

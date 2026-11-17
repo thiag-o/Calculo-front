@@ -1,0 +1,68 @@
+/*
+ * Notice (inline note, estilos.md §7.7 and §14; screen "D · Guia de design", error state): -100 background, -900 text,
+ * 6px radius, 14px icon, no thick side border. 13px text; actions below the note.
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-notice {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.fc-notice > svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.fc-notice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-notice-title {
+  margin: 0;
+  font-weight: 500;
+}
+
+.fc-notice-error {
+  background-color: var(--fc-danger-bg);
+  color: var(--fc-danger-text);
+}
+
+.fc-notice-warning {
+  background-color: var(--fc-amber-100);
+  color: var(--fc-amber-900);
+}
+
+.fc-notice-success {
+  background-color: var(--fc-green-100);
+  color: var(--fc-green-900);
+}
+
+.fc-notice-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fc-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}

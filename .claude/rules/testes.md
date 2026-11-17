@@ -8,6 +8,10 @@ paths:
 
 Adaptado de `rules/react/testing.md` e da skill `e2e-testing` do ECC (MIT).
 
+## Idioma
+- Nomes de arquivo, variáveis, funções de apoio e ids em inglês (ADR 0031); as descrições de `describe`, `it` e `test` e os textos procurados na tela ficam em pt-BR.
+- Apoio de teste em `<nome>.test-support.ts(x)`; no e2e, `e2e/support/` e `e2e/epic-<n>/support/`.
+
 ## Componentes (Vitest + Testing Library)
 - Teste o que a pessoa vê e faz, não detalhes de implementação.
 - Ordem das consultas: `getByRole` (com `name`), `getByLabelText`, `getByText`. Use `getByTestId` só quando nada mais servir.

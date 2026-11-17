@@ -1,4 +1,4 @@
 // Vertical "editor" (ADR 0003).
-// Editor de workflow (React Flow): canvas, camadas, propriedades, blocos, grupos e Tabela de Decisão.
-// Este arquivo é a interface pública da vertical; o resto da pasta é privado.
+// Workflow editor (React Flow): canvas, layers, properties, blocks, groups and Decision Table.
+// This file is the vertical's public interface; the rest of the folder is private.
 export {};

@@ -1,0 +1,91 @@
+/*
+ * Dialog (estilos.md §7.7, §4 and §5): background-100 panel with 12px radius, modal shadow (only the border in dark),
+ * heading-16 title and actions footer. Translucent backdrop without blur (glass is forbidden, §1).
+ * Enters in 200ms with ease-out; no animation with prefers-reduced-motion.
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--fc-overlay);
+  animation: fc-dialog-appear 200ms ease-out;
+}
+
+.fc-dialog {
+  box-sizing: border-box;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: min(480px, calc(100% - 32px));
+  max-height: calc(100% - 64px);
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: var(--fc-shadow-modal);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  animation: fc-dialog-appear 200ms ease-out;
+}
+
+.fc-dialog:focus {
+  outline: none;
+}
+
+.fc-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* Space on the right for the "Fechar" button in the corner. */
+.fc-dialog-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 32px;
+}
+
+.fc-dialog-title,
+.fc-dialog-description {
+  margin: 0;
+}
+
+.fc-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--fc-border);
+  background-color: var(--fc-background-200);
+}
+
+.fc-dialog-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+@keyframes fc-dialog-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-dialog-backdrop,
+  .fc-dialog {
+    animation: none;
+  }
+}

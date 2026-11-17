@@ -1,0 +1,103 @@
+/*
+ * Admin › Users (estilos.md §4, §7.4, §7.6, §9 and §14). Only fc- classes and --fc-* variables;
+ * no global reset and no full-window measurement (ADR 0002).
+ */
+
+.fc-users {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fc-users-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fc-users-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fc-users-title h2,
+.fc-users-title p {
+  margin: 0;
+}
+
+/* Row with two lines of text (estilos.md §7.6): name on top, e-mail below. */
+.fc-users-person {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-users-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fc-users-email {
+  overflow-wrap: anywhere;
+}
+
+.fc-users-role-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-users-more {
+  display: flex;
+  justify-content: center;
+}
+
+/* Dialogs */
+
+.fc-users-form,
+.fc-users-link {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.fc-users-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fc-users-roles-caption {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.fc-users-roles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fc-users-no-roles,
+.fc-users-link-copy {
+  margin: 0;
+}
+

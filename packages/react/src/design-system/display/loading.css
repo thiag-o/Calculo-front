@@ -1,0 +1,63 @@
+/*
+ * Loading (estilos.md §14): skeleton with 12px bars, 4px radius and 1.4s shimmer; still with
+ * prefers-reduced-motion. Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-loading {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.fc-loading-shape {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fc-loading-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fc-skeleton {
+  box-sizing: border-box;
+  display: block;
+  flex-shrink: 0;
+  max-width: 100%;
+  height: 12px;
+  border-radius: 4px;
+  background-color: var(--fc-gray-100);
+  background-image: linear-gradient(90deg, var(--fc-gray-100), var(--fc-gray-200), var(--fc-gray-100));
+  background-size: 200% 100%;
+  animation: fc-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes fc-skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-skeleton {
+    animation: none;
+  }
+}
+
+/* Text for screen readers only (loading label, table caption). */
+.fc-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

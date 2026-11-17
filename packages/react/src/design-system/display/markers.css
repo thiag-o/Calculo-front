@@ -1,0 +1,109 @@
+/*
+ * Status (10px dot + word, estilos.md §7.3 and §7.5) and Badge (§7.4).
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.fc-status-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--fc-gray-500);
+}
+
+.fc-status-word {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc-status-gray .fc-status-dot {
+  background-color: var(--fc-gray-500);
+}
+
+.fc-status-amber .fc-status-dot {
+  background-color: var(--fc-amber-700);
+}
+
+.fc-status-green .fc-status-dot {
+  background-color: var(--fc-green-700);
+}
+
+.fc-status-red .fc-status-dot {
+  background-color: var(--fc-red-700);
+}
+
+.fc-status-decision .fc-status-dot {
+  background-color: var(--fc-cat-decision);
+}
+
+.fc-status-multi .fc-status-dot {
+  background-color: var(--fc-cat-multi);
+}
+
+/* Pulses only while "Calculando" or "Na fila" (estilos.md §5). */
+.fc-status-pulsing .fc-status-dot {
+  animation: fc-status-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes fc-status-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-status-pulsing .fc-status-dot {
+    animation: none;
+  }
+}
+
+/* Badge: 20px height, 0 6px padding, pill, 11px/500 text (estilos.md §7.4). */
+.fc-badge {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 20px;
+  max-width: 100%;
+  padding: 0 6px;
+  border-radius: 9999px;
+  font-family: var(--fc-font-sans);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  background-color: var(--fc-gray-200);
+  color: var(--fc-text);
+}
+
+.fc-badge-blue {
+  background-color: var(--fc-blue-100);
+  color: var(--fc-blue-900);
+}
+
+.fc-badge-green {
+  background-color: var(--fc-green-100);
+  color: var(--fc-green-900);
+}
+
+.fc-badge-amber {
+  background-color: var(--fc-amber-100);
+  color: var(--fc-amber-900);
+}
+
+.fc-badge-red {
+  background-color: var(--fc-red-100);
+  color: var(--fc-red-900);
+}

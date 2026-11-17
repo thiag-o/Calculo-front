@@ -1,22 +1,22 @@
-// Playwright (raiz do repositório). Dois projetos que usam os mesmos arquivos de teste em e2e/:
-// - simulado: API simulada por fixture (page.route); roda no portão do front.
-// - real: back de verdade (E2E_API_URL) + casca; roda no teste de integração do checkpoint.
-// O `pnpm e2e:real` roda com 2 workers (no script do package.json): nesta máquina, 6 navegadores, o Vite dev e a API
-// juntos saturam CPU e memória, e os logins estouram o tempo limite (decisão da sessão global, F39). A API sozinha
-// atende 6 logins paralelos em menos de 1,5 s. O `pnpm e2e` (simulado) segue com o paralelismo padrão.
+// Playwright (repository root). Two projects that use the same test files in e2e/:
+// - simulated: API simulated by a fixture (page.route); runs at the front gate.
+// - real: real backend (E2E_API_URL) + shell; runs in the checkpoint integration test.
+// `pnpm e2e:real` runs with 2 workers (in the package.json script): on this machine, 6 browsers, the Vite dev server and the API
+// together saturate CPU and memory, and the sign-ins time out (global session decision, F39). The API alone
+// serves 6 parallel sign-ins in under 1.5 s. `pnpm e2e` (simulated) keeps the default parallelism.
 import { defineConfig, devices } from '@playwright/test';
 
-const cascaUrl = process.env.E2E_CASCA_URL ?? 'http://localhost:5173';
+const shellUrl = process.env.E2E_CASCA_URL ?? 'http://localhost:5173';
 
-// O "hospedeiro" dos testes de incorporação: a página de teste do casca (apps/casca/vite.incorporacao.config.ts), numa
-// origem diferente da do casca. É a origem que o `preparar-local` do back cadastra como domínio autorizado; o back trata
-// a origem do casca (FLUXO_CORS_ORIGENS) com a política de CORS do casca, que não aceita `Authorization`.
-const hospedeiroUrl = 'http://localhost:5274';
+// The "host app" of the embedding tests: the shell's embed test page (apps/shell/vite.embed.config.ts), on an
+// origin different from the shell's. It is the origin the backend's `preparar-local` registers as an authorized domain; the backend treats
+// the shell origin (FLUXO_CORS_ORIGENS) with the shell CORS policy, which does not accept `Authorization`.
+const hostAppUrl = 'http://localhost:5274';
 
-// No modo real, o casca e a página de teste que o Playwright sobe falam com a mesma API dos testes: E2E_API_URL vira o
-// VITE_API_URL deles. Sem E2E_API_URL, os dois seguem o próprio VITE_API_URL (ou o padrão http://localhost:8000).
+// In real mode, the shell and the test page Playwright starts talk to the same API as the tests: E2E_API_URL becomes their
+// VITE_API_URL. Without E2E_API_URL, both follow their own VITE_API_URL (or the default http://localhost:8000).
 const apiUrl = process.env.E2E_API_URL?.trim().replace(/\/+$/, '');
-const envVite: Record<string, string> = apiUrl ? { VITE_API_URL: apiUrl } : {};
+const viteEnv: Record<string, string> = apiUrl ? { VITE_API_URL: apiUrl } : {};
 
 export default defineConfig({
   testDir: './e2e',
@@ -24,36 +24,36 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL: cascaUrl, trace: 'retain-on-failure' },
+  use: { baseURL: shellUrl, trace: 'retain-on-failure' },
   // Lido pelas fixtures (testInfo.config.metadata).
-  metadata: { hospedeiroUrl },
+  metadata: { hostAppUrl },
   projects: [
-    { name: 'simulado', use: { ...devices['Desktop Chrome'] }, metadata: { modo: 'simulado' } },
-    // Só no real, 60 s de tempo limite por teste e por `expect` (decisão da sessão global, D8 da F39): o fluxo longo da
-    // auditoria (8 logins com argon2, 2 usuários, o link e 5 filtros) chegou a 33 s sozinho, com esta máquina carregada.
-    // O simulado fica com os padrões (30 s e 5 s).
+    { name: 'simulated', use: { ...devices['Desktop Chrome'] }, metadata: { mode: 'simulated' } },
+    // Real only: 60 s timeout per test and per `expect` (global session decision, D8 of F39): the long audit
+    // flow (8 sign-ins with argon2, 2 users, the link and 5 filters) took 33 s alone, with this machine loaded.
+    // The simulated project keeps the defaults (30 s and 5 s).
     {
       name: 'real',
       use: { ...devices['Desktop Chrome'] },
-      metadata: { modo: 'real' },
+      metadata: { mode: 'real' },
       timeout: 60_000,
       expect: { timeout: 60_000 },
     },
   ],
   webServer: [
     {
-      command: 'pnpm --filter casca dev',
-      url: cascaUrl,
-      // Um casca já aberto é reaproveitado com o VITE_API_URL que tiver; a fixture reprova se ele chamar outra API.
+      command: 'pnpm --filter shell dev',
+      url: shellUrl,
+      // An already open shell is reused with whatever VITE_API_URL it has; the fixture fails if it calls another API.
       reuseExistingServer: !process.env.CI,
-      env: envVite,
+      env: viteEnv,
     },
     {
-      // A página de teste de incorporação, nos dois modos. BROWSER=none: o Vite não abre o navegador (`server.open`).
-      command: 'pnpm --filter casca exec vite --config vite.incorporacao.config.ts',
-      url: `${hospedeiroUrl}/teste-incorporacao.html`,
+      // The embed test page, in both modes. BROWSER=none: Vite does not open the browser (`server.open`).
+      command: 'pnpm --filter shell exec vite --config vite.embed.config.ts',
+      url: `${hostAppUrl}/embed-test.html`,
       reuseExistingServer: !process.env.CI,
-      env: { ...envVite, BROWSER: 'none' },
+      env: { ...viteEnv, BROWSER: 'none' },
     },
   ],
 });

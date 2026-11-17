@@ -7,15 +7,18 @@ O backend fica num repositório separado (`../backend`). O desenho do produto es
 
 Para incorporar o módulo num sistema hospedeiro, veja o [guia de incorporação](docs/incorporacao.md).
 
+**Código em inglês** (ADR [0031](docs/adr/0031-codigo-em-ingles.md)): pastas, arquivos, identificadores, comentários, classes `fc-`, rotas da URL e scripts ficam em inglês; textos para pessoas (rótulos, mensagens, descrições de teste) e a documentação ficam em pt-BR. Os nomes estão no [glossário do front](docs/glossario.md) e, para a API, no `../backend/docs/glossario.md`.
+
 ## Estrutura
 
 ```
 frontend/
 ├── packages/react/   @fluxo/react: o produto, organizado por verticais (ADR 0003)
-├── apps/casca/       app próprio: login + layout, usando o pacote (ADR 0002)
+├── apps/shell/       app casca (próprio): login + layout, usando o pacote (ADR 0002)
 ├── docs/
 │   ├── ambientes.md  local, homologação, produção e variáveis
 │   ├── incorporacao.md  guia para quem incorpora o @fluxo/react
+│   ├── glossario.md  nomes do código do front (português → inglês)
 │   └── adr/          decisões de arquitetura (índice em docs/adr/README.md)
 ├── .changeset/       versões do pacote (Changesets)
 └── .github/workflows ci.yml · publicar.yml · deploy-casca.yml (desligado)
@@ -32,7 +35,7 @@ frontend/
 ## Começar (a partir da fase 1)
 
 1. Crie um token pessoal do GitHub com `read:packages` e exporte como `NODE_AUTH_TOKEN`.
-2. Copie `apps/casca/.env.example` para `apps/casca/.env`.
+2. Copie `apps/shell/.env.example` para `apps/shell/.env`.
 3. Suba o backend (veja `../backend/README.md`).
 4. Instale e rode:
 
@@ -59,7 +62,7 @@ pnpm dev
 | `pnpm typecheck` | Checagem de tipos |
 | `pnpm test` | Testes (Vitest) |
 | `pnpm changeset` | Registra uma mudança do pacote para a próxima versão |
-| `pnpm gerar:api` | Gera os tipos da API a partir do OpenAPI do backend (ADR 0005) |
+| `pnpm generate:api` | Gera os tipos da API a partir do OpenAPI do backend (ADR 0005), em `packages/react/src/api/generated/` |
 | `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** |
 | `pnpm e2e:real` | Os mesmos testes contra o back de verdade (veja abaixo) |
 
@@ -69,7 +72,7 @@ O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, co
 
 O Playwright sobe dois servidores, nos dois modos:
 - o casca em `http://localhost:5173`;
-- a página de teste de incorporação em `http://localhost:5274` (`apps/casca/vite.incorporacao.config.ts`). Ela é o "hospedeiro" dos testes de incorporação, numa origem diferente da do casca. É a origem que o `preparar-local` do back cadastra como domínio autorizado.
+- a página de teste de incorporação em `http://localhost:5274/embed-test.html` (`apps/shell/vite.embed.config.ts`). Ela é o "hospedeiro" dos testes de incorporação, numa origem diferente da do casca. É a origem que o `preparar-local` do back cadastra como domínio autorizado.
 
 1. Suba o back (veja `../backend/README.md`): `docker compose up -d` e depois os comandos abaixo, na pasta `backend`.
 

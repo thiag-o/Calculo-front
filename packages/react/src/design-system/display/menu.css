@@ -1,0 +1,100 @@
+/*
+ * Dropdown menu (estilos.md §4, §5 and §7.7): background-100, 12px radius, menu shadow (--fc-shadow-menu, declared
+ * in tokens/tokens.css), 32px items with 6px radius and --fc-hover hover; dangerous action in red.
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-menu {
+  box-sizing: border-box;
+  min-width: 160px;
+  max-width: 320px;
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  overflow-y: auto;
+  padding: 4px;
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: var(--fc-shadow-menu);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  animation: fc-menu-appear 200ms ease-out;
+}
+
+.fc-menu-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--fc-text);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.fc-menu-item[data-highlighted] {
+  background-color: var(--fc-hover);
+}
+
+.fc-menu-item-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--fc-text-secondary);
+}
+
+.fc-menu-item-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fc-menu-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fc-menu-item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-menu-item-danger,
+.fc-menu-item-danger .fc-menu-item-icon {
+  color: var(--fc-danger-text);
+}
+
+/* Disabled with a reason: still reachable by the arrows; the reason sits below (tertiary label-12). */
+.fc-menu-item.fc-menu-item-disabled,
+.fc-menu-item.fc-menu-item-disabled .fc-menu-item-icon {
+  color: var(--fc-text-tertiary);
+  cursor: not-allowed;
+}
+
+.fc-menu-item-reason {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fc-text-tertiary);
+}
+
+.fc-menu-separator {
+  height: 1px;
+  margin: 4px -4px;
+  background-color: var(--fc-border);
+}
+
+@keyframes fc-menu-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-menu {
+    animation: none;
+  }
+}

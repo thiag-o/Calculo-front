@@ -8,18 +8,18 @@
     "pnpm": ">=10"
   },
   "scripts": {
-    "dev": "pnpm --filter casca dev",
+    "dev": "pnpm --filter shell dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "eslint .",
-    "gerar:api": "node scripts/gerar-api.mjs",
+    "generate:api": "node scripts/generate-api.mjs",
     "changeset": "changeset",
     "release": "pnpm --filter @fluxo/react build && changeset publish",
-    "e2e": "playwright test --project=simulado --pass-with-no-tests",
+    "e2e": "playwright test --project=simulated --pass-with-no-tests",
     "e2e:real": "playwright test --project=real --workers=2 --pass-with-no-tests"
   },
-  "//": "e2e:real roda com 2 workers: nesta máquina, 6 navegadores, o Vite dev e a API juntos saturam CPU e memória e os logins estouram o tempo limite (decisão da sessão global, F39). O e2e (simulado) segue com o paralelismo padrão.",
+  "//": "e2e:real runs with 2 workers: on this machine, 6 browsers, the Vite dev server and the API together saturate CPU and memory and the sign-ins time out (global session decision, F39). e2e (simulated) keeps the default parallelism.",
   "devDependencies": {
     "@playwright/test": "^1.65.1",
     "@testing-library/jest-dom": "^7.0.1",

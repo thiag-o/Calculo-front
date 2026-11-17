@@ -1,0 +1,125 @@
+/*
+ * Fluxo de Cálculo type scale (estilos.md §3): Geist in the interface and Geist Mono in data.
+ * The fonts come bundled locally (@fontsource-variable, no CDN; imported in root/FluxoRoot.tsx).
+ * The families (--fc-font-sans and --fc-font-mono) live in tokens/tokens.css.
+ * Only classes with the fc- prefix; no global selector (ADR 0002).
+ */
+
+/* Remove the default margin of h1…h6 and p when the element uses the Text component. */
+.fc-text {
+  margin: 0;
+}
+
+.fc-heading-48 {
+  font-family: var(--fc-font-sans);
+  font-size: 48px;
+  line-height: 56px;
+  font-weight: 600;
+  letter-spacing: -2.4px;
+}
+
+.fc-heading-32 {
+  font-family: var(--fc-font-sans);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+  letter-spacing: -1.28px;
+}
+
+.fc-heading-24 {
+  font-family: var(--fc-font-sans);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.96px;
+}
+
+.fc-heading-16 {
+  font-family: var(--fc-font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: -0.32px;
+}
+
+.fc-heading-14 {
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: -0.28px;
+}
+
+.fc-copy-14 {
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.fc-label-14 {
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.fc-label-13 {
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.fc-label-12 {
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.fc-button-14 {
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+.fc-mono-13 {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.fc-mono-12 {
+  font-family: var(--fc-font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+/* Weight 500, for the styles that accept 400–500 (label-14, label-12, mono-13). */
+.fc-text-medium {
+  font-weight: 500;
+}
+
+/* Text colors (estilos.md §3). The primary one is inherited from the root. */
+.fc-text-primary {
+  color: var(--fc-text);
+}
+
+.fc-text-secondary {
+  color: var(--fc-text-secondary);
+}
+
+.fc-text-tertiary {
+  color: var(--fc-text-tertiary);
+}

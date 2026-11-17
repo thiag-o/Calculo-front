@@ -1,0 +1,77 @@
+/*
+ * Admin › Integration (estilos.md §4, §7.6, §9 and §14). Only fc- classes and --fc-* variables;
+ * no global reset and no full-window measurement (ADR 0002).
+ */
+
+/* Two sections (keys and domains), 32px apart (estilos.md §9). */
+.fc-integration {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+
+.fc-integration-section {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fc-integration-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fc-integration-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fc-integration-title h2,
+.fc-integration-title p {
+  margin: 0;
+}
+
+/* Row with two lines of text (estilos.md §7.6): name on top, prefix below. */
+.fc-integration-two-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-integration-wrap {
+  overflow-wrap: anywhere;
+}
+
+.fc-integration-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-integration-more {
+  display: flex;
+  justify-content: center;
+}
+
+/* Dialogs */
+
+.fc-integration-form,
+.fc-integration-secret {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.fc-integration-copy {
+  margin: 0;
+}

@@ -1,20 +1,20 @@
 // Vertical "api" (ADR 0003).
-// Cliente HTTP, tipos gerados do OpenAPI do backend e configuração do TanStack Query. Vertical compartilhada: não depende de nenhuma outra.
-// Este arquivo é a interface pública da vertical; o resto da pasta é privado.
+// HTTP client, types generated from the backend OpenAPI and TanStack Query setup. Shared vertical: depends on no other.
+// This file is the vertical's public interface; the rest of the folder is private.
 
-// Tipos gerados do contrato (ADR 0005). Nunca escritos à mão.
-export type { components, operations, paths } from './gerado/esquema';
-import type { components } from './gerado/esquema';
-/** Os esquemas do contrato (ex.: `Esquemas['Sessao']`). */
-export type Esquemas = components['schemas'];
+// Types generated from the contract (ADR 0005). Never written by hand.
+export type { components, operations, paths } from './generated/schema';
+import type { components } from './generated/schema';
+/** The contract schemas (e.g. `Schemas['Sessao']`). */
+export type Schemas = components['schemas'];
 
 // Cliente HTTP.
-export { criarClienteApi } from './cliente/criarClienteApi';
-export type { ClienteApi, ModoAutenticacao, OpcoesClienteApi } from './cliente/criarClienteApi';
-export { CODIGO_RESPOSTA_INESPERADA, CODIGO_SEM_CONEXAO, ErroApi, dadosOuErro } from './cliente/erroApi';
-export type { CorpoProblema } from './cliente/erroApi';
-export { ProvedorApi, useClienteApi } from './cliente/ProvedorApi';
-export type { PropsProvedorApi } from './cliente/ProvedorApi';
+export { createApiClient } from './client/createApiClient';
+export type { ApiClient, AuthMode, ApiClientOptions } from './client/createApiClient';
+export { UNEXPECTED_RESPONSE_CODE, NO_CONNECTION_CODE, ApiError, dataOrError } from './client/apiError';
+export type { ProblemBody } from './client/apiError';
+export { ApiProvider, useApiClient } from './client/ApiProvider';
+export type { ApiProviderProps } from './client/ApiProvider';
 
 // TanStack Query.
-export { criarQueryClient } from './consultas/criarQueryClient';
+export { createQueryClient } from './queries/createQueryClient';

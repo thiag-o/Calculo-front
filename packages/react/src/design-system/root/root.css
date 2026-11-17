@@ -1,0 +1,22 @@
+/*
+ * Module root (ADR 0002): the only place where Fluxo de Cálculo sets the text base and the background.
+ * No global reset: the style applies only inside .fc-root and is inherited by the children and by the portals.
+ */
+
+.fc-root {
+  background-color: var(--fc-background-200);
+  color: var(--fc-text);
+  /* copy-14, the default text (estilos.md §3). */
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Portal container (Radix): inside the root, inherits theme and font; takes no space in the layout. */
+.fc-portals {
+  display: contents;
+}

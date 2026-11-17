@@ -1,0 +1,88 @@
+/*
+ * Simple table (estilos.md §7.6 and §9; "deploys style" list of the screen "D · Guia de design"):
+ * card with 12px radius, 32px header in tertiary label-12, rows with a 1px divider and --fc-hover hover.
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-table {
+  box-sizing: border-box;
+  position: relative;
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--fc-border);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+}
+
+.fc-table-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.fc-table-header {
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--fc-border);
+  /* tertiary label-12 */
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: var(--fc-text-tertiary);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.fc-table-cell {
+  box-sizing: border-box;
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: middle;
+  transition: background-color 150ms ease-out;
+}
+
+/* 1px divider between rows, drawn only once (estilos.md §4). */
+.fc-table-row + .fc-table-row > .fc-table-cell {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-table-row:hover > .fc-table-cell {
+  background-color: var(--fc-hover);
+}
+
+.fc-table-skeleton-row:hover > .fc-table-cell,
+.fc-table-single-row:hover > .fc-table-cell {
+  background-color: transparent;
+}
+
+.fc-table-end {
+  text-align: right;
+}
+
+.fc-table-end > .fc-skeleton {
+  margin-left: auto;
+}
+
+.fc-table-single-cell {
+  padding: 16px;
+}
+
+.fc-table-no-value {
+  color: var(--fc-text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-table-cell {
+    transition: none;
+  }
+}

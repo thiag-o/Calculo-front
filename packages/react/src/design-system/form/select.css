@@ -1,0 +1,161 @@
+/*
+ * Select (Radix Select, estilos.md §7.2): trigger like a field (32px, 6px radius, background-100 background)
+ * and floating list with the menu shadow (estilos.md §4), 12px radius and 32px items with 6px radius.
+ * The list goes to the module root portal container (ADR 0011).
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-select-trigger {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  margin: 0;
+  padding: 0 8px 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  /* copy-14 */
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-align: left;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: box-shadow 150ms ease-out;
+}
+
+.fc-select-trigger:hover,
+.fc-select-trigger[data-state='open'] {
+  box-shadow: 0 0 0 1px var(--fc-border-hover);
+}
+
+.fc-select-trigger:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--fc-border-hover),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-select-trigger[aria-invalid='true'] {
+  box-shadow: 0 0 0 1px var(--fc-red-700);
+}
+
+.fc-select-trigger[aria-invalid='true']:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--fc-red-700),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-select-trigger:disabled,
+.fc-select-trigger:disabled:hover {
+  background-color: var(--fc-hover);
+  color: var(--fc-text-tertiary);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  cursor: not-allowed;
+}
+
+.fc-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-select-trigger[data-placeholder] .fc-select-value {
+  color: var(--fc-text-tertiary);
+}
+
+.fc-select-arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--fc-text-secondary);
+}
+
+.fc-select-trigger:disabled .fc-select-arrow {
+  color: var(--fc-text-tertiary);
+}
+
+/* Lista flutuante. */
+.fc-select-content {
+  box-sizing: border-box;
+  min-width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: var(--fc-shadow-menu);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  animation: fc-select-appear 200ms ease-out;
+}
+
+.fc-select-list {
+  padding: 4px;
+}
+
+.fc-select-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.fc-select-item[data-highlighted] {
+  background-color: var(--fc-hover);
+}
+
+.fc-select-item[data-state='checked'] {
+  font-weight: 500;
+}
+
+.fc-select-item[data-disabled] {
+  color: var(--fc-text-tertiary);
+  cursor: not-allowed;
+}
+
+.fc-select-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-select-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+@keyframes fc-select-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-select-trigger {
+    transition: none;
+  }
+
+  .fc-select-content {
+    animation: none;
+  }
+}
