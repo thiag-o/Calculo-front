@@ -552,6 +552,10 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - rotas `/catalogo`, `/catalogo/conexoes/:id`, `/catalogo/datasets/:id` e `/catalogo/arquivos/:id`;
   - a prop `tela` aceita `catalogo`;
   - o pacote exporta `<Catalogo>` (Contratos: componentes por tela).
+- Achados da revisão da F33 (sessão global), na tela do dataset:
+  - quando a lista de variáveis falha, a coluna "Variáveis" mostra o estado de erro com "Tentar de novo", em vez de ficar vazia;
+  - o diálogo da variável fecha assim que a API confirma; o recarregamento do catálogo segue em segundo plano;
+  - ao editar uma variável cujo tipo não está mais entre as conversões aceitas (a coluna mudou), o tipo atual aparece marcado como "não aceito mais", e salvar exige escolher um tipo válido.
 - Aceite: testes por papel (o Integrador vê e edita tudo; o Configurador vê o catálogo só para leitura, sem credenciais; o Auditor também só lê); `pnpm build` gera o pacote com o export novo.
 
 **F35 · Testes ponta a ponta do épico 3**
