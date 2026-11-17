@@ -2,7 +2,7 @@
 
 Para quem põe o Fluxo de Cálculo dentro de um sistema hospedeiro (React). O módulo vive na página do hospedeiro, sem iframe (ADR [0002](adr/0002-pacote-react-sem-iframe.md)).
 
-Os nomes da interface pública (componentes, props e seus valores, tipos, CSS publicado e rotas) estão em inglês desde a versão maior da F41 (ADR [0031](adr/0031-codigo-em-ingles.md)); a lista do que mudou está no changeset `.changeset/f41-codigo-em-ingles.md`. Os caminhos, campos e códigos da API (`/v1/...`, `id_externo`, `codigo`…) continuam em português até a migração da API (F42).
+Os nomes da interface pública (componentes, props e seus valores, tipos, CSS publicado e rotas) estão em inglês desde a versão maior da F41 (ADR [0031](adr/0031-codigo-em-ingles.md)); a lista do que mudou está no changeset `.changeset/f41-codigo-em-ingles.md`. Os caminhos, campos, códigos de erro e permissões da API (`/v1/...`, `external_id`, `code`…) e o cookie de sessão (`fc_session`) estão em inglês desde a F42; os textos para pessoas (`title`, `detail` e as mensagens de `fields`) continuam em português.
 
 ## 1. Instalação e CSS
 
@@ -60,7 +60,7 @@ No modo incorporado, as abas são as telas a que o usuário tem permissão; as s
 | Aba | Permissão | Valores de `screen` |
 |---|---|---|
 | Início | nenhuma | `home` |
-| Auditoria | `auditoria.ver` | `audit` |
+| Auditoria | `audit.view` | `audit` |
 | Administração | a de cada área | `admin` (primeira área permitida), `users`, `roles`, `integration`, `security` |
 
 A aba Administração tem sub-abas, cada uma com a sua permissão, e some se o usuário não tem nenhuma. Quais permissões o usuário tem vem dos papéis que o hospedeiro informa ao pedir o token.
@@ -86,7 +86,7 @@ Props, iguais às do `<FluxoCalculo>` (tipos `HomeProps`, `AuditProps`, `AdminPr
 | `token` | `string` | Com ele, `Authorization: Bearer` (seção 3). Sem ele, o cookie de sessão. |
 | `theme` | `'light' \| 'dark' \| 'system'` | Padrão `'system'` (seção 5). |
 | `onEvent` | `(event: FluxoEvent) => void` | Como no `<FluxoCalculo>`; nenhum evento hoje. |
-| `onSessionExpired` | `() => void` | Como no `<FluxoCalculo>`: uma vez por token, depois de `401 sem_sessao`. |
+| `onSessionExpired` | `() => void` | Como no `<FluxoCalculo>`: uma vez por token, depois de `401 no_session`. |
 
 Não há `screen` nem `navigation`:
 
@@ -96,12 +96,12 @@ Não há `screen` nem `navigation`:
 | Componente | Permissão |
 |---|---|
 | `<Home>` | nenhuma |
-| `<Audit>` | `auditoria.ver` |
-| `<Admin>` | pelo menos uma de `usuarios.gerenciar`, `papeis.gerenciar`, `integracao.gerenciar` e `seguranca.gerenciar`; só as sub-abas permitidas aparecem |
+| `<Audit>` | `audit.view` |
+| `<Admin>` | pelo menos uma de `users.manage`, `roles.manage`, `integration.manage` e `security.manage`; só as sub-abas permitidas aparecem |
 
-Enquanto a sessão carrega, a tela mostra o esqueleto; se a sessão não abre (por exemplo `403 origem_nao_autorizada`), mostra o motivo e **Tentar de novo**; depois de `401 sem_sessao`, o aviso de sessão encerrada.
+Enquanto a sessão carrega, a tela mostra o esqueleto; se a sessão não abre (por exemplo `403 origin_not_authorized`), mostra o motivo e **Tentar de novo**; depois de `401 no_session`, o aviso de sessão encerrada.
 
-Cada componente é independente: dois na mesma página têm cada um a sua raiz, o seu tema e o seu cache, e cada um confere a sessão (`GET /v1/sessao`). Para várias telas com cache e sessão comuns, use o `<FluxoCalculo>`. Os diálogos e menus abrem no portal da raiz de cada componente; valem para eles as regras da seção 6.
+Cada componente é independente: dois na mesma página têm cada um a sua raiz, o seu tema e o seu cache, e cada um confere a sessão (`GET /v1/session`). Para várias telas com cache e sessão comuns, use o `<FluxoCalculo>`. Os diálogos e menus abrem no portal da raiz de cada componente; valem para eles as regras da seção 6.
 
 `<SignIn>` e `<ResetPassword>` (props `apiUrl`, `theme?`; a primeira também `onSignIn?`, a segunda `token?` e `onSave?`) são telas públicas do app casca e não servem à incorporação.
 
@@ -110,16 +110,16 @@ Cada componente é independente: dois na mesma página têm cada um a sua raiz, 
 **A chave de API nunca vai para o navegador.** Quem a guarda e a troca por um token é o backend do hospedeiro.
 
 1. O admin do tenant cria uma chave de API na tela Integração e a guarda no backend do hospedeiro.
-2. Quando o usuário do hospedeiro abre a tela do Fluxo, o backend do hospedeiro chama `POST {apiUrl}/v1/incorporacao/sessoes` com `Authorization: Chave <chave>` e o corpo:
+2. Quando o usuário do hospedeiro abre a tela do Fluxo, o backend do hospedeiro chama `POST {apiUrl}/v1/embed/sessions` com `Authorization: ApiKey <key>` e o corpo:
 
    | Campo | Descrição |
    |---|---|
-   | `id_externo` | Identificador do usuário no hospedeiro. |
+   | `external_id` | Identificador do usuário no hospedeiro. |
    | `email` | E-mail do usuário. |
-   | `nome` | Nome do usuário. |
-   | `papeis` | **Nomes** de papéis do tenant (lista vazia vale: usuário sem permissões). |
+   | `name` | Nome do usuário. |
+   | `roles` | **Nomes** de papéis do tenant (lista vazia vale: usuário sem permissões). |
 
-   A resposta `201` traz `{ token, expira_em }`. O token vale num tenant só, por 15 minutos por padrão (o tenant ajusta).
+   A resposta `201` traz `{ token, expires_at }`. O token vale num tenant só, por 15 minutos por padrão (o tenant ajusta).
 3. O backend entrega o token ao navegador, que o passa em `token`.
 
 Exemplo do backend do hospedeiro (Node):
@@ -129,40 +129,40 @@ export async function getFluxoToken(
   apiUrl: string,
   apiKey: string, // comes from the server environment, never from the browser
   user: { externalId: string; email: string; name: string; roles: string[] },
-): Promise<{ token: string; expira_em: string }> {
-  const response = await fetch(`${apiUrl}/v1/incorporacao/sessoes`, {
+): Promise<{ token: string; expires_at: string }> {
+  const response = await fetch(`${apiUrl}/v1/embed/sessions`, {
     method: 'POST',
-    headers: { Authorization: `Chave ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `ApiKey ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      id_externo: user.externalId,
+      external_id: user.externalId,
       email: user.email,
-      nome: user.name,
-      papeis: user.roles,
+      name: user.name,
+      roles: user.roles,
     }),
   });
   if (response.status !== 201) {
-    const problem = (await response.json().catch(() => ({}))) as { codigo?: string };
-    throw new Error(`Falha ao obter o token (${response.status} ${problem.codigo ?? ''})`);
+    const problem = (await response.json().catch(() => ({}))) as { code?: string };
+    throw new Error(`Falha ao obter o token (${response.status} ${problem.code ?? ''})`);
   }
-  return (await response.json()) as { token: string; expira_em: string };
+  return (await response.json()) as { token: string; expires_at: string };
 }
 ```
 
-Códigos de erro dessa troca (problem+json, campo `codigo`):
+Códigos de erro dessa troca (problem+json, campo `code`):
 
-| Status | `codigo` | Quando |
+| Status | `code` | Quando |
 |---|---|---|
-| 401 | `chave_invalida` | Cabeçalho ausente ou malformado, chave inexistente ou revogada. |
-| 409 | `email_em_uso` | O e-mail já pertence a outro usuário do sistema, não ligado a esse `id_externo`. |
-| 422 | `papel_inexistente` | Um nome em `papeis` não existe no tenant. |
-| 422 | `dados_invalidos` | Corpo malformado ou campo faltando (`campos` traz o erro de cada um). |
+| 401 | `invalid_api_key` | Cabeçalho ausente ou malformado, chave inexistente ou revogada. |
+| 409 | `email_in_use` | O e-mail já pertence a outro usuário do sistema, não ligado a esse `external_id`. |
+| 422 | `unknown_role` | Um nome em `roles` não existe no tenant. |
+| 422 | `invalid_data` | Corpo malformado ou campo faltando (`fields` traz o erro de cada um). |
 
 ### Renovar o token e `onSessionExpired`
 
 O token vence (15 minutos por padrão). Duas formas de renovar:
 
-- **Antes de vencer:** o backend devolve `expira_em`; o hospedeiro pede outro token e passa no `token`. O módulo confere a sessão com `GET /v1/sessao`. Se for a mesma pessoa e o mesmo tenant, mantém a tela e os dados; se for outra pessoa ou outro tenant, descarta o cache (ADR [0024](adr/0024-troca-de-token-confere-a-sessao.md)).
-- **Depois de vencer:** a API responde `401 sem_sessao` e o módulo chama `onSessionExpired`, **uma vez por token** (ADR [0019](adr/0019-encerramento-de-sessao-no-modulo.md)). O módulo mostra o aviso de sessão encerrada e limpa o cache. O hospedeiro pede um token novo e o passa em `token`.
+- **Antes de vencer:** o backend devolve `expires_at`; o hospedeiro pede outro token e passa no `token`. O módulo confere a sessão com `GET /v1/session`. Se for a mesma pessoa e o mesmo tenant, mantém a tela e os dados; se for outra pessoa ou outro tenant, descarta o cache (ADR [0024](adr/0024-troca-de-token-confere-a-sessao.md)).
+- **Depois de vencer:** a API responde `401 no_session` e o módulo chama `onSessionExpired`, **uma vez por token** (ADR [0019](adr/0019-encerramento-de-sessao-no-modulo.md)). O módulo mostra o aviso de sessão encerrada e limpa o cache. O hospedeiro pede um token novo e o passa em `token`.
 
 O mesmo `onSessionExpired` é chamado quando a pessoa usa "Sair" do módulo.
 
@@ -185,7 +185,7 @@ export function HostAppFluxo({ requestToken }: { requestToken: () => Promise<str
 
 ### Domínios autorizados
 
-Com token, a API confere o cabeçalho `Origin` da requisição: ele precisa estar entre os **domínios autorizados** do tenant (cadastrados na tela Integração, `/v1/dominios-autorizados`). Senão, a resposta é `403 origem_nao_autorizada`. Cadastre a origem do hospedeiro com esquema, host e porta (por exemplo `https://app.exemplo.com.br`). Em desenvolvimento, cadastre também `http://localhost:<porta>`.
+Com token, a API confere o cabeçalho `Origin` da requisição: ele precisa estar entre os **domínios autorizados** do tenant (cadastrados na tela Integração, `/v1/authorized-domains`). Senão, a resposta é `403 origin_not_authorized`. Cadastre a origem do hospedeiro com esquema, host e porta (por exemplo `https://app.exemplo.com.br`). Em desenvolvimento, cadastre também `http://localhost:<porta>`.
 
 ### Página de teste
 
@@ -199,7 +199,7 @@ Ela sobe em `http://localhost:5274/embed-test.html`, que precisa estar nos domí
 
 ## 4. Erros que o módulo mostra
 
-Os códigos gerais das rotas protegidas são `401 sem_sessao` (leva ao `onSessionExpired`), `403 sem_permissao` e `403 origem_nao_autorizada`. A lista completa está no contrato (`backend/contratos/openapi.yaml`). As telas decidem pelo `codigo`, nunca pelo texto.
+Os códigos gerais das rotas protegidas são `401 no_session` (leva ao `onSessionExpired`), `403 no_permission` e `403 origin_not_authorized`. A lista completa está no contrato (`backend/contracts/openapi.yaml`). As telas decidem pelo `code`, nunca pelo texto.
 
 ## 5. Tema e sobrescrita de tokens
 

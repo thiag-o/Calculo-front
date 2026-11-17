@@ -10,13 +10,10 @@ import { EnvironmentLabel } from './EnvironmentLabel';
 const SIGN_IN_ROUTE = '/sign-in';
 const INITIAL_ROUTE = '/home';
 const RESET_ROUTE = '/reset-password';
-// Path of the reset link the backend still generates (`<FLUXO_URL_CASCA>/redefinir?token=...`), until the API
-// migration (F42/B48) moves it to RESET_ROUTE.
-const LEGACY_RESET_ROUTE = '/redefinir';
 
 // Public route /reset-password?token=...: the reset link token comes from the URL.
 function onResetRoute(): boolean {
-  return window.location.pathname === RESET_ROUTE || window.location.pathname === LEGACY_RESET_ROUTE;
+  return window.location.pathname === RESET_ROUTE;
 }
 
 function readLinkToken(): string {

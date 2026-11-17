@@ -34,12 +34,12 @@ afterEach(() => {
 /** The API with the given session and empty lists on the epic 2 screens. */
 function simulateApiWith(permissions: string[]) {
   return simulateApi({
-    'GET /v1/sessao': json(sessionWith(permissions)),
-    'GET /v1/usuarios': json({ itens: [], proximo_cursor: null }),
-    'GET /v1/papeis': json({ itens: [] }),
-    'GET /v1/chaves-api': json({ itens: [], proximo_cursor: null }),
-    'GET /v1/dominios-autorizados': json([]),
-    'GET /v1/auditoria/acessos': json({ itens: [], proximo_cursor: null }),
+    'GET /v1/session': json(sessionWith(permissions)),
+    'GET /v1/users': json({ items: [], next_cursor: null }),
+    'GET /v1/roles': json({ items: [] }),
+    'GET /v1/api-keys': json({ items: [], next_cursor: null }),
+    'GET /v1/authorized-domains': json([]),
+    'GET /v1/audit/access-events': json({ items: [], next_cursor: null }),
   });
 }
 
@@ -61,7 +61,7 @@ describe('<Home> avulso', () => {
     expect(screen.getByRole('region', { name: 'Início' })).toContainElement(title);
     withoutModuleNavigation();
 
-    expect(api.calls()).toEqual(['GET /v1/sessao']);
+    expect(api.calls()).toEqual(['GET /v1/session']);
     expect(api.request(0).credentials).toBe('include');
     expect(api.request(0).headers.get('Authorization')).toBeNull();
     expect(pageUrl()).toBe(HOST_APP_URL);
@@ -79,7 +79,7 @@ describe('<Home> avulso', () => {
 
   it('enquanto a sessão chega, mostra o esqueleto com o nome da tela', async () => {
     const pending = pendingResponse();
-    simulateApi({ 'GET /v1/sessao': pending.promise });
+    simulateApi({ 'GET /v1/session': pending.promise });
     render(<Home apiUrl={API} token="token" />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Carregando o Início');
@@ -88,21 +88,21 @@ describe('<Home> avulso', () => {
   });
 
   it('se a sessão não abre, diz o que houve e tenta de novo', async () => {
-    const api = simulateApi({ 'GET /v1/sessao': problem(403, 'origem_nao_autorizada') });
+    const api = simulateApi({ 'GET /v1/session': problem(403, 'origin_not_authorized') });
     const user = userEvent.setup();
     render(<Home apiUrl={API} token="token" />);
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Não foi possível abrir o Início');
-    expect(alert).toHaveTextContent('Texto do servidor para origem_nao_autorizada.');
+    expect(alert).toHaveTextContent('Texto do servidor para origin_not_authorized.');
 
-    api.set({ 'GET /v1/sessao': json(sessionWith([])) });
+    api.set({ 'GET /v1/session': json(sessionWith([])) });
     await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Início' })).toBeInTheDocument();
   });
 
-  it('sem sessão (401 sem_sessao), avisa o onSessionExpired uma vez e mostra a sessão encerrada', async () => {
-    simulateApi({ 'GET /v1/sessao': problem(401, 'sem_sessao') });
+  it('sem sessão (401 no_session), avisa o onSessionExpired uma vez e mostra a sessão encerrada', async () => {
+    simulateApi({ 'GET /v1/session': problem(401, 'no_session') });
     const onSessionExpired = vi.fn();
     render(<Home apiUrl={API} token="token-vencido" onSessionExpired={onSessionExpired} />);
 
@@ -114,13 +114,13 @@ describe('<Home> avulso', () => {
 
 describe('<Audit> avulsa', () => {
   it('só com apiUrl, usa o cookie e abre os acessos; a lista de tipos abre no portal da raiz, com o tema', async () => {
-    const api = simulateApiWith(['auditoria.ver']);
+    const api = simulateApiWith(['audit.view']);
     const user = userEvent.setup();
     render(<Audit apiUrl={API} theme="dark" />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Acessos' })).toBeInTheDocument();
     withoutModuleNavigation();
-    expect(api.calls()).toContain('GET /v1/auditoria/acessos');
+    expect(api.calls()).toContain('GET /v1/audit/access-events');
     for (const index of api.calls().keys()) {
       expect(api.request(index).credentials).toBe('include');
       expect(api.request(index).headers.get('Authorization')).toBeNull();
@@ -133,24 +133,24 @@ describe('<Audit> avulsa', () => {
   });
 
   it('com token, chama a API com Bearer', async () => {
-    const api = simulateApiWith(['auditoria.ver']);
+    const api = simulateApiWith(['audit.view']);
     render(<Audit apiUrl={API} token="token-do-hospedeiro" />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Acessos' })).toBeInTheDocument();
-    expect(api.calls()).toContain('GET /v1/auditoria/acessos');
+    expect(api.calls()).toContain('GET /v1/audit/access-events');
     for (const index of api.calls().keys()) {
       expect(api.request(index).headers.get('Authorization')).toBe('Bearer token-do-hospedeiro');
     }
   });
 
-  it('sem auditoria.ver, mostra o estado sem acesso e não busca os eventos', async () => {
+  it('sem audit.view, mostra o estado sem acesso e não busca os eventos', async () => {
     const api = simulateApiWith(CONFIGURATOR_PERMISSIONS);
     render(<Audit apiUrl={API} token="token" />);
 
     expect(await screen.findByText('Você não tem acesso à Auditoria')).toBeInTheDocument();
     expect(screen.getByText('Peça ao administrador do cliente as permissões de que precisa.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Acessos' })).not.toBeInTheDocument();
-    expect(api.calls()).toEqual(['GET /v1/sessao']);
+    expect(api.calls()).toEqual(['GET /v1/session']);
   });
 });
 
@@ -205,7 +205,7 @@ describe('<Admin> avulsa', () => {
   });
 
   it('mostra só as áreas permitidas', async () => {
-    simulateApiWith(['papeis.gerenciar', 'seguranca.gerenciar']);
+    simulateApiWith(['roles.manage', 'security.manage']);
     render(<Admin apiUrl={API} token="token" />);
 
     const tabs = await screen.findByRole('tablist', { name: 'Administração' });
@@ -218,7 +218,7 @@ describe('<Admin> avulsa', () => {
 
     expect(await screen.findByText('Você não tem acesso à Administração')).toBeInTheDocument();
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
-    expect(api.calls()).toEqual(['GET /v1/sessao']);
+    expect(api.calls()).toEqual(['GET /v1/session']);
   });
 
   it('dentro de um hospedeiro com react-router, monta e não mexe no roteador dele', async () => {

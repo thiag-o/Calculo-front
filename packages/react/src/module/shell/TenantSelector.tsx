@@ -17,13 +17,13 @@ export interface TenantSelectorProps {
  */
 export function TenantSelector({ session, onSwitch, onFailure }: TenantSelectorProps) {
   const switchTenant = useSwitchTenant();
-  const current = session.tenant_atual;
+  const current = session.current_tenant;
 
   const identification = (
     <>
       <FluxoBrand />
-      <Avatar name={current.nome} tone="neutral" />
-      <span className="fc-tenant-selector-name">{current.nome}</span>
+      <Avatar name={current.name} tone="neutral" />
+      <span className="fc-tenant-selector-name">{current.name}</span>
     </>
   );
 
@@ -38,9 +38,9 @@ export function TenantSelector({ session, onSwitch, onFailure }: TenantSelectorP
 
   const items: MenuItem[] = session.tenants.map((tenant) =>
     tenant.id === current.id
-      ? { label: tenant.nome, disabledReason: 'Cliente atual', onSelect: () => undefined }
+      ? { label: tenant.name, disabledReason: 'Cliente atual', onSelect: () => undefined }
       : {
-          label: tenant.nome,
+          label: tenant.name,
           onSelect: () => {
             if (switchTenant.isPending) return;
             switchTenant.mutate(tenant.id, { onSuccess: onSwitch, onError: onFailure });
@@ -56,7 +56,7 @@ export function TenantSelector({ session, onSwitch, onFailure }: TenantSelectorP
         <button
           type="button"
           className="fc-tenant-selector fc-tenant-selector-button"
-          aria-label={`Trocar cliente. Atual: ${current.nome}`}
+          aria-label={`Trocar cliente. Atual: ${current.name}`}
           aria-busy={switchTenant.isPending || undefined}
         >
           {identification}

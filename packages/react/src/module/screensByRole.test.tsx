@@ -31,12 +31,12 @@ afterEach(() => {
 /** The API with the given session and empty lists on the epic 2 screens. */
 function simulateApiWith(permissions: string[]) {
   return simulateApi({
-    'GET /v1/sessao': json(sessionWith(permissions)),
-    'GET /v1/usuarios': json({ itens: [], proximo_cursor: null }),
-    'GET /v1/papeis': json([]),
-    'GET /v1/chaves-api': json({ itens: [], proximo_cursor: null }),
-    'GET /v1/dominios-autorizados': json([]),
-    'GET /v1/auditoria/acessos': json({ itens: [], proximo_cursor: null }),
+    'GET /v1/session': json(sessionWith(permissions)),
+    'GET /v1/users': json({ items: [], next_cursor: null }),
+    'GET /v1/roles': json([]),
+    'GET /v1/api-keys': json({ items: [], next_cursor: null }),
+    'GET /v1/authorized-domains': json([]),
+    'GET /v1/audit/access-events': json({ items: [], next_cursor: null }),
   });
 }
 
@@ -85,7 +85,7 @@ describe('telas por papel no casca', () => {
     expect(screen.queryByText('Administração')).not.toBeInTheDocument();
     await waitFor(() => expect(window.location.pathname).toBe('/home'));
     expect(screen.queryByRole('heading', { name: 'Usuários' })).not.toBeInTheDocument();
-    expect(api.calls()).not.toContain('GET /v1/usuarios');
+    expect(api.calls()).not.toContain('GET /v1/users');
   });
 
   it('o Auditor vê Auditoria e abre os acessos; não vê Administração', async () => {
@@ -102,7 +102,7 @@ describe('telas por papel no casca', () => {
   });
 
   it('cada área da Administração depende só da sua permissão', async () => {
-    simulateApiWith(['integracao.gerenciar', 'seguranca.gerenciar']);
+    simulateApiWith(['integration.manage', 'security.manage']);
     renderScreen({ navigation: 'memory' });
 
     await initiallyOpen();
@@ -112,7 +112,7 @@ describe('telas por papel no casca', () => {
     expect(screen.queryByRole('link', { name: 'Auditoria' })).not.toBeInTheDocument();
   });
 
-  it('os itens da Administração abrem as telas delas, nas rotas /administracao/…', async () => {
+  it('os itens da Administração abrem as telas delas, nas rotas /admin/…', async () => {
     const api = simulateApiWith(ADMIN_PERMISSIONS);
     const { user } = renderScreen({ navigation: 'url' });
     await initiallyOpen();
@@ -135,7 +135,7 @@ describe('telas por papel no casca', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'Segurança' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/admin/security');
 
-    await waitFor(() => expect(api.calls()).toContain('GET /v1/configuracoes/seguranca'));
+    await waitFor(() => expect(api.calls()).toContain('GET /v1/settings/security'));
   });
 
   it('no endereço de uma área da Administração, abre direto nela', async () => {
@@ -184,7 +184,7 @@ describe('telas por papel no casca', () => {
 
   it('o endereço da seção abre a primeira área permitida', async () => {
     window.history.replaceState(null, '', '/admin');
-    simulateApiWith(['papeis.gerenciar', 'seguranca.gerenciar']);
+    simulateApiWith(['roles.manage', 'security.manage']);
     renderScreen();
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Papéis' })).toBeInTheDocument();
@@ -225,7 +225,7 @@ describe('a propriedade tela', () => {
   });
 
   it('administracao abre a primeira área permitida', async () => {
-    simulateApiWith(['integracao.gerenciar', 'seguranca.gerenciar']);
+    simulateApiWith(['integration.manage', 'security.manage']);
     renderScreen({ token: 'token', screen: 'admin' });
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Chaves de API' })).toBeInTheDocument();
@@ -280,7 +280,7 @@ describe('abas do modo incorporado', () => {
     await user.click(within(tabs()).getByRole('link', { name: 'Auditoria' }));
     expect(await screen.findByRole('heading', { level: 2, name: 'Acessos' })).toBeInTheDocument();
     expect(screen.queryByRole('tablist', { name: 'Administração' })).not.toBeInTheDocument();
-    await waitFor(() => expect(api.calls()).toContain('GET /v1/auditoria/acessos'));
+    await waitFor(() => expect(api.calls()).toContain('GET /v1/audit/access-events'));
   });
 
   it('pelo teclado, as abas internas da Administração trocam a área e o foco continua nelas', async () => {
@@ -313,7 +313,7 @@ describe('abas do modo incorporado', () => {
   });
 
   it('as abas internas da Administração seguem a permissão de cada área', async () => {
-    simulateApiWith(['usuarios.gerenciar', 'papeis.gerenciar']);
+    simulateApiWith(['users.manage', 'roles.manage']);
     const { user } = renderScreen({ token: 'token' });
 
     await initiallyOpen();
@@ -325,7 +325,7 @@ describe('abas do modo incorporado', () => {
   });
 
   it('com uma área só, a aba Administração abre nela', async () => {
-    simulateApiWith(['seguranca.gerenciar']);
+    simulateApiWith(['security.manage']);
     const { user } = renderScreen({ token: 'token' });
 
     await initiallyOpen();

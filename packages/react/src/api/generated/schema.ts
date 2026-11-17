@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/v1/saude": {
+    "/v1/health": {
         parameters: {
             query?: never;
             header?: never;
@@ -15,7 +15,7 @@ export interface paths {
          * Verifica se a API está no ar
          * @description Rota pública, sem autenticação.
          */
-        get: operations["saude"];
+        get: operations["health"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24,7 +24,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/sessao": {
+    "/v1/session": {
         parameters: {
             query?: never;
             header?: never;
@@ -33,26 +33,26 @@ export interface paths {
         };
         /**
          * Devolve a sessão atual
-         * @description Devolve a sessão do cookie `fc_sessao` e renova a última atividade dela.
+         * @description Devolve a sessão do cookie `fc_session` e renova a última atividade dela.
          *
          *     No modo incorporado, aceita `Authorization: Bearer <token>`: devolve a
-         *     sessão do token, com `tenants` e `tenant_atual` iguais ao tenant do token
+         *     sessão do token, com `tenants` e `current_tenant` iguais ao tenant do token
          *     e as permissões dos papéis informados na emissão. Token vencido,
          *     adulterado, com assinatura inválida ou de um membro desativado no tenant:
-         *     `401 sem_sessao`.
+         *     `401 no_session`.
          */
-        get: operations["sessao_atual"];
+        get: operations["get_current_session"];
         put?: never;
         /**
          * Faz login com e-mail e senha
-         * @description Rota pública. Cria a sessão e emite os cookies `fc_sessao` e `fc_csrf`.
+         * @description Rota pública. Cria a sessão e emite os cookies `fc_session` e `fc_csrf`.
          *     Isenta do CSRF (não exige `X-CSRF-Token`): antes do login não há sessão
          *     nem `fc_csrf`.
          *
          *     Contra *login CSRF*, só aceita corpo com `Content-Type: application/json`
          *     (parâmetros como `charset=utf-8` são aceitos). Sem `Content-Type` ou com
          *     outro tipo (ex.: `application/x-www-form-urlencoded`, `multipart/form-data`,
-         *     `text/plain`): `415 tipo_conteudo_invalido`. Um formulário de outro site
+         *     `text/plain`): `415 invalid_content_type`. Um formulário de outro site
          *     não consegue enviar `application/json` sem passar pelo CORS.
          *
          *     O `415` e o `422` vêm antes do bloqueio (`423`) e das credenciais (`401`).
@@ -60,19 +60,19 @@ export interface paths {
          *     (`423`), credenciais (`401`). A resposta `401` é a mesma para e-mail
          *     inexistente e senha errada, para não revelar quais e-mails existem.
          */
-        post: operations["criar_sessao"];
+        post: operations["create_session"];
         /**
          * Faz logout
-         * @description Apaga a sessão no servidor e os cookies `fc_sessao` e `fc_csrf` no navegador.
+         * @description Apaga a sessão no servidor e os cookies `fc_session` e `fc_csrf` no navegador.
          *     Como toda requisição `DELETE` autenticada por cookie, exige `X-CSRF-Token`.
          */
-        delete: operations["encerrar_sessao"];
+        delete: operations["end_session"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/sessao/tenant": {
+    "/v1/session/tenant": {
         parameters: {
             query?: never;
             header?: never;
@@ -86,7 +86,7 @@ export interface paths {
          *     permissões e os parâmetros de segurança do novo tenant.
          *     Exige `X-CSRF-Token`.
          */
-        put: operations["trocar_tenant"];
+        put: operations["switch_tenant"];
         post?: never;
         delete?: never;
         options?: never;
@@ -94,7 +94,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/permissoes": {
+    "/v1/permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -103,10 +103,10 @@ export interface paths {
         };
         /**
          * Lista o catálogo de permissões
-         * @description O catálogo inteiro, agrupado por `grupo`, com as permissões sensíveis
-         *     marcadas (`sensivel`), para montar a edição de papéis.
+         * @description O catálogo inteiro, agrupado por `category`, com as permissões sensíveis
+         *     marcadas (`sensitive`), para montar a edição de papéis.
          */
-        get: operations["listar_permissoes"];
+        get: operations["list_permissions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -115,7 +115,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/papeis": {
+    "/v1/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -124,26 +124,26 @@ export interface paths {
         };
         /**
          * Lista os papéis do tenant
-         * @description Todos os papéis do tenant atual, inclusive o Admin (`fixo: true`), sem paginação.
-         *     Aceita `papeis.gerenciar` **ou** `usuarios.gerenciar` (requisitos alternativos),
+         * @description Todos os papéis do tenant atual, inclusive o Admin (`fixed: true`), sem paginação.
+         *     Aceita `roles.manage` **ou** `users.manage` (requisitos alternativos),
          *     porque a tela de usuários lista os papéis para atribuí-los.
          */
-        get: operations["listar_papeis"];
+        get: operations["list_roles"];
         put?: never;
         /**
          * Cria um papel personalizado
          * @description Cria um papel com as permissões escolhidas. O nome é único no tenant,
          *     comparado sem os espaços das pontas e sem diferenciar maiúsculas
-         *     (guardado sem os espaços das pontas). Auditado como `papel_alterado`.
+         *     (guardado sem os espaços das pontas). Auditado como `role_updated`.
          */
-        post: operations["criar_papel"];
+        post: operations["create_role"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/papeis/{id}": {
+    "/v1/roles/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -151,28 +151,28 @@ export interface paths {
             cookie?: never;
         };
         /** Devolve um papel */
-        get: operations["obter_papel"];
+        get: operations["get_role"];
         /**
          * Altera o nome e as permissões de um papel
          * @description Substitui o nome e as permissões do papel. Os papéis iniciais podem ser
-         *     alterados; o Admin (`fixo: true`) não: `409 papel_fixo`. Nome repetido no
-         *     tenant: `409 papel_existente`. Auditado como `papel_alterado`.
+         *     alterados; o Admin (`fixed: true`) não: `409 fixed_role`. Nome repetido no
+         *     tenant: `409 role_already_exists`. Auditado como `role_updated`.
          */
-        put: operations["alterar_papel"];
+        put: operations["update_role"];
         post?: never;
         /**
          * Remove um papel
          * @description Remove o papel. Os papéis iniciais podem ser removidos; o Admin não
-         *     (`409 papel_fixo`). Papel atribuído a algum usuário do tenant:
-         *     `409 papel_em_uso`. Auditado como `papel_alterado`.
+         *     (`409 fixed_role`). Papel atribuído a algum usuário do tenant:
+         *     `409 role_in_use`. Auditado como `role_updated`.
          */
-        delete: operations["remover_papel"];
+        delete: operations["delete_role"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/usuarios": {
+    "/v1/users": {
         parameters: {
             query?: never;
             header?: never;
@@ -182,9 +182,9 @@ export interface paths {
         /**
          * Lista os usuários do tenant
          * @description Os usuários do tenant atual, paginados, inclusive os inativos no tenant e
-         *     os criados pela incorporação (`externo: true`).
+         *     os criados pela incorporação (`external: true`).
          */
-        get: operations["listar_usuarios"];
+        get: operations["list_users"];
         put?: never;
         /**
          * Cria um usuário no tenant
@@ -192,20 +192,20 @@ export interface paths {
          *     papel do tenant), ativo.
          *     - E-mail que já é de um usuário de outro tenant: reaproveita esse usuário e o
          *       acrescenta como membro, sem mudar o nome dele.
-         *     - E-mail que já é membro deste tenant: `409 usuario_existente`.
-         *     - Papel que não existe no tenant: `422 papel_inexistente`.
+         *     - E-mail que já é membro deste tenant: `409 user_already_exists`.
+         *     - Papel que não existe no tenant: `422 unknown_role`.
          *
-         *     Devolve só o `Usuario`: o link para definir a senha sai depois, por
-         *     `POST /v1/usuarios/{id}/redefinicao`. Auditado como `usuario_alterado`.
+         *     Devolve só o `User`: o link para definir a senha sai depois, por
+         *     `POST /v1/users/{id}/password-reset`. Auditado como `user_updated`.
          */
-        post: operations["criar_usuario"];
+        post: operations["create_user"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/usuarios/{id}": {
+    "/v1/users/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -213,20 +213,20 @@ export interface paths {
             cookie?: never;
         };
         /** Devolve um usuário do tenant */
-        get: operations["obter_usuario"];
+        get: operations["get_user"];
         /**
          * Altera o nome, os papéis e a situação de um usuário
          * @description Substitui o nome, os papéis no tenant atual (ids de papel) e se está ativo.
-         *     - O `nome` é do usuário, não do vínculo: vale em todos os tenants dele.
-         *     - `ativo` vale só no tenant atual. Desativar derruba as sessões do usuário
+         *     - O `name` é do usuário, não do vínculo: vale em todos os tenants dele.
+         *     - `active` vale só no tenant atual. Desativar derruba as sessões do usuário
          *       nesse tenant.
          *     - Tirar o papel Admin do último Admin ativo, ou desativá-lo:
-         *       `409 ultimo_admin`.
-         *     - Papel que não existe no tenant: `422 papel_inexistente`.
+         *       `409 last_admin`.
+         *     - Papel que não existe no tenant: `422 unknown_role`.
          *
-         *     Auditado como `usuario_alterado`.
+         *     Auditado como `user_updated`.
          */
-        put: operations["alterar_usuario"];
+        put: operations["update_user"];
         post?: never;
         delete?: never;
         options?: never;
@@ -234,7 +234,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/usuarios/{id}/redefinicao": {
+    "/v1/users/{id}/password-reset": {
         parameters: {
             query?: never;
             header?: never;
@@ -249,19 +249,19 @@ export interface paths {
          *     validade do link do tenant atual (padrão 24 h). O link aparece só nesta
          *     resposta; o servidor guarda só o resumo do token. Gerar um link novo
          *     invalida os anteriores do usuário.
-         *     - Usuário inativo no tenant: `409 usuario_inativo`.
-         *     - Usuário criado pela incorporação: `409 usuario_externo`.
+         *     - Usuário inativo no tenant: `409 inactive_user`.
+         *     - Usuário criado pela incorporação: `409 external_user`.
          *
-         *     Auditado como `redefinicao_gerada`.
+         *     Auditado como `reset_link_generated`.
          */
-        post: operations["gerar_link_redefinicao"];
+        post: operations["generate_reset_link"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/redefinicao": {
+    "/v1/password-reset": {
         parameters: {
             query?: never;
             header?: never;
@@ -273,27 +273,27 @@ export interface paths {
         /**
          * Troca a senha pelo link de redefinição
          * @description Rota pública: a pessoa informa o token do link e a nova senha. O link é de
-         *     uso único. Token inexistente, já usado ou vencido: `410 link_invalido`.
+         *     uso único. Token inexistente, já usado ou vencido: `410 invalid_link`.
          *
          *     A nova senha precisa cumprir a maior senha mínima entre os tenants do
-         *     usuário e não pode conter o e-mail: `422 senha_invalida` com
-         *     `campos.nova_senha`.
+         *     usuário e não pode conter o e-mail: `422 invalid_password` com
+         *     `fields.new_password`.
          *
          *     Troca a senha, marca o link como usado e encerra as outras sessões do
          *     usuário. Não cria sessão (a pessoa entra depois pelo login). Auditado como
-         *     `senha_redefinida`.
+         *     `password_reset`.
          *
          *     Como o login, é isenta do CSRF e só aceita `Content-Type: application/json`:
-         *     sem `Content-Type` ou com outro tipo, `415 tipo_conteudo_invalido`.
+         *     sem `Content-Type` ou com outro tipo, `415 invalid_content_type`.
          */
-        post: operations["redefinir_senha"];
+        post: operations["reset_password"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/redefinicao/verificacao": {
+    "/v1/password-reset/verification": {
         parameters: {
             query?: never;
             header?: never;
@@ -308,21 +308,21 @@ export interface paths {
          *     mínima, que varia por tenant. Não consome o link.
          *
          *     O token vai no corpo, e não no caminho, para não aparecer em log de acesso.
-         *     `senha_minima` é a maior senha mínima entre os tenants do usuário.
-         *     Token inexistente, já usado ou vencido: `410 link_invalido`.
+         *     `min_password_length` é a maior senha mínima entre os tenants do usuário.
+         *     Token inexistente, já usado ou vencido: `410 invalid_link`.
          *
-         *     Como `POST /v1/redefinicao`, é isenta do CSRF e só aceita
+         *     Como `POST /v1/password-reset`, é isenta do CSRF e só aceita
          *     `Content-Type: application/json`: sem `Content-Type` ou com outro tipo,
-         *     `415 tipo_conteudo_invalido`.
+         *     `415 invalid_content_type`.
          */
-        post: operations["verificar_link_redefinicao"];
+        post: operations["verify_reset_link"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/chaves-api": {
+    "/v1/api-keys": {
         parameters: {
             query?: never;
             header?: never;
@@ -332,24 +332,24 @@ export interface paths {
         /**
          * Lista as chaves de API do tenant
          * @description As chaves do tenant atual, paginadas, inclusive as revogadas
-         *     (`revogada_em` preenchido). A chave inteira nunca volta: só o `prefixo`.
+         *     (`revoked_at` preenchido). A chave inteira nunca volta: só o `prefix`.
          */
-        get: operations["listar_chaves_api"];
+        get: operations["list_api_keys"];
         put?: never;
         /**
          * Cria uma chave de API
-         * @description Cria uma chave de API do tenant atual. A `chave` inteira aparece só nesta
-         *     resposta; o servidor guarda só o hash e o `prefixo` visível. Nomes
-         *     repetidos são permitidos. Auditado como `chave_api_criada`.
+         * @description Cria uma chave de API do tenant atual. A `key` inteira aparece só nesta
+         *     resposta; o servidor guarda só o hash e o `prefix` visível. Nomes
+         *     repetidos são permitidos. Auditado como `api_key_created`.
          */
-        post: operations["criar_chave_api"];
+        post: operations["create_api_key"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/chaves-api/{id}": {
+    "/v1/api-keys/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -361,18 +361,18 @@ export interface paths {
         post?: never;
         /**
          * Revoga uma chave de API
-         * @description Revoga a chave sem apagá-la (ela continua na lista, com `revogada_em`).
+         * @description Revoga a chave sem apagá-la (ela continua na lista, com `revoked_at`).
          *     Revogar uma chave já revogada também responde `204`. Daí em diante a troca
-         *     por token com essa chave dá `401 chave_invalida`. Auditado como
-         *     `chave_api_revogada`.
+         *     por token com essa chave dá `401 invalid_api_key`. Auditado como
+         *     `api_key_revoked`.
          */
-        delete: operations["revogar_chave_api"];
+        delete: operations["revoke_api_key"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/dominios-autorizados": {
+    "/v1/authorized-domains": {
         parameters: {
             query?: never;
             header?: never;
@@ -383,25 +383,25 @@ export interface paths {
          * Lista os domínios autorizados do tenant
          * @description As origens que podem chamar a API pelo navegador com o token do tenant, sem paginação.
          */
-        get: operations["listar_dominios_autorizados"];
+        get: operations["list_authorized_domains"];
         put?: never;
         /**
          * Cadastra um domínio autorizado
-         * @description Cadastra uma origem no formato `https?://host[:porta]`, sem caminho,
+         * @description Cadastra uma origem no formato `https?://host[:port]`, sem caminho,
          *     consulta nem fragmento. Ela é guardada e devolvida normalizada: em
          *     minúsculas, sem barra final e sem a porta padrão do esquema (80 no
          *     `http`, 443 no `https`).
-         *     - Origem fora do formato: `422 origem_invalida` com `campos.origem`.
-         *     - Origem (já normalizada) repetida no tenant: `409 dominio_existente`.
+         *     - Origem fora do formato: `422 invalid_origin` com `fields.origin`.
+         *     - Origem (já normalizada) repetida no tenant: `409 authorized_domain_already_exists`.
          */
-        post: operations["criar_dominio_autorizado"];
+        post: operations["create_authorized_domain"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/dominios-autorizados/{id}": {
+    "/v1/authorized-domains/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -415,13 +415,13 @@ export interface paths {
          * Remove um domínio autorizado
          * @description Apaga o domínio de vez; a origem deixa de poder chamar a API com o token do tenant.
          */
-        delete: operations["remover_dominio_autorizado"];
+        delete: operations["delete_authorized_domain"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/incorporacao/sessoes": {
+    "/v1/embed/sessions": {
         parameters: {
             query?: never;
             header?: never;
@@ -432,37 +432,37 @@ export interface paths {
         put?: never;
         /**
          * Troca a chave de API por um token de incorporação
-         * @description Chamada pelo backend do hospedeiro com `Authorization: Chave <chave>`.
+         * @description Chamada pelo backend do hospedeiro com `Authorization: ApiKey <key>`.
          *     Cria ou atualiza, no tenant da chave, o usuário externo identificado pelo
-         *     `id_externo` (e-mail, nome e papéis informados) e devolve um token de
+         *     `external_id` (e-mail, nome e papéis informados) e devolve um token de
          *     incorporação para esse usuário, válido pela validade do token do tenant
          *     (padrão 15 min). Registra o último uso da chave. Auditado como
-         *     `token_incorporacao_emitido`.
+         *     `embed_token_issued`.
          *     - Cabeçalho ausente ou malformado, chave inexistente ou revogada:
-         *       `401 chave_invalida`.
-         *     - `papeis` traz **nomes** de papel do tenant; nome que não existe:
-         *       `422 papel_inexistente`. Lista vazia é aceita (usuário sem permissões).
+         *       `401 invalid_api_key`.
+         *     - `roles` traz **nomes** de papel do tenant; nome que não existe:
+         *       `422 unknown_role`. Lista vazia é aceita (usuário sem permissões).
          *     - E-mail que já pertence a outro usuário do sistema, não ligado a esse
-         *       `id_externo`: `409 email_em_uso` (o hospedeiro nunca assume uma conta
+         *       `external_id`: `409 email_in_use` (o hospedeiro nunca assume uma conta
          *       existente).
-         *     - Usuário externo desativado no tenant (pelo Admin): `409 usuario_inativo`.
+         *     - Usuário externo desativado no tenant (pelo Admin): `409 inactive_user`.
          *       Os tokens emitidos antes da desativação deixam de valer na hora
-         *       (`401 sem_sessao`).
-         *     - A incorporação não dá nem tira o papel Admin: Admin em `papeis` é
-         *       `422 papel_nao_permitido` (`campos.papeis`). Se o usuário externo já é
+         *       (`401 no_session`).
+         *     - A incorporação não dá nem tira o papel Admin: Admin em `roles` é
+         *       `422 role_not_allowed` (`fields.roles`). Se o usuário externo já é
          *       Admin (dado pela tela de usuários), a atualização mantém o Admin e troca
          *       só os demais papéis.
          *
          *     Não usa cookie nem CSRF.
          */
-        post: operations["criar_sessao_incorporacao"];
+        post: operations["create_embed_session"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v1/auditoria/acessos": {
+    "/v1/audit/access-events": {
         parameters: {
             query?: never;
             header?: never;
@@ -473,21 +473,21 @@ export interface paths {
          * Consulta a auditoria de acessos
          * @description Os eventos de acesso do tenant atual, do mais recente para o mais antigo,
          *     paginados. Entram também os eventos sem tenant (falha e bloqueio de login,
-         *     gravados antes de se saber o tenant) cujo `usuario_id` é membro do tenant
+         *     gravados antes de se saber o tenant) cujo `user_id` é membro do tenant
          *     atual. E-mails sem conta nunca aparecem.
          *
          *     Filtros (todos opcionais, combinados com E):
-         *     - `tipo`: um ou mais tipos de evento (parâmetro repetido:
-         *       `?tipo=login_ok&tipo=login_falhou`). Os tipos são `login_ok`,
-         *       `login_falhou`, `login_bloqueado`, `logout`, `troca_tenant`,
-         *       `redefinicao_gerada`, `senha_redefinida`, `chave_api_criada`,
-         *       `chave_api_revogada`, `token_incorporacao_emitido`, `papel_alterado`,
-         *       `usuario_alterado` e `seguranca_alterada`. Tipo desconhecido:
-         *       `422 tipo_evento_invalido` com `campos.tipo`;
-         *     - `desde` (inclusivo) e `ate` (exclusivo), em ISO 8601. `desde` depois de
-         *       `ate`: `422 dados_invalidos` com `campos.ate`.
+         *     - `type`: um ou mais tipos de evento (parâmetro repetido:
+         *       `?type=login_succeeded&type=login_failed`). Os tipos são `login_succeeded`,
+         *       `login_failed`, `login_locked`, `logout`, `tenant_switched`,
+         *       `reset_link_generated`, `password_reset`, `api_key_created`,
+         *       `api_key_revoked`, `embed_token_issued`, `role_updated`,
+         *       `user_updated` e `security_updated`. Tipo desconhecido:
+         *       `422 invalid_event_type` com `fields.type`;
+         *     - `since` (inclusivo) e `until` (exclusivo), em ISO 8601. `since` depois de
+         *       `until`: `422 invalid_data` com `fields.until`.
          */
-        get: operations["listar_acessos"];
+        get: operations["list_access_events"];
         put?: never;
         post?: never;
         delete?: never;
@@ -496,7 +496,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/configuracoes/seguranca": {
+    "/v1/settings/security": {
         parameters: {
             query?: never;
             header?: never;
@@ -511,25 +511,25 @@ export interface paths {
          *
          *     | Campo | Unidade | Padrão | Limites |
          *     |---|---|---|---|
-         *     | `inatividade_minutos` | minutos | 480 | 15 a 1440 |
-         *     | `duracao_maxima_dias` | dias | 7 | 1 a 30 |
-         *     | `senha_minima` | caracteres | 12 | 8 a 64 |
-         *     | `validade_link_horas` | horas | 24 | 1 a 72 |
-         *     | `validade_token_minutos` | minutos | 15 | 5 a 60 |
+         *     | `inactivity_minutes` | minutos | 480 | 15 a 1440 |
+         *     | `max_duration_days` | dias | 7 | 1 a 30 |
+         *     | `min_password_length` | caracteres | 12 | 8 a 64 |
+         *     | `link_validity_hours` | horas | 24 | 1 a 72 |
+         *     | `token_validity_minutes` | minutos | 15 | 5 a 60 |
          *
          *     O bloqueio de login e o limite por IP são do sistema, não do tenant, e
          *     não aparecem aqui.
          */
-        get: operations["configuracao_seguranca"];
+        get: operations["get_security_settings"];
         /**
          * Altera os parâmetros de segurança do tenant
          * @description Substitui os cinco parâmetros (todos obrigatórios, inteiros, nas unidades
-         *     do `GET`). Valor fora dos limites: `422 valor_fora_do_limite`, com um item
-         *     em `campos` para cada campo fora do limite, de uma vez só; nada é gravado.
-         *     Responde com o mesmo corpo do `GET`. Auditado como `seguranca_alterada`,
+         *     do `GET`). Valor fora dos limites: `422 value_out_of_range`, com um item
+         *     em `fields` para cada campo fora do limite, de uma vez só; nada é gravado.
+         *     Responde com o mesmo corpo do `GET`. Auditado como `security_updated`,
          *     com o valor antigo e o novo.
          */
-        put: operations["alterar_configuracao_seguranca"];
+        put: operations["update_security_settings"];
         post?: never;
         delete?: never;
         options?: never;
@@ -541,45 +541,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        Saude: {
+        Health: {
             /** @constant */
             status: "ok";
         };
         /** @description Corpo do login. */
-        Credenciais: {
+        LoginCredentials: {
             email: string;
-            senha: string;
+            password: string;
         };
         /** @description Corpo da troca de tenant. */
-        TrocaTenant: {
+        TenantSwitch: {
             /** Format: uuid */
             tenant_id: string;
         };
         /** @description A sessão do usuário logado, no tenant atual. */
-        Sessao: {
-            usuario: components["schemas"]["UsuarioSessao"];
+        Session: {
+            user: components["schemas"]["SessionUser"];
             /** @description Os tenants a que o usuário pertence. */
-            tenants: components["schemas"]["TenantResumo"][];
-            tenant_atual: components["schemas"]["TenantResumo"];
-            /** @description Códigos das permissões do usuário no tenant atual (ex.: `workflows.ver`). */
-            permissoes: string[];
+            tenants: components["schemas"]["TenantSummary"][];
+            current_tenant: components["schemas"]["TenantSummary"];
+            /** @description Códigos das permissões do usuário no tenant atual (ex.: `workflows.view`). */
+            permissions: string[];
         };
-        UsuarioSessao: {
+        SessionUser: {
             /** Format: uuid */
             id: string;
-            nome: string;
+            name: string;
             email: string;
         };
-        TenantResumo: {
+        TenantSummary: {
             /** Format: uuid */
             id: string;
-            nome: string;
+            name: string;
         };
         /**
-         * @description Erro no formato problem+json (RFC 9457), com o `codigo` estável do Fluxo.
-         *     O front decide pelo `codigo`, nunca pelo texto.
+         * @description Erro no formato problem+json (RFC 9457), com o `code` estável do Fluxo.
+         *     O front decide pelo `code`, nunca pelo texto.
          */
-        Problema: {
+        Problem: {
             /** @default about:blank */
             type: string;
             title: string;
@@ -587,18 +587,18 @@ export interface components {
             /** @description Mensagem em pt-BR para o usuário final. */
             detail: string;
             /** @description Identificador estável do erro (slug). */
-            codigo: string;
-            /** @description Erro por campo do corpo, quando houver (`{"<campo>": "<erro>"}`). */
-            campos?: {
+            code: string;
+            /** @description Erro por campo do corpo, quando houver (`{"<field>": "<error>"}`). */
+            fields?: {
                 [key: string]: string;
             };
         };
         /**
-         * @description O `Problema` do `422 dados_invalidos`, com `campos` obrigatório.
+         * @description O `Problem` do `422 invalid_data`, com `fields` obrigatório.
          *     A chave é o nome do campo no corpo (caminho com ponto, se aninhado);
-         *     erro que não é de um campo (JSON malformado, corpo ausente) usa a chave `corpo`.
+         *     erro que não é de um campo (JSON malformado, corpo ausente) usa a chave `body`.
          */
-        ProblemaDadosInvalidos: {
+        InvalidDataProblem: {
             /** @default about:blank */
             type: string;
             title: string;
@@ -606,14 +606,14 @@ export interface components {
             /** @description Mensagem em pt-BR para o usuário final. */
             detail: string;
             /** @description Identificador estável do erro (slug). */
-            codigo: string;
-            /** @description Erro de cada campo, em pt-BR (`{"<campo>": "<erro>"}`). */
-            campos: {
+            code: string;
+            /** @description Erro de cada campo, em pt-BR (`{"<field>": "<error>"}`). */
+            fields: {
                 [key: string]: string;
             };
         };
-        /** @description O `Problema` do `423 login_bloqueado`, com o fim do bloqueio. */
-        ProblemaLoginBloqueado: {
+        /** @description O `Problem` do `423 login_locked`, com o fim do bloqueio. */
+        LoginLockedProblem: {
             /** @default about:blank */
             type: string;
             title: string;
@@ -621,493 +621,493 @@ export interface components {
             /** @description Mensagem em pt-BR para o usuário final. */
             detail: string;
             /** @description Identificador estável do erro (slug). */
-            codigo: string;
-            /** @description Erro por campo do corpo, quando houver (`{"<campo>": "<erro>"}`). */
-            campos?: {
+            code: string;
+            /** @description Erro por campo do corpo, quando houver (`{"<field>": "<error>"}`). */
+            fields?: {
                 [key: string]: string;
             };
             /**
              * Format: date-time
              * @description Quando o login deste e-mail volta a ser aceito (UTC).
              */
-            desbloqueia_em: string;
+            unlocks_at: string;
         };
         /**
          * @description Código de uma permissão do catálogo do RBAC.
          * @enum {string}
          */
-        CodigoPermissao: "usuarios.gerenciar" | "papeis.gerenciar" | "integracao.gerenciar" | "seguranca.gerenciar" | "conexoes.ver" | "conexoes.gerenciar" | "credenciais.gerenciar" | "datasets.gerenciar" | "sql_livre.usar" | "variaveis.gerenciar" | "workflows.ver" | "workflows.editar" | "testes.editar" | "teste.alterar_origem_cliente" | "versao.enviar_revisao" | "versao.aprovar" | "versao.publicar" | "execucoes.ver" | "execucoes.disparar" | "execucoes.agendar" | "execucao.reprocessar" | "erro.ignorar" | "simulacao.rodar" | "estados.ver" | "estado.ajustar" | "auditoria.ver" | "traces.ver";
+        PermissionCode: "users.manage" | "roles.manage" | "integration.manage" | "security.manage" | "connections.view" | "connections.manage" | "credentials.manage" | "datasets.manage" | "free_sql.use" | "variables.manage" | "workflows.view" | "workflows.edit" | "test_cases.edit" | "client_test_cases.edit" | "versions.submit" | "versions.approve" | "versions.publish" | "executions.view" | "executions.trigger" | "executions.schedule" | "executions.reprocess" | "errors.ignore" | "simulations.run" | "states.view" | "states.adjust" | "audit.view" | "traces.view";
         /** @description Uma permissão do catálogo. */
-        Permissao: {
-            codigo: components["schemas"]["CodigoPermissao"];
+        Permission: {
+            code: components["schemas"]["PermissionCode"];
             /** @description Nome da permissão para a tela, em pt-BR. */
-            nome: string;
+            name: string;
             /** @description Grupo do catálogo (ex.: `Administração`, `Dados`). */
-            grupo: string;
+            category: string;
             /** @description Permissão sensível, para ser dada uma a uma e destacada na tela. */
-            sensivel: boolean;
+            sensitive: boolean;
         };
-        ListaPermissoes: {
-            itens: components["schemas"]["Permissao"][];
+        PermissionList: {
+            items: components["schemas"]["Permission"][];
         };
         /** @description Um papel do tenant (conjunto de permissões). */
-        Papel: {
+        Role: {
             /** Format: uuid */
             id: string;
-            nome: string;
-            permissoes: components["schemas"]["CodigoPermissao"][];
+            name: string;
+            permissions: components["schemas"]["PermissionCode"][];
             /** @description `true` só no Admin: tem todas as permissões e não pode ser alterado nem removido. */
-            fixo: boolean;
+            fixed: boolean;
             /** @description Quantos usuários do tenant têm o papel. */
-            total_usuarios: number;
+            user_count: number;
         };
-        ListaPapeis: {
-            itens: components["schemas"]["Papel"][];
+        RoleList: {
+            items: components["schemas"]["Role"][];
         };
         /** @description Corpo da criação e da alteração de papel (a alteração substitui tudo). */
-        DadosPapel: {
-            nome: string;
-            permissoes: components["schemas"]["CodigoPermissao"][];
+        RoleData: {
+            name: string;
+            permissions: components["schemas"]["PermissionCode"][];
         };
-        PapelResumo: {
+        RoleSummary: {
             /** Format: uuid */
             id: string;
-            nome: string;
+            name: string;
         };
         /** @description Um usuário, como membro do tenant atual. */
-        Usuario: {
+        User: {
             /** Format: uuid */
             id: string;
             email: string;
-            nome: string;
+            name: string;
             /** @description Os papéis do usuário no tenant atual. */
-            papeis: components["schemas"]["PapelResumo"][];
+            roles: components["schemas"]["RoleSummary"][];
             /** @description Se o usuário está ativo no tenant atual. */
-            ativo: boolean;
+            active: boolean;
             /** @description `true` para o usuário criado pela incorporação (sem senha). */
-            externo: boolean;
+            external: boolean;
         };
-        ListaUsuarios: {
-            itens: components["schemas"]["Usuario"][];
-            proximo_cursor: string | null;
+        UserList: {
+            items: components["schemas"]["User"][];
+            next_cursor: string | null;
         };
         /** @description Corpo da criação de usuário. */
-        NovoUsuario: {
+        NewUser: {
             email: string;
-            nome: string;
+            name: string;
             /** @description Ids dos papéis do tenant. */
-            papeis: string[];
+            roles: string[];
         };
         /** @description Corpo da alteração de usuário (substitui tudo). */
-        AlteracaoUsuario: {
-            nome: string;
+        UserUpdate: {
+            name: string;
             /** @description Ids dos papéis do tenant. */
-            papeis: string[];
-            ativo: boolean;
+            roles: string[];
+            active: boolean;
         };
         /** @description O link de redefinição de senha, mostrado uma vez só. */
-        LinkRedefinicao: {
+        ResetLink: {
             /** @description URL do casca com o token (`<FLUXO_URL_CASCA>/redefinir?token=...`). */
             link: string;
             /** Format: date-time */
-            expira_em: string;
+            expires_at: string;
         };
         /** @description Corpo da troca de senha pelo link. */
-        NovaSenha: {
+        NewPassword: {
             token: string;
-            nova_senha: string;
+            new_password: string;
         };
         /** @description Corpo da consulta do link de redefinição. */
-        VerificacaoLink: {
+        LinkVerification: {
             token: string;
         };
         /** @description O que a tela de redefinição precisa saber do link. */
-        LinkVerificado: {
+        VerifiedLink: {
             /** @description A maior senha mínima (em caracteres) entre os tenants do usuário. */
-            senha_minima: number;
+            min_password_length: number;
             /** Format: date-time */
-            expira_em: string;
+            expires_at: string;
         };
         /** @description Uma chave de API, sem a chave inteira. */
-        ChaveApi: {
+        ApiKey: {
             /** Format: uuid */
             id: string;
-            nome: string;
+            name: string;
             /** @description O começo visível da chave, para reconhecê-la. */
-            prefixo: string;
+            prefix: string;
             /** Format: date-time */
-            criada_em: string;
-            ultimo_uso_em: string | null;
-            revogada_em: string | null;
+            created_at: string;
+            last_used_at: string | null;
+            revoked_at: string | null;
         };
-        ListaChavesApi: {
-            itens: components["schemas"]["ChaveApi"][];
-            proximo_cursor: string | null;
+        ApiKeyList: {
+            items: components["schemas"]["ApiKey"][];
+            next_cursor: string | null;
         };
         /** @description Corpo da criação de chave de API. */
-        NovaChaveApi: {
-            nome: string;
+        NewApiKey: {
+            name: string;
         };
-        /** @description A chave recém-criada. A `chave` inteira só aparece aqui. */
-        ChaveApiCriada: {
+        /** @description A chave recém-criada. A `key` inteira só aparece aqui. */
+        CreatedApiKey: {
             /** Format: uuid */
             id: string;
-            nome: string;
-            prefixo: string;
-            /** @description A chave inteira, para `Authorization: Chave <chave>`. Não é mostrada de novo. */
-            chave: string;
+            name: string;
+            prefix: string;
+            /** @description A chave inteira, para `Authorization: ApiKey <key>`. Não é mostrada de novo. */
+            key: string;
         };
-        DominioAutorizado: {
+        AuthorizedDomain: {
             /** Format: uuid */
             id: string;
             /** @description Origem normalizada (ex.: `https://app.exemplo.com.br`, `http://localhost:5274`). */
-            origem: string;
+            origin: string;
             /** Format: date-time */
-            criado_em: string;
+            created_at: string;
         };
-        ListaDominiosAutorizados: {
-            itens: components["schemas"]["DominioAutorizado"][];
+        AuthorizedDomainList: {
+            items: components["schemas"]["AuthorizedDomain"][];
         };
         /** @description Corpo do cadastro de domínio autorizado. */
-        NovoDominioAutorizado: {
-            /** @description Origem no formato `https?://host[:porta]`. */
-            origem: string;
+        NewAuthorizedDomain: {
+            /** @description Origem no formato `https?://host[:port]`. */
+            origin: string;
         };
         /** @description Corpo da troca da chave de API por um token. */
-        NovaSessaoIncorporacao: {
+        NewEmbedSession: {
             /** @description Identificador do usuário no sistema hospedeiro. */
-            id_externo: string;
+            external_id: string;
             email: string;
-            nome: string;
+            name: string;
             /** @description Nomes de papéis do tenant (pode ser vazia). */
-            papeis: string[];
+            roles: string[];
         };
-        TokenIncorporacao: {
+        EmbedToken: {
             /** @description O token para `Authorization: Bearer <token>`. */
             token: string;
             /** Format: date-time */
-            expira_em: string;
+            expires_at: string;
         };
         /** @description Um evento da auditoria de acessos. */
-        EventoAcesso: {
+        AccessEvent: {
             /** Format: uuid */
             id: string;
             /** Format: date-time */
-            ocorrido_em: string;
-            /** @description Tipo do evento (ex.: `login_ok`, `login_falhou`); a lista está em `GET /v1/auditoria/acessos`. */
-            tipo: string;
-            usuario_id: string | null;
-            email_informado: string;
+            occurred_at: string;
+            /** @description Tipo do evento (ex.: `login_succeeded`, `login_failed`); a lista está em `GET /v1/audit/access-events`. */
+            type: string;
+            user_id: string | null;
+            provided_email: string;
             ip: string | null;
-            detalhe: string | null;
+            detail: string | null;
         };
-        ListaEventosAcesso: {
-            itens: components["schemas"]["EventoAcesso"][];
-            proximo_cursor: string | null;
+        AccessEventList: {
+            items: components["schemas"]["AccessEvent"][];
+            next_cursor: string | null;
         };
         /** @description Um parâmetro de segurança do tenant, com o padrão e os limites aceitos (inclusivos). */
-        ParametroSeguranca: {
-            valor: number;
-            padrao: number;
-            minimo: number;
-            maximo: number;
+        SecurityParameter: {
+            value: number;
+            default: number;
+            min: number;
+            max: number;
         };
         /** @description Os cinco parâmetros de sessão e senha do tenant atual. */
-        ConfiguracaoSeguranca: {
-            inatividade_minutos: components["schemas"]["ParametroSeguranca"];
-            duracao_maxima_dias: components["schemas"]["ParametroSeguranca"];
-            senha_minima: components["schemas"]["ParametroSeguranca"];
-            validade_link_horas: components["schemas"]["ParametroSeguranca"];
-            validade_token_minutos: components["schemas"]["ParametroSeguranca"];
+        SecuritySettings: {
+            inactivity_minutes: components["schemas"]["SecurityParameter"];
+            max_duration_days: components["schemas"]["SecurityParameter"];
+            min_password_length: components["schemas"]["SecurityParameter"];
+            link_validity_hours: components["schemas"]["SecurityParameter"];
+            token_validity_minutes: components["schemas"]["SecurityParameter"];
         };
         /**
          * @description Corpo da alteração dos parâmetros de segurança (os cinco, nas unidades do nome).
-         *     Os limites não estão no esquema: fora deles, a resposta é `422 valor_fora_do_limite`.
+         *     Os limites não estão no esquema: fora deles, a resposta é `422 value_out_of_range`.
          */
-        AlteracaoConfiguracaoSeguranca: {
-            inatividade_minutos: number;
-            duracao_maxima_dias: number;
-            senha_minima: number;
-            validade_link_horas: number;
-            validade_token_minutos: number;
+        SecuritySettingsUpdate: {
+            inactivity_minutes: number;
+            max_duration_days: number;
+            min_password_length: number;
+            link_validity_hours: number;
+            token_validity_minutes: number;
         };
     };
     responses: {
         /**
-         * @description `sem_sessao`: sem sessão válida (ausente, revogada ou expirada) ou, com
+         * @description `no_session`: sem sessão válida (ausente, revogada ou expirada) ou, com
          *     `Authorization: Bearer`, token de incorporação vencido, adulterado, com
          *     assinatura inválida ou de um membro desativado no tenant.
          */
-        SemSessao: {
+        NoSession: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description `csrf_invalido`: falta o `X-CSRF-Token` ou ele não bate com o cookie `fc_csrf`. */
-        CsrfInvalido: {
+        /** @description `invalid_csrf`: falta o `X-CSRF-Token` ou ele não bate com o cookie `fc_csrf`. */
+        InvalidCsrf: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description `credenciais_invalidas`: e-mail inexistente ou senha errada. A mensagem é a
+         * @description `invalid_credentials`: e-mail inexistente ou senha errada. A mensagem é a
          *     mesma nos dois casos, para não revelar quais e-mails existem.
          */
-        CredenciaisInvalidas: {
+        InvalidCredentials: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description `login_bloqueado`: o e-mail errou a senha vezes seguidas demais e está
-         *     bloqueado até `desbloqueia_em`.
+         * @description `login_locked`: o e-mail errou a senha vezes seguidas demais e está
+         *     bloqueado até `unlocks_at`.
          */
-        LoginBloqueado: {
+        LoginLocked: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ProblemaLoginBloqueado"];
+                "application/problem+json": components["schemas"]["LoginLockedProblem"];
             };
         };
-        /** @description `muitas_tentativas`: o IP passou do limite de tentativas de login por minuto. */
-        MuitasTentativas: {
+        /** @description `too_many_attempts`: o IP passou do limite de tentativas de login por minuto. */
+        TooManyAttempts: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description `dados_invalidos`: o corpo não pôde ser lido ou não segue o esquema (JSON
-         *     malformado, campo obrigatório faltando, tipo errado). `campos` traz o erro
-         *     de cada campo; erro que não é de um campo usa a chave `corpo`.
+         * @description `invalid_data`: o corpo não pôde ser lido ou não segue o esquema (JSON
+         *     malformado, campo obrigatório faltando, tipo errado). `fields` traz o erro
+         *     de cada campo; erro que não é de um campo usa a chave `body`.
          */
-        DadosInvalidos: {
+        InvalidData: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                "application/problem+json": components["schemas"]["InvalidDataProblem"];
             };
         };
         /**
-         * @description `tipo_conteudo_invalido`: o login só aceita corpo `application/json`
+         * @description `invalid_content_type`: o login só aceita corpo `application/json`
          *     (proteção contra *login CSRF*); veio sem `Content-Type` ou com outro tipo.
          */
-        TipoConteudoInvalido: {
+        InvalidContentType: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description - `sem_permissao`: a sessão não tem a permissão exigida pela rota;
-         *     - `origem_nao_autorizada`: com token de incorporação, a origem não está
+         * @description - `no_permission`: a sessão não tem a permissão exigida pela rota;
+         *     - `origin_not_authorized`: com token de incorporação, a origem não está
          *       entre os domínios autorizados do tenant do token.
          */
-        ProibidoLeitura: {
+        ForbiddenRead: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description - `sem_permissao`: a sessão não tem a permissão exigida pela rota;
-         *     - `origem_nao_autorizada`: com token de incorporação, a origem não está
+         * @description - `no_permission`: a sessão não tem a permissão exigida pela rota;
+         *     - `origin_not_authorized`: com token de incorporação, a origem não está
          *       entre os domínios autorizados do tenant do token;
-         *     - `csrf_invalido`: com o cookie, falta o `X-CSRF-Token` ou ele não bate com o `fc_csrf`.
+         *     - `invalid_csrf`: com o cookie, falta o `X-CSRF-Token` ou ele não bate com o `fc_csrf`.
          */
-        ProibidoMutacao: {
+        ForbiddenMutation: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description `origem_nao_autorizada`: com token de incorporação, a origem não está entre
+         * @description `origin_not_authorized`: com token de incorporação, a origem não está entre
          *     os domínios autorizados do tenant do token.
          */
-        OrigemNaoAutorizada: {
+        OriginNotAuthorized: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description `nao_encontrado`: o recurso não existe ou não é do tenant atual. */
-        NaoEncontrado: {
+        /** @description `not_found`: o recurso não existe ou não é do tenant atual. */
+        NotFound: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description `dados_invalidos`: o `{id}` do caminho não é um UUID (`campos.id`). */
-        IdInvalido: {
+        /** @description `invalid_data`: o `{id}` do caminho não é um UUID (`fields.id`). */
+        InvalidId: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                "application/problem+json": components["schemas"]["InvalidDataProblem"];
             };
         };
         /**
-         * @description `dados_invalidos`: o `{id}` do caminho não é um UUID (`campos.id`) ou o corpo
-         *     não segue o esquema (`campos` com o erro de cada campo; `corpo` se não for
+         * @description `invalid_data`: o `{id}` do caminho não é um UUID (`fields.id`) ou o corpo
+         *     não segue o esquema (`fields` com o erro de cada campo; `body` se não for
          *     de um campo).
          */
-        DadosInvalidosComId: {
+        InvalidDataWithId: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                "application/problem+json": components["schemas"]["InvalidDataProblem"];
             };
         };
         /**
-         * @description - `dados_invalidos`: `limite` fora de 1..200 (`campos.limite`);
-         *     - `cursor_invalido`: o cursor não foi gerado por esta lista ou foi alterado.
+         * @description - `invalid_data`: `limit` fora de 1..200 (`fields.limit`);
+         *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
          */
-        PaginacaoInvalida: {
+        InvalidPagination: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description - `dados_invalidos`: o corpo (ou o `{id}` do caminho) não segue o esquema;
-         *     - `papel_inexistente`: algum papel informado não existe no tenant.
+         * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+         *     - `unknown_role`: algum papel informado não existe no tenant.
          */
-        DadosOuPapelInvalidos: {
+        InvalidDataOrRole: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description `papel_existente`: já há um papel com esse nome no tenant. */
-        PapelExistente: {
+        /** @description `role_already_exists`: já há um papel com esse nome no tenant. */
+        RoleAlreadyExists: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description `usuario_existente`: o e-mail já é de um membro do tenant. */
-        UsuarioExistente: {
+        /** @description `user_already_exists`: o e-mail já é de um membro do tenant. */
+        UserAlreadyExists: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description `ultimo_admin`: a alteração deixaria o tenant sem Admin ativo (tirar o papel
+         * @description `last_admin`: a alteração deixaria o tenant sem Admin ativo (tirar o papel
          *     Admin do último Admin ativo ou desativá-lo).
          */
-        UltimoAdmin: {
+        LastAdmin: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description `link_invalido`: o token do link não existe, já foi usado ou venceu. */
-        LinkInvalido: {
+        /** @description `invalid_link`: o token do link não existe, já foi usado ou venceu. */
+        InvalidLink: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description `chave_invalida`: cabeçalho `Authorization: Chave <chave>` ausente ou
+         * @description `invalid_api_key`: cabeçalho `Authorization: ApiKey <key>` ausente ou
          *     malformado, chave inexistente ou revogada.
          */
-        ChaveInvalida: {
+        InvalidApiKey: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description - `email_em_uso`: o e-mail já pertence a outro usuário do sistema, não ligado
-         *       a esse `id_externo`;
-         *     - `usuario_inativo`: o usuário externo está desativado no tenant.
+         * @description - `email_in_use`: o e-mail já pertence a outro usuário do sistema, não ligado
+         *       a esse `external_id`;
+         *     - `inactive_user`: o usuário externo está desativado no tenant.
          */
-        ConflitoIncorporacao: {
+        EmbedConflict: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
-         * @description - `dados_invalidos`: o corpo não segue o esquema;
-         *     - `papel_inexistente`: algum papel informado não existe no tenant;
-         *     - `papel_nao_permitido` (`campos.papeis`): a lista traz o papel Admin, que a
+         * @description - `invalid_data`: o corpo não segue o esquema;
+         *     - `unknown_role`: algum papel informado não existe no tenant;
+         *     - `role_not_allowed` (`fields.roles`): a lista traz o papel Admin, que a
          *       incorporação não pode dar nem tirar.
          */
-        IncorporacaoInvalida: {
+        InvalidEmbedRequest: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description `dominio_existente`: a origem (normalizada) já está cadastrada no tenant. */
-        DominioExistente: {
+        /** @description `authorized_domain_already_exists`: a origem (normalizada) já está cadastrada no tenant. */
+        AuthorizedDomainAlreadyExists: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Problema"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
     };
     parameters: {
-        /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+        /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
         Id: string;
         /** @description Quantos itens por página (1 a 200). */
-        Limite: number;
-        /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+        Limit: number;
+        /** @description O `next_cursor` da página anterior; ausente na primeira página. */
         Cursor: string | null;
     };
     requestBodies: never;
     headers: {
         /**
          * @description Dois cabeçalhos `Set-Cookie`:
-         *     - `fc_sessao=<identificador opaco>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=<segundos>`;
+         *     - `fc_session=<identificador opaco>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=<segundos>`;
          *     - `fc_csrf=<token>; Secure; SameSite=Lax; Path=/; Max-Age=<segundos>`, **sem** `HttpOnly`,
          *       para o front ler e repetir no `X-CSRF-Token`.
          *
@@ -1116,14 +1116,14 @@ export interface components {
          *     do novo tenant). A troca de tenant mantém o token e o valor do `fc_csrf`.
          */
         SetCookieLogin: string;
-        /** @description Dois cabeçalhos `Set-Cookie` que apagam os cookies `fc_sessao` e `fc_csrf` (`Max-Age=0`). */
+        /** @description Dois cabeçalhos `Set-Cookie` que apagam os cookies `fc_session` e `fc_csrf` (`Max-Age=0`). */
         SetCookieLogout: string;
     };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    saude: {
+    health: {
         parameters: {
             query?: never;
             header?: never;
@@ -1143,12 +1143,12 @@ export interface operations {
                      *       "status": "ok"
                      *     }
                      */
-                    "application/json": components["schemas"]["Saude"];
+                    "application/json": components["schemas"]["Health"];
                 };
             };
         };
     };
-    sessao_atual: {
+    get_current_session: {
         parameters: {
             query?: never;
             header?: never;
@@ -1163,14 +1163,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Sessao"];
+                    "application/json": components["schemas"]["Session"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["OrigemNaoAutorizada"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["OriginNotAuthorized"];
         };
     };
-    criar_sessao: {
+    create_session: {
         parameters: {
             query?: never;
             header?: never;
@@ -1179,7 +1179,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Credenciais"];
+                "application/json": components["schemas"]["LoginCredentials"];
             };
         };
         responses: {
@@ -1190,17 +1190,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Sessao"];
+                    "application/json": components["schemas"]["Session"];
                 };
             };
-            401: components["responses"]["CredenciaisInvalidas"];
-            415: components["responses"]["TipoConteudoInvalido"];
-            422: components["responses"]["DadosInvalidos"];
-            423: components["responses"]["LoginBloqueado"];
-            429: components["responses"]["MuitasTentativas"];
+            401: components["responses"]["InvalidCredentials"];
+            415: components["responses"]["InvalidContentType"];
+            422: components["responses"]["InvalidData"];
+            423: components["responses"]["LoginLocked"];
+            429: components["responses"]["TooManyAttempts"];
         };
     };
-    encerrar_sessao: {
+    end_session: {
         parameters: {
             query?: never;
             header?: never;
@@ -1217,10 +1217,10 @@ export interface operations {
                 };
                 content?: never;
             };
-            403: components["responses"]["CsrfInvalido"];
+            403: components["responses"]["InvalidCsrf"];
         };
     };
-    trocar_tenant: {
+    switch_tenant: {
         parameters: {
             query?: never;
             header?: never;
@@ -1229,7 +1229,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TrocaTenant"];
+                "application/json": components["schemas"]["TenantSwitch"];
             };
         };
         responses: {
@@ -1243,27 +1243,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Sessao"];
+                    "application/json": components["schemas"]["Session"];
                 };
             };
-            401: components["responses"]["SemSessao"];
+            401: components["responses"]["NoSession"];
             /**
-             * @description - `sem_acesso_ao_tenant`: o usuário não pertence ao tenant pedido
+             * @description - `no_tenant_access`: o usuário não pertence ao tenant pedido
              *       (inclusive quando o tenant não existe);
-             *     - `csrf_invalido`: falta o `X-CSRF-Token` ou ele não bate com o `fc_csrf`.
+             *     - `invalid_csrf`: falta o `X-CSRF-Token` ou ele não bate com o `fc_csrf`.
              */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["Problema"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            422: components["responses"]["DadosInvalidos"];
+            422: components["responses"]["InvalidData"];
         };
     };
-    listar_permissoes: {
+    list_permissions: {
         parameters: {
             query?: never;
             header?: never;
@@ -1278,14 +1278,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListaPermissoes"];
+                    "application/json": components["schemas"]["PermissionList"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
         };
     };
-    listar_papeis: {
+    list_roles: {
         parameters: {
             query?: never;
             header?: never;
@@ -1300,14 +1300,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListaPapeis"];
+                    "application/json": components["schemas"]["RoleList"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
         };
     };
-    criar_papel: {
+    create_role: {
         parameters: {
             query?: never;
             header?: never;
@@ -1316,7 +1316,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DadosPapel"];
+                "application/json": components["schemas"]["RoleData"];
             };
         };
         responses: {
@@ -1326,21 +1326,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Papel"];
+                    "application/json": components["schemas"]["Role"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            409: components["responses"]["PapelExistente"];
-            422: components["responses"]["DadosInvalidos"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            409: components["responses"]["RoleAlreadyExists"];
+            422: components["responses"]["InvalidData"];
         };
     };
-    obter_papel: {
+    get_role: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
@@ -1353,28 +1353,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Papel"];
+                    "application/json": components["schemas"]["Role"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
-            404: components["responses"]["NaoEncontrado"];
-            422: components["responses"]["IdInvalido"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
         };
     };
-    alterar_papel: {
+    update_role: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DadosPapel"];
+                "application/json": components["schemas"]["RoleData"];
             };
         };
         responses: {
@@ -1384,33 +1384,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Papel"];
+                    "application/json": components["schemas"]["Role"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            404: components["responses"]["NaoEncontrado"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
             /**
-             * @description - `papel_fixo`: o Admin não pode ser alterado;
-             *     - `papel_existente`: já há outro papel com esse nome no tenant.
+             * @description - `fixed_role`: o Admin não pode ser alterado;
+             *     - `role_already_exists`: já há outro papel com esse nome no tenant.
              */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["Problema"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            422: components["responses"]["DadosInvalidosComId"];
+            422: components["responses"]["InvalidDataWithId"];
         };
     };
-    remover_papel: {
+    delete_role: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
@@ -1424,30 +1424,30 @@ export interface operations {
                 };
                 content?: never;
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            404: components["responses"]["NaoEncontrado"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
             /**
-             * @description - `papel_fixo`: o Admin não pode ser removido;
-             *     - `papel_em_uso`: o papel está atribuído a algum usuário do tenant.
+             * @description - `fixed_role`: o Admin não pode ser removido;
+             *     - `role_in_use`: o papel está atribuído a algum usuário do tenant.
              */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["Problema"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            422: components["responses"]["IdInvalido"];
+            422: components["responses"]["InvalidId"];
         };
     };
-    listar_usuarios: {
+    list_users: {
         parameters: {
             query?: {
                 /** @description Quantos itens por página (1 a 200). */
-                limite?: components["parameters"]["Limite"];
-                /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+                limit?: components["parameters"]["Limit"];
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
                 cursor?: components["parameters"]["Cursor"];
             };
             header?: never;
@@ -1462,15 +1462,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListaUsuarios"];
+                    "application/json": components["schemas"]["UserList"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
-            422: components["responses"]["PaginacaoInvalida"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            422: components["responses"]["InvalidPagination"];
         };
     };
-    criar_usuario: {
+    create_user: {
         parameters: {
             query?: never;
             header?: never;
@@ -1479,7 +1479,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NovoUsuario"];
+                "application/json": components["schemas"]["NewUser"];
             };
         };
         responses: {
@@ -1489,21 +1489,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Usuario"];
+                    "application/json": components["schemas"]["User"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            409: components["responses"]["UsuarioExistente"];
-            422: components["responses"]["DadosOuPapelInvalidos"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            409: components["responses"]["UserAlreadyExists"];
+            422: components["responses"]["InvalidDataOrRole"];
         };
     };
-    obter_usuario: {
+    get_user: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
@@ -1516,28 +1516,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Usuario"];
+                    "application/json": components["schemas"]["User"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
-            404: components["responses"]["NaoEncontrado"];
-            422: components["responses"]["IdInvalido"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
         };
     };
-    alterar_usuario: {
+    update_user: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AlteracaoUsuario"];
+                "application/json": components["schemas"]["UserUpdate"];
             };
         };
         responses: {
@@ -1547,22 +1547,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Usuario"];
+                    "application/json": components["schemas"]["User"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            404: components["responses"]["NaoEncontrado"];
-            409: components["responses"]["UltimoAdmin"];
-            422: components["responses"]["DadosOuPapelInvalidos"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["LastAdmin"];
+            422: components["responses"]["InvalidDataOrRole"];
         };
     };
-    gerar_link_redefinicao: {
+    generate_reset_link: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
@@ -1575,28 +1575,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkRedefinicao"];
+                    "application/json": components["schemas"]["ResetLink"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            404: components["responses"]["NaoEncontrado"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
             /**
-             * @description - `usuario_inativo`: o usuário está inativo no tenant;
-             *     - `usuario_externo`: o usuário foi criado pela incorporação e não tem senha.
+             * @description - `inactive_user`: o usuário está inativo no tenant;
+             *     - `external_user`: o usuário foi criado pela incorporação e não tem senha.
              */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["Problema"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            422: components["responses"]["IdInvalido"];
+            422: components["responses"]["InvalidId"];
         };
     };
-    redefinir_senha: {
+    reset_password: {
         parameters: {
             query?: never;
             header?: never;
@@ -1605,7 +1605,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NovaSenha"];
+                "application/json": components["schemas"]["NewPassword"];
             };
         };
         responses: {
@@ -1616,23 +1616,23 @@ export interface operations {
                 };
                 content?: never;
             };
-            410: components["responses"]["LinkInvalido"];
-            415: components["responses"]["TipoConteudoInvalido"];
+            410: components["responses"]["InvalidLink"];
+            415: components["responses"]["InvalidContentType"];
             /**
-             * @description - `dados_invalidos`: o corpo não segue o esquema;
-             *     - `senha_invalida`: a nova senha não cumpre a política (`campos.nova_senha`).
+             * @description - `invalid_data`: o corpo não segue o esquema;
+             *     - `invalid_password`: a nova senha não cumpre a política (`fields.new_password`).
              */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
                 };
             };
         };
     };
-    verificar_link_redefinicao: {
+    verify_reset_link: {
         parameters: {
             query?: never;
             header?: never;
@@ -1641,7 +1641,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VerificacaoLink"];
+                "application/json": components["schemas"]["LinkVerification"];
             };
         };
         responses: {
@@ -1651,28 +1651,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkVerificado"];
+                    "application/json": components["schemas"]["VerifiedLink"];
                 };
             };
-            410: components["responses"]["LinkInvalido"];
-            415: components["responses"]["TipoConteudoInvalido"];
-            /** @description `dados_invalidos`: o corpo não segue o esquema. */
+            410: components["responses"]["InvalidLink"];
+            415: components["responses"]["InvalidContentType"];
+            /** @description `invalid_data`: o corpo não segue o esquema. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
                 };
             };
         };
     };
-    listar_chaves_api: {
+    list_api_keys: {
         parameters: {
             query?: {
                 /** @description Quantos itens por página (1 a 200). */
-                limite?: components["parameters"]["Limite"];
-                /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+                limit?: components["parameters"]["Limit"];
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
                 cursor?: components["parameters"]["Cursor"];
             };
             header?: never;
@@ -1687,15 +1687,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListaChavesApi"];
+                    "application/json": components["schemas"]["ApiKeyList"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
-            422: components["responses"]["PaginacaoInvalida"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            422: components["responses"]["InvalidPagination"];
         };
     };
-    criar_chave_api: {
+    create_api_key: {
         parameters: {
             query?: never;
             header?: never;
@@ -1704,30 +1704,30 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NovaChaveApi"];
+                "application/json": components["schemas"]["NewApiKey"];
             };
         };
         responses: {
-            /** @description Chave criada. A `chave` é mostrada uma vez só. */
+            /** @description Chave criada. A `key` é mostrada uma vez só. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChaveApiCriada"];
+                    "application/json": components["schemas"]["CreatedApiKey"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            422: components["responses"]["DadosInvalidos"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            422: components["responses"]["InvalidData"];
         };
     };
-    revogar_chave_api: {
+    revoke_api_key: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
@@ -1741,13 +1741,13 @@ export interface operations {
                 };
                 content?: never;
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            404: components["responses"]["NaoEncontrado"];
-            422: components["responses"]["IdInvalido"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
         };
     };
-    listar_dominios_autorizados: {
+    list_authorized_domains: {
         parameters: {
             query?: never;
             header?: never;
@@ -1762,14 +1762,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListaDominiosAutorizados"];
+                    "application/json": components["schemas"]["AuthorizedDomainList"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
         };
     };
-    criar_dominio_autorizado: {
+    create_authorized_domain: {
         parameters: {
             query?: never;
             header?: never;
@@ -1778,7 +1778,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NovoDominioAutorizado"];
+                "application/json": components["schemas"]["NewAuthorizedDomain"];
             };
         };
         responses: {
@@ -1788,32 +1788,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DominioAutorizado"];
+                    "application/json": components["schemas"]["AuthorizedDomain"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            409: components["responses"]["DominioExistente"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            409: components["responses"]["AuthorizedDomainAlreadyExists"];
             /**
-             * @description - `dados_invalidos`: o corpo não segue o esquema;
-             *     - `origem_invalida`: a origem não segue `https?://host[:porta]` (`campos.origem`).
+             * @description - `invalid_data`: o corpo não segue o esquema;
+             *     - `invalid_origin`: a origem não segue `https?://host[:port]` (`fields.origin`).
              */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
                 };
             };
         };
     };
-    remover_dominio_autorizado: {
+    delete_authorized_domain: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 dados_invalidos` com `campos.id`. */
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
                 id: components["parameters"]["Id"];
             };
             cookie?: never;
@@ -1827,13 +1827,13 @@ export interface operations {
                 };
                 content?: never;
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
-            404: components["responses"]["NaoEncontrado"];
-            422: components["responses"]["IdInvalido"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
         };
     };
-    criar_sessao_incorporacao: {
+    create_embed_session: {
         parameters: {
             query?: never;
             header?: never;
@@ -1842,7 +1842,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NovaSessaoIncorporacao"];
+                "application/json": components["schemas"]["NewEmbedSession"];
             };
         };
         responses: {
@@ -1852,26 +1852,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenIncorporacao"];
+                    "application/json": components["schemas"]["EmbedToken"];
                 };
             };
-            401: components["responses"]["ChaveInvalida"];
-            409: components["responses"]["ConflitoIncorporacao"];
-            422: components["responses"]["IncorporacaoInvalida"];
+            401: components["responses"]["InvalidApiKey"];
+            409: components["responses"]["EmbedConflict"];
+            422: components["responses"]["InvalidEmbedRequest"];
         };
     };
-    listar_acessos: {
+    list_access_events: {
         parameters: {
             query?: {
                 /** @description Tipos de evento (repita o parâmetro para mais de um). */
-                tipo?: string[] | null;
+                type?: string[] | null;
                 /** @description Só eventos a partir deste instante (inclusivo). */
-                desde?: string | null;
+                since?: string | null;
                 /** @description Só eventos antes deste instante (exclusivo). */
-                ate?: string | null;
+                until?: string | null;
                 /** @description Quantos itens por página (1 a 200). */
-                limite?: components["parameters"]["Limite"];
-                /** @description O `proximo_cursor` da página anterior; ausente na primeira página. */
+                limit?: components["parameters"]["Limit"];
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
                 cursor?: components["parameters"]["Cursor"];
             };
             header?: never;
@@ -1886,28 +1886,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListaEventosAcesso"];
+                    "application/json": components["schemas"]["AccessEventList"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
             /**
-             * @description - `dados_invalidos`: `limite` fora de 1..200, data malformada ou
-             *       `desde` depois de `ate` (`campos.<parâmetro>`);
-             *     - `cursor_invalido`: o cursor não foi gerado por esta lista;
-             *     - `tipo_evento_invalido`: tipo de evento desconhecido (`campos.tipo`).
+             * @description - `invalid_data`: `limit` fora de 1..200, data malformada ou
+             *       `since` depois de `until` (`fields.<parameter>`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista;
+             *     - `invalid_event_type`: tipo de evento desconhecido (`fields.type`).
              */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["Problema"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
     };
-    configuracao_seguranca: {
+    get_security_settings: {
         parameters: {
             query?: never;
             header?: never;
@@ -1922,14 +1922,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConfiguracaoSeguranca"];
+                    "application/json": components["schemas"]["SecuritySettings"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoLeitura"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
         };
     };
-    alterar_configuracao_seguranca: {
+    update_security_settings: {
         parameters: {
             query?: never;
             header?: never;
@@ -1938,7 +1938,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AlteracaoConfiguracaoSeguranca"];
+                "application/json": components["schemas"]["SecuritySettingsUpdate"];
             };
         };
         responses: {
@@ -1948,23 +1948,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConfiguracaoSeguranca"];
+                    "application/json": components["schemas"]["SecuritySettings"];
                 };
             };
-            401: components["responses"]["SemSessao"];
-            403: components["responses"]["ProibidoMutacao"];
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
             /**
-             * @description - `dados_invalidos`: o corpo não segue o esquema (campo faltando, valor
+             * @description - `invalid_data`: o corpo não segue o esquema (campo faltando, valor
              *       que não é inteiro);
-             *     - `valor_fora_do_limite`: um ou mais campos fora dos limites (um item
-             *       em `campos` para cada).
+             *     - `value_out_of_range`: um ou mais campos fora dos limites (um item
+             *       em `fields` para cada).
              */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemaDadosInvalidos"];
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
                 };
             };
         };

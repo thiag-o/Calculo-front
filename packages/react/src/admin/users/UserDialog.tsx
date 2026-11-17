@@ -69,9 +69,9 @@ export function UserDialog({ user, onClose, focusOnClose }: UserDialogProps) {
     resolver: zodResolver(createSchema(editing)),
     defaultValues: {
       email: user?.email ?? '',
-      name: user?.nome ?? '',
-      roles: user?.papeis.map((role) => role.id) ?? [],
-      active: user?.ativo ?? true,
+      name: user?.name ?? '',
+      roles: user?.roles.map((role) => role.id) ?? [],
+      active: user?.active ?? true,
     },
   });
 
@@ -84,11 +84,11 @@ export function UserDialog({ user, onClose, focusOnClose }: UserDialogProps) {
     if (disabledReason) return;
     if (user) {
       update.mutate(
-        { id: user.id, body: { nome: data.name, papeis: data.roles, ativo: data.active } },
+        { id: user.id, body: { name: data.name, roles: data.roles, active: data.active } },
         { onSuccess: onClose },
       );
     } else {
-      create.mutate({ email: data.email, nome: data.name, papeis: data.roles }, { onSuccess: onClose });
+      create.mutate({ email: data.email, name: data.name, roles: data.roles }, { onSuccess: onClose });
     }
   });
 
@@ -208,8 +208,8 @@ export function UserDialog({ user, onClose, focusOnClose }: UserDialogProps) {
 function RoleCheckbox({ role, checked, onChange }: { role: Role; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <Checkbox
-      label={role.nome}
-      tooltip={role.fixo ? 'Todas as permissões. O tenant precisa de pelo menos um Admin ativo.' : undefined}
+      label={role.name}
+      tooltip={role.fixed ? 'Todas as permissões. O tenant precisa de pelo menos um Admin ativo.' : undefined}
       checked={checked}
       onCheckedChange={(value) => onChange(value === true)}
     />

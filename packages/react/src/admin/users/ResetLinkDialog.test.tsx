@@ -22,8 +22,8 @@ import {
 
 let api: SimulatedApi;
 
-const LINK = 'https://casca.exemplo.com/redefinir?token=tok-uso-unico-123';
-const LINK_ROUTE = `POST /v1/usuarios/${BRUNO.id}/redefinicao`;
+const LINK = 'https://casca.exemplo.com/reset-password?token=tok-uso-unico-123';
+const LINK_ROUTE = `POST /v1/users/${BRUNO.id}/password-reset`;
 
 /** Local date (in the time zone of whoever runs the test), as ISO/UTC like the API sends. */
 function localIso(year: number, month: number, day: number, time: number, minute: number): string {
@@ -33,7 +33,7 @@ const EXPIRES_AT = localIso(2026, 11, 16, 14, 30);
 
 beforeEach(() => {
   api = simulateApi();
-  api.respond('GET /v1/usuarios', json({ itens: [ANA, BRUNO], proximo_cursor: null }));
+  api.respond('GET /v1/users', json({ items: [ANA, BRUNO], next_cursor: null }));
   setCsrfCookie('csrf-123');
 });
 
@@ -70,7 +70,7 @@ describe('Usuários: gerar link de redefinição', () => {
   });
 
   it('gera, mostra o link uma vez com a validade e copia', async () => {
-    api.respond(LINK_ROUTE, json({ link: LINK, expira_em: EXPIRES_AT }, 201));
+    api.respond(LINK_ROUTE, json({ link: LINK, expires_at: EXPIRES_AT }, 201));
     const { user } = renderUsers();
     const write = vi.spyOn(navigator.clipboard, 'writeText');
     const panel = await openLink(user);
@@ -95,7 +95,7 @@ describe('Usuários: gerar link de redefinição', () => {
   });
 
   it('ao fechar, o link some: reabrir pede para gerar de novo', async () => {
-    api.respond(LINK_ROUTE, json({ link: LINK, expira_em: EXPIRES_AT }, 201));
+    api.respond(LINK_ROUTE, json({ link: LINK, expires_at: EXPIRES_AT }, 201));
     const { user, queryClient } = renderUsers();
     let panel = await openLink(user);
     await user.click(within(panel).getByRole('button', { name: 'Gerar link de redefinição' }));
@@ -115,7 +115,7 @@ describe('Usuários: gerar link de redefinição', () => {
   });
 
   it('enquanto gera, o botão fica ocupado e não gera duas vezes', async () => {
-    const pending = pendingResponse(() => json({ link: LINK, expira_em: EXPIRES_AT }, 201));
+    const pending = pendingResponse(() => json({ link: LINK, expires_at: EXPIRES_AT }, 201));
     api.respond(LINK_ROUTE, pending.promise);
     const { user } = renderUsers();
     const panel = await openLink(user);
@@ -131,7 +131,7 @@ describe('Usuários: gerar link de redefinição', () => {
   });
 
   it('se não der para copiar, explica como copiar à mão', async () => {
-    api.respond(LINK_ROUTE, json({ link: LINK, expira_em: EXPIRES_AT }, 201));
+    api.respond(LINK_ROUTE, json({ link: LINK, expires_at: EXPIRES_AT }, 201));
     const { user } = renderUsers();
     vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('negado'));
     const panel = await openLink(user);
@@ -144,9 +144,9 @@ describe('Usuários: gerar link de redefinição', () => {
   });
 
   it.each([
-    ['usuario_inativo', 409, INACTIVE_USER_MESSAGE],
-    ['usuario_externo', 409, EXTERNAL_USER_MESSAGE],
-    ['nao_encontrado', 404, USER_NOT_FOUND_MESSAGE],
+    ['inactive_user', 409, INACTIVE_USER_MESSAGE],
+    ['external_user', 409, EXTERNAL_USER_MESSAGE],
+    ['not_found', 404, USER_NOT_FOUND_MESSAGE],
   ])('%s: explica, não oferece gerar de novo e atualiza a lista', async (code, status, message) => {
     api.respond(LINK_ROUTE, problem(status, code));
     const { user } = renderUsers();
@@ -158,11 +158,11 @@ describe('Usuários: gerar link de redefinição', () => {
     const generate = within(panel).getByRole('button', { name: 'Gerar link de redefinição' });
     expect(generate).toHaveAttribute('aria-disabled', 'true');
     expect(generate).toHaveAccessibleDescription('Feche e confira o usuário na lista atualizada');
-    await waitFor(() => expect(api.callsTo('GET /v1/usuarios')).toHaveLength(2));
+    await waitFor(() => expect(api.callsTo('GET /v1/users')).toHaveLength(2));
   });
 
   it('sem permissão: explica', async () => {
-    api.respond(LINK_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(LINK_ROUTE, problem(403, 'no_permission'));
     const { user } = renderUsers();
     const panel = await openLink(user);
 
@@ -171,7 +171,7 @@ describe('Usuários: gerar link de redefinição', () => {
   });
 
   it('erro passageiro: mostra a mensagem e deixa gerar de novo', async () => {
-    api.respond(LINK_ROUTE, problem(503, 'unavailable'), json({ link: LINK, expira_em: EXPIRES_AT }, 201));
+    api.respond(LINK_ROUTE, problem(503, 'unavailable'), json({ link: LINK, expires_at: EXPIRES_AT }, 201));
     const { user } = renderUsers();
     const panel = await openLink(user);
 

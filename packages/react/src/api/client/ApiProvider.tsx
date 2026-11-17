@@ -8,7 +8,7 @@ export interface ApiProviderProps {
   apiUrl: string;
   /** Embed token; without it, the client uses the session cookie. Changing the token recreates the client. */
   token?: string;
-  /** Called when the API answers `401 sem_sessao`. */
+  /** Called when the API answers `401 no_session`. */
   onSessionExpired?: () => void;
   children: ReactNode;
 }

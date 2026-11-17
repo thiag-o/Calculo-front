@@ -45,7 +45,7 @@ export function SaveSecurityDialog({ settings, newOnes, changed, saving, error, 
           <li key={parameter.field} className="fc-security-change">
             <span className={textClasses({ variant: 'label-14', medium: true })}>{parameter.label}</span>
             <span className={`fc-security-number ${textClasses({ variant: 'label-13', emphasis: 'secondary' })}`}>
-              de {quantity(settings[parameter.field].valor, parameter)} para {quantity(newOnes[parameter.field], parameter)}
+              de {quantity(settings[parameter.field].value, parameter)} para {quantity(newOnes[parameter.field], parameter)}
             </span>
           </li>
         ))}

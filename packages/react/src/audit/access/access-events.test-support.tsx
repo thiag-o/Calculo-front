@@ -30,14 +30,14 @@ prototype.releasePointerCapture ??= () => {};
 prototype.scrollIntoView ??= () => {};
 
 export const API = 'https://api.teste';
-export const ACCESS_EVENTS_ROUTE = 'GET /v1/auditoria/acessos';
+export const ACCESS_EVENTS_ROUTE = 'GET /v1/audit/access-events';
 
 /** Local date (in the time zone of whoever runs the test), as ISO/UTC like the API sends. */
 export function localIso(year: number, month: number, day: number, time = 0, minute = 0): string {
   return new Date(year, month - 1, day, time, minute).toISOString();
 }
 
-type AccessEvent = Schemas['EventoAcesso'];
+type AccessEvent = Schemas['AccessEvent'];
 
 let sequence = 0;
 /** A contract event; the rest comes from `partial`. */
@@ -45,36 +45,36 @@ export function event(partial: Partial<AccessEvent> = {}): AccessEvent {
   sequence += 1;
   return {
     id: `50000000-0000-0000-0000-${String(sequence).padStart(12, '0')}`,
-    ocorrido_em: localIso(2026, 11, 15, 9, 5),
-    tipo: 'login_ok',
-    usuario_id: '10000000-0000-0000-0000-000000000001',
-    email_informado: 'ana.souza@exemplo.com.br',
+    occurred_at: localIso(2026, 11, 15, 9, 5),
+    type: 'login_succeeded',
+    user_id: '10000000-0000-0000-0000-000000000001',
+    provided_email: 'ana.souza@exemplo.com.br',
     ip: '203.0.113.7',
-    detalhe: null,
+    detail: null,
     ...partial,
   };
 }
 
 export const ANA_LOGIN = event({
-  ocorrido_em: localIso(2026, 11, 15, 9, 5),
-  tipo: 'login_ok',
-  email_informado: 'ana.souza@exemplo.com.br',
+  occurred_at: localIso(2026, 11, 15, 9, 5),
+  type: 'login_succeeded',
+  provided_email: 'ana.souza@exemplo.com.br',
   ip: '203.0.113.7',
 });
 export const BRUNO_FAILURE = event({
-  ocorrido_em: localIso(2026, 11, 14, 18, 30),
-  tipo: 'login_falhou',
-  usuario_id: null,
-  email_informado: 'bruno.lima.da.silva.gerente.regional@exemplo-distribuidora.com.br',
+  occurred_at: localIso(2026, 11, 14, 18, 30),
+  type: 'login_failed',
+  user_id: null,
+  provided_email: 'bruno.lima.da.silva.gerente.regional@exemplo-distribuidora.com.br',
   ip: '2001:db8:85a3::8a2e:370:7334',
-  detalhe: 'senha incorreta',
+  detail: 'senha incorreta',
 });
 export const BRUNO_LOCK = event({
-  ocorrido_em: localIso(2026, 11, 14, 18, 31),
-  tipo: 'login_bloqueado',
-  email_informado: 'bruno.lima.da.silva.gerente.regional@exemplo-distribuidora.com.br',
+  occurred_at: localIso(2026, 11, 14, 18, 31),
+  type: 'login_locked',
+  provided_email: 'bruno.lima.da.silva.gerente.regional@exemplo-distribuidora.com.br',
   ip: null,
-  detalhe: null,
+  detail: null,
 });
 
 export function json(body: unknown, status = 200): Response {
@@ -83,13 +83,13 @@ export function json(body: unknown, status = 200): Response {
 
 /** A page of the event list. */
 export function pageResponse(items: readonly AccessEvent[], nextCursor: string | null = null): Response {
-  return json({ itens: items, proximo_cursor: nextCursor });
+  return json({ items: items, next_cursor: nextCursor });
 }
 
 /** problem+json error of the contract. */
 export function problem(status: number, code: string, extra: Record<string, unknown> = {}): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code, ...extra }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code, ...extra }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
@@ -98,7 +98,7 @@ type RouteResponse = Response | Promise<Response> | ((request: Request) => Respo
 
 /**
  * fetch simulated per route ("METHOD /path"). Each route has a queue of responses: the last one repeats.
- * A route without a configured response answers 599 (it becomes `resposta_inesperada` on screen).
+ * A route without a configured response answers 599 (it becomes `unexpected_response` on screen).
  */
 export function simulateApi() {
   const queues = new Map<string, RouteResponse[]>();

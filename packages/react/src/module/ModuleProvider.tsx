@@ -13,7 +13,7 @@ export interface ModuleProviderProps {
   token?: string;
   /** Default: `system`. */
   theme?: FluxoTheme;
-  /** Called once per token when there is no session anymore (`401 sem_sessao` or "Sair"). */
+  /** Called once per token when there is no session anymore (`401 no_session` or "Sair"). */
   onSessionExpired?: () => void;
   children: ReactNode;
 }

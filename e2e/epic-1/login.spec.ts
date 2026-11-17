@@ -10,7 +10,7 @@ test.describe('login', () => {
 
     const session = await signIn(page, api.account('admin'));
 
-    expect(session.usuario.email.toLowerCase()).toBe(api.account('admin').email.toLowerCase());
+    expect(session.user.email.toLowerCase()).toBe(api.account('admin').email.toLowerCase());
     await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Início' })).toBeVisible();
     // Sign-in issues the fc_csrf cookie, which the front reads for the next mutations.
     const cookies = await page.context().cookies();

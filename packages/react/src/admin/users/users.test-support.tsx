@@ -29,62 +29,62 @@ prototype.scrollIntoView ??= () => {};
 
 export const API = 'https://api.teste';
 
-export const ADMIN_ROLE: Schemas['Papel'] = {
+export const ADMIN_ROLE: Schemas['Role'] = {
   id: '10000000-0000-0000-0000-000000000001',
-  nome: 'Admin',
-  permissoes: [],
-  fixo: true,
-  total_usuarios: 1,
+  name: 'Admin',
+  permissions: [],
+  fixed: true,
+  user_count: 1,
 };
-export const CONFIGURATOR_ROLE: Schemas['Papel'] = {
+export const CONFIGURATOR_ROLE: Schemas['Role'] = {
   id: '10000000-0000-0000-0000-000000000002',
-  nome: 'Configurador',
-  permissoes: ['workflows.ver', 'workflows.editar'],
-  fixo: false,
-  total_usuarios: 1,
+  name: 'Configurador',
+  permissions: ['workflows.view', 'workflows.edit'],
+  fixed: false,
+  user_count: 1,
 };
-export const AUDITOR_ROLE: Schemas['Papel'] = {
+export const AUDITOR_ROLE: Schemas['Role'] = {
   id: '10000000-0000-0000-0000-000000000003',
-  nome: 'Auditor',
-  permissoes: ['auditoria.ver'],
-  fixo: false,
-  total_usuarios: 0,
+  name: 'Auditor',
+  permissions: ['audit.view'],
+  fixed: false,
+  user_count: 0,
 };
 export const ROLES = [ADMIN_ROLE, CONFIGURATOR_ROLE, AUDITOR_ROLE];
 
-const summary = (role: Schemas['Papel']) => ({ id: role.id, nome: role.nome });
+const summary = (role: Schemas['Role']) => ({ id: role.id, name: role.name });
 
-export const ANA: Schemas['Usuario'] = {
+export const ANA: Schemas['User'] = {
   id: '20000000-0000-0000-0000-000000000001',
   email: 'ana@exemplo.com',
-  nome: 'Ana Beatriz Souza',
-  papeis: [summary(ADMIN_ROLE)],
-  ativo: true,
-  externo: false,
+  name: 'Ana Beatriz Souza',
+  roles: [summary(ADMIN_ROLE)],
+  active: true,
+  external: false,
 };
-export const BRUNO: Schemas['Usuario'] = {
+export const BRUNO: Schemas['User'] = {
   id: '20000000-0000-0000-0000-000000000002',
   email: 'bruno.figueiredo.de.albuquerque@exemplo.com',
-  nome: 'Bruno Figueiredo de Albuquerque',
-  papeis: [summary(CONFIGURATOR_ROLE), summary(AUDITOR_ROLE)],
-  ativo: true,
-  externo: false,
+  name: 'Bruno Figueiredo de Albuquerque',
+  roles: [summary(CONFIGURATOR_ROLE), summary(AUDITOR_ROLE)],
+  active: true,
+  external: false,
 };
-export const CARLA: Schemas['Usuario'] = {
+export const CARLA: Schemas['User'] = {
   id: '20000000-0000-0000-0000-000000000003',
   email: 'carla@exemplo.com',
-  nome: 'Carla Menezes',
-  papeis: [],
-  ativo: false,
-  externo: false,
+  name: 'Carla Menezes',
+  roles: [],
+  active: false,
+  external: false,
 };
-export const DAVI: Schemas['Usuario'] = {
+export const DAVI: Schemas['User'] = {
   id: '20000000-0000-0000-0000-000000000004',
   email: 'davi@hospedeiro.com',
-  nome: 'Davi Externo',
-  papeis: [summary(AUDITOR_ROLE)],
-  ativo: true,
-  externo: true,
+  name: 'Davi Externo',
+  roles: [summary(AUDITOR_ROLE)],
+  active: true,
+  external: true,
 };
 
 export function json(body: unknown, status = 200): Response {
@@ -94,7 +94,7 @@ export function json(body: unknown, status = 200): Response {
 /** problem+json error of the contract. */
 export function problem(status: number, code: string, extra: Record<string, unknown> = {}): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code, ...extra }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code, ...extra }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }

@@ -23,13 +23,13 @@ function count(total: number, singular: string, plural: string): string {
 }
 
 function permissionsSummary(role: Role): string {
-  if (role.permissoes.length === 0) return 'Nenhuma permissão';
-  return count(role.permissoes.length, 'permissão', 'permissões');
+  if (role.permissions.length === 0) return 'Nenhuma permissão';
+  return count(role.permissions.length, 'permissão', 'permissões');
 }
 
 /**
  * Admin › Roles: list of the tenant roles, create and edit with the permission catalog and delete with
- * confirmation. The Admin (`fixo`) shows locked, with the reason, and offers neither edit nor delete.
+ * confirmation. The Admin (`fixed`) shows locked, with the reason, and offers neither edit nor delete.
  * Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals of dialogs and menus).
  */
 export function Roles() {
@@ -39,7 +39,7 @@ export function Roles() {
   const close = () => setDialog(null);
 
   const roles = list.data;
-  const noPermission = list.error instanceof ApiError && list.error.code === 'sem_permissao';
+  const noPermission = list.error instanceof ApiError && list.error.code === 'no_permission';
   const newRole = (size: 'small' | 'default', variant: 'primary' | 'secondary') => (
     <Button variant={variant} size={size} onClick={() => setDialog({ type: 'new' })}>
       Novo papel
@@ -49,17 +49,17 @@ export function Roles() {
   const columns: readonly TableColumn<Role>[] = [
     {
       key: 'role',
-      title: 'Papel',
+      title: 'Role',
       skeletonWidth: 180,
       cell: (role) => (
         <div className="fc-roles-role">
           <span className="fc-roles-name">
             <Text variant="label-14" medium>
-              {role.nome}
+              {role.name}
             </Text>
-            {role.fixo ? <Badge>Fixo</Badge> : null}
+            {role.fixed ? <Badge>Fixo</Badge> : null}
           </span>
-          {role.fixo ? (
+          {role.fixed ? (
             <Text variant="label-13" emphasis="secondary" className="fc-roles-reason">
               <LockIcon size={14} />
               {FIXED_ROLE_REASON}
@@ -80,7 +80,7 @@ export function Roles() {
       skeletonWidth: 40,
       cell: (role) => (
         <Text variant="label-14" className="fc-roles-number">
-          {role.total_usuarios.toLocaleString('pt-BR')}
+          {role.user_count.toLocaleString('pt-BR')}
         </Text>
       ),
     },
@@ -92,15 +92,15 @@ export function Roles() {
       width: '56px',
       skeletonWidth: 20,
       cell: (role) =>
-        role.fixo ? (
+        role.fixed ? (
           // No menu: the Admin offers neither edit nor delete. The lock takes the place of the "…".
-          <span className="fc-roles-locked" role="img" aria-label={`${role.nome} travado`}>
+          <span className="fc-roles-locked" role="img" aria-label={`${role.name} travado`}>
             <LockIcon />
           </span>
         ) : (
           <Menu
             trigger={
-              <Button iconOnly variant="ghost" size="small" label={`Mais ações para ${role.nome}`} icon={<MoreActionsIcon />} />
+              <Button iconOnly variant="ghost" size="small" label={`Mais ações para ${role.name}`} icon={<MoreActionsIcon />} />
             }
             items={[
               { label: 'Editar papel', onSelect: () => setDialog({ type: 'edit', role }) },
@@ -108,7 +108,7 @@ export function Roles() {
                 label: 'Remover papel',
                 danger: true,
                 onSelect: () => setDialog({ type: 'delete', role }),
-                disabledReason: role.total_usuarios > 0 ? roleInUseReason(role.total_usuarios) : undefined,
+                disabledReason: role.user_count > 0 ? roleInUseReason(role.user_count) : undefined,
               },
             ]}
           />

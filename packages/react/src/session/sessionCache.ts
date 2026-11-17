@@ -1,15 +1,15 @@
 import { notifyManager, type QueryClient } from '@tanstack/react-query';
 import type { Schemas } from '../api';
 
-/** The signed-in user's session, in the current tenant (generated from the contract, `GET /v1/sessao`). */
-export type Session = Schemas['Sessao'];
+/** The signed-in user's session, in the current tenant (generated from the contract, `GET /v1/session`). */
+export type Session = Schemas['Session'];
 
 /** Session key in the TanStack Query cache. The vertical's mutations write the new session here. */
 export const SESSION_KEY = ['session'] as const;
 
 /** Are both sessions of the same person in the same tenant? Then the cached data stays valid. */
 export function sameIdentity(a: Session, b: Session): boolean {
-  return a.usuario.id === b.usuario.id && a.tenant_atual.id === b.tenant_atual.id;
+  return a.user.id === b.user.id && a.current_tenant.id === b.current_tenant.id;
 }
 
 /**

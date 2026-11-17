@@ -13,8 +13,8 @@ const SAVED_MESSAGE = 'Parâmetros de segurança salvos.';
 const field = (page: Page, label: string): Locator => page.getByRole('textbox', { name: label, exact: true });
 
 /** A new value within the bounds: one more (or one less, if already at the maximum). */
-function otherValue(parameter: Schemas['ParametroSeguranca']): number {
-  return parameter.valor < parameter.maximo ? parameter.valor + 1 : parameter.valor - 1;
+function otherValue(parameter: Schemas['SecurityParameter']): number {
+  return parameter.value < parameter.max ? parameter.value + 1 : parameter.value - 1;
 }
 
 /** Fills both fields, saves and confirms in the dialog, which lists what changes. */
@@ -26,23 +26,23 @@ async function save(page: Page, inactivity: number, minPasswordLength: number, c
   const updates = dialog.getByRole('list', { name: 'Parâmetros alterados' });
   for (const text of confirmation) await expect(updates).toContainText(text);
 
-  const response = await submit(page, 'PUT', '/v1/configuracoes/seguranca', dialog.getByRole('button', { name: 'Salvar', exact: true }));
+  const response = await submit(page, 'PUT', '/v1/settings/security', dialog.getByRole('button', { name: 'Salvar', exact: true }));
 
   expect(response.status(), 'salvar os parâmetros').toBe(200);
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('status').filter({ hasText: SAVED_MESSAGE })).toBeVisible();
-  return (await response.json()) as Schemas['ConfiguracaoSeguranca'];
+  return (await response.json()) as Schemas['SecuritySettings'];
 }
 
 test.describe('configuração de segurança', () => {
   test('o Admin muda a inatividade e a senha mínima; fora do limite é recusado; a mudança fica na auditoria', async ({ page, api }) => {
     const session = await signIn(page, api.account('admin'));
-    const [query] = await Promise.all([apiResponse(page, 'GET', '/v1/configuracoes/seguranca'), openFromMenu(page, 'Segurança')]);
+    const [query] = await Promise.all([apiResponse(page, 'GET', '/v1/settings/security'), openFromMenu(page, 'Segurança')]);
     expect(query.status()).toBe(200);
     // In real mode the tenant may not be at the defaults: the test starts from what the API returned and goes back to it at the end.
-    const original = (await query.json()) as Schemas['ConfiguracaoSeguranca'];
-    const inactivity = { from: original.inatividade_minutos.valor, to: otherValue(original.inatividade_minutos) };
-    const minPasswordLength = { from: original.senha_minima.valor, to: otherValue(original.senha_minima) };
+    const original = (await query.json()) as Schemas['SecuritySettings'];
+    const inactivity = { from: original.inactivity_minutes.value, to: otherValue(original.inactivity_minutes) };
+    const minPasswordLength = { from: original.min_password_length.value, to: otherValue(original.min_password_length) };
 
     await test.step('o Admin muda a inatividade da sessão e a senha mínima', async () => {
       await expect(field(page, INACTIVITY)).toHaveValue(String(inactivity.from));
@@ -53,8 +53,8 @@ test.describe('configuração de segurança', () => {
         `de ${minPasswordLength.from} caracteres para ${minPasswordLength.to} caracteres`,
       ]);
 
-      expect(saved.inatividade_minutos.valor).toBe(inactivity.to);
-      expect(saved.senha_minima.valor).toBe(minPasswordLength.to);
+      expect(saved.inactivity_minutes.value).toBe(inactivity.to);
+      expect(saved.min_password_length.value).toBe(minPasswordLength.to);
       await expect(field(page, INACTIVITY)).toHaveValue(String(inactivity.to));
       await expect(field(page, MIN_PASSWORD_LENGTH)).toHaveValue(String(minPasswordLength.to));
     });
@@ -62,10 +62,10 @@ test.describe('configuração de segurança', () => {
     await test.step('um valor fora dos limites é recusado e nada é enviado', async () => {
       const submissions: Request[] = [];
       const count = (request: Request) => {
-        if (request.method() === 'PUT' && new URL(request.url()).pathname === '/v1/configuracoes/seguranca') submissions.push(request);
+        if (request.method() === 'PUT' && new URL(request.url()).pathname === '/v1/settings/security') submissions.push(request);
       };
       page.on('request', count);
-      const { minimo: min, maximo: max } = original.inatividade_minutos;
+      const { min: min, max: max } = original.inactivity_minutes;
 
       await field(page, INACTIVITY).fill(String(min - 1));
       await page.getByRole('button', { name: 'Salvar', exact: true }).click();
@@ -80,14 +80,14 @@ test.describe('configuração de segurança', () => {
 
       if (api.mode === 'real' && api.apiUrl) {
         // The API rejects it on its own too, without saving anything.
-        const outside = await callApi(page, api.apiUrl, 'PUT', '/v1/configuracoes/seguranca', {
-          inatividade_minutos: min - 1,
-          duracao_maxima_dias: original.duracao_maxima_dias.valor,
-          senha_minima: minPasswordLength.to,
-          validade_link_horas: original.validade_link_horas.valor,
-          validade_token_minutos: original.validade_token_minutos.valor,
+        const outside = await callApi(page, api.apiUrl, 'PUT', '/v1/settings/security', {
+          inactivity_minutes: min - 1,
+          max_duration_days: original.max_duration_days.value,
+          min_password_length: minPasswordLength.to,
+          link_validity_hours: original.link_validity_hours.value,
+          token_validity_minutes: original.token_validity_minutes.value,
         });
-        expect(outside).toMatchObject({ status: 422, codigo: 'valor_fora_do_limite' });
+        expect(outside).toMatchObject({ status: 422, code: 'value_out_of_range' });
       }
     });
 
@@ -99,9 +99,9 @@ test.describe('configuração de segurança', () => {
       // each changed field in the detail.
       const event = table.getByRole('row').nth(1);
       await expect(event.getByText('Segurança alterada', { exact: true })).toBeVisible();
-      await expect(event).toContainText(`inatividade_minutos: ${inactivity.from} → ${inactivity.to}`);
-      await expect(event).toContainText(`senha_minima: ${minPasswordLength.from} → ${minPasswordLength.to}`);
-      await expect(event.getByText(session.usuario.email, { exact: true })).toBeVisible();
+      await expect(event).toContainText(`inactivity_minutes: ${inactivity.from} → ${inactivity.to}`);
+      await expect(event).toContainText(`min_password_length: ${minPasswordLength.from} → ${minPasswordLength.to}`);
+      await expect(event.getByText(session.user.email, { exact: true })).toBeVisible();
     });
 
     await test.step('o Admin volta os valores de antes', async () => {
@@ -112,8 +112,8 @@ test.describe('configuração de segurança', () => {
         `de ${inactivity.to.toLocaleString('pt-BR')} minutos para ${inactivity.from.toLocaleString('pt-BR')} minutos`,
       ]);
 
-      expect(saved.inatividade_minutos.valor).toBe(inactivity.from);
-      expect(saved.senha_minima.valor).toBe(minPasswordLength.from);
+      expect(saved.inactivity_minutes.value).toBe(inactivity.from);
+      expect(saved.min_password_length.value).toBe(minPasswordLength.from);
     });
   });
 });

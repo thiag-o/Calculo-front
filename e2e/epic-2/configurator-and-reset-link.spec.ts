@@ -26,7 +26,7 @@ test.describe('usuário Configurador e link de redefinição', () => {
     api,
     epic2: epic2,
   }) => {
-    const person = { email: newEmail('configurador'), nome: `E2E Configurador ${suffix()}` };
+    const person = { email: newEmail('configurador'), name: `E2E Configurador ${suffix()}` };
     const password = newPassword();
     let user: User | undefined;
     let link = '';
@@ -37,10 +37,10 @@ test.describe('usuário Configurador e link de redefinição', () => {
 
       user = await createUser(page, { ...person, role: 'Configurador' });
 
-      expect(user.papeis.map((role) => role.nome)).toEqual(['Configurador']);
+      expect(user.roles.map((role) => role.name)).toEqual(['Configurador']);
       const personRow = await userRow(page, person.email);
-      await expect(personRow.getByText(person.nome, { exact: true })).toBeVisible();
-      await expect(personRow.getByRole('list', { name: `Papéis de ${person.nome}` })).toHaveText('Configurador');
+      await expect(personRow.getByText(person.name, { exact: true })).toBeVisible();
+      await expect(personRow.getByRole('list', { name: `Papéis de ${person.name}` })).toHaveText('Configurador');
       await expect(personRow.getByText('Ativo', { exact: true })).toBeVisible();
     });
 
@@ -65,7 +65,7 @@ test.describe('usuário Configurador e link de redefinição', () => {
     });
 
     await test.step('a pessoa entra com a nova senha e não vê a Administração', async () => {
-      await signIn(otherPage, { email: person.email, senha: password });
+      await signIn(otherPage, { email: person.email, password: password });
 
       const navigation = mainNavigation(otherPage);
       await expect(navigation.getByRole('link', { name: 'Início', exact: true })).toBeVisible();
@@ -85,7 +85,7 @@ test.describe('usuário Configurador e link de redefinição', () => {
 
     if (api.mode === 'real' && api.apiUrl) {
       await test.step('modo real: a API também recusa a Administração ao Configurador', async () => {
-        expect(await callApi(otherPage, api.apiUrl ?? '', 'GET', '/v1/usuarios')).toMatchObject({ status: 403, codigo: 'sem_permissao' });
+        expect(await callApi(otherPage, api.apiUrl ?? '', 'GET', '/v1/users')).toMatchObject({ status: 403, code: 'no_permission' });
       });
     }
   });

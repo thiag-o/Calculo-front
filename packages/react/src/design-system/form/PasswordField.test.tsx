@@ -87,8 +87,8 @@ describe('PasswordField', () => {
 
   it('repassa a ref ao input', () => {
     const ref = createRef<HTMLInputElement>();
-    render(<PasswordField ref={ref} label="Senha" name="senha" />);
+    render(<PasswordField ref={ref} label="Senha" name="password" />);
     expect(ref.current).toBe(passwordField());
-    expect(ref.current).toHaveAttribute('name', 'senha');
+    expect(ref.current).toHaveAttribute('name', 'password');
   });
 });

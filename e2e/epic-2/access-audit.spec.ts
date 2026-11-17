@@ -25,15 +25,15 @@ function event(table: Locator, label: string, text: string): Locator {
 
 test.describe('auditoria de acessos', () => {
   test('o Auditor vê os logins, as falhas, o bloqueio e as redefinições de senha dos membros do tenant', async ({ page, api, epic2: epic2 }) => {
-    const auditor = { email: newEmail('auditor'), nome: `E2E Auditor ${suffix()}`, senha: newPassword() };
+    const auditor = { email: newEmail('auditor'), name: `E2E Auditor ${suffix()}`, password: newPassword() };
     // Member without a password, who fails sign-in until locked. Only members' e-mails show up in the audit.
-    const locked = { email: newEmail('bloqueado'), nome: `E2E Bloqueado ${suffix()}` };
+    const locked = { email: newEmail('bloqueado'), name: `E2E Bloqueado ${suffix()}` };
     let link = '';
 
     await test.step('o Admin cria o Auditor e um membro, e gera o link do Auditor', async () => {
       await signIn(page, api.account('admin'));
       await openFromMenu(page, 'Usuários');
-      const auditorUser = await createUser(page, { email: auditor.email, nome: auditor.nome, role: 'Auditor' });
+      const auditorUser = await createUser(page, { email: auditor.email, name: auditor.name, role: 'Auditor' });
       await createUser(page, { ...locked, role: 'Operador' });
       link = await generateResetLink(page, auditorUser);
     });
@@ -41,11 +41,11 @@ test.describe('auditoria de acessos', () => {
     const otherPage = await epic2.newPage();
 
     await test.step('o Auditor define a senha pelo link', async () => {
-      await setPasswordByLink(otherPage, link, auditor.senha);
+      await setPasswordByLink(otherPage, link, auditor.password);
     });
 
     await test.step('o outro membro erra o login até ser bloqueado', async () => {
-      const credentials = { email: locked.email, senha: 'senha-que-nao-confere' };
+      const credentials = { email: locked.email, password: 'senha-que-nao-confere' };
       for (let attempt = 1; attempt <= FAILURES_UNTIL_LOCK; attempt += 1) {
         expect((await submitSignIn(otherPage, credentials)).status(), `tentativa ${attempt}`).toBe(401);
       }
@@ -55,7 +55,7 @@ test.describe('auditoria de acessos', () => {
     await test.step('o Auditor entra e abre a Auditoria', async () => {
       // The page is already on sign-in (the link led there, and the lock keeps it there): sign in right there, without `signIn`,
       // which would open /sign-in again and reload the whole shell for nothing (about 1 s on the Vite dev server).
-      const response = await submitSignIn(otherPage, { email: auditor.email, senha: auditor.senha });
+      const response = await submitSignIn(otherPage, { email: auditor.email, password: auditor.password });
       expect(response.status(), 'o login do Auditor').toBe(200);
       await waitForModule(otherPage, (await response.json()) as Session);
       // The Auditor sees the Audit, but not the Admin.

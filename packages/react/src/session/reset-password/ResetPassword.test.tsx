@@ -8,7 +8,7 @@ import { INVALID_LINK_MESSAGE, PASSWORD_SAVED_MESSAGE, expiryMessage } from './r
 
 const TOKEN = 'tok-redefinicao-123';
 /** Minimum different from the default (12): the screen shows what the API says, not a fixed number. */
-const validLink = { senha_minima: 10, expira_em: new Date(2026, 10, 17, 14, 30).toISOString() };
+const validLink = { min_password_length: 10, expires_at: new Date(2026, 10, 17, 14, 30).toISOString() };
 
 let simulatedFetch: SimulatedFetch;
 
@@ -62,7 +62,7 @@ describe('<ResetPassword> ao abrir', () => {
     expect(screen.queryByRole('button', { name: 'Salvar' })).not.toBeInTheDocument();
 
     await waitFor(() => expect(simulatedFetch).toHaveBeenCalledTimes(1));
-    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/redefinicao/verificacao']);
+    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/password-reset/verification']);
     const req = request(simulatedFetch);
     // The token does not go in the URL (it does not show in access logs).
     expect(req.url).not.toContain(TOKEN);
@@ -87,8 +87,8 @@ describe('<ResetPassword> ao abrir', () => {
     expect(saveButton()).toBeEnabled();
   });
 
-  it('link_invalido: diz que o link não vale mais e não mostra o formulário', async () => {
-    simulatedFetch.mockResolvedValueOnce(problem(410, 'link_invalido'));
+  it('invalid_link: diz que o link não vale mais e não mostra o formulário', async () => {
+    simulatedFetch.mockResolvedValueOnce(problem(410, 'invalid_link'));
     renderScreen();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(INVALID_LINK_MESSAGE);
@@ -112,18 +112,18 @@ describe('<ResetPassword> ao abrir', () => {
   });
 
   it('outra falha da verificação: mostra o erro e "Tentar de novo" consulta de novo', async () => {
-    simulatedFetch.mockResolvedValueOnce(problem(415, 'tipo_conteudo_invalido')).mockResolvedValueOnce(json(validLink));
+    simulatedFetch.mockResolvedValueOnce(problem(415, 'invalid_content_type')).mockResolvedValueOnce(json(validLink));
     const { user } = renderScreen();
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Não foi possível verificar o link');
-    expect(alert).toHaveTextContent('Texto do servidor para tipo_conteudo_invalido.');
+    expect(alert).toHaveTextContent('Texto do servidor para invalid_content_type.');
     expect(screen.queryByLabelText('Nova senha', { selector: 'input' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
 
     expect(await screen.findByLabelText('Nova senha', { selector: 'input' })).toBeInTheDocument();
-    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/redefinicao/verificacao', 'POST /v1/redefinicao/verificacao']);
+    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/password-reset/verification', 'POST /v1/password-reset/verification']);
   });
 });
 
@@ -136,8 +136,8 @@ describe('<ResetPassword> ao salvar', () => {
     await user.click(saveButton());
 
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/redefinicao/verificacao', 'POST /v1/redefinicao']);
-    expect(await request(simulatedFetch, 1).json()).toEqual({ token: TOKEN, nova_senha: ' senha nova 1 ' });
+    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/password-reset/verification', 'POST /v1/password-reset']);
+    expect(await request(simulatedFetch, 1).json()).toEqual({ token: TOKEN, new_password: ' senha nova 1 ' });
 
     const confirmation = screen.getByRole('status');
     expect(confirmation).toHaveTextContent(PASSWORD_SAVED_MESSAGE);
@@ -212,10 +212,10 @@ describe('<ResetPassword> ao salvar', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
   });
 
-  it('senha_invalida: põe a regra que o servidor recusou (ex.: o e-mail) no campo da nova senha', async () => {
+  it('invalid_password: põe a regra que o servidor recusou (ex.: o e-mail) no campo da nova senha', async () => {
     const { user, onSave } = await openForm();
     simulatedFetch.mockResolvedValueOnce(
-      problem(422, 'senha_invalida', { campos: { nova_senha: 'A senha não pode conter o seu e-mail.' } }),
+      problem(422, 'invalid_password', { fields: { new_password: 'A senha não pode conter o seu e-mail.' } }),
     );
 
     await fill(user, 'ana@exemplo.com-1');
@@ -227,20 +227,20 @@ describe('<ResetPassword> ao salvar', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('senha_invalida sem o erro do campo: mostra a mensagem do servidor numa nota', async () => {
+  it('invalid_password sem o erro do campo: mostra a mensagem do servidor numa nota', async () => {
     const { user } = await openForm();
-    simulatedFetch.mockResolvedValueOnce(problem(422, 'senha_invalida'));
+    simulatedFetch.mockResolvedValueOnce(problem(422, 'invalid_password'));
 
     await fill(user, 'senha-segura');
     await user.click(saveButton());
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Texto do servidor para senha_invalida.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Texto do servidor para invalid_password.');
     expect(passwordField()).toBeInTheDocument();
   });
 
-  it('link_invalido no envio (venceu enquanto a pessoa digitava): troca o formulário pela mensagem e foca nela', async () => {
+  it('invalid_link no envio (venceu enquanto a pessoa digitava): troca o formulário pela mensagem e foca nela', async () => {
     const { user, onSave } = await openForm();
-    simulatedFetch.mockResolvedValueOnce(problem(410, 'link_invalido'));
+    simulatedFetch.mockResolvedValueOnce(problem(410, 'invalid_link'));
 
     await fill(user, 'senha-segura');
     await user.click(saveButton());

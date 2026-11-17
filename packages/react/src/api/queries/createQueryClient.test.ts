@@ -20,9 +20,9 @@ describe('createQueryClient', () => {
   });
 
   it.each([
-    [401, 'sem_sessao'],
-    [403, 'sem_permissao'],
-    [422, 'dados_invalidos'],
+    [401, 'no_session'],
+    [403, 'no_permission'],
+    [422, 'invalid_data'],
   ])('não repete a consulta num erro %i (%s)', async (status, code) => {
     const query = vi.fn().mockRejectedValue(error(status, code));
 
@@ -32,7 +32,7 @@ describe('createQueryClient', () => {
   });
 
   it('repete até 3 vezes numa falha passageira (5xx)', async () => {
-    const query = vi.fn().mockRejectedValue(error(503, 'resposta_inesperada'));
+    const query = vi.fn().mockRejectedValue(error(503, 'unexpected_response'));
 
     await expect(newClient().fetchQuery({ queryKey: ['5xx'], queryFn: query, retryDelay: 0 })).rejects.toBeInstanceOf(ApiError);
 
@@ -40,7 +40,7 @@ describe('createQueryClient', () => {
   });
 
   it('repete numa falha de rede e devolve o dado quando ela passa', async () => {
-    const query = vi.fn().mockRejectedValueOnce(error(0, 'sem_conexao')).mockResolvedValue('ok');
+    const query = vi.fn().mockRejectedValueOnce(error(0, 'no_connection')).mockResolvedValue('ok');
 
     await expect(newClient().fetchQuery({ queryKey: ['network'], queryFn: query, retryDelay: 0 })).resolves.toBe('ok');
 
@@ -48,7 +48,7 @@ describe('createQueryClient', () => {
   });
 
   it('nunca repete uma mutação', async () => {
-    const mutation = vi.fn().mockRejectedValue(error(503, 'resposta_inesperada'));
+    const mutation = vi.fn().mockRejectedValue(error(503, 'unexpected_response'));
     const client = newClient();
 
     const observer = new MutationObserver(client, { mutationFn: mutation, retryDelay: 0 });

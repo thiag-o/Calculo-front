@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { SecuritySettingsUpdate, SecuritySettings, SecurityParameter } from './queries';
 
-/** Name of a parameter, as in the contract (`inatividade_minutos`…). */
+/** Name of a parameter, as in the contract (`inactivity_minutes`…). */
 export type SecurityField = keyof SecuritySettingsUpdate;
 
 /** What the screen says about each parameter: label, unit (plural and singular) and the group it shows in. */
@@ -22,21 +22,21 @@ export const GROUPS: readonly ParameterGroup[] = [
   {
     title: 'Sessão',
     parameters: [
-      { field: 'inatividade_minutos', label: 'Inatividade da sessão', unit: 'minutos', singularUnit: 'minuto' },
-      { field: 'duracao_maxima_dias', label: 'Duração máxima da sessão', unit: 'dias', singularUnit: 'dia' },
+      { field: 'inactivity_minutes', label: 'Inatividade da sessão', unit: 'minutos', singularUnit: 'minuto' },
+      { field: 'max_duration_days', label: 'Duração máxima da sessão', unit: 'dias', singularUnit: 'dia' },
     ],
   },
   {
     title: 'Senha',
     parameters: [
-      { field: 'senha_minima', label: 'Tamanho mínimo da senha', unit: 'caracteres', singularUnit: 'caractere' },
-      { field: 'validade_link_horas', label: 'Validade do link de redefinição', unit: 'horas', singularUnit: 'hora' },
+      { field: 'min_password_length', label: 'Tamanho mínimo da senha', unit: 'caracteres', singularUnit: 'caractere' },
+      { field: 'link_validity_hours', label: 'Validade do link de redefinição', unit: 'horas', singularUnit: 'hora' },
     ],
   },
   {
     title: 'Incorporação',
     parameters: [
-      { field: 'validade_token_minutos', label: 'Validade do token de incorporação', unit: 'minutos', singularUnit: 'minuto' },
+      { field: 'token_validity_minutes', label: 'Validade do token de incorporação', unit: 'minutos', singularUnit: 'minuto' },
     ],
   },
 ];
@@ -59,12 +59,12 @@ export function quantity(value: number, parameter: ParameterDescription): string
 
 /** Help below the field: the default and the accepted bounds. */
 export function parameterHelp(parameter: SecurityParameter): string {
-  return `Padrão: ${formatNumber(parameter.padrao)}. Aceita de ${formatNumber(parameter.minimo)} a ${formatNumber(parameter.maximo)}.`;
+  return `Padrão: ${formatNumber(parameter.default)}. Aceita de ${formatNumber(parameter.min)} a ${formatNumber(parameter.max)}.`;
 }
 
 /** The error of an out-of-range value, in the same format as the API. */
 export function outOfRangeMessage(parameter: SecurityParameter): string {
-  return `Informe um valor de ${formatNumber(parameter.minimo)} a ${formatNumber(parameter.maximo)}.`;
+  return `Informe um valor de ${formatNumber(parameter.min)} a ${formatNumber(parameter.max)}.`;
 }
 
 export const EMPTY_MESSAGE = 'Informe um valor.';
@@ -74,7 +74,7 @@ const INTEGER = /^-?\d+$/;
 
 /** The values in force, as text, for the form. */
 export function valuesOf(settings: SecuritySettings): FormValues {
-  return Object.fromEntries(FIELDS.map((field) => [field, String(settings[field].valor)])) as FormValues;
+  return Object.fromEntries(FIELDS.map((field) => [field, String(settings[field].value)])) as FormValues;
 }
 
 /** PUT body from already validated values. */
@@ -86,7 +86,7 @@ export function bodyOf(values: FormValues): SecuritySettingsUpdate {
 export function changedFields(values: FormValues, settings: SecuritySettings): SecurityField[] {
   return FIELDS.filter((field) => {
     const text = values[field].trim();
-    return !(INTEGER.test(text) && Number(text) === settings[field].valor);
+    return !(INTEGER.test(text) && Number(text) === settings[field].value);
   });
 }
 
@@ -95,7 +95,7 @@ function integerField(parameter: SecurityParameter) {
     const text = value.trim();
     if (text === '') context.addIssue({ code: 'custom', message: EMPTY_MESSAGE });
     else if (!INTEGER.test(text)) context.addIssue({ code: 'custom', message: NOT_INTEGER_MESSAGE });
-    else if (Number(text) < parameter.minimo || Number(text) > parameter.maximo) {
+    else if (Number(text) < parameter.min || Number(text) > parameter.max) {
       context.addIssue({ code: 'custom', message: outOfRangeMessage(parameter) });
     }
   });
@@ -104,10 +104,10 @@ function integerField(parameter: SecurityParameter) {
 /** Client-side validation, with the bounds the API returned (the same ones it checks on PUT). */
 export function schemaOf(settings: SecuritySettings) {
   return z.object({
-    inatividade_minutos: integerField(settings.inatividade_minutos),
-    duracao_maxima_dias: integerField(settings.duracao_maxima_dias),
-    senha_minima: integerField(settings.senha_minima),
-    validade_link_horas: integerField(settings.validade_link_horas),
-    validade_token_minutos: integerField(settings.validade_token_minutos),
+    inactivity_minutes: integerField(settings.inactivity_minutes),
+    max_duration_days: integerField(settings.max_duration_days),
+    min_password_length: integerField(settings.min_password_length),
+    link_validity_hours: integerField(settings.link_validity_hours),
+    token_validity_minutes: integerField(settings.token_validity_minutes),
   });
 }

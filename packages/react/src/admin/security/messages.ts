@@ -21,28 +21,28 @@ function formFields(fields: Readonly<Record<string, string>>): Partial<Record<Se
   return result;
 }
 
-/** Error loading the parameters (`GET /v1/configuracoes/seguranca`). */
+/** Error loading the parameters (`GET /v1/settings/security`). */
 export function queryErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
-  if (error.code === 'sem_permissao') return NO_PERMISSION_MESSAGE;
-  // sem_conexao, resposta_inesperada, origem_nao_autorizada…: the error's own pt-BR message.
+  if (error.code === 'no_permission') return NO_PERMISSION_MESSAGE;
+  // no_connection, unexpected_response, origin_not_authorized…: the error's own pt-BR message.
   return error.message;
 }
 
-/** Error saving (`PUT /v1/configuracoes/seguranca`), by `codigo` (ADR 0008). */
+/** Error saving (`PUT /v1/settings/security`), by `code` (ADR 0008). */
 export function saveError(error: unknown): ScreenError {
   if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE, fields: {} };
   switch (error.code) {
-    case 'valor_fora_do_limite':
-    case 'dados_invalidos': {
+    case 'value_out_of_range':
+    case 'invalid_data': {
       const fields = formFields(error.fields);
       if (Object.keys(fields).length === 0) return { message: error.message, fields: {} };
-      return { message: error.code === 'valor_fora_do_limite' ? OUT_OF_RANGE_MESSAGE : INVALID_DATA_MESSAGE, fields };
+      return { message: error.code === 'value_out_of_range' ? OUT_OF_RANGE_MESSAGE : INVALID_DATA_MESSAGE, fields };
     }
-    case 'sem_permissao':
+    case 'no_permission':
       return { message: NO_PERMISSION_MESSAGE, fields: {} };
     default:
-      // csrf_invalido, sem_conexao, resposta_inesperada…: the error's own pt-BR message.
+      // invalid_csrf, no_connection, unexpected_response…: the error's own pt-BR message.
       return { message: error.message, fields: {} };
   }
 }

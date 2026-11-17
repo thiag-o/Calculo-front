@@ -47,8 +47,8 @@ async function openMenuOf(user: RolesScreen['user'], name: string) {
 
 describe('Papéis: lista', () => {
   it('mostra o esqueleto enquanto carrega e anuncia o carregamento', async () => {
-    const pending = pendingResponse(() => json({ itens: ROLES }));
-    api.respond('GET /v1/papeis', pending.promise);
+    const pending = pendingResponse(() => json({ items: ROLES }));
+    api.respond('GET /v1/roles', pending.promise);
     renderRoles();
 
     expect(screen.getByRole('heading', { level: 2, name: 'Papéis' })).toBeInTheDocument();
@@ -61,27 +61,27 @@ describe('Papéis: lista', () => {
   });
 
   it('mostra cada papel com o resumo das permissões e quantos usuários o têm', async () => {
-    api.respond('GET /v1/papeis', json({ itens: ROLES }));
+    api.respond('GET /v1/roles', json({ items: ROLES }));
     renderRoles();
 
     await screen.findByText('Configurador');
     expect(screen.getByText('4 papéis')).toBeInTheDocument();
-    expect(within(table()).getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Papel', 'Usuários', 'Ações']);
+    expect(within(table()).getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Role', 'Usuários', 'Ações']);
 
     const configurator = rowOf('Configurador');
     expect(within(configurator).getByText('3 permissões')).toBeInTheDocument();
     expect(within(configurator).getByText('3')).toBeInTheDocument();
 
-    const auditor = rowOf(AUDITOR_ROLE.nome);
+    const auditor = rowOf(AUDITOR_ROLE.name);
     expect(within(auditor).getByText('1 permissão')).toBeInTheDocument();
     expect(within(auditor).getByText('0')).toBeInTheDocument();
 
     expect(within(rowOf('Sem acesso')).getByText('Nenhuma permissão')).toBeInTheDocument();
-    expect(api.callsTo('GET /v1/papeis')).toHaveLength(1);
+    expect(api.callsTo('GET /v1/roles')).toHaveLength(1);
   });
 
   it('o Admin aparece travado, com o motivo, e não oferece editar nem remover', async () => {
-    api.respond('GET /v1/papeis', json({ itens: ROLES }));
+    api.respond('GET /v1/roles', json({ items: ROLES }));
     renderRoles();
     await screen.findByText('Configurador');
 
@@ -97,8 +97,8 @@ describe('Papéis: lista', () => {
   });
 
   it('mostra o estado vazio com a ação de criar', async () => {
-    api.respond('GET /v1/papeis', json({ itens: [] }));
-    api.respond('GET /v1/permissoes', json({ itens: PERMISSION_CATALOG }));
+    api.respond('GET /v1/roles', json({ items: [] }));
+    api.respond('GET /v1/permissions', json({ items: PERMISSION_CATALOG }));
     const { user } = renderRoles();
 
     expect(await screen.findByText('Nenhum papel ainda')).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('Papéis: lista', () => {
   });
 
   it('mostra o erro com "Tentar de novo" e carrega de novo', async () => {
-    api.respond('GET /v1/papeis', problem(503, 'unavailable'), json({ itens: ROLES }));
+    api.respond('GET /v1/roles', problem(503, 'unavailable'), json({ items: ROLES }));
     const { user } = renderRoles();
 
     const alert = await screen.findByRole('alert');
@@ -122,7 +122,7 @@ describe('Papéis: lista', () => {
   });
 
   it('sem a permissão, explica e não oferece "Tentar de novo"', async () => {
-    api.respond('GET /v1/papeis', problem(403, 'sem_permissao'));
+    api.respond('GET /v1/roles', problem(403, 'no_permission'));
     renderRoles();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(NO_PERMISSION_MESSAGE);
@@ -130,11 +130,11 @@ describe('Papéis: lista', () => {
   });
 
   it('o menu oferece editar e remover; remover fica desabilitado, com o motivo, se o papel tem usuários', async () => {
-    api.respond('GET /v1/papeis', json({ itens: ROLES }));
+    api.respond('GET /v1/roles', json({ items: ROLES }));
     const { user } = renderRoles();
     await screen.findByText('Configurador');
 
-    let menu = await openMenuOf(user, AUDITOR_ROLE.nome);
+    let menu = await openMenuOf(user, AUDITOR_ROLE.name);
     expect(within(menu).getByRole('menuitem', { name: 'Editar papel' })).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Remover papel' })).not.toHaveAttribute('aria-disabled');
     await user.keyboard('{Escape}');
@@ -158,9 +158,9 @@ describe('Papéis: lista', () => {
 describe('Papéis: criar', () => {
   it('mostra o catálogo agrupado, com as sensíveis destacadas, e cria o papel', async () => {
     setCsrfCookie('csrf-123');
-    api.respond('GET /v1/papeis', json({ itens: [ADMIN_ROLE] }), json({ itens: [ADMIN_ROLE, AUDITOR_ROLE] }));
-    api.respond('GET /v1/permissoes', json({ itens: PERMISSION_CATALOG }));
-    api.respond('POST /v1/papeis', json(AUDITOR_ROLE, 201));
+    api.respond('GET /v1/roles', json({ items: [ADMIN_ROLE] }), json({ items: [ADMIN_ROLE, AUDITOR_ROLE] }));
+    api.respond('GET /v1/permissions', json({ items: PERMISSION_CATALOG }));
+    api.respond('POST /v1/roles', json(AUDITOR_ROLE, 201));
     const { user } = renderRoles();
     await screen.findByText('1 papel');
 
@@ -188,15 +188,15 @@ describe('Papéis: criar', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    const [creation] = api.callsTo('POST /v1/papeis');
+    const [creation] = api.callsTo('POST /v1/roles');
     expect(creation!.headers.get('X-CSRF-Token')).toBe('csrf-123');
-    expect(await creation!.json()).toEqual({ nome: 'Auditor de contratos', permissoes: ['auditoria.ver', 'versao.aprovar'] });
-    expect(await screen.findByText(AUDITOR_ROLE.nome)).toBeInTheDocument();
+    expect(await creation!.json()).toEqual({ name: 'Auditor de contratos', permissions: ['audit.view', 'versions.approve'] });
+    expect(await screen.findByText(AUDITOR_ROLE.name)).toBeInTheDocument();
   });
 
   it('pede o nome antes de enviar', async () => {
-    api.respond('GET /v1/papeis', json({ itens: [ADMIN_ROLE] }));
-    api.respond('GET /v1/permissoes', json({ itens: PERMISSION_CATALOG }));
+    api.respond('GET /v1/roles', json({ items: [ADMIN_ROLE] }));
+    api.respond('GET /v1/permissions', json({ items: PERMISSION_CATALOG }));
     const { user } = renderRoles();
     await screen.findByText('1 papel');
 
@@ -207,13 +207,13 @@ describe('Papéis: criar', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(dialog).findByRole('textbox', { name: 'Nome' })).toHaveAccessibleDescription('Informe o nome do papel');
-    expect(api.callsTo('POST /v1/papeis')).toHaveLength(0);
+    expect(api.callsTo('POST /v1/roles')).toHaveLength(0);
   });
 
   it('não deixa salvar enquanto o catálogo carrega', async () => {
-    const pending = pendingResponse(() => json({ itens: PERMISSION_CATALOG }));
-    api.respond('GET /v1/papeis', json({ itens: [ADMIN_ROLE] }));
-    api.respond('GET /v1/permissoes', pending.promise);
+    const pending = pendingResponse(() => json({ items: PERMISSION_CATALOG }));
+    api.respond('GET /v1/roles', json({ items: [ADMIN_ROLE] }));
+    api.respond('GET /v1/permissions', pending.promise);
     const { user } = renderRoles();
     await screen.findByText('1 papel');
 
@@ -226,7 +226,7 @@ describe('Papéis: criar', () => {
 
     await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'Leitura');
     await user.click(save);
-    expect(api.callsTo('POST /v1/papeis')).toHaveLength(0);
+    expect(api.callsTo('POST /v1/roles')).toHaveLength(0);
 
     pending.release();
     await within(dialog).findByRole('group', { name: 'Dados' });
@@ -234,8 +234,8 @@ describe('Papéis: criar', () => {
   });
 
   it('mostra o erro do catálogo, com "Tentar de novo", e não deixa salvar', async () => {
-    api.respond('GET /v1/papeis', json({ itens: [ADMIN_ROLE] }));
-    api.respond('GET /v1/permissoes', problem(503, 'unavailable'), json({ itens: PERMISSION_CATALOG }));
+    api.respond('GET /v1/roles', json({ items: [ADMIN_ROLE] }));
+    api.respond('GET /v1/permissions', problem(503, 'unavailable'), json({ items: PERMISSION_CATALOG }));
     const { user } = renderRoles();
     await screen.findByText('1 papel');
 
@@ -250,10 +250,10 @@ describe('Papéis: criar', () => {
     expect(within(dialog).getByRole('button', { name: 'Salvar' })).not.toHaveAttribute('aria-disabled');
   });
 
-  it('papel_existente: mostra o erro no nome e mantém o diálogo aberto', async () => {
-    api.respond('GET /v1/papeis', json({ itens: [ADMIN_ROLE, CONFIGURATOR_ROLE] }));
-    api.respond('GET /v1/permissoes', json({ itens: PERMISSION_CATALOG }));
-    api.respond('POST /v1/papeis', problem(409, 'papel_existente'));
+  it('role_already_exists: mostra o erro no nome e mantém o diálogo aberto', async () => {
+    api.respond('GET /v1/roles', json({ items: [ADMIN_ROLE, CONFIGURATOR_ROLE] }));
+    api.respond('GET /v1/permissions', json({ items: PERMISSION_CATALOG }));
+    api.respond('POST /v1/roles', problem(409, 'role_already_exists'));
     const { user } = renderRoles();
     await screen.findByText('Configurador');
 
@@ -270,10 +270,10 @@ describe('Papéis: criar', () => {
     expect(screen.getByRole('dialog', { name: 'Novo papel' })).toBeInTheDocument();
   });
 
-  it('dados_invalidos: mostra o erro de cada campo vindo da API', async () => {
-    api.respond('GET /v1/papeis', json({ itens: [ADMIN_ROLE] }));
-    api.respond('GET /v1/permissoes', json({ itens: PERMISSION_CATALOG }));
-    api.respond('POST /v1/papeis', problem(422, 'dados_invalidos', { campos: { 'permissoes.0': 'Permissão desconhecida.' } }));
+  it('invalid_data: mostra o erro de cada campo vindo da API', async () => {
+    api.respond('GET /v1/roles', json({ items: [ADMIN_ROLE] }));
+    api.respond('GET /v1/permissions', json({ items: PERMISSION_CATALOG }));
+    api.respond('POST /v1/roles', problem(422, 'invalid_data', { fields: { 'permissions.0': 'Permissão desconhecida.' } }));
     const { user } = renderRoles();
     await screen.findByText('1 papel');
 
@@ -292,10 +292,10 @@ describe('Papéis: criar', () => {
 describe('Papéis: editar', () => {
   it('abre com o nome e as permissões do papel e salva o que mudou', async () => {
     setCsrfCookie('csrf-456');
-    const updated = { ...CONFIGURATOR_ROLE, nome: 'Configurador sênior', permissoes: ['workflows.ver', 'conexoes.ver', 'versao.aprovar'] };
-    api.respond('GET /v1/papeis', json({ itens: ROLES }), json({ itens: [ADMIN_ROLE, updated, AUDITOR_ROLE, EMPTY_ROLE] }));
-    api.respond('GET /v1/permissoes', json({ itens: PERMISSION_CATALOG }));
-    api.respond(`PUT /v1/papeis/${CONFIGURATOR_ROLE.id}`, json(updated));
+    const updated = { ...CONFIGURATOR_ROLE, name: 'Configurador sênior', permissions: ['workflows.view', 'connections.view', 'versions.approve'] };
+    api.respond('GET /v1/roles', json({ items: ROLES }), json({ items: [ADMIN_ROLE, updated, AUDITOR_ROLE, EMPTY_ROLE] }));
+    api.respond('GET /v1/permissions', json({ items: PERMISSION_CATALOG }));
+    api.respond(`PUT /v1/roles/${CONFIGURATOR_ROLE.id}`, json(updated));
     const { user } = renderRoles();
     await screen.findByText('Configurador');
 
@@ -319,75 +319,75 @@ describe('Papéis: editar', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    const [update] = api.callsTo(`PUT /v1/papeis/${CONFIGURATOR_ROLE.id}`);
+    const [update] = api.callsTo(`PUT /v1/roles/${CONFIGURATOR_ROLE.id}`);
     expect(update!.headers.get('X-CSRF-Token')).toBe('csrf-456');
-    expect(await update!.json()).toEqual({ nome: 'Configurador sênior', permissoes: ['workflows.ver', 'conexoes.ver', 'versao.aprovar'] });
+    expect(await update!.json()).toEqual({ name: 'Configurador sênior', permissions: ['workflows.view', 'connections.view', 'versions.approve'] });
     expect(await screen.findByText('Configurador sênior')).toBeInTheDocument();
   });
 
-  it('nao_encontrado: avisa que o papel não existe mais e atualiza a lista', async () => {
-    api.respond('GET /v1/papeis', json({ itens: ROLES }), json({ itens: [ADMIN_ROLE, CONFIGURATOR_ROLE, EMPTY_ROLE] }));
-    api.respond('GET /v1/permissoes', json({ itens: PERMISSION_CATALOG }));
-    api.respond(`PUT /v1/papeis/${AUDITOR_ROLE.id}`, problem(404, 'nao_encontrado'));
+  it('not_found: avisa que o papel não existe mais e atualiza a lista', async () => {
+    api.respond('GET /v1/roles', json({ items: ROLES }), json({ items: [ADMIN_ROLE, CONFIGURATOR_ROLE, EMPTY_ROLE] }));
+    api.respond('GET /v1/permissions', json({ items: PERMISSION_CATALOG }));
+    api.respond(`PUT /v1/roles/${AUDITOR_ROLE.id}`, problem(404, 'not_found'));
     const { user } = renderRoles();
-    await screen.findByText(AUDITOR_ROLE.nome);
+    await screen.findByText(AUDITOR_ROLE.name);
 
-    const menu = await openMenuOf(user, AUDITOR_ROLE.nome);
+    const menu = await openMenuOf(user, AUDITOR_ROLE.name);
     await user.click(within(menu).getByRole('menuitem', { name: 'Editar papel' }));
     const dialog = await screen.findByRole('dialog', { name: 'Editar papel' });
     await within(dialog).findByRole('group', { name: 'Dados' });
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(ROLE_NOT_FOUND_MESSAGE);
-    await waitFor(() => expect(api.callsTo('GET /v1/papeis')).toHaveLength(2));
+    await waitFor(() => expect(api.callsTo('GET /v1/roles')).toHaveLength(2));
   });
 });
 
 describe('Papéis: remover', () => {
   it('pede confirmação e remove o papel', async () => {
     setCsrfCookie('csrf-789');
-    api.respond('GET /v1/papeis', json({ itens: ROLES }), json({ itens: [ADMIN_ROLE, CONFIGURATOR_ROLE, EMPTY_ROLE] }));
-    api.respond(`DELETE /v1/papeis/${AUDITOR_ROLE.id}`, new Response(null, { status: 204 }));
+    api.respond('GET /v1/roles', json({ items: ROLES }), json({ items: [ADMIN_ROLE, CONFIGURATOR_ROLE, EMPTY_ROLE] }));
+    api.respond(`DELETE /v1/roles/${AUDITOR_ROLE.id}`, new Response(null, { status: 204 }));
     const { user } = renderRoles();
-    await screen.findByText(AUDITOR_ROLE.nome);
+    await screen.findByText(AUDITOR_ROLE.name);
 
-    const menu = await openMenuOf(user, AUDITOR_ROLE.nome);
+    const menu = await openMenuOf(user, AUDITOR_ROLE.name);
     await user.click(within(menu).getByRole('menuitem', { name: 'Remover papel' }));
     const dialog = await screen.findByRole('dialog', { name: 'Remover papel' });
-    expect(dialog).toHaveAccessibleDescription(`O papel ${AUDITOR_ROLE.nome} deixa de existir neste tenant. Não dá para desfazer.`);
-    expect(api.callsTo(`DELETE /v1/papeis/${AUDITOR_ROLE.id}`)).toHaveLength(0);
+    expect(dialog).toHaveAccessibleDescription(`O papel ${AUDITOR_ROLE.name} deixa de existir neste tenant. Não dá para desfazer.`);
+    expect(api.callsTo(`DELETE /v1/roles/${AUDITOR_ROLE.id}`)).toHaveLength(0);
 
     await user.click(within(dialog).getByRole('button', { name: 'Remover papel' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    const [deletion] = api.callsTo(`DELETE /v1/papeis/${AUDITOR_ROLE.id}`);
+    const [deletion] = api.callsTo(`DELETE /v1/roles/${AUDITOR_ROLE.id}`);
     expect(deletion!.headers.get('X-CSRF-Token')).toBe('csrf-789');
-    await waitFor(() => expect(screen.queryByText(AUDITOR_ROLE.nome)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(AUDITOR_ROLE.name)).not.toBeInTheDocument());
     expect(screen.getByText('3 papéis')).toBeInTheDocument();
   });
 
   it('"Cancelar" fecha sem remover', async () => {
-    api.respond('GET /v1/papeis', json({ itens: ROLES }));
+    api.respond('GET /v1/roles', json({ items: ROLES }));
     const { user } = renderRoles();
-    await screen.findByText(AUDITOR_ROLE.nome);
+    await screen.findByText(AUDITOR_ROLE.name);
 
-    const menu = await openMenuOf(user, AUDITOR_ROLE.nome);
+    const menu = await openMenuOf(user, AUDITOR_ROLE.name);
     await user.click(within(menu).getByRole('menuitem', { name: 'Remover papel' }));
     const dialog = await screen.findByRole('dialog', { name: 'Remover papel' });
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(api.callsTo(`DELETE /v1/papeis/${AUDITOR_ROLE.id}`)).toHaveLength(0);
-    expect(screen.getByText(AUDITOR_ROLE.nome)).toBeInTheDocument();
+    expect(api.callsTo(`DELETE /v1/roles/${AUDITOR_ROLE.id}`)).toHaveLength(0);
+    expect(screen.getByText(AUDITOR_ROLE.name)).toBeInTheDocument();
   });
 
-  it('papel_em_uso: explica, trava o botão com o motivo e atualiza a lista', async () => {
-    const inUse = { ...AUDITOR_ROLE, total_usuarios: 1 };
-    api.respond('GET /v1/papeis', json({ itens: ROLES }), json({ itens: [ADMIN_ROLE, CONFIGURATOR_ROLE, inUse, EMPTY_ROLE] }));
-    api.respond(`DELETE /v1/papeis/${AUDITOR_ROLE.id}`, problem(409, 'papel_em_uso'));
+  it('role_in_use: explica, trava o botão com o motivo e atualiza a lista', async () => {
+    const inUse = { ...AUDITOR_ROLE, user_count: 1 };
+    api.respond('GET /v1/roles', json({ items: ROLES }), json({ items: [ADMIN_ROLE, CONFIGURATOR_ROLE, inUse, EMPTY_ROLE] }));
+    api.respond(`DELETE /v1/roles/${AUDITOR_ROLE.id}`, problem(409, 'role_in_use'));
     const { user } = renderRoles();
-    await screen.findByText(AUDITOR_ROLE.nome);
+    await screen.findByText(AUDITOR_ROLE.name);
 
-    const menu = await openMenuOf(user, AUDITOR_ROLE.nome);
+    const menu = await openMenuOf(user, AUDITOR_ROLE.name);
     await user.click(within(menu).getByRole('menuitem', { name: 'Remover papel' }));
     const dialog = await screen.findByRole('dialog', { name: 'Remover papel' });
     await user.click(within(dialog).getByRole('button', { name: 'Remover papel' }));
@@ -397,7 +397,7 @@ describe('Papéis: remover', () => {
     expect(deleteItem).toHaveAttribute('aria-disabled', 'true');
     expect(deleteItem).toHaveAccessibleDescription(DELETE_IN_USE_REASON);
     await user.click(deleteItem);
-    expect(api.callsTo(`DELETE /v1/papeis/${AUDITOR_ROLE.id}`)).toHaveLength(1);
-    await waitFor(() => expect(api.callsTo('GET /v1/papeis')).toHaveLength(2));
+    expect(api.callsTo(`DELETE /v1/roles/${AUDITOR_ROLE.id}`)).toHaveLength(1);
+    await waitFor(() => expect(api.callsTo('GET /v1/roles')).toHaveLength(2));
   });
 });

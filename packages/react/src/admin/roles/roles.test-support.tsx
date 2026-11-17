@@ -30,45 +30,45 @@ prototype.scrollIntoView ??= () => {};
 export const API = 'https://api.teste';
 
 /** Part of the contract catalog (backend/docs/plano.md §Contratos), with sensitive ones in two groups. */
-export const PERMISSION_CATALOG: Schemas['Permissao'][] = [
-  { codigo: 'usuarios.gerenciar', nome: 'Gerenciar usuários', grupo: 'Administração', sensivel: false },
-  { codigo: 'papeis.gerenciar', nome: 'Gerenciar papéis', grupo: 'Administração', sensivel: false },
-  { codigo: 'seguranca.gerenciar', nome: 'Gerenciar segurança', grupo: 'Administração', sensivel: true },
-  { codigo: 'conexoes.ver', nome: 'Ver conexões', grupo: 'Dados', sensivel: false },
-  { codigo: 'credenciais.gerenciar', nome: 'Gerenciar credenciais', grupo: 'Dados', sensivel: true },
-  { codigo: 'workflows.ver', nome: 'Ver workflows', grupo: 'Workflows', sensivel: false },
-  { codigo: 'workflows.editar', nome: 'Editar workflows', grupo: 'Workflows', sensivel: false },
-  { codigo: 'versao.aprovar', nome: 'Aprovar versões', grupo: 'Workflows', sensivel: true },
-  { codigo: 'auditoria.ver', nome: 'Ver auditoria', grupo: 'Auditoria', sensivel: false },
+export const PERMISSION_CATALOG: Schemas['Permission'][] = [
+  { code: 'users.manage', name: 'Gerenciar usuários', category: 'Administração', sensitive: false },
+  { code: 'roles.manage', name: 'Gerenciar papéis', category: 'Administração', sensitive: false },
+  { code: 'security.manage', name: 'Gerenciar segurança', category: 'Administração', sensitive: true },
+  { code: 'connections.view', name: 'Ver conexões', category: 'Dados', sensitive: false },
+  { code: 'credentials.manage', name: 'Gerenciar credenciais', category: 'Dados', sensitive: true },
+  { code: 'workflows.view', name: 'Ver workflows', category: 'Workflows', sensitive: false },
+  { code: 'workflows.edit', name: 'Editar workflows', category: 'Workflows', sensitive: false },
+  { code: 'versions.approve', name: 'Aprovar versões', category: 'Workflows', sensitive: true },
+  { code: 'audit.view', name: 'Ver auditoria', category: 'Auditoria', sensitive: false },
 ];
 
-export const ADMIN_ROLE: Schemas['Papel'] = {
+export const ADMIN_ROLE: Schemas['Role'] = {
   id: '10000000-0000-0000-0000-000000000001',
-  nome: 'Admin',
-  permissoes: PERMISSION_CATALOG.map((permission) => permission.codigo),
-  fixo: true,
-  total_usuarios: 2,
+  name: 'Admin',
+  permissions: PERMISSION_CATALOG.map((permission) => permission.code),
+  fixed: true,
+  user_count: 2,
 };
-export const CONFIGURATOR_ROLE: Schemas['Papel'] = {
+export const CONFIGURATOR_ROLE: Schemas['Role'] = {
   id: '10000000-0000-0000-0000-000000000002',
-  nome: 'Configurador',
-  permissoes: ['workflows.ver', 'workflows.editar', 'conexoes.ver'],
-  fixo: false,
-  total_usuarios: 3,
+  name: 'Configurador',
+  permissions: ['workflows.view', 'workflows.edit', 'connections.view'],
+  fixed: false,
+  user_count: 3,
 };
-export const AUDITOR_ROLE: Schemas['Papel'] = {
+export const AUDITOR_ROLE: Schemas['Role'] = {
   id: '10000000-0000-0000-0000-000000000003',
-  nome: 'Auditor de contratos e conciliações do grupo econômico',
-  permissoes: ['auditoria.ver'],
-  fixo: false,
-  total_usuarios: 0,
+  name: 'Auditor de contratos e conciliações do grupo econômico',
+  permissions: ['audit.view'],
+  fixed: false,
+  user_count: 0,
 };
-export const EMPTY_ROLE: Schemas['Papel'] = {
+export const EMPTY_ROLE: Schemas['Role'] = {
   id: '10000000-0000-0000-0000-000000000004',
-  nome: 'Sem acesso',
-  permissoes: [],
-  fixo: false,
-  total_usuarios: 1,
+  name: 'Sem acesso',
+  permissions: [],
+  fixed: false,
+  user_count: 1,
 };
 
 export function json(body: unknown, status = 200): Response {
@@ -78,7 +78,7 @@ export function json(body: unknown, status = 200): Response {
 /** problem+json error of the contract. */
 export function problem(status: number, code: string, extra: Record<string, unknown> = {}): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code, ...extra }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code, ...extra }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
@@ -87,7 +87,7 @@ type RouteResponse = Response | Promise<Response> | ((request: Request) => Respo
 
 /**
  * fetch simulated per route ("METHOD /path"). Each route has a queue of responses: the last one repeats.
- * A route without a configured response answers 599 (it becomes `resposta_inesperada` on screen).
+ * A route without a configured response answers 599 (it becomes `unexpected_response` on screen).
  */
 export function simulateApi() {
   const queues = new Map<string, RouteResponse[]>();

@@ -6,11 +6,11 @@
 // serves 6 parallel sign-ins in under 1.5 s. `pnpm e2e` (simulated) keeps the default parallelism.
 import { defineConfig, devices } from '@playwright/test';
 
-const shellUrl = process.env.E2E_CASCA_URL ?? 'http://localhost:5173';
+const shellUrl = process.env.E2E_SHELL_URL ?? 'http://localhost:5173';
 
 // The "host app" of the embedding tests: the shell's embed test page (apps/shell/vite.embed.config.ts), on an
-// origin different from the shell's. It is the origin the backend's `preparar-local` registers as an authorized domain; the backend treats
-// the shell origin (FLUXO_CORS_ORIGENS) with the shell CORS policy, which does not accept `Authorization`.
+// origin different from the shell's. It is the origin the backend's `prepare-local` registers as an authorized domain; the backend treats
+// the shell origin (FLUXO_CORS_ORIGINS) with the shell CORS policy, which does not accept `Authorization`.
 const hostAppUrl = 'http://localhost:5274';
 
 // In real mode, the shell and the test page Playwright starts talk to the same API as the tests: E2E_API_URL becomes their

@@ -28,7 +28,7 @@ let api: SimulatedApi;
 
 beforeEach(() => {
   api = simulateApi();
-  api.respond('GET /v1/papeis', json({ itens: ROLES }));
+  api.respond('GET /v1/roles', json({ items: ROLES }));
   setCsrfCookie('csrf-123');
 });
 
@@ -59,11 +59,11 @@ async function openEdit(user: UserEvent, name: string) {
 
 describe('Usuários: criar', () => {
   beforeEach(() => {
-    api.respond('GET /v1/usuarios', json({ itens: [ANA], proximo_cursor: null }), json({ itens: [ANA, BRUNO], proximo_cursor: null }));
+    api.respond('GET /v1/users', json({ items: [ANA], next_cursor: null }), json({ items: [ANA, BRUNO], next_cursor: null }));
   });
 
   it('cria com e-mail, nome e papéis, fecha o diálogo e atualiza a lista', async () => {
-    api.respond('POST /v1/usuarios', json(BRUNO, 201));
+    api.respond('POST /v1/users', json(BRUNO, 201));
     const { user } = renderUsers();
     const panel = await openNew(user);
 
@@ -80,15 +80,15 @@ describe('Usuários: criar', () => {
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    const [req] = api.callsTo('POST /v1/usuarios');
+    const [req] = api.callsTo('POST /v1/users');
     expect(req!.headers.get('X-CSRF-Token')).toBe('csrf-123');
     expect(await req!.json()).toEqual({
       email: 'bruno.figueiredo.de.albuquerque@exemplo.com',
-      nome: 'Bruno Figueiredo de Albuquerque',
-      papeis: [CONFIGURATOR_ROLE.id, AUDITOR_ROLE.id],
+      name: 'Bruno Figueiredo de Albuquerque',
+      roles: [CONFIGURATOR_ROLE.id, AUDITOR_ROLE.id],
     });
     expect(await screen.findByText('Bruno Figueiredo de Albuquerque')).toBeInTheDocument();
-    expect(api.callsTo('GET /v1/usuarios')).toHaveLength(2);
+    expect(api.callsTo('GET /v1/users')).toHaveLength(2);
     // Focus goes back to whoever opened the dialog.
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Novo usuário' })[0]).toHaveFocus());
   });
@@ -105,11 +105,11 @@ describe('Usuários: criar', () => {
     await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'bruno');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
     expect(await within(panel).findByText('Informe um e-mail válido, como ana@empresa.com.br')).toBeInTheDocument();
-    expect(api.callsTo('POST /v1/usuarios')).toHaveLength(0);
+    expect(api.callsTo('POST /v1/users')).toHaveLength(0);
   });
 
   it('envia pelo envio do formulário (Enter num campo, no navegador)', async () => {
-    api.respond('POST /v1/usuarios', json(BRUNO, 201));
+    api.respond('POST /v1/users', json(BRUNO, 201));
     const { user } = renderUsers();
     const panel = await openNew(user);
 
@@ -120,13 +120,13 @@ describe('Usuários: criar', () => {
     // Enter (the form's default button); user-event only looks for buttons inside the <form>, so the submit is direct.
     fireEvent.submit((name as HTMLInputElement).form!);
 
-    await waitFor(() => expect(api.callsTo('POST /v1/usuarios')).toHaveLength(1));
-    expect(await api.callsTo('POST /v1/usuarios')[0]!.json()).toEqual({ email: 'bruno@exemplo.com', nome: 'Bruno', papeis: [] });
+    await waitFor(() => expect(api.callsTo('POST /v1/users')).toHaveLength(1));
+    expect(await api.callsTo('POST /v1/users')[0]!.json()).toEqual({ email: 'bruno@exemplo.com', name: 'Bruno', roles: [] });
   });
 
   it('enquanto salva, o botão fica ocupado e não envia de novo', async () => {
     const pending = pendingResponse(() => json(BRUNO, 201));
-    api.respond('POST /v1/usuarios', pending.promise);
+    api.respond('POST /v1/users', pending.promise);
     const { user } = renderUsers();
     const panel = await openNew(user);
 
@@ -136,14 +136,14 @@ describe('Usuários: criar', () => {
     await user.click(create);
     await waitFor(() => expect(create).toHaveAttribute('aria-busy', 'true'));
     await user.click(create);
-    expect(api.callsTo('POST /v1/usuarios')).toHaveLength(1);
+    expect(api.callsTo('POST /v1/users')).toHaveLength(1);
 
     pending.release();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  it('usuario_existente: marca o e-mail e mantém o diálogo aberto', async () => {
-    api.respond('POST /v1/usuarios', problem(409, 'usuario_existente'));
+  it('user_already_exists: marca o e-mail e mantém o diálogo aberto', async () => {
+    api.respond('POST /v1/users', problem(409, 'user_already_exists'));
     const { user } = renderUsers();
     const panel = await openNew(user);
 
@@ -157,9 +157,9 @@ describe('Usuários: criar', () => {
     expect(dialog('Novo usuário')).toBeInTheDocument();
   });
 
-  it('papel_inexistente: marca os papéis e busca a lista de papéis de novo', async () => {
-    api.respond('GET /v1/papeis', json({ itens: ROLES }), json({ itens: [ADMIN_ROLE, CONFIGURATOR_ROLE] }));
-    api.respond('POST /v1/usuarios', problem(422, 'papel_inexistente'));
+  it('unknown_role: marca os papéis e busca a lista de papéis de novo', async () => {
+    api.respond('GET /v1/roles', json({ items: ROLES }), json({ items: [ADMIN_ROLE, CONFIGURATOR_ROLE] }));
+    api.respond('POST /v1/users', problem(422, 'unknown_role'));
     const { user } = renderUsers();
     const panel = await openNew(user);
 
@@ -171,11 +171,11 @@ describe('Usuários: criar', () => {
     const group = within(panel).getByRole('group', { name: 'Papéis' });
     await waitFor(() => expect(group).toHaveAccessibleDescription(UNKNOWN_ROLE_MESSAGE));
     await waitFor(() => expect(within(panel).queryByRole('checkbox', { name: 'Auditor' })).not.toBeInTheDocument());
-    expect(api.callsTo('GET /v1/papeis')).toHaveLength(2);
+    expect(api.callsTo('GET /v1/roles')).toHaveLength(2);
   });
 
-  it('dados_invalidos: mostra o erro de cada campo vindo da API', async () => {
-    api.respond('POST /v1/usuarios', problem(422, 'dados_invalidos', { campos: { email: 'E-mail com formato inválido.', nome: 'Nome longo demais.' } }));
+  it('invalid_data: mostra o erro de cada campo vindo da API', async () => {
+    api.respond('POST /v1/users', problem(422, 'invalid_data', { fields: { email: 'E-mail com formato inválido.', name: 'Nome longo demais.' } }));
     const { user } = renderUsers();
     const panel = await openNew(user);
 
@@ -188,8 +188,8 @@ describe('Usuários: criar', () => {
     expect(within(panel).getByRole('alert')).toHaveTextContent('Confira os campos destacados e tente de novo.');
   });
 
-  it('outros erros (ex.: csrf_invalido): mostra a mensagem do servidor', async () => {
-    api.respond('POST /v1/usuarios', problem(403, 'csrf_invalido'));
+  it('outros erros (ex.: invalid_csrf): mostra a mensagem do servidor', async () => {
+    api.respond('POST /v1/users', problem(403, 'invalid_csrf'));
     const { user } = renderUsers();
     const panel = await openNew(user);
 
@@ -197,7 +197,7 @@ describe('Usuários: criar', () => {
     await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Bruno');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
-    expect(await within(panel).findByRole('alert')).toHaveTextContent('Texto do servidor para csrf_invalido.');
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('Texto do servidor para invalid_csrf.');
   });
 
   it('Cancelar fecha sem enviar', async () => {
@@ -207,7 +207,7 @@ describe('Usuários: criar', () => {
     await user.click(within(panel).getByRole('button', { name: 'Cancelar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(api.callsTo('POST /v1/usuarios')).toHaveLength(0);
+    expect(api.callsTo('POST /v1/users')).toHaveLength(0);
 
     // Reopening starts from scratch.
     const newDialog = await openNew(user);
@@ -217,12 +217,12 @@ describe('Usuários: criar', () => {
 
 describe('Usuários: papéis no formulário', () => {
   beforeEach(() => {
-    api.respond('GET /v1/usuarios', json({ itens: [ANA], proximo_cursor: null }));
+    api.respond('GET /v1/users', json({ items: [ANA], next_cursor: null }));
   });
 
   it('enquanto os papéis carregam, salvar fica desabilitado com o motivo', async () => {
-    const pending = pendingResponse(() => json({ itens: ROLES }));
-    api.respond('GET /v1/papeis', pending.promise);
+    const pending = pendingResponse(() => json({ items: ROLES }));
+    api.respond('GET /v1/roles', pending.promise);
     const { user } = renderUsers();
     await screen.findByText('Ana Beatriz Souza');
     await user.click(screen.getAllByRole('button', { name: 'Novo usuário' })[0]!);
@@ -238,8 +238,8 @@ describe('Usuários: papéis no formulário', () => {
     expect(within(panel).getByRole('button', { name: 'Salvar' })).not.toHaveAttribute('aria-disabled');
   });
 
-  it('lista os papéis por GET /v1/papeis ao criar e ao editar, com salvar liberado', async () => {
-    api.respond('GET /v1/usuarios', json({ itens: [ANA, BRUNO], proximo_cursor: null }));
+  it('lista os papéis por GET /v1/roles ao criar e ao editar, com salvar liberado', async () => {
+    api.respond('GET /v1/users', json({ items: [ANA, BRUNO], next_cursor: null }));
     const { user } = renderUsers();
 
     const newDialog = await openNew(user);
@@ -253,11 +253,11 @@ describe('Usuários: papéis no formulário', () => {
     expect(within(within(editing).getByRole('group', { name: 'Papéis' })).getAllByRole('checkbox')).toHaveLength(ROLES.length);
     expect(within(editing).queryByRole('alert')).not.toBeInTheDocument();
     expect(within(editing).getByRole('button', { name: 'Salvar' })).not.toHaveAttribute('aria-disabled');
-    expect(api.callsTo('GET /v1/papeis').length).toBeGreaterThanOrEqual(1);
+    expect(api.callsTo('GET /v1/roles').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('sem_permissao ao listar os papéis: é a falta de gerenciar usuários', async () => {
-    api.respond('GET /v1/papeis', problem(403, 'sem_permissao'));
+  it('no_permission ao listar os papéis: é a falta de gerenciar usuários', async () => {
+    api.respond('GET /v1/roles', problem(403, 'no_permission'));
     const { user } = renderUsers();
     await screen.findByText('Ana Beatriz Souza');
     await user.click(screen.getAllByRole('button', { name: 'Novo usuário' })[0]!);
@@ -267,7 +267,7 @@ describe('Usuários: papéis no formulário', () => {
   });
 
   it('erro ao carregar os papéis: tenta de novo', async () => {
-    api.respond('GET /v1/papeis', problem(503, 'unavailable'), json({ itens: ROLES }));
+    api.respond('GET /v1/roles', problem(503, 'unavailable'), json({ items: ROLES }));
     const { user } = renderUsers();
     await screen.findByText('Ana Beatriz Souza');
     await user.click(screen.getAllByRole('button', { name: 'Novo usuário' })[0]!);
@@ -279,7 +279,7 @@ describe('Usuários: papéis no formulário', () => {
   });
 
   it('tenant sem papéis: diz o que falta', async () => {
-    api.respond('GET /v1/papeis', json({ itens: [] }));
+    api.respond('GET /v1/roles', json({ items: [] }));
     const { user } = renderUsers();
     await screen.findByText('Ana Beatriz Souza');
     await user.click(screen.getAllByRole('button', { name: 'Novo usuário' })[0]!);
@@ -291,13 +291,13 @@ describe('Usuários: papéis no formulário', () => {
 
 describe('Usuários: editar', () => {
   beforeEach(() => {
-    api.respond('GET /v1/usuarios', json({ itens: [ANA, BRUNO], proximo_cursor: null }));
+    api.respond('GET /v1/users', json({ items: [ANA, BRUNO], next_cursor: null }));
   });
 
   it('abre com os dados atuais e salva nome, papéis e situação', async () => {
-    const updated = { ...BRUNO, nome: 'Bruno F. Albuquerque', papeis: [{ id: AUDITOR_ROLE.id, nome: 'Auditor' }], ativo: false };
-    api.respond('PUT /v1/usuarios/' + BRUNO.id, json(updated));
-    api.respond('GET /v1/usuarios', json({ itens: [ANA, BRUNO], proximo_cursor: null }), json({ itens: [ANA, updated], proximo_cursor: null }));
+    const updated = { ...BRUNO, name: 'Bruno F. Albuquerque', roles: [{ id: AUDITOR_ROLE.id, name: 'Auditor' }], active: false };
+    api.respond('PUT /v1/users/' + BRUNO.id, json(updated));
+    api.respond('GET /v1/users', json({ items: [ANA, BRUNO], next_cursor: null }), json({ items: [ANA, updated], next_cursor: null }));
     const { user } = renderUsers();
     const panel = await openEdit(user, 'Bruno Figueiredo de Albuquerque');
 
@@ -320,16 +320,16 @@ describe('Usuários: editar', () => {
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    const [req] = api.callsTo('PUT /v1/usuarios/' + BRUNO.id);
+    const [req] = api.callsTo('PUT /v1/users/' + BRUNO.id);
     expect(req!.headers.get('X-CSRF-Token')).toBe('csrf-123');
-    expect(await req!.json()).toEqual({ nome: 'Bruno F. Albuquerque', papeis: [AUDITOR_ROLE.id], ativo: false });
+    expect(await req!.json()).toEqual({ name: 'Bruno F. Albuquerque', roles: [AUDITOR_ROLE.id], active: false });
     expect(await screen.findByText('Bruno F. Albuquerque')).toBeInTheDocument();
     // Focus goes back to the row menu.
     await waitFor(() => expect(screen.getByRole('button', { name: 'Mais ações para Bruno F. Albuquerque' })).toHaveFocus());
   });
 
-  it('ultimo_admin: explica e mantém o diálogo aberto', async () => {
-    api.respond('PUT /v1/usuarios/' + ANA.id, problem(409, 'ultimo_admin'));
+  it('last_admin: explica e mantém o diálogo aberto', async () => {
+    api.respond('PUT /v1/users/' + ANA.id, problem(409, 'last_admin'));
     const { user } = renderUsers();
     const panel = await openEdit(user, 'Ana Beatriz Souza');
 
@@ -338,23 +338,23 @@ describe('Usuários: editar', () => {
 
     expect(await within(panel).findByRole('alert')).toHaveTextContent(LAST_ADMIN_MESSAGE);
     expect(dialog('Editar usuário')).toBeInTheDocument();
-    expect(await api.callsTo('PUT /v1/usuarios/' + ANA.id)[0]!.json()).toEqual({ nome: 'Ana Beatriz Souza', papeis: [], ativo: true });
+    expect(await api.callsTo('PUT /v1/users/' + ANA.id)[0]!.json()).toEqual({ name: 'Ana Beatriz Souza', roles: [], active: true });
   });
 
-  it('nao_encontrado: avisa e atualiza a lista', async () => {
-    api.respond('PUT /v1/usuarios/' + BRUNO.id, problem(404, 'nao_encontrado'));
-    api.respond('GET /v1/usuarios', json({ itens: [ANA, BRUNO], proximo_cursor: null }), json({ itens: [ANA], proximo_cursor: null }));
+  it('not_found: avisa e atualiza a lista', async () => {
+    api.respond('PUT /v1/users/' + BRUNO.id, problem(404, 'not_found'));
+    api.respond('GET /v1/users', json({ items: [ANA, BRUNO], next_cursor: null }), json({ items: [ANA], next_cursor: null }));
     const { user } = renderUsers();
     const panel = await openEdit(user, 'Bruno Figueiredo de Albuquerque');
 
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(panel).findByRole('alert')).toHaveTextContent(USER_NOT_FOUND_MESSAGE);
-    await waitFor(() => expect(api.callsTo('GET /v1/usuarios')).toHaveLength(2));
+    await waitFor(() => expect(api.callsTo('GET /v1/users')).toHaveLength(2));
   });
 
-  it('papel_inexistente: marca os papéis', async () => {
-    api.respond('PUT /v1/usuarios/' + BRUNO.id, problem(422, 'papel_inexistente'));
+  it('unknown_role: marca os papéis', async () => {
+    api.respond('PUT /v1/users/' + BRUNO.id, problem(422, 'unknown_role'));
     const { user } = renderUsers();
     const panel = await openEdit(user, 'Bruno Figueiredo de Albuquerque');
 
@@ -373,6 +373,6 @@ describe('Usuários: editar', () => {
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(panel).findByText('Informe o nome')).toBeInTheDocument();
-    expect(api.callsTo('PUT /v1/usuarios/' + BRUNO.id)).toHaveLength(0);
+    expect(api.callsTo('PUT /v1/users/' + BRUNO.id)).toHaveLength(0);
   });
 });

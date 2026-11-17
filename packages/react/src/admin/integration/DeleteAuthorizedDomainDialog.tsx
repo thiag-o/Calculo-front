@@ -16,7 +16,7 @@ export interface DeleteAuthorizedDomainDialogProps {
 export function DeleteAuthorizedDomainDialog({ authorizedDomain, onClose, focusOnClose }: DeleteAuthorizedDomainDialogProps) {
   const deleteMutation = useDeleteAuthorizedDomain();
   const error = deleteMutation.error;
-  const disabledReason = errorWithCode(error, ['nao_encontrado']) ? DELETE_NOT_FOUND_REASON : undefined;
+  const disabledReason = errorWithCode(error, ['not_found']) ? DELETE_NOT_FOUND_REASON : undefined;
 
   return (
     <Dialog
@@ -26,7 +26,7 @@ export function DeleteAuthorizedDomainDialog({ authorizedDomain, onClose, focusO
         if (!open) onClose();
       }}
       title="Remover domínio"
-      description={`${authorizedDomain.origem} deixa de poder chamar a API com o token deste tenant: o módulo incorporado nessa origem para de funcionar.`}
+      description={`${authorizedDomain.origin} deixa de poder chamar a API com o token deste tenant: o módulo incorporado nessa origem para de funcionar.`}
       actions={
         <>
           <DialogClose>

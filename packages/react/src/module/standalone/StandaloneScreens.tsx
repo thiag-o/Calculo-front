@@ -85,7 +85,7 @@ const AUDIT_SCREEN: StandaloneDefinition = {
   name: 'Auditoria',
   target: 'a Auditoria',
   access: {
-    allowed: (hasPermission) => hasPermission('auditoria.ver'),
+    allowed: (hasPermission) => hasPermission('audit.view'),
     noAccess: 'Você não tem acesso à Auditoria',
   },
   content: <AuditScreen />,
@@ -115,7 +115,7 @@ export function Admin(props: AdminProps) {
   return <StandaloneScreen {...props} definition={ADMIN_SCREEN} />;
 }
 
-/** The Audit, on its own, outside `<FluxoCalculo>`. Requires `auditoria.ver`; without it, shows the "no access" state. */
+/** The Audit, on its own, outside `<FluxoCalculo>`. Requires `audit.view`; without it, shows the "no access" state. */
 export function Audit(props: AuditProps) {
   return <StandaloneScreen {...props} definition={AUDIT_SCREEN} />;
 }

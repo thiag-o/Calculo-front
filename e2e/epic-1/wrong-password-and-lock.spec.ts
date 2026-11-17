@@ -26,10 +26,10 @@ test.describe('senha errada e bloqueio', () => {
     const account = api.account('admin');
     await page.goto('/sign-in');
 
-    const rejection = await submitSignIn(page, { email: account.email, senha: `${account.senha}-errada` });
+    const rejection = await submitSignIn(page, { email: account.email, password: `${account.password}-errada` });
 
     expect(rejection.status()).toBe(401);
-    expect((await problemBody(rejection)).codigo).toBe('credenciais_invalidas');
+    expect((await problemBody(rejection)).code).toBe('invalid_credentials');
     await expect(signInNotice(page)).toHaveText(INVALID_CREDENTIALS_MESSAGE);
     await waitForSignIn(page);
     // The message does not blame a single field (it does not reveal whether the e-mail exists).
@@ -43,7 +43,7 @@ test.describe('senha errada e bloqueio', () => {
 
   test('cinco erros seguidos bloqueiam o e-mail e a tela diz quando tentar de novo', async ({ page, api }) => {
     // A new e-mail each run: in real mode the lock lasts 15 minutes and must not hit the other tests' accounts.
-    const credentials = { email: api.emailWithoutAccount(), senha: 'senha-que-nao-confere' };
+    const credentials = { email: api.emailWithoutAccount(), password: 'senha-que-nao-confere' };
     await page.goto('/sign-in');
 
     for (let attempt = 1; attempt <= FAILURES_UNTIL_LOCK; attempt += 1) {
@@ -56,8 +56,8 @@ test.describe('senha errada e bloqueio', () => {
 
     expect(lock.status()).toBe(423);
     const body = await problemBody(lock);
-    expect(body.codigo).toBe('login_bloqueado');
-    const unlocksAt = (body as { desbloqueia_em?: unknown }).desbloqueia_em;
+    expect(body.code).toBe('login_locked');
+    const unlocksAt = (body as { unlocks_at?: unknown }).unlocks_at;
     expect(typeof unlocksAt).toBe('string');
     await expect(signInNotice(page)).toHaveText(
       `O login deste e-mail foi bloqueado depois de várias tentativas erradas. ${unlockText(unlocksAt as string)}`,

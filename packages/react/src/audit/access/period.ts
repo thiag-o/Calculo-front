@@ -1,5 +1,5 @@
 // Filter period: "De" and "Até" come from the browser date picker (`yyyy-mm-dd`) and become instants in the user's time
-// zone. The API `desde` is inclusive and `ate` is exclusive, so "Até" becomes the start of the next day: the last day
+// zone. The API `since` is inclusive and `until` is exclusive, so "Até" becomes the start of the next day: the last day
 // is fully included (answer D3 of F18).
 
 const DAY_FORMAT = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -21,12 +21,12 @@ export function validDay(day: string): boolean {
   return localStartOfDay(day) !== undefined;
 }
 
-/** API `desde`: the start of the "De" day, in the local time zone, as ISO 8601. */
+/** API `since`: the start of the "De" day, in the local time zone, as ISO 8601. */
 export function sinceParam(day: string): string | undefined {
   return localStartOfDay(day)?.toISOString();
 }
 
-/** API `ate` (exclusive): the start of the day after "Até", in the local time zone, as ISO 8601. */
+/** API `until` (exclusive): the start of the day after "Até", in the local time zone, as ISO 8601. */
 export function untilParam(day: string): string | undefined {
   return localStartOfDay(day, 1)?.toISOString();
 }

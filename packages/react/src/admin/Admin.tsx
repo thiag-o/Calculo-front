@@ -16,10 +16,10 @@ export type AdminTab = 'users' | 'roles' | 'integration' | 'security';
  * and in the embedded mode tabs, so the standalone screen and the module show the same areas to each person.
  */
 export const ADMIN_TAB_PERMISSIONS = {
-  users: 'usuarios.gerenciar',
-  roles: 'papeis.gerenciar',
-  integration: 'integracao.gerenciar',
-  security: 'seguranca.gerenciar',
+  users: 'users.manage',
+  roles: 'roles.manage',
+  integration: 'integration.manage',
+  security: 'security.manage',
 } as const satisfies Record<AdminTab, string>;
 
 interface TabDefinition {

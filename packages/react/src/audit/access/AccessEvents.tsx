@@ -50,7 +50,7 @@ const columns: readonly TableColumn<AccessEvent>[] = [
     skeletonWidth: 128,
     cell: (event) => (
       <Text variant="label-14" className="fc-access-number">
-        {dateTime(event.ocorrido_em)}
+        {dateTime(event.occurred_at)}
       </Text>
     ),
   },
@@ -59,7 +59,7 @@ const columns: readonly TableColumn<AccessEvent>[] = [
     title: 'Evento',
     skeletonWidth: 140,
     cell: (event) => {
-      const type = typePresentation(event.tipo);
+      const type = typePresentation(event.type);
       return <Status tone={type.tone}>{type.label}</Status>;
     },
   },
@@ -69,7 +69,7 @@ const columns: readonly TableColumn<AccessEvent>[] = [
     skeletonWidth: 180,
     cell: (event) => (
       <Text variant="label-14" className="fc-access-wrap">
-        {event.email_informado}
+        {event.provided_email}
       </Text>
     ),
   },
@@ -89,9 +89,9 @@ const columns: readonly TableColumn<AccessEvent>[] = [
     title: 'Detalhe',
     skeletonWidth: 160,
     cell: (event) =>
-      event.detalhe ? (
+      event.detail ? (
         <Text variant="label-14" emphasis="secondary" className="fc-access-wrap">
-          {event.detalhe}
+          {event.detail}
         </Text>
       ) : null,
   },
@@ -131,11 +131,11 @@ export function AccessEvents() {
   const events = list.data;
   const filtered = hasFilter(filters);
   const noDataError = list.isError && events === undefined ? list.error : null;
-  const noPermission = noDataError instanceof ApiError && noDataError.code === 'sem_permissao';
+  const noPermission = noDataError instanceof ApiError && noDataError.code === 'no_permission';
   const inverted = invertedPeriod(fields.from, fields.until);
   const sinceError = fieldError(noDataError, 'since');
   const untilError = inverted ? INVERTED_PERIOD_MESSAGE : fieldError(noDataError, 'until');
-  const invalidCursor = list.error instanceof ApiError && list.error.code === 'cursor_invalido';
+  const invalidCursor = list.error instanceof ApiError && list.error.code === 'invalid_cursor';
 
   const clearButton = (
     <Button size="small" variant="secondary" onClick={clearFilters}>

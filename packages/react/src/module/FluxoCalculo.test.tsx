@@ -43,7 +43,7 @@ const tabs = () => screen.queryByRole('navigation', { name: 'Telas do Fluxo de C
 
 describe('<FluxoCalculo>', () => {
   it('no casca (sem token), monta a raiz com o tema, chama a API com o cookie e abre o Início com o menu lateral', async () => {
-    const api = simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+    const api = simulateApi({ 'GET /v1/session': json(headquartersSession) });
     const { container } = render(<FluxoCalculo apiUrl={API} theme="dark" navigation="memory" />);
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Início' })).toBeInTheDocument();
@@ -52,14 +52,14 @@ describe('<FluxoCalculo>', () => {
     expect(within(mainNavigation()).getByRole('link', { name: 'Início' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' })).toBeInTheDocument();
 
-    expect(api.calls()).toEqual(['GET /v1/sessao']);
+    expect(api.calls()).toEqual(['GET /v1/session']);
     expect(api.request(0).credentials).toBe('include');
     expect(api.request(0).headers.get('Authorization')).toBeNull();
   });
 
   it('enquanto a sessão chega, mostra o esqueleto de carregamento', async () => {
     const pending = pendingResponse();
-    simulateApi({ 'GET /v1/sessao': pending.promise });
+    simulateApi({ 'GET /v1/session': pending.promise });
     renderModule({ navigation: 'memory' });
 
     expect(screen.getByRole('status')).toHaveTextContent('Carregando o Fluxo de Cálculo');
@@ -72,25 +72,25 @@ describe('<FluxoCalculo>', () => {
 
   it('se a sessão não carrega por falha passageira, diz o que houve e tenta de novo', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    const api = simulateApi({ 'GET /v1/sessao': problem(503, 'unavailable') });
+    const api = simulateApi({ 'GET /v1/session': problem(503, 'unavailable') });
     const { user, onSessionExpired } = renderModule({ navigation: 'memory' });
 
     // 5xx is retried by the product QueryClient before becoming an error (up to 3 times, with growing wait).
     await act(() => vi.advanceTimersByTimeAsync(10000));
     vi.useRealTimers();
     const alert = await screen.findByRole('alert');
-    expect(api.calls()).toEqual(Array(4).fill('GET /v1/sessao'));
+    expect(api.calls()).toEqual(Array(4).fill('GET /v1/session'));
     expect(alert).toHaveTextContent('Não foi possível abrir o Fluxo de Cálculo');
     expect(alert).toHaveTextContent('Texto do servidor para unavailable.');
     expect(onSessionExpired).not.toHaveBeenCalled();
 
-    api.set({ 'GET /v1/sessao': json(headquartersSession) });
+    api.set({ 'GET /v1/session': json(headquartersSession) });
     await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();
   });
 
-  it('sem sessão (401 sem_sessao), avisa o onSessionExpired uma vez e não mostra o módulo', async () => {
-    const api = simulateApi({ 'GET /v1/sessao': problem(401, 'sem_sessao') });
+  it('sem sessão (401 no_session), avisa o onSessionExpired uma vez e não mostra o módulo', async () => {
+    const api = simulateApi({ 'GET /v1/session': problem(401, 'no_session') });
     const { onSessionExpired } = renderModule({ navigation: 'memory' });
 
     expect(await screen.findByText('A sessão terminou')).toBeInTheDocument();
@@ -98,16 +98,16 @@ describe('<FluxoCalculo>', () => {
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
     expect(sidebar()).not.toBeInTheDocument();
     // 4xx is not retried, and nothing fetches the session again after it ended.
-    expect(api.calls()).toEqual(['GET /v1/sessao']);
+    expect(api.calls()).toEqual(['GET /v1/session']);
   });
 
   it('incorporado, com o token novo do hospedeiro, abre de novo depois da sessão encerrada', async () => {
-    const api = simulateApi({ 'GET /v1/sessao': problem(401, 'sem_sessao') });
+    const api = simulateApi({ 'GET /v1/session': problem(401, 'no_session') });
     const { onSessionExpired, rerender } = renderModule({ token: 'token-vencido' });
     expect(await screen.findByText('A sessão terminou')).toBeInTheDocument();
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
 
-    api.set({ 'GET /v1/sessao': json(headquartersSession) });
+    api.set({ 'GET /v1/session': json(headquartersSession) });
     rerender(<FluxoModule apiUrl={API} screens={testScreens} onSessionExpired={onSessionExpired} token="token-novo" />);
 
     expect(await screen.findByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();
@@ -116,12 +116,12 @@ describe('<FluxoCalculo>', () => {
   });
 
   it('quando a sessão expira com o módulo aberto, o cache é limpo: o token novo não vê os dados do anterior', async () => {
-    const api = simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+    const api = simulateApi({ 'GET /v1/session': json(headquartersSession) });
     const { onSessionExpired, rerender } = renderModule({ token: 'token-a' });
     await screen.findByRole('heading', { name: 'Tela Início' });
 
-    // The token expires: the next fetch (here, when focus comes back to the page) gets 401 sem_sessao.
-    api.set({ 'GET /v1/sessao': problem(401, 'sem_sessao') });
+    // The token expires: the next fetch (here, when focus comes back to the page) gets 401 no_session.
+    api.set({ 'GET /v1/session': problem(401, 'no_session') });
     act(() => {
       focusManager.setFocused(false);
       focusManager.setFocused(true);
@@ -131,7 +131,7 @@ describe('<FluxoCalculo>', () => {
     focusManager.setFocused(undefined);
 
     const pending = pendingResponse();
-    api.set({ 'GET /v1/sessao': pending.promise });
+    api.set({ 'GET /v1/session': pending.promise });
     rerender(<FluxoModule apiUrl={API} screens={testScreens} onSessionExpired={onSessionExpired} token="token-b" />);
 
     // With nothing from the previous token in the cache, the module waits for the new session instead of showing the old one.
@@ -143,7 +143,7 @@ describe('<FluxoCalculo>', () => {
 
   describe('layout incorporado (com token)', () => {
     it('não renderiza o menu lateral: só as abas, com Bearer e sem cookie', async () => {
-      const api = simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      const api = simulateApi({ 'GET /v1/session': json(headquartersSession) });
       render(<FluxoCalculo apiUrl={API} token="token-do-hospedeiro" />);
 
       expect(await screen.findByRole('heading', { level: 1, name: 'Início' })).toBeInTheDocument();
@@ -162,7 +162,7 @@ describe('<FluxoCalculo>', () => {
     });
 
     it('as abas seguem as permissões e navegam entre as telas', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const { user } = renderModule({ token: 'token' });
 
       await screen.findByRole('heading', { name: 'Tela Início' });
@@ -178,7 +178,7 @@ describe('<FluxoCalculo>', () => {
 
   describe('navegação', () => {
     it('no modo memoria, a URL da página não muda, nem ao abrir nem ao navegar', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const historyBefore = window.history.length;
       const { user } = renderModule({ navigation: 'memory' });
 
@@ -191,7 +191,7 @@ describe('<FluxoCalculo>', () => {
     });
 
     it('com token e sem navegacao, o padrão é memoria: a URL do hospedeiro não muda', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const { user } = renderModule({ token: 'token' });
 
       await screen.findByRole('heading', { name: 'Tela Início' });
@@ -203,7 +203,7 @@ describe('<FluxoCalculo>', () => {
 
     it('no modo url, as rotas internas seguem a URL: a raiz abre a tela inicial e o menu muda o endereço', async () => {
       window.history.replaceState(null, '', '/');
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const { user } = renderModule({ navigation: 'url' });
 
       await screen.findByRole('heading', { name: 'Tela Início' });
@@ -216,7 +216,7 @@ describe('<FluxoCalculo>', () => {
 
     it('sem token e sem navegacao, o padrão é url: abre a tela do endereço atual', async () => {
       window.history.replaceState(null, '', '/workflows');
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       renderModule();
 
       expect(await screen.findByRole('heading', { name: 'Tela Workflows' })).toBeInTheDocument();
@@ -224,14 +224,14 @@ describe('<FluxoCalculo>', () => {
     });
 
     it('a propriedade tela abre o módulo direto nela', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       renderModule({ navigation: 'memory', screen: 'workflows' });
 
       expect(await screen.findByRole('heading', { name: 'Tela Workflows' })).toBeInTheDocument();
     });
 
     it('dentro de um hospedeiro com react-router, o módulo monta e não mexe no roteador dele', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       function HostAppLocation() {
         const local = useLocation();
         return <p>Hospedeiro em {local.pathname}</p>;
@@ -259,7 +259,7 @@ describe('<FluxoCalculo>', () => {
 
   describe('itens por permissão', () => {
     it('item sem permissão não aparece no menu lateral', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       renderModule({ navigation: 'memory' });
 
       await screen.findByRole('heading', { name: 'Tela Início' });
@@ -270,7 +270,7 @@ describe('<FluxoCalculo>', () => {
 
     it('a rota de uma tela sem permissão não abre: volta para a tela inicial', async () => {
       window.history.replaceState(null, '', '/audit');
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       renderModule({ navigation: 'url' });
 
       expect(await screen.findByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();
@@ -279,7 +279,7 @@ describe('<FluxoCalculo>', () => {
     });
 
     it('a propriedade tela sem permissão abre a primeira tela permitida', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       renderModule({ navigation: 'memory', screen: 'audit' });
 
       expect(await screen.findByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();

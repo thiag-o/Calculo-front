@@ -1,5 +1,5 @@
 // Client-side validation of an authorized domain origin, in the contract format: `https?://host[:port]`, without
-// path, query or fragment. The API validates again (`422 origem_invalida`) and normalizes (lower case, no trailing
+// path, query or fragment. The API validates again (`422 invalid_origin`) and normalizes (lower case, no trailing
 // slash, no default port); here we only avoid the round trip on common errors.
 
 export const EMPTY_ORIGIN_MESSAGE = 'Informe a origem';

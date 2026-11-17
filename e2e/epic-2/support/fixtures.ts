@@ -2,7 +2,7 @@
 // in both projects of playwright.config.ts.
 // - simulated (pnpm e2e): the epic 2 simulated API (`Epic2Simulation`) answers every call to `/v1/...`, on all
 //   pages of the test, with a single state (the Admin creates a user on one page and the person signs in on another);
-// - real (pnpm e2e:real): the shell talks to the real backend, with the `preparar-local` accounts.
+// - real (pnpm e2e:real): the shell talks to the real backend, with the `prepare-local` accounts.
 import type { BrowserContext, Page, TestInfo } from '@playwright/test';
 import { expect, test as base, type E2EApi } from '../../support/fixtures';
 import { Epic2Simulation, type InitialAccount } from './simulation';
@@ -12,7 +12,7 @@ export { expect };
 export interface Epic2 {
   /**
    * The "host app" origin (`http://localhost:5274`): the embed test page's, which
-   * `playwright.config.ts` starts next to the shell, in both modes. It is the domain `preparar-local` registers in the backend.
+   * `playwright.config.ts` starts next to the shell, in both modes. It is the domain `prepare-local` registers in the backend.
    */
   hostAppOrigin: string;
   /**
@@ -23,22 +23,22 @@ export interface Epic2 {
 }
 
 /**
- * The accounts that already exist in the backend, as `preparar-local` creates them (tenants "Demonstração" and "Outra Empresa"). Admin and
+ * The accounts that already exist in the backend, as `prepare-local` creates them (tenants "Demonstração" and "Outra Empresa"). Admin and
  * two tenants use the epic 1 fixture credentials; the Configurator only exists so the user list is realistic.
  */
 function initialAccounts(api: E2EApi): InitialAccount[] {
   return [
-    { ...api.account('admin'), nome: 'Administradora Demonstração', papeis: { Demonstração: 'Admin' } },
+    { ...api.account('admin'), name: 'Administradora Demonstração', roles: { Demonstração: 'Admin' } },
     {
       email: 'configurador@demo.local',
-      senha: 'senha-simulada-configurador',
-      nome: 'Configurador Demonstração',
-      papeis: { Demonstração: 'Configurador' },
+      password: 'senha-simulada-configurador',
+      name: 'Configurador Demonstração',
+      roles: { Demonstração: 'Configurador' },
     },
     {
       ...api.account('twoTenants'),
-      nome: 'Usuário de Dois Tenants',
-      papeis: { Demonstração: 'Operador', 'Outra Empresa': 'Admin' },
+      name: 'Usuário de Dois Tenants',
+      roles: { Demonstração: 'Operador', 'Outra Empresa': 'Admin' },
     },
   ];
 }

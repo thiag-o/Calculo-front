@@ -28,10 +28,10 @@ import {
 
 let api: SimulatedApi;
 
-const LIST_ROUTE = 'GET /v1/dominios-autorizados';
-const CREATE_ROUTE = 'POST /v1/dominios-autorizados';
-const DELETE_ROUTE = `DELETE /v1/dominios-autorizados/${APP_AUTHORIZED_DOMAIN.id}`;
-const NEW = { id: '40000000-0000-0000-0000-000000000009', origem: 'https://portal.cliente.com.br:8443', criado_em: localIso(2026, 11, 16) };
+const LIST_ROUTE = 'GET /v1/authorized-domains';
+const CREATE_ROUTE = 'POST /v1/authorized-domains';
+const DELETE_ROUTE = `DELETE /v1/authorized-domains/${APP_AUTHORIZED_DOMAIN.id}`;
+const NEW = { id: '40000000-0000-0000-0000-000000000009', origin: 'https://portal.cliente.com.br:8443', created_at: localIso(2026, 11, 16) };
 
 beforeEach(() => {
   api = simulateApi();
@@ -53,8 +53,8 @@ function rowOf(text: string): HTMLElement {
 
 describe('Integração: tela inteira', () => {
   it('mostra as chaves de API e os domínios autorizados, cada seção com a sua ação', async () => {
-    api.respond('GET /v1/chaves-api', json({ itens: [PORTAL_API_KEY], proximo_cursor: null }));
-    api.respond(LIST_ROUTE, json({ itens: AUTHORIZED_DOMAINS }));
+    api.respond('GET /v1/api-keys', json({ items: [PORTAL_API_KEY], next_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: AUTHORIZED_DOMAINS }));
     renderIntegration(<Integration />);
 
     expect(await screen.findByText('Portal do cliente')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('Integração: tela inteira', () => {
 
 describe('Integração: lista de domínios autorizados', () => {
   it('mostra a origem e quando foi cadastrada', async () => {
-    api.respond(LIST_ROUTE, json({ itens: AUTHORIZED_DOMAINS }));
+    api.respond(LIST_ROUTE, json({ items: AUTHORIZED_DOMAINS }));
     renderScreen();
 
     expect(await screen.findByText('https://app.exemplo.com.br')).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe('Integração: lista de domínios autorizados', () => {
   });
 
   it('enquanto carrega, mostra o esqueleto e anuncia', async () => {
-    const pending = pendingResponse(() => json({ itens: [APP_AUTHORIZED_DOMAIN] }));
+    const pending = pendingResponse(() => json({ items: [APP_AUTHORIZED_DOMAIN] }));
     api.respond(LIST_ROUTE, pending.promise);
     renderScreen();
 
@@ -101,7 +101,7 @@ describe('Integração: lista de domínios autorizados', () => {
   });
 
   it('vazio: diz o que falta e oferece cadastrar', async () => {
-    api.respond(LIST_ROUTE, json({ itens: [] }));
+    api.respond(LIST_ROUTE, json({ items: [] }));
     const { user } = renderScreen();
 
     expect(await screen.findByText('Nenhum domínio autorizado ainda')).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('Integração: lista de domínios autorizados', () => {
   });
 
   it('erro ao carregar: explica e deixa tentar de novo', async () => {
-    api.respond(LIST_ROUTE, problem(503, 'unavailable'), json({ itens: [APP_AUTHORIZED_DOMAIN] }));
+    api.respond(LIST_ROUTE, problem(503, 'unavailable'), json({ items: [APP_AUTHORIZED_DOMAIN] }));
     const { user } = renderScreen();
 
     const alert = await screen.findByRole('alert');
@@ -122,7 +122,7 @@ describe('Integração: lista de domínios autorizados', () => {
   });
 
   it('sem permissão: explica e não oferece tentar de novo', async () => {
-    api.respond(LIST_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(LIST_ROUTE, problem(403, 'no_permission'));
     renderScreen();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(NO_PERMISSION_MESSAGE);
@@ -146,7 +146,7 @@ async function saveOrigin(user: UserEvent, panel: HTMLElement, origin: string) {
 
 describe('Integração: novo domínio', () => {
   beforeEach(() => {
-    api.respond(LIST_ROUTE, json({ itens: AUTHORIZED_DOMAINS }));
+    api.respond(LIST_ROUTE, json({ items: AUTHORIZED_DOMAINS }));
   });
 
   it.each([
@@ -174,21 +174,21 @@ describe('Integração: novo domínio', () => {
     expect(within(panel).getByRole('textbox', { name: 'Origem' })).toHaveAccessibleDescription(
       'Esquema, host e, se precisar, a porta. Sem caminho no fim.',
     );
-    api.respond(LIST_ROUTE, json({ itens: [...AUTHORIZED_DOMAINS, NEW] }));
+    api.respond(LIST_ROUTE, json({ items: [...AUTHORIZED_DOMAINS, NEW] }));
 
     await saveOrigin(user, panel, '  HTTPS://Portal.Cliente.com.br:8443/  ');
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     const [req] = api.callsTo(CREATE_ROUTE);
     expect(req!.headers.get('X-CSRF-Token')).toBe('csrf-123');
-    expect(await req!.json()).toEqual({ origem: 'HTTPS://Portal.Cliente.com.br:8443/' });
+    expect(await req!.json()).toEqual({ origin: 'HTTPS://Portal.Cliente.com.br:8443/' });
     // A lista mostra a origem como a API a guardou (normalizada).
     expect(await screen.findByText('https://portal.cliente.com.br:8443')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Novo domínio' })).toHaveFocus());
   });
 
-  it('origem_invalida da API: mostra o erro no campo', async () => {
-    api.respond(CREATE_ROUTE, problem(422, 'origem_invalida', { campos: { origem: 'Texto do servidor.' } }));
+  it('invalid_origin da API: mostra o erro no campo', async () => {
+    api.respond(CREATE_ROUTE, problem(422, 'invalid_origin', { fields: { origin: 'Texto do servidor.' } }));
     const { user } = renderScreen();
     const panel = await openNew(user);
 
@@ -199,8 +199,8 @@ describe('Integração: novo domínio', () => {
     expect(screen.getByRole('dialog', { name: 'Novo domínio' })).toBeInTheDocument();
   });
 
-  it('dominio_existente: mostra o erro no campo e atualiza a lista', async () => {
-    api.respond(CREATE_ROUTE, problem(409, 'dominio_existente'));
+  it('authorized_domain_already_exists: mostra o erro no campo e atualiza a lista', async () => {
+    api.respond(CREATE_ROUTE, problem(409, 'authorized_domain_already_exists'));
     const { user } = renderScreen();
     const panel = await openNew(user);
 
@@ -216,7 +216,7 @@ describe('Integração: novo domínio', () => {
     const { user } = renderScreen();
     const panel = await openNew(user);
 
-    await saveOrigin(user, panel, NEW.origem);
+    await saveOrigin(user, panel, NEW.origin);
     const save = within(panel).getByRole('button', { name: 'Salvar' });
     await waitFor(() => expect(save).toHaveAttribute('aria-busy', 'true'));
     await user.click(save);
@@ -227,11 +227,11 @@ describe('Integração: novo domínio', () => {
   });
 
   it('sem permissão: explica numa nota', async () => {
-    api.respond(CREATE_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(CREATE_ROUTE, problem(403, 'no_permission'));
     const { user } = renderScreen();
     const panel = await openNew(user);
 
-    await saveOrigin(user, panel, NEW.origem);
+    await saveOrigin(user, panel, NEW.origin);
     expect(await within(panel).findByRole('alert')).toHaveTextContent(NO_PERMISSION_MESSAGE);
   });
 });
@@ -245,7 +245,7 @@ async function openDelete(user: UserEvent, origin = 'https://app.exemplo.com.br'
 
 describe('Integração: remover domínio', () => {
   beforeEach(() => {
-    api.respond(LIST_ROUTE, json({ itens: AUTHORIZED_DOMAINS }));
+    api.respond(LIST_ROUTE, json({ items: AUTHORIZED_DOMAINS }));
   });
 
   it('pede confirmação e cancelar não remove; o foco volta ao "…" da linha', async () => {
@@ -267,7 +267,7 @@ describe('Integração: remover domínio', () => {
     api.respond(DELETE_ROUTE, noContent());
     const { user } = renderScreen();
     const panel = await openDelete(user);
-    api.respond(LIST_ROUTE, json({ itens: [LOCAL_AUTHORIZED_DOMAIN] }));
+    api.respond(LIST_ROUTE, json({ items: [LOCAL_AUTHORIZED_DOMAIN] }));
 
     await user.click(within(panel).getByRole('button', { name: 'Remover domínio' }));
 
@@ -278,8 +278,8 @@ describe('Integração: remover domínio', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Novo domínio' })).toHaveFocus());
   });
 
-  it('nao_encontrado: explica, não oferece remover de novo e atualiza a lista', async () => {
-    api.respond(DELETE_ROUTE, problem(404, 'nao_encontrado'));
+  it('not_found: explica, não oferece remover de novo e atualiza a lista', async () => {
+    api.respond(DELETE_ROUTE, problem(404, 'not_found'));
     const { user } = renderScreen();
     const panel = await openDelete(user);
 

@@ -8,17 +8,17 @@ import type { Session } from './useSession';
 
 export const API = 'https://api.teste';
 
-export const HEADQUARTERS_TENANT = { id: '00000000-0000-0000-0000-00000000000a', nome: 'Matriz' };
-export const BRANCH_TENANT = { id: '00000000-0000-0000-0000-00000000000b', nome: 'Filial Nordeste e Centro-Oeste' };
+export const HEADQUARTERS_TENANT = { id: '00000000-0000-0000-0000-00000000000a', name: 'Matriz' };
+export const BRANCH_TENANT = { id: '00000000-0000-0000-0000-00000000000b', name: 'Filial Nordeste e Centro-Oeste' };
 
 export const headquartersSession: Session = {
-  usuario: { id: '00000000-0000-0000-0000-000000000001', nome: 'Ana Beatriz', email: 'ana@exemplo.com' },
+  user: { id: '00000000-0000-0000-0000-000000000001', name: 'Ana Beatriz', email: 'ana@exemplo.com' },
   tenants: [HEADQUARTERS_TENANT, BRANCH_TENANT],
-  tenant_atual: HEADQUARTERS_TENANT,
-  permissoes: ['workflows.ver', 'execucoes.ver'],
+  current_tenant: HEADQUARTERS_TENANT,
+  permissions: ['workflows.view', 'executions.view'],
 };
 
-export const branchSession: Session = { ...headquartersSession, tenant_atual: BRANCH_TENANT, permissoes: ['auditoria.ver'] };
+export const branchSession: Session = { ...headquartersSession, current_tenant: BRANCH_TENANT, permissions: ['audit.view'] };
 
 export type SimulatedFetch = ReturnType<typeof vi.fn<(request: Request) => Promise<Response>>>;
 
@@ -36,7 +36,7 @@ export function json(body: unknown, status = 200): Response {
 /** problem+json error of the contract, with the extension members in `extra`. */
 export function problem(status: number, code: string, extra: Record<string, unknown> = {}): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code, ...extra }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code, ...extra }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }

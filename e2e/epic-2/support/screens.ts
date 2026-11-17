@@ -6,7 +6,7 @@ import type { Schemas } from '../../support/contract';
 import { waitForSignIn, apiResponse } from '../../support/screens';
 import { expect } from './fixtures';
 
-export type User = Schemas['Usuario'];
+export type User = Schemas['User'];
 
 /** Messages of the new password screen (session/reset-password/resetPasswordMessages.ts). */
 export const INVALID_LINK_MESSAGE = 'Este link não vale mais: já foi usado ou venceu. Peça ao administrador um link novo.';
@@ -66,14 +66,14 @@ export async function userRow(page: Page, email: string): Promise<Locator> {
 }
 
 /** "Novo usuário" on the Users screen: e-mail, name and one role. Returns the created user (`201` response). */
-export async function createUser(page: Page, data: { email: string; nome: string; role: string }): Promise<User> {
+export async function createUser(page: Page, data: { email: string; name: string; role: string }): Promise<User> {
   await page.getByRole('button', { name: 'Novo usuário' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Novo usuário' });
   await dialog.getByRole('textbox', { name: 'E-mail' }).fill(data.email);
-  await dialog.getByRole('textbox', { name: 'Nome', exact: true }).fill(data.nome);
+  await dialog.getByRole('textbox', { name: 'Nome', exact: true }).fill(data.name);
   await dialog.getByRole('checkbox', { name: data.role, exact: true }).check();
 
-  const response = await submit(page, 'POST', '/v1/usuarios', dialog.getByRole('button', { name: 'Salvar' }));
+  const response = await submit(page, 'POST', '/v1/users', dialog.getByRole('button', { name: 'Salvar' }));
   expect(response.status(), 'criar o usuário').toBe(201);
   await expect(dialog).toBeHidden();
   return (await response.json()) as User;
@@ -85,20 +85,20 @@ export async function createUser(page: Page, data: { email: string; nome: string
  */
 export async function generateResetLink(page: Page, user: User): Promise<string> {
   const row = await userRow(page, user.email);
-  await row.getByRole('button', { name: `Mais ações para ${user.nome}` }).click();
+  await row.getByRole('button', { name: `Mais ações para ${user.name}` }).click();
   await page.getByRole('menuitem', { name: 'Gerar link de redefinição' }).click();
   const dialog = page.getByRole('dialog', { name: 'Link de redefinição' });
 
   const response = await submit(
     page,
     'POST',
-    `/v1/usuarios/${user.id}/redefinicao`,
+    `/v1/users/${user.id}/password-reset`,
     dialog.getByRole('button', { name: 'Gerar link de redefinição' }),
   );
   expect(response.status(), 'gerar o link').toBe(201);
   await expect(dialog.getByText('Copie o link agora: ele não será mostrado de novo.')).toBeVisible();
   const link = await dialog.getByRole('textbox', { name: 'Link' }).inputValue();
-  expect(link).toBe(((await response.json()) as Schemas['LinkRedefinicao']).link);
+  expect(link).toBe(((await response.json()) as Schemas['ResetLink']).link);
 
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
@@ -108,7 +108,7 @@ export async function generateResetLink(page: Page, user: User): Promise<string>
 /** The reset link address in the test shell (the backend builds the link with its shell URL). */
 export function linkPath(link: string): string {
   const url = new URL(link);
-  expect(url.pathname, 'o link leva à tela de nova senha do casca').toBe('/redefinir');
+  expect(url.pathname, 'o link leva à tela de nova senha do casca').toBe('/reset-password');
   return `${url.pathname}${url.search}`;
 }
 
@@ -122,7 +122,7 @@ export async function setPasswordByLink(page: Page, link: string, password: stri
   await newPasswordField(page).fill(password);
   await page.getByRole('textbox', { name: 'Repita a nova senha', exact: true }).fill(password);
 
-  const response = await submit(page, 'POST', '/v1/redefinicao', page.getByRole('button', { name: 'Salvar' }));
+  const response = await submit(page, 'POST', '/v1/password-reset', page.getByRole('button', { name: 'Salvar' }));
   expect(response.status(), 'trocar a senha pelo link').toBe(204);
   await waitForSignIn(page);
 }
@@ -139,7 +139,7 @@ export async function filterAccessEvents(page: Page, typeLabel: string): Promise
   const [response] = await Promise.all([
     page.waitForResponse((r) => {
       const url = new URL(r.url());
-      return r.request().method() === 'GET' && url.pathname === '/v1/auditoria/acessos' && url.searchParams.has('tipo');
+      return r.request().method() === 'GET' && url.pathname === '/v1/audit/access-events' && url.searchParams.has('type');
     }),
     page.getByRole('option', { name: typeLabel, exact: true }).click(),
   ]);
@@ -152,7 +152,7 @@ export async function filterAccessEvents(page: Page, typeLabel: string): Promise
 /** Result of a call made from inside the browser. */
 export interface CallResult {
   status: number;
-  codigo: unknown;
+  code: unknown;
   body: unknown;
 }
 
@@ -183,7 +183,7 @@ export function callApi(
         body: body === undefined ? undefined : JSON.stringify(body),
       });
       const json: unknown = await response.json().catch(() => null);
-      return { status: response.status, codigo: (json as { codigo?: unknown } | null)?.codigo, body: json };
+      return { status: response.status, code: (json as { code?: unknown } | null)?.code, body: json };
     },
     { url: `${apiUrl}${path}`, method, body },
   );

@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import type { BrowserContext, Page, Request, Route } from '@playwright/test';
 import { EXAMPLES, type ErrorBody, type Schemas, type Session } from './contract';
 
-type TenantSummary = Schemas['TenantResumo'];
+type TenantSummary = Schemas['TenantSummary'];
 
 /**
  * The filter of the simulated routes, as a glob (text) and not a function: Playwright checks the glob without going through
@@ -24,11 +24,11 @@ export function isApiCall(route: Route, shellOrigin: string): boolean {
 /** A simulation account: credentials, user and permissions per tenant. */
 export interface SimulatedAccount {
   email: string;
-  senha: string;
-  nome: string;
+  password: string;
+  name: string;
   id: string;
   /** Tenant → the user's permissions in it. */
-  tenants: ReadonlyArray<{ tenant: TenantSummary; permissoes: readonly string[] }>;
+  tenants: ReadonlyArray<{ tenant: TenantSummary; permissions: readonly string[] }>;
 }
 
 /** Backend sign-in rules (G4 and D3–D8): 5 consecutive failures lock the e-mail for 15 minutes. */
@@ -36,7 +36,7 @@ const ATTEMPTS_UNTIL_LOCK = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000;
 
 const CSRF_COOKIE = 'fc_csrf';
-const SESSION_COOKIE = 'fc_sessao';
+const SESSION_COOKIE = 'fc_session';
 const CSRF_HEADER = 'x-csrf-token';
 
 interface OpenSession {
@@ -53,11 +53,11 @@ export interface ReceivedRequest {
 }
 
 function compareName(a: TenantSummary, b: TenantSummary): number {
-  return a.nome.localeCompare(b.nome, 'pt-BR');
+  return a.name.localeCompare(b.name, 'pt-BR');
 }
 
 /**
- * The epic 1 API (`/v1/saude`, `/v1/sessao`, `/v1/sessao/tenant`), in memory, one per test.
+ * The epic 1 API (`/v1/health`, `/v1/session`, `/v1/session/tenant`), in memory, one per test.
  * A route outside the contract answers 501 and is kept in `unexpected`; the fixture fails the test if there is any.
  */
 export class SimulatedApi {
@@ -113,52 +113,52 @@ export class SimulatedApi {
   private async handle(method: string, path: string, request: Request, context: BrowserContext): Promise<RouteResponse> {
     const route = `${method} ${path}`;
     switch (route) {
-      case 'GET /v1/saude':
-        return json(200, { status: 'ok' } satisfies Schemas['Saude']);
-      case 'POST /v1/sessao':
+      case 'GET /v1/health':
+        return json(200, { status: 'ok' } satisfies Schemas['Health']);
+      case 'POST /v1/session':
         return this.signIn(request, context);
-      case 'GET /v1/sessao':
-        return this.session ? json(200, this.sessionBody(this.session)) : problem(EXAMPLES.SemSessao);
-      case 'DELETE /v1/sessao':
+      case 'GET /v1/session':
+        return this.session ? json(200, this.sessionBody(this.session)) : problem(EXAMPLES.NoSession);
+      case 'DELETE /v1/session':
         return this.signOut(request, context);
-      case 'PUT /v1/sessao/tenant':
+      case 'PUT /v1/session/tenant':
         return this.switchTenant(request);
       default:
         this.unexpected.push(route);
-        return problem({ type: 'about:blank', title: 'Rota fora da simulação', status: 501, detail: route, codigo: 'rota_nao_simulada' });
+        return problem({ type: 'about:blank', title: 'Rota fora da simulação', status: 501, detail: route, code: 'route_not_simulated' });
     }
   }
 
-  /** `POST /v1/sessao`: order of the contract's rejections (415/422, lock 423, credentials 401). */
+  /** `POST /v1/session`: order of the contract's rejections (415/422, lock 423, credentials 401). */
   private async signIn(request: Request, context: BrowserContext): Promise<RouteResponse> {
-    if (!isJson(request)) return problem(EXAMPLES.TipoConteudoInvalido);
+    if (!isJson(request)) return problem(EXAMPLES.InvalidContentType);
     const body = readJson(request);
-    if (body === undefined) return problem(EXAMPLES.DadosInvalidosJsonMalformado);
+    if (body === undefined) return problem(EXAMPLES.InvalidDataMalformedJson);
     const fields: Record<string, string> = {};
     if (typeof body.email !== 'string') fields.email = 'Informe o e-mail.';
-    if (typeof body.senha !== 'string') fields.senha = 'Informe a senha.';
-    if (Object.keys(fields).length > 0) return problem({ ...EXAMPLES.DadosInvalidos, campos: fields });
+    if (typeof body.password !== 'string') fields.password = 'Informe a senha.';
+    if (Object.keys(fields).length > 0) return problem({ ...EXAMPLES.InvalidData, fields: fields });
     const email = body.email as string;
-    const password = body.senha as string;
+    const password = body.password as string;
 
     const now = this.now();
     const emailKey = email.toLocaleLowerCase('en-US');
     const lockEnd = this.unlocksAt(emailKey, now);
     if (lockEnd !== null) {
-      return problem({ ...EXAMPLES.LoginBloqueado, desbloqueia_em: new Date(lockEnd).toISOString() });
+      return problem({ ...EXAMPLES.LoginLocked, unlocks_at: new Date(lockEnd).toISOString() });
     }
 
     const account = this.accounts.find((c) => c.email.toLocaleLowerCase('en-US') === emailKey);
-    if (!account || account.senha !== password) {
+    if (!account || account.password !== password) {
       this.failures.set(emailKey, [...(this.failures.get(emailKey) ?? []), now]);
-      return problem(EXAMPLES.CredenciaisInvalidas);
+      return problem(EXAMPLES.InvalidCredentials);
     }
 
     this.failures.delete(emailKey);
     const tenants = [...account.tenants.map((t) => t.tenant)].sort(compareName);
     const last = this.lastTenant.get(emailKey);
     const initial = tenants.find((t) => t.id === last) ?? tenants[0];
-    if (!initial) return problem(EXAMPLES.CredenciaisInvalidas);
+    if (!initial) return problem(EXAMPLES.InvalidCredentials);
 
     this.session = { account, currentTenantId: initial.id, csrf: randomUUID() };
     // The two sign-in cookies (contract, SetCookieLogin), on the API host.
@@ -170,33 +170,33 @@ export class SimulatedApi {
     return json(200, this.sessionBody(this.session));
   }
 
-  /** `DELETE /v1/sessao`: requires CSRF; deletes the session and both cookies. */
+  /** `DELETE /v1/session`: requires CSRF; deletes the session and both cookies. */
   private async signOut(request: Request, context: BrowserContext): Promise<RouteResponse> {
-    if (!this.session) return problem(EXAMPLES.SemSessao);
-    if (!csrfMatches(request, this.session)) return problem(EXAMPLES.CsrfInvalido);
+    if (!this.session) return problem(EXAMPLES.NoSession);
+    if (!csrfMatches(request, this.session)) return problem(EXAMPLES.InvalidCsrf);
     this.session = null;
     await context.clearCookies({ name: SESSION_COOKIE });
     await context.clearCookies({ name: CSRF_COOKIE });
     return { status: 204, contentType: 'application/json', body: undefined };
   }
 
-  /** `PUT /v1/sessao/tenant`: requires session and CSRF; only to one of the user's tenants. */
+  /** `PUT /v1/session/tenant`: requires session and CSRF; only to one of the user's tenants. */
   private switchTenant(request: Request): RouteResponse {
     const session = this.session;
-    if (!session) return problem(EXAMPLES.SemSessao);
-    if (!csrfMatches(request, session)) return problem(EXAMPLES.CsrfInvalido);
-    if (!isJson(request)) return problem(EXAMPLES.DadosInvalidosJsonMalformado);
+    if (!session) return problem(EXAMPLES.NoSession);
+    if (!csrfMatches(request, session)) return problem(EXAMPLES.InvalidCsrf);
+    if (!isJson(request)) return problem(EXAMPLES.InvalidDataMalformedJson);
     const body = readJson(request);
-    if (body === undefined) return problem(EXAMPLES.DadosInvalidosJsonMalformado);
+    if (body === undefined) return problem(EXAMPLES.InvalidDataMalformedJson);
     const tenantId = body.tenant_id;
-    if (typeof tenantId !== 'string' || !UUID.test(tenantId)) return problem(EXAMPLES.DadosInvalidos);
-    if (!session.account.tenants.some((t) => t.tenant.id === tenantId)) return problem(EXAMPLES.SemAcessoAoTenant);
+    if (typeof tenantId !== 'string' || !UUID.test(tenantId)) return problem(EXAMPLES.InvalidData);
+    if (!session.account.tenants.some((t) => t.tenant.id === tenantId)) return problem(EXAMPLES.NoTenantAccess);
     session.currentTenantId = tenantId;
     this.lastTenant.set(session.account.email.toLocaleLowerCase('en-US'), tenantId);
     return json(200, this.sessionBody(session));
   }
 
-  /** Same as the backend domain's `desbloqueia_em`: the 5th consecutive failure locks for 15 min, counted from it. */
+  /** Same as the backend domain's `unlocks_at`: the 5th consecutive failure locks for 15 min, counted from it. */
   private unlocksAt(emailKey: string, now: number): number | null {
     let end: number | null = null;
     let consecutive = 0;
@@ -219,10 +219,10 @@ export class SimulatedApi {
     const current = tenants.find((t) => t.tenant.id === currentTenantId) ?? tenants[0];
     if (!current) throw new Error(`Conta simulada sem tenant: ${account.email}`);
     return {
-      usuario: { id: account.id, nome: account.nome, email: account.email },
+      user: { id: account.id, name: account.name, email: account.email },
       tenants: tenants.map((t) => t.tenant),
-      tenant_atual: current.tenant,
-      permissoes: [...current.permissoes],
+      current_tenant: current.tenant,
+      permissions: [...current.permissions],
     };
   }
 }

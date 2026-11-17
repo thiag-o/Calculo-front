@@ -72,27 +72,46 @@ O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, co
 
 O Playwright sobe dois servidores, nos dois modos:
 - o casca em `http://localhost:5173`;
-- a página de teste de incorporação em `http://localhost:5274/embed-test.html` (`apps/shell/vite.embed.config.ts`). Ela é o "hospedeiro" dos testes de incorporação, numa origem diferente da do casca. É a origem que o `preparar-local` do back cadastra como domínio autorizado.
+- a página de teste de incorporação em `http://localhost:5274/embed-test.html` (`apps/shell/vite.embed.config.ts`). Ela é o "hospedeiro" dos testes de incorporação, numa origem diferente da do casca. É a origem que o `prepare-local` do back cadastra como domínio autorizado.
 
-1. Suba o back (veja `../backend/README.md`): `docker compose up -d` e depois os comandos abaixo, na pasta `backend`.
+1. Suba o back (veja `../backend/README.md` e `../backend/docs/ambientes.md`): copie o `.env.example` do back para `.env`, rode `docker compose up -d` e depois os comandos abaixo, na pasta `backend`.
 
 ```bash
-uv run python -m fluxo.inicializacao migrar
-uv run python -m fluxo.inicializacao preparar-local
-uv run python -m fluxo.inicializacao api
+uv run python -m fluxo.bootstrap migrate
+uv run python -m fluxo.bootstrap prepare-local
+uv run python -m fluxo.bootstrap api
 ```
 
-2. Exporte o endereço da API (sem o `/v1`) e as contas que o `preparar-local` imprime (também em `../backend/docs/ambientes.md`):
+   Variáveis do back que o modo real exige (os nomes estão em inglês desde a B49; os antigos estão no `../backend/docs/glossario.md`):
+
+   | Variável do back | Valor no modo real | Por quê |
+   |---|---|---|
+   | `FLUXO_SHELL_URL` | `http://localhost:5173` | Base do link de redefinição de senha: `<FLUXO_SHELL_URL>/reset-password?token=...`. |
+   | `FLUXO_CORS_ORIGINS` | `http://localhost:5173` | A origem do casca; sem ela, todo login dá preflight 400. |
+   | `FLUXO_SESSION_SECRET` | qualquer texto longo | Assina o token de incorporação; sem ela, a `api` não sobe. |
+   | `FLUXO_LOGIN_IP_LIMIT_PER_MIN` | `1000` | Veja "Limite de logins por IP", abaixo. |
+
+2. Exporte o endereço da API (sem o `/v1`) e as contas que o `prepare-local` imprime (também em `../backend/docs/ambientes.md`):
 
 ```bash
 export E2E_API_URL=http://localhost:8000
 export E2E_ADMIN_EMAIL=admin@demo.local
-export E2E_ADMIN_SENHA=demo-admin-local
-export E2E_DOIS_TENANTS_EMAIL=dois.tenants@demo.local
-export E2E_DOIS_TENANTS_SENHA=demo-dois-tenants-local
+export E2E_ADMIN_PASSWORD=demo-admin-local
+export E2E_TWO_TENANTS_EMAIL=dois.tenants@demo.local
+export E2E_TWO_TENANTS_PASSWORD=demo-dois-tenants-local
 ```
 
 No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
+
+| Variável do e2e | Obrigatória | O que é |
+|---|---|---|
+| `E2E_API_URL` | sim | Endereço da API, sem o `/v1`. |
+| `E2E_ADMIN_EMAIL` | não (padrão `admin@demo.local`) | E-mail do Admin de demonstração. |
+| `E2E_ADMIN_PASSWORD` | sim | Senha do Admin de demonstração. |
+| `E2E_TWO_TENANTS_EMAIL`, `E2E_TWO_TENANTS_PASSWORD` | sim | Conta com acesso aos dois tenants de demonstração (troca de tenant). |
+| `E2E_SHELL_URL` | não (padrão `http://localhost:5173`) | Endereço do casca que o Playwright abre. |
+
+As variáveis do e2e estão em inglês desde a F42 (eram `E2E_ADMIN_SENHA`, `E2E_DOIS_TENANTS_EMAIL`, `E2E_DOIS_TENANTS_SENHA` e `E2E_CASCA_URL`). As credenciais do banco de exemplo (`postgres-sample`), que os testes do catálogo (épico 3) vão usar, seguem o mesmo padrão, com o prefixo `E2E_SAMPLE_`; elas entram nesta tabela com esses testes.
 
 3. Rode:
 
@@ -100,6 +119,7 @@ No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
 pnpm e2e:real
 ```
 
-- **Só `E2E_API_URL` basta.** O `playwright.config.ts` sobe o casca e a página de teste com `VITE_API_URL` igual a `E2E_API_URL`. Se já houver um casca aberto em `localhost:5173`, ou uma página de teste em `localhost:5274`, o Playwright os reaproveita com o `VITE_API_URL` que tiverem. Se o casca chamar outra API, os testes reprovam e dizem isso. Nesse caso, feche esse servidor.
-- **Limite de logins por IP.** A suíte faz cerca de 27 logins por minuto do mesmo IP, e o back aceita 20 por padrão. Suba a `api` com `FLUXO_LOGIN_LIMITE_IP_MIN=1000`: nenhum fluxo testa esse limite. Com o limite padrão, parte dos logins recebe `429 muitas_tentativas`. As tentativas ficam gravadas no banco, então reiniciar a API não zera a contagem.
+- **Só `E2E_API_URL` basta para o endereço.** O `playwright.config.ts` sobe o casca e a página de teste com `VITE_API_URL` igual a `E2E_API_URL`. Se já houver um casca aberto em `localhost:5173`, ou uma página de teste em `localhost:5274`, o Playwright os reaproveita com o `VITE_API_URL` que tiverem. Se o casca chamar outra API, os testes reprovam e dizem isso. Nesse caso, feche esse servidor.
+- **O casca usa o pacote compilado.** O `apps/shell` importa o `@fluxo/react` do `dist/`: rode `pnpm build` antes do `pnpm e2e` ou do `pnpm e2e:real` depois de mudar o pacote.
+- **Limite de logins por IP.** A suíte faz cerca de 27 logins por minuto do mesmo IP, e o back aceita 20 por padrão. Suba a `api` com `FLUXO_LOGIN_IP_LIMIT_PER_MIN=1000`: nenhum fluxo testa esse limite. Com o limite padrão, parte dos logins recebe `429 too_many_attempts`. As tentativas ficam gravadas no banco, então reiniciar a API não zera a contagem.
 - **O teste de bloqueio não atinge as contas acima.** Ele erra a senha de um e-mail novo a cada rodada.

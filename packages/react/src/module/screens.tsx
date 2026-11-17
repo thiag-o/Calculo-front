@@ -20,7 +20,7 @@ export const SECTIONS: Record<MenuSection, { label: string; path: string }> = {
 /**
  * The screens `<FluxoCalculo>` can open through the `screen` prop. Each epic adds its own.
  * - `home`: Início, open to everyone;
- * - `audit`: Auditoria (`auditoria.ver`);
+ * - `audit`: Auditoria (`audit.view`);
  * - `admin`: Administração, on the first allowed area;
  * - `users`, `roles`, `integration` and `security`: Administração already on one area, each with its own permission.
  * Without the permission, the module opens on the first allowed screen.
@@ -36,7 +36,7 @@ export interface ScreenDefinition {
   path: string;
   /** 16px Lucide icon of the sidebar item. */
   icon: ReactNode;
-  /** Required permission (e.g. `auditoria.ver`). Without it, the screen shows neither in the menu nor in the tabs, and the route does not open. */
+  /** Required permission (e.g. `audit.view`). Without it, the screen shows neither in the menu nor in the tabs, and the route does not open. */
   permission?: string;
   /**
    * Section the screen belongs to. In the shell, the section groups the items in the sidebar (e.g. Administração, in the footer). In
@@ -83,7 +83,7 @@ export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
     label: 'Auditoria',
     path: 'audit',
     icon: <AuditIcon />,
-    permission: 'auditoria.ver',
+    permission: 'audit.view',
     content: <Audit />,
   },
   adminArea('users', 'Usuários', <UsersIcon />),

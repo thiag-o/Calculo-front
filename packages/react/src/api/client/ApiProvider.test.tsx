@@ -22,8 +22,8 @@ function SessionName() {
   const client = useApiClient();
   const [text, setText] = useState('carregando');
   useEffect(() => {
-    dataOrError(client.GET('/v1/sessao')).then(
-      (session) => setText(session.usuario.nome),
+    dataOrError(client.GET('/v1/session')).then(
+      (session) => setText(session.user.name),
       (error: unknown) => setText(error instanceof ApiError ? error.code : 'erro'),
     );
   }, [client]);
@@ -31,10 +31,10 @@ function SessionName() {
 }
 
 const session = {
-  usuario: { id: '00000000-0000-0000-0000-000000000001', nome: 'Ana', email: 'ana@exemplo.com' },
+  user: { id: '00000000-0000-0000-0000-000000000001', name: 'Ana', email: 'ana@exemplo.com' },
   tenants: [],
-  tenant_atual: { id: '00000000-0000-0000-0000-00000000000a', nome: 'Matriz' },
-  permissoes: [],
+  current_tenant: { id: '00000000-0000-0000-0000-00000000000a', name: 'Matriz' },
+  permissions: [],
 };
 
 describe('ApiProvider', () => {
@@ -48,12 +48,12 @@ describe('ApiProvider', () => {
     );
 
     expect(await screen.findByText('Ana')).toBeTruthy();
-    expect(simulatedFetch.mock.calls[0]?.[0].url).toBe(`${API}/v1/sessao`);
+    expect(simulatedFetch.mock.calls[0]?.[0].url).toBe(`${API}/v1/session`);
   });
 
-  it('chama onSessionExpired quando a API responde 401 sem_sessao', async () => {
+  it('chama onSessionExpired quando a API responde 401 no_session', async () => {
     simulatedFetch.mockResolvedValue(
-      new Response(JSON.stringify({ title: 'Sem sessão', status: 401, detail: 'Entre de novo.', codigo: 'sem_sessao' }), {
+      new Response(JSON.stringify({ title: 'Sem sessão', status: 401, detail: 'Entre de novo.', code: 'no_session' }), {
         status: 401,
         headers: { 'Content-Type': 'application/problem+json' },
       }),
@@ -66,7 +66,7 @@ describe('ApiProvider', () => {
       </ApiProvider>,
     );
 
-    expect(await screen.findByText('sem_sessao')).toBeTruthy();
+    expect(await screen.findByText('no_session')).toBeTruthy();
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
   });
 
@@ -80,11 +80,11 @@ describe('ApiProvider', () => {
         </ApiProvider>
       ),
     });
-    await result.current.DELETE('/v1/sessao');
+    await result.current.DELETE('/v1/session');
 
     currentToken = 'tok-2';
     rerender();
-    await result.current.DELETE('/v1/sessao');
+    await result.current.DELETE('/v1/session');
 
     await waitFor(() => expect(simulatedFetch).toHaveBeenCalledTimes(2));
     expect(simulatedFetch.mock.calls[0]?.[0].headers.get('Authorization')).toBe('Bearer tok-1');

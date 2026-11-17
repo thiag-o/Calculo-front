@@ -18,7 +18,7 @@ export function RevokeApiKeyDialog({ apiKey, onClose, focusOnClose }: RevokeApiK
   const revoke = useRevokeApiKey();
   const error = revoke.error;
   // After this error, trying again changes nothing: the button stays disabled, with the reason.
-  const disabledReason = errorWithCode(error, ['nao_encontrado']) ? REVOKE_NOT_FOUND_REASON : undefined;
+  const disabledReason = errorWithCode(error, ['not_found']) ? REVOKE_NOT_FOUND_REASON : undefined;
 
   return (
     <Dialog
@@ -28,7 +28,7 @@ export function RevokeApiKeyDialog({ apiKey, onClose, focusOnClose }: RevokeApiK
         if (!open) onClose();
       }}
       title="Revogar chave"
-      description={`A chave ${apiKey.nome} (${apiKey.prefixo}…) para de funcionar: o sistema que a usa não consegue mais pedir tokens de incorporação. Não dá para desfazer.`}
+      description={`A chave ${apiKey.name} (${apiKey.prefix}…) para de funcionar: o sistema que a usa não consegue mais pedir tokens de incorporação. Não dá para desfazer.`}
       actions={
         <>
           <DialogClose>

@@ -18,11 +18,11 @@ export function apiResponse(page: Page, method: string, path: string): Promise<R
   );
 }
 
-/** Fills in the sign-in form and submits; returns the `POST /v1/sessao` response. Expects to be on the sign-in screen. */
-export async function submitSignIn(page: Page, { email, senha: password }: LoginCredentials): Promise<Response> {
+/** Fills in the sign-in form and submits; returns the `POST /v1/session` response. Expects to be on the sign-in screen. */
+export async function submitSignIn(page: Page, { email, password: password }: LoginCredentials): Promise<Response> {
   await emailField(page).fill(email);
   await passwordField(page).fill(password);
-  const [response] = await Promise.all([apiResponse(page, 'POST', '/v1/sessao'), signInButton(page).click()]);
+  const [response] = await Promise.all([apiResponse(page, 'POST', '/v1/session'), signInButton(page).click()]);
   return response;
 }
 
@@ -40,7 +40,7 @@ export async function signIn(page: Page, credentials: LoginCredentials): Promise
 export async function waitForModule(page: Page, session: Session): Promise<void> {
   await expect(page).toHaveURL(/\/home$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Início' })).toBeVisible();
-  await expect(accountMenu(page, session.usuario.nome)).toBeVisible();
+  await expect(accountMenu(page, session.user.name)).toBeVisible();
 }
 
 /** The sign-in screen in view (and not the module). */

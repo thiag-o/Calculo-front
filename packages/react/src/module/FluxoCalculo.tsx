@@ -31,7 +31,7 @@ export interface FluxoCalculoProps {
   /** Notifications to the host app (none yet in epic 1). */
   onEvent?: (event: FluxoEvent) => void;
   /**
-   * Called when there is no session anymore: the API answered `401 sem_sessao` (expired, revoked, token expired) or
+   * Called when there is no session anymore: the API answered `401 no_session` (expired, revoked, token expired) or
    * the person signed out. In the shell, it is time to go back to sign-in; embedded, to renew the token.
    */
   onSessionExpired?: () => void;

@@ -2,15 +2,15 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { dataOrError, ApiError, useApiClient, type Schemas } from '../../api';
 
 /** A tenant API key, without the full key (generated from the contract). */
-export type ApiKey = Schemas['ChaveApi'];
-/** The newly created key, with the full `chave`, shown only once (generated from the contract). */
-export type CreatedApiKey = Schemas['ChaveApiCriada'];
+export type ApiKey = Schemas['ApiKey'];
+/** The newly created key, with the full `key`, shown only once (generated from the contract). */
+export type CreatedApiKey = Schemas['CreatedApiKey'];
 /** Body for creating an API key (generated from the contract). */
-export type NewApiKey = Schemas['NovaChaveApi'];
+export type NewApiKey = Schemas['NewApiKey'];
 /** A tenant authorized domain, with the normalized origin (generated from the contract). */
-export type AuthorizedDomain = Schemas['DominioAutorizado'];
+export type AuthorizedDomain = Schemas['AuthorizedDomain'];
 /** Body for registering an authorized domain (generated from the contract). */
-export type NewAuthorizedDomain = Schemas['NovoDominioAutorizado'];
+export type NewAuthorizedDomain = Schemas['NewAuthorizedDomain'];
 
 /**
  * Cache keys, under `['admin', …]` (ADR 0020). They do not carry the tenant: switching tenant resets the cache
@@ -24,21 +24,21 @@ export function errorWithCode(error: unknown, codes: readonly string[]): boolean
   return error instanceof ApiError && codes.includes(error.code);
 }
 
-/** The tenant API keys (`GET /v1/chaves-api`), including the revoked ones, paginated by cursor. */
+/** The tenant API keys (`GET /v1/api-keys`), including the revoked ones, paginated by cursor. */
 export function useApiKeyList() {
   const client = useApiClient();
   return useInfiniteQuery({
     queryKey: API_KEY_LIST_KEY,
     initialPageParam: null as string | null,
     queryFn: ({ pageParam, signal }) =>
-      dataOrError(client.GET('/v1/chaves-api', { params: { query: pageParam ? { cursor: pageParam } : {} }, signal })),
-    getNextPageParam: (last) => last.proximo_cursor ?? undefined,
-    select: (data) => data.pages.flatMap((pageResponse) => pageResponse.itens),
+      dataOrError(client.GET('/v1/api-keys', { params: { query: pageParam ? { cursor: pageParam } : {} }, signal })),
+    getNextPageParam: (last) => last.next_cursor ?? undefined,
+    select: (data) => data.pages.flatMap((pageResponse) => pageResponse.items),
   });
 }
 
 /**
- * Creates an API key (`POST /v1/chaves-api`). The response carries the full key, which only exists in this
+ * Creates an API key (`POST /v1/api-keys`). The response carries the full key, which only exists in this
  * mutation's result (ADR 0021): `gcTime: 0` drops the mutation from the cache as soon as the dialog using it unmounts. On success, the list
  * is fetched again (it only has the prefix).
  */
@@ -46,7 +46,7 @@ export function useCreateApiKey() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: NewApiKey) => dataOrError(client.POST('/v1/chaves-api', { body: body })),
+    mutationFn: (body: NewApiKey) => dataOrError(client.POST('/v1/api-keys', { body: body })),
     gcTime: 0,
     // Without waiting for the list: the key shows as soon as the API answers.
     onSuccess: () => {
@@ -55,53 +55,53 @@ export function useCreateApiKey() {
   });
 }
 
-/** Revokes a key (`DELETE /v1/chaves-api/{id}`). It stays in the list, with `revogada_em`. */
+/** Revokes a key (`DELETE /v1/api-keys/{id}`). It stays in the list, with `revoked_at`. */
 export function useRevokeApiKey() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => dataOrError(client.DELETE('/v1/chaves-api/{id}', { params: { path: { id } } })),
+    mutationFn: (id: string) => dataOrError(client.DELETE('/v1/api-keys/{id}', { params: { path: { id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY }),
     onError: (error) => {
       // The list was stale (the key no longer exists): fetch again.
-      if (errorWithCode(error, ['nao_encontrado'])) void queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY });
+      if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY });
     },
   });
 }
 
-/** The tenant authorized domains (`GET /v1/dominios-autorizados`). The list comes whole, without pagination. */
+/** The tenant authorized domains (`GET /v1/authorized-domains`). The list comes whole, without pagination. */
 export function useAuthorizedDomainList() {
   const client = useApiClient();
   return useQuery({
     queryKey: AUTHORIZED_DOMAIN_LIST_KEY,
-    queryFn: ({ signal }) => dataOrError(client.GET('/v1/dominios-autorizados', { signal })),
-    select: (data) => data.itens,
+    queryFn: ({ signal }) => dataOrError(client.GET('/v1/authorized-domains', { signal })),
+    select: (data) => data.items,
   });
 }
 
-/** Registers an authorized domain (`POST /v1/dominios-autorizados`); the API returns the normalized origin. */
+/** Registers an authorized domain (`POST /v1/authorized-domains`); the API returns the normalized origin. */
 export function useCreateAuthorizedDomain() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: NewAuthorizedDomain) => dataOrError(client.POST('/v1/dominios-autorizados', { body: body })),
+    mutationFn: (body: NewAuthorizedDomain) => dataOrError(client.POST('/v1/authorized-domains', { body: body })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY }),
     onError: (error) => {
       // The origin was already registered (maybe by someone else): the list is fetched again to show it.
-      if (errorWithCode(error, ['dominio_existente'])) void queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY });
+      if (errorWithCode(error, ['authorized_domain_already_exists'])) void queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY });
     },
   });
 }
 
-/** Deletes an authorized domain for good (`DELETE /v1/dominios-autorizados/{id}`). */
+/** Deletes an authorized domain for good (`DELETE /v1/authorized-domains/{id}`). */
 export function useDeleteAuthorizedDomain() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => dataOrError(client.DELETE('/v1/dominios-autorizados/{id}', { params: { path: { id } } })),
+    mutationFn: (id: string) => dataOrError(client.DELETE('/v1/authorized-domains/{id}', { params: { path: { id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY }),
     onError: (error) => {
-      if (errorWithCode(error, ['nao_encontrado'])) void queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY });
+      if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY });
     },
   });
 }

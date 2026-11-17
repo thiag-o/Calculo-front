@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 
 /**
  * Ends the session in the module: hides the layout, clears the cache and notifies the host app's `onSessionExpired`.
- * Used when the API answers `401 sem_sessao` and after "Sair".
+ * Used when the API answers `401 no_session` and after "Sair".
  */
 export const EndSessionContext = createContext<(() => void) | null>(null);
 

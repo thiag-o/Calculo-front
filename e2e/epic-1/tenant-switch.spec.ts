@@ -7,30 +7,30 @@ test.describe('troca de tenant', () => {
   test('quem tem dois clientes troca pelo seletor e continua no novo depois de recarregar', async ({ page, api }) => {
     const session = await signIn(page, api.account('twoTenants'));
     // The session starts in the last tenant used (or the first by name): the test starts from what the API returned.
-    const current = session.tenant_atual;
+    const current = session.current_tenant;
     const other = session.tenants.find((tenant) => tenant.id !== current.id);
     if (!other) throw new Error('A conta "twoTenants" precisa pertencer a dois tenants.');
 
-    await tenantSelector(page, current.nome).click();
-    const currentItem = page.getByRole('menuitem', { name: current.nome, exact: true });
+    await tenantSelector(page, current.name).click();
+    const currentItem = page.getByRole('menuitem', { name: current.name, exact: true });
     await expect(currentItem).toHaveAttribute('aria-disabled', 'true');
     await expect(currentItem).toHaveAccessibleDescription('Cliente atual');
 
     const [switching] = await Promise.all([
-      apiResponse(page, 'PUT', '/v1/sessao/tenant'),
-      page.getByRole('menuitem', { name: other.nome, exact: true }).click(),
+      apiResponse(page, 'PUT', '/v1/session/tenant'),
+      page.getByRole('menuitem', { name: other.name, exact: true }).click(),
     ]);
 
     // 200 only with the right X-CSRF-Token (the switch requires CSRF, in both modes).
     expect(switching.status()).toBe(200);
     const newSession = (await switching.json()) as Session;
-    expect(newSession.tenant_atual).toEqual(other);
-    await expect(tenantSelector(page, other.nome)).toBeVisible();
+    expect(newSession.current_tenant).toEqual(other);
+    await expect(tenantSelector(page, other.name)).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
 
     // The current tenant is kept in the server session.
     await page.reload();
     await waitForModule(page, newSession);
-    await expect(tenantSelector(page, other.nome)).toBeVisible();
+    await expect(tenantSelector(page, other.name)).toBeVisible();
   });
 });

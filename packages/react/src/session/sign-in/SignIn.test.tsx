@@ -63,10 +63,10 @@ describe('<SignIn>', () => {
     await user.click(signInButton());
 
     await waitFor(() => expect(onSignIn).toHaveBeenCalledWith(headquartersSession));
-    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/sessao']);
+    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/session']);
     const req = request(simulatedFetch);
     expect(req.credentials).toBe('include');
-    expect(await req.json()).toEqual({ email: 'ana@exemplo.com', senha: 'senha-segura-123' });
+    expect(await req.json()).toEqual({ email: 'ana@exemplo.com', password: 'senha-segura-123' });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -78,7 +78,7 @@ describe('<SignIn>', () => {
     await user.keyboard('{Enter}');
 
     await waitFor(() => expect(onSignIn).toHaveBeenCalledTimes(1));
-    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/sessao']);
+    expect(calledRoutes(simulatedFetch)).toEqual(['POST /v1/session']);
   });
 
   it('envia pelo Enter no campo de e-mail', async () => {
@@ -100,7 +100,7 @@ describe('<SignIn>', () => {
     await user.keyboard('{Enter}');
 
     await waitFor(() => expect(onSignIn).toHaveBeenCalled());
-    expect(await request(simulatedFetch).json()).toEqual({ email: 'ana@exemplo.com', senha: ' senha com espaço ' });
+    expect(await request(simulatedFetch).json()).toEqual({ email: 'ana@exemplo.com', password: ' senha com espaço ' });
   });
 
   it('campos obrigatórios: sem e-mail nem senha, não envia, marca os dois e foca o e-mail', async () => {
@@ -152,8 +152,8 @@ describe('<SignIn>', () => {
     await waitFor(() => expect(signInButton()).not.toHaveAttribute('aria-busy'));
   });
 
-  it('credenciais_invalidas: mostra a mensagem genérica, não o texto do servidor', async () => {
-    simulatedFetch.mockResolvedValue(problem(401, 'credenciais_invalidas'));
+  it('invalid_credentials: mostra a mensagem genérica, não o texto do servidor', async () => {
+    simulatedFetch.mockResolvedValue(problem(401, 'invalid_credentials'));
     const { user, onSignIn } = renderScreen();
 
     await fill(user);
@@ -169,10 +169,10 @@ describe('<SignIn>', () => {
     expect(passwordField()).not.toHaveAttribute('aria-invalid');
   });
 
-  it('login_bloqueado: diz a hora em que dá para tentar de novo (HH:MM no fuso local)', async () => {
+  it('login_locked: diz a hora em que dá para tentar de novo (HH:MM no fuso local)', async () => {
     const today = new Date();
     const unlock = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 30);
-    simulatedFetch.mockResolvedValue(problem(423, 'login_bloqueado', { desbloqueia_em: unlock.toISOString() }));
+    simulatedFetch.mockResolvedValue(problem(423, 'login_locked', { unlocks_at: unlock.toISOString() }));
     const { user } = renderScreen();
 
     await fill(user);
@@ -182,8 +182,8 @@ describe('<SignIn>', () => {
     expect(alert).toHaveTextContent('O login deste e-mail foi bloqueado depois de várias tentativas erradas. Tente de novo às 14:30.');
   });
 
-  it('muitas_tentativas: pede para esperar um pouco', async () => {
-    simulatedFetch.mockResolvedValue(problem(429, 'muitas_tentativas'));
+  it('too_many_attempts: pede para esperar um pouco', async () => {
+    simulatedFetch.mockResolvedValue(problem(429, 'too_many_attempts'));
     const { user } = renderScreen();
 
     await fill(user);
@@ -193,8 +193,8 @@ describe('<SignIn>', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Espere um pouco e tente de novo.');
   });
 
-  it('dados_invalidos: põe o erro de cada campo no campo', async () => {
-    simulatedFetch.mockResolvedValue(problem(422, 'dados_invalidos', { campos: { email: 'Informe um e-mail com até 254 caracteres.' } }));
+  it('invalid_data: põe o erro de cada campo no campo', async () => {
+    simulatedFetch.mockResolvedValue(problem(422, 'invalid_data', { fields: { email: 'Informe um e-mail com até 254 caracteres.' } }));
     const { user } = renderScreen();
 
     await fill(user);
@@ -215,18 +215,18 @@ describe('<SignIn>', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível falar com o servidor.');
   });
 
-  it('outro erro com codigo (tipo_conteudo_invalido): usa a mensagem em pt-BR do servidor', async () => {
-    simulatedFetch.mockResolvedValue(problem(415, 'tipo_conteudo_invalido'));
+  it('outro erro com code (invalid_content_type): usa a mensagem em pt-BR do servidor', async () => {
+    simulatedFetch.mockResolvedValue(problem(415, 'invalid_content_type'));
     const { user } = renderScreen();
 
     await fill(user);
     await user.click(signInButton());
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Texto do servidor para tipo_conteudo_invalido.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Texto do servidor para invalid_content_type.');
   });
 
   it('depois de um erro, uma nova tentativa que dá certo tira a mensagem', async () => {
-    simulatedFetch.mockResolvedValueOnce(problem(401, 'credenciais_invalidas')).mockResolvedValueOnce(json(headquartersSession));
+    simulatedFetch.mockResolvedValueOnce(problem(401, 'invalid_credentials')).mockResolvedValueOnce(json(headquartersSession));
     const { user, onSignIn } = renderScreen();
 
     await fill(user, 'ana@exemplo.com', 'errada-errada');

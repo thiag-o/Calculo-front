@@ -15,7 +15,7 @@ export interface ApiClientOptions {
 export interface ApiClient extends Client<paths> {
   readonly mode: AuthMode;
   /**
-   * Notifies when the API answers `401 sem_sessao` (session missing, revoked or expired; token expired).
+   * Notifies when the API answers `401 no_session` (session missing, revoked or expired; token expired).
    * Returns the function that cancels the notification.
    */
   onSessionExpired(listener: () => void): () => void;
@@ -25,7 +25,7 @@ export interface ApiClient extends Client<paths> {
 const CSRF_COOKIE = 'fc_csrf';
 const CSRF_HEADER = 'X-CSRF-Token';
 const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-const NO_SESSION_CODE = 'sem_sessao';
+const NO_SESSION_CODE = 'no_session';
 
 function readCookie(name: string): string | undefined {
   if (typeof document === 'undefined') return undefined;

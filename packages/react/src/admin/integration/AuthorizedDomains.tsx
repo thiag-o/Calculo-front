@@ -43,7 +43,7 @@ export function AuthorizedDomains() {
   }
 
   const authorizedDomains = list.data;
-  const noPermission = list.error instanceof ApiError && list.error.code === 'sem_permissao';
+  const noPermission = list.error instanceof ApiError && list.error.code === 'no_permission';
   const newAuthorizedDomain = (size: 'small' | 'default', variant: 'primary' | 'secondary', ref?: typeof newButton) => (
     <Button ref={ref} variant={variant} size={size} onClick={() => setDialog({ type: 'new' })}>
       Novo domínio
@@ -57,7 +57,7 @@ export function AuthorizedDomains() {
       skeletonWidth: 220,
       cell: (authorizedDomain) => (
         <Text variant="mono-13" medium className="fc-integration-wrap">
-          {authorizedDomain.origem}
+          {authorizedDomain.origin}
         </Text>
       ),
     },
@@ -68,7 +68,7 @@ export function AuthorizedDomains() {
       skeletonWidth: 80,
       cell: (authorizedDomain) => (
         <Text variant="label-14" className="fc-integration-number">
-          {day(authorizedDomain.criado_em)}
+          {day(authorizedDomain.created_at)}
         </Text>
       ),
     },
@@ -86,7 +86,7 @@ export function AuthorizedDomains() {
               iconOnly
               variant="ghost"
               size="small"
-              label={`Mais ações para ${authorizedDomain.origem}`}
+              label={`Mais ações para ${authorizedDomain.origin}`}
               icon={<MoreActionsIcon />}
               data-fc-authorized-domain-actions={authorizedDomain.id}
             />

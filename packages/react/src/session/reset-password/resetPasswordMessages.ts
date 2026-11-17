@@ -1,6 +1,6 @@
 import { ApiError } from '../../api';
 
-export const INVALID_LINK_CODE = 'link_invalido';
+export const INVALID_LINK_CODE = 'invalid_link';
 
 export const INVALID_LINK_MESSAGE = 'Este link não vale mais: já foi usado ou venceu. Peça ao administrador um link novo.';
 export const PASSWORD_SAVED_MESSAGE = 'Senha salva. Entre com o seu e-mail e a nova senha.';
@@ -13,29 +13,29 @@ export function isInvalidLink(error: unknown): boolean {
   return error instanceof ApiError && error.code === INVALID_LINK_CODE;
 }
 
-/** Message of a verification failure that is not `link_invalido` (no connection, unexpected response…). */
+/** Message of a verification failure that is not `invalid_link` (no connection, unexpected response…). */
 export function verificationErrorMessage(error: unknown): string {
   return error instanceof ApiError ? error.message : UNKNOWN_VERIFICATION_MESSAGE;
 }
 
-/** What the screen shows for a submit error (besides `link_invalido`): a general note and/or the field error. */
+/** What the screen shows for a submit error (besides `invalid_link`): a general note and/or the field error. */
 export interface SubmitError {
   message?: string;
   newPassword?: string;
 }
 
-/** Turns the `POST /v1/redefinicao` error into what the screen shows, always by `code` (ADR 0008). */
+/** Turns the `POST /v1/password-reset` error into what the screen shows, always by `code` (ADR 0008). */
 export function submitError(error: unknown): SubmitError {
   if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE };
-  const newPassword = error.fields.nova_senha;
+  const newPassword = error.fields.new_password;
   switch (error.code) {
-    case 'senha_invalida':
+    case 'invalid_password':
       // The rule the password broke (length, e-mail) comes in the field; without it, the note says what the server said.
       return newPassword ? { newPassword } : { message: error.message };
-    case 'dados_invalidos':
+    case 'invalid_data':
       return newPassword ? { newPassword, message: INVALID_DATA_MESSAGE } : { message: error.message };
     default:
-      // sem_conexao, resposta_inesperada, tipo_conteudo_invalido…: the error's own pt-BR message.
+      // no_connection, unexpected_response, invalid_content_type…: the error's own pt-BR message.
       return { message: error.message };
   }
 }

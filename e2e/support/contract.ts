@@ -1,4 +1,4 @@
-// Simulated API responses, taken from the backend contract (../backend/contratos/openapi.yaml).
+// Simulated API responses, taken from the backend contract (../backend/contracts/openapi.yaml).
 //
 // The front CI does not have the backend repository next to it, so the examples are copied here, typed by the
 // schemas generated from the contract (ADR 0005). The `contract-examples.spec.ts` test compares this copy with the
@@ -6,288 +6,288 @@
 import type { components } from '../../packages/react/src/api/generated/schema';
 
 export type Schemas = components['schemas'];
-export type Session = Schemas['Sessao'];
-export type Problem = Schemas['Problema'];
-/** A contract error body: the `Problema` or one of the flat schemas with their own members. */
-export type ErrorBody = Problem | Schemas['ProblemaLoginBloqueado'] | Schemas['ProblemaDadosInvalidos'];
+export type Session = Schemas['Session'];
+export type Problem = Schemas['Problem'];
+/** A contract error body: the `Problem` or one of the flat schemas with their own members. */
+export type ErrorBody = Problem | Schemas['LoginLockedProblem'] | Schemas['InvalidDataProblem'];
 
 /** Literal copy of the contract's `components.examples` (example name → `value`). */
 export const EXAMPLES = {
-  SemSessao: {
+  NoSession: {
     type: 'about:blank',
     title: 'Sem sessão',
     status: 401,
     detail: 'Sua sessão expirou. Entre novamente.',
-    codigo: 'sem_sessao',
+    code: 'no_session',
   },
-  CsrfInvalido: {
+  InvalidCsrf: {
     type: 'about:blank',
     title: 'Requisição recusada',
     status: 403,
     detail: 'Não foi possível confirmar a origem da requisição. Recarregue a página e tente de novo.',
-    codigo: 'csrf_invalido',
+    code: 'invalid_csrf',
   },
-  SemAcessoAoTenant: {
+  NoTenantAccess: {
     type: 'about:blank',
     title: 'Sem acesso ao tenant',
     status: 403,
     detail: 'Você não tem acesso a esta empresa.',
-    codigo: 'sem_acesso_ao_tenant',
+    code: 'no_tenant_access',
   },
-  CredenciaisInvalidas: {
+  InvalidCredentials: {
     type: 'about:blank',
     title: 'Credenciais inválidas',
     status: 401,
     detail: 'E-mail ou senha incorretos.',
-    codigo: 'credenciais_invalidas',
+    code: 'invalid_credentials',
   },
-  LoginBloqueado: {
+  LoginLocked: {
     type: 'about:blank',
     title: 'Login bloqueado',
     status: 423,
     detail: 'Muitas tentativas erradas. Tente de novo mais tarde.',
-    codigo: 'login_bloqueado',
-    desbloqueia_em: '2026-11-15T14:30:00Z',
-  } satisfies Schemas['ProblemaLoginBloqueado'],
-  DadosInvalidos: {
+    code: 'login_locked',
+    unlocks_at: '2026-11-15T14:30:00Z',
+  } satisfies Schemas['LoginLockedProblem'],
+  InvalidData: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { tenant_id: 'Informe um identificador válido.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  DadosInvalidosJsonMalformado: {
+    code: 'invalid_data',
+    fields: { tenant_id: 'Informe um identificador válido.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidDataMalformedJson: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { corpo: 'Não foi possível ler os dados enviados.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  TipoConteudoInvalido: {
+    code: 'invalid_data',
+    fields: { body: 'Não foi possível ler os dados enviados.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidContentType: {
     type: 'about:blank',
     title: 'Tipo de conteúdo inválido',
     status: 415,
     detail: 'Não foi possível processar a requisição. Recarregue a página e tente de novo.',
-    codigo: 'tipo_conteudo_invalido',
+    code: 'invalid_content_type',
   },
-  MuitasTentativas: {
+  TooManyAttempts: {
     type: 'about:blank',
     title: 'Muitas tentativas',
     status: 429,
     detail: 'Muitas tentativas de login a partir deste endereço. Aguarde um minuto e tente de novo.',
-    codigo: 'muitas_tentativas',
+    code: 'too_many_attempts',
   },
   // Epic 2 (B13 onwards).
-  SemPermissao: {
+  NoPermission: {
     type: 'about:blank',
     title: 'Sem permissão',
     status: 403,
     detail: 'Você não tem permissão para esta ação.',
-    codigo: 'sem_permissao',
+    code: 'no_permission',
   },
-  OrigemNaoAutorizada: {
+  OriginNotAuthorized: {
     type: 'about:blank',
     title: 'Origem não autorizada',
     status: 403,
     detail: 'Este endereço não está autorizado a usar o módulo. Fale com o administrador.',
-    codigo: 'origem_nao_autorizada',
+    code: 'origin_not_authorized',
   },
-  NaoEncontrado: {
+  NotFound: {
     type: 'about:blank',
     title: 'Não encontrado',
     status: 404,
     detail: 'O item procurado não existe ou foi removido.',
-    codigo: 'nao_encontrado',
+    code: 'not_found',
   },
-  DadosInvalidosId: {
+  InvalidDataId: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { id: 'Informe um identificador válido.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  DadosInvalidosLimite: {
+    code: 'invalid_data',
+    fields: { id: 'Informe um identificador válido.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidDataLimit: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { limite: 'Informe um número de 1 a 200.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  DadosInvalidosNovaSenha: {
+    code: 'invalid_data',
+    fields: { limit: 'Informe um número de 1 a 200.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidDataNewPassword: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { nova_senha: 'Campo obrigatório.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  DadosInvalidosToken: {
+    code: 'invalid_data',
+    fields: { new_password: 'Campo obrigatório.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidDataToken: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { token: 'Campo obrigatório.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  DadosInvalidosOrigem: {
+    code: 'invalid_data',
+    fields: { token: 'Campo obrigatório.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidDataOrigin: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { origem: 'Campo obrigatório.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  DadosInvalidosSeguranca: {
+    code: 'invalid_data',
+    fields: { origin: 'Campo obrigatório.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidDataSecurity: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
-    codigo: 'dados_invalidos',
-    campos: { senha_minima: 'Informe um número inteiro.' },
-  } satisfies Schemas['ProblemaDadosInvalidos'],
-  CursorInvalido: {
+    code: 'invalid_data',
+    fields: { min_password_length: 'Informe um número inteiro.' },
+  } satisfies Schemas['InvalidDataProblem'],
+  InvalidCursor: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'O cursor de paginação é inválido. Recarregue a lista do início.',
-    codigo: 'cursor_invalido',
+    code: 'invalid_cursor',
   },
-  TipoEventoInvalido: {
+  InvalidEventType: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'O tipo do evento de acesso não é válido.',
-    codigo: 'tipo_evento_invalido',
-    campos: { tipo: "Tipo desconhecido: 'login'." },
+    code: 'invalid_event_type',
+    fields: { type: "Tipo desconhecido: 'login'." },
   },
-  PapelFixo: {
+  FixedRole: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'O papel Admin não pode ser alterado nem removido.',
-    codigo: 'papel_fixo',
+    code: 'fixed_role',
   },
-  PapelEmUso: {
+  RoleInUse: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'O papel está atribuído a usuários. Tire o papel deles antes de remover.',
-    codigo: 'papel_em_uso',
+    code: 'role_in_use',
   },
-  PapelExistente: {
+  RoleAlreadyExists: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'Já existe um papel com esse nome.',
-    codigo: 'papel_existente',
+    code: 'role_already_exists',
   },
-  UsuarioExistente: {
+  UserAlreadyExists: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'Este e-mail já é de um usuário desta empresa.',
-    codigo: 'usuario_existente',
+    code: 'user_already_exists',
   },
-  UltimoAdmin: {
+  LastAdmin: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'A empresa precisa de ao menos um Admin ativo.',
-    codigo: 'ultimo_admin',
+    code: 'last_admin',
   },
-  UsuarioInativo: {
+  InactiveUser: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'O usuário está inativo. Ative-o antes de gerar o link.',
-    codigo: 'usuario_inativo',
+    code: 'inactive_user',
   },
-  UsuarioExterno: {
+  ExternalUser: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'Este usuário entra pelo sistema integrado e não tem senha.',
-    codigo: 'usuario_externo',
+    code: 'external_user',
   },
-  LinkInvalido: {
+  InvalidLink: {
     type: 'about:blank',
     title: 'Não está mais disponível',
     status: 410,
     detail: 'Este link não vale mais. Peça um novo link ao administrador.',
-    codigo: 'link_invalido',
+    code: 'invalid_link',
   },
-  SenhaInvalida: {
+  InvalidPassword: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'A senha não cumpre a política de senha.',
-    codigo: 'senha_invalida',
-    campos: { nova_senha: 'A senha precisa ter pelo menos 12 caracteres.' },
+    code: 'invalid_password',
+    fields: { new_password: 'A senha precisa ter pelo menos 12 caracteres.' },
   },
-  ChaveInvalida: {
+  InvalidApiKey: {
     type: 'about:blank',
     title: 'Não autenticado',
     status: 401,
     detail: 'Chave de API inválida ou revogada.',
-    codigo: 'chave_invalida',
+    code: 'invalid_api_key',
   },
-  EmailEmUso: {
+  EmailInUse: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'Este e-mail já pertence a outro usuário.',
-    codigo: 'email_em_uso',
+    code: 'email_in_use',
   },
-  UsuarioInativoIncorporacao: {
+  InactiveEmbedUser: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'Este usuário está desativado nesta empresa.',
-    codigo: 'usuario_inativo',
+    code: 'inactive_user',
   },
-  PapelNaoPermitido: {
+  RoleNotAllowed: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'A incorporação não pode dar nem tirar o papel Admin.',
-    codigo: 'papel_nao_permitido',
-    campos: { papeis: 'O papel Admin não pode ser informado pela incorporação.' },
+    code: 'role_not_allowed',
+    fields: { roles: 'O papel Admin não pode ser informado pela incorporação.' },
   },
-  PapelInexistente: {
+  UnknownRole: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Um dos papéis informados não existe nesta empresa.',
-    codigo: 'papel_inexistente',
+    code: 'unknown_role',
   },
-  DominioExistente: {
+  AuthorizedDomainAlreadyExists: {
     type: 'about:blank',
     title: 'Conflito',
     status: 409,
     detail: 'Este domínio já está cadastrado.',
-    codigo: 'dominio_existente',
+    code: 'authorized_domain_already_exists',
   },
-  OrigemInvalida: {
+  InvalidOrigin: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Informe a origem no formato https://endereco ou http://endereco:porta.',
-    codigo: 'origem_invalida',
-    campos: { origem: 'Use o formato https://host[:porta], sem caminho.' },
+    code: 'invalid_origin',
+    fields: { origin: 'Use o formato https://host[:porta], sem caminho.' },
   },
-  ValorForaDoLimite: {
+  ValueOutOfRange: {
     type: 'about:blank',
     title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns valores estão fora dos limites aceitos.',
-    codigo: 'valor_fora_do_limite',
-    campos: {
-      inatividade_minutos: 'Informe um valor de 15 a 1440.',
-      senha_minima: 'Informe um valor de 8 a 64.',
+    code: 'value_out_of_range',
+    fields: {
+      inactivity_minutes: 'Informe um valor de 15 a 1440.',
+      min_password_length: 'Informe um valor de 8 a 64.',
     },
   },
 } satisfies Record<string, ErrorBody>;

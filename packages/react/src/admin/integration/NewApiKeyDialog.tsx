@@ -44,13 +44,13 @@ export function NewApiKeyDialog({ onClose, focusOnClose }: NewApiKeyDialogProps)
 
   const submit = handleSubmit((data) => {
     if (create.isPending || created) return;
-    create.mutate({ nome: data.name });
+    create.mutate({ name: data.name });
   });
 
   async function copy() {
     if (!created) return;
     try {
-      await navigator.clipboard.writeText(created.chave);
+      await navigator.clipboard.writeText(created.key);
       setCopyStatus('copied');
     } catch {
       setCopyStatus('failed');
@@ -67,7 +67,7 @@ export function NewApiKeyDialog({ onClose, focusOnClose }: NewApiKeyDialogProps)
       title="Nova chave de API"
       description={
         created
-          ? `Configure a chave ${created.nome} no backend do sistema hospedeiro, no cabeçalho Authorization: Chave <chave>.`
+          ? `Configure a chave ${created.name} no backend do sistema hospedeiro, no cabeçalho Authorization: ApiKey <chave>.`
           : 'O backend do sistema hospedeiro usa a chave para pedir tokens de incorporação deste tenant.'
       }
       actions={
@@ -97,13 +97,13 @@ export function NewApiKeyDialog({ onClose, focusOnClose }: NewApiKeyDialogProps)
           <Notice type="warning">{KEY_SHOWN_ONCE_NOTICE}</Notice>
           <TextField
             label="Chave"
-            value={created.chave}
+            value={created.key}
             readOnly
             autoFocus
             autoComplete="off"
             spellCheck={false}
             onFocus={(event) => event.currentTarget.select()}
-            tooltip={`Na lista, ela aparece só pelo começo: ${created.prefixo}…`}
+            tooltip={`Na lista, ela aparece só pelo começo: ${created.prefix}…`}
           />
           <Text as="p" variant="label-13" emphasis="secondary" className="fc-integration-copy" role="status">
             {copyStatus === 'copied' ? 'Chave copiada' : ''}

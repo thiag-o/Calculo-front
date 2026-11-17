@@ -36,7 +36,7 @@ const schema = z.object({
 type FormFields = z.infer<typeof schema>;
 
 export interface RoleDialogProps {
-  /** The role to edit. Without it, the dialog creates a new role. Never the Admin (`fixo`), which is not editable. */
+  /** The role to edit. Without it, the dialog creates a new role. Never the Admin (`fixed`), which is not editable. */
   role?: Role;
   /** Called on close (Cancelar, Esc, "Fechar" or after saving). */
   onClose: () => void;
@@ -64,17 +64,17 @@ export function RoleDialog({ role, onClose }: RoleDialogProps) {
     formState: { errors },
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
-    defaultValues: { name: role?.nome ?? '', permissions: role?.permissoes ?? [] },
+    defaultValues: { name: role?.name ?? '', permissions: role?.permissions ?? [] },
   });
 
   const apiError = mutation.error ? formError(mutation.error) : undefined;
   const permissionsError = errors.permissions?.message ?? apiError?.fields.permissions;
   const disabledReason = permissionCatalog.isPending ? PERMISSION_CATALOG_LOADING_REASON : permissionCatalog.isError ? PERMISSION_CATALOG_ERROR_REASON : undefined;
-  const hasSensitive = permissionCatalog.data?.some((permission) => permission.sensivel) ?? false;
+  const hasSensitive = permissionCatalog.data?.some((permission) => permission.sensitive) ?? false;
 
   const submit = handleSubmit((data) => {
     if (disabledReason) return;
-    const body = { nome: data.name, permissoes: data.permissions as PermissionCode[] };
+    const body = { name: data.name, permissions: data.permissions as PermissionCode[] };
     if (role) update.mutate({ id: role.id, body }, { onSuccess: onClose });
     else create.mutate(body, { onSuccess: onClose });
   });
@@ -159,12 +159,12 @@ export function RoleDialog({ role, onClose }: RoleDialogProps) {
                       <legend className={`fc-roles-group-caption ${textClasses({ variant: 'label-14', medium: true })}`}>{group}</legend>
                       {permissions.map((permission) => (
                         <PermissionCheckbox
-                          key={permission.codigo}
+                          key={permission.code}
                           permission={permission}
-                          checked={field.value.includes(permission.codigo)}
+                          checked={field.value.includes(permission.code)}
                           onChange={(checked) =>
                             field.onChange(
-                              checked ? [...field.value, permission.codigo] : field.value.filter((code) => code !== permission.codigo),
+                              checked ? [...field.value, permission.code] : field.value.filter((code) => code !== permission.code),
                             )
                           }
                         />
@@ -193,9 +193,9 @@ function PermissionCheckbox({ permission, checked, onChange }: { permission: Per
     <Checkbox
       label={
         <span className="fc-roles-permission">
-          {permission.nome}
+          {permission.name}
           {/* The space separates the words in the accessible name ("Aprovar versões Sensível"); flex drops it on screen. */}
-          {permission.sensivel ? <> <Badge tone="amber">Sensível</Badge></> : null}
+          {permission.sensitive ? <> <Badge tone="amber">Sensível</Badge></> : null}
         </span>
       }
       checked={checked}

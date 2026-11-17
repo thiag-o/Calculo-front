@@ -6,7 +6,7 @@ import { CopyIcon } from './icons';
 import { linkErrorMessage } from './messages';
 
 /** Errors where generating again does not help: the user changed since the list was loaded. */
-const NO_RETRY_CODES = new Set(['usuario_inativo', 'usuario_externo', 'nao_encontrado']);
+const NO_RETRY_CODES = new Set(['inactive_user', 'external_user', 'not_found']);
 const NO_RETRY_REASON = 'Feche e confira o usuário na lista atualizada';
 
 export const COPY_FAILED_MESSAGE = 'Não foi possível copiar. Selecione o link e copie com Ctrl C.';
@@ -64,8 +64,8 @@ export function ResetLinkDialog({ user, onClose, focusOnClose }: ResetLinkDialog
       title="Link de redefinição"
       description={
         link
-          ? `Entregue o link a ${user.nome} para definir a senha.`
-          : `Gera um link de uso único para ${user.nome} definir a senha. Um link novo invalida os anteriores.`
+          ? `Entregue o link a ${user.name} para definir a senha.`
+          : `Gera um link de uso único para ${user.name} definir a senha. Um link novo invalida os anteriores.`
       }
       actions={
         link ? (
@@ -104,7 +104,7 @@ export function ResetLinkDialog({ user, onClose, focusOnClose }: ResetLinkDialog
             autoFocus
             spellCheck={false}
             onFocus={(event) => event.currentTarget.select()}
-            tooltip={validityText(link.expira_em)}
+            tooltip={validityText(link.expires_at)}
           />
           <Text as="p" variant="label-13" emphasis="secondary" className="fc-users-link-copy" role="status">
             {copyStatus === 'copied' ? 'Link copiado' : ''}

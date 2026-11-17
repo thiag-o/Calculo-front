@@ -44,7 +44,7 @@ export function Users() {
   }
 
   const users = list.data;
-  const noPermission = list.error instanceof ApiError && list.error.code === 'sem_permissao';
+  const noPermission = list.error instanceof ApiError && list.error.code === 'no_permission';
   const newUser = (size: 'small' | 'default', variant: 'primary' | 'secondary', ref?: typeof newButton) => (
     <Button ref={ref} variant={variant} size={size} onClick={() => setDialog({ type: 'new' })}>
       Novo usuário
@@ -60,9 +60,9 @@ export function Users() {
         <div className="fc-users-person">
           <span className="fc-users-name">
             <Text variant="label-14" medium>
-              {user.nome}
+              {user.name}
             </Text>
-            {user.externo ? <Badge>Incorporação</Badge> : null}
+            {user.external ? <Badge>Incorporação</Badge> : null}
           </span>
           <Text variant="label-13" emphasis="secondary" className="fc-users-email">
             {user.email}
@@ -75,11 +75,11 @@ export function Users() {
       title: 'Papéis',
       skeletonWidth: 120,
       cell: (user) =>
-        user.papeis.length === 0 ? null : (
-          <ul className="fc-users-role-list" aria-label={`Papéis de ${user.nome}`}>
-            {user.papeis.map((role) => (
+        user.roles.length === 0 ? null : (
+          <ul className="fc-users-role-list" aria-label={`Papéis de ${user.name}`}>
+            {user.roles.map((role) => (
               <li key={role.id}>
-                <Badge>{role.nome}</Badge>
+                <Badge>{role.name}</Badge>
               </li>
             ))}
           </ul>
@@ -90,7 +90,7 @@ export function Users() {
       title: 'Situação',
       width: '120px',
       skeletonWidth: 60,
-      cell: (user) => (user.ativo ? <Status tone="green">Ativo</Status> : <Status tone="gray">Inativo</Status>),
+      cell: (user) => (user.active ? <Status tone="green">Ativo</Status> : <Status tone="gray">Inativo</Status>),
     },
     {
       key: 'actions',
@@ -106,7 +106,7 @@ export function Users() {
               iconOnly
               variant="ghost"
               size="small"
-              label={`Mais ações para ${user.nome}`}
+              label={`Mais ações para ${user.name}`}
               icon={<MoreActionsIcon />}
               data-fc-user-actions={user.id}
             />
@@ -116,7 +116,7 @@ export function Users() {
             {
               label: 'Gerar link de redefinição',
               onSelect: () => setDialog({ type: 'link', user }),
-              disabledReason: user.externo ? EXTERNAL_LINK_REASON : user.ativo ? undefined : INACTIVE_LINK_REASON,
+              disabledReason: user.external ? EXTERNAL_LINK_REASON : user.active ? undefined : INACTIVE_LINK_REASON,
             },
           ]}
         />

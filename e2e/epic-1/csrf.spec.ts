@@ -5,7 +5,7 @@ import { signIn, waitForModule } from '../support/screens';
 
 interface Result {
   status: number;
-  codigo: unknown;
+  code: unknown;
 }
 
 test.describe('CSRF', () => {
@@ -24,16 +24,16 @@ test.describe('CSRF', () => {
             body: body === undefined ? undefined : JSON.stringify(body),
           });
           const json: unknown = await response.json().catch(() => null);
-          return { status: response.status, codigo: (json as { codigo?: unknown } | null)?.codigo };
+          return { status: response.status, code: (json as { code?: unknown } | null)?.code };
         },
         { url: `${api.apiUrl}${path}`, method, headers, body },
       );
 
-    const rejected = { status: 403, codigo: 'csrf_invalido' };
-    expect(await call('DELETE', '/v1/sessao', {})).toEqual(rejected);
-    expect(await call('DELETE', '/v1/sessao', { 'X-CSRF-Token': 'outro-valor' })).toEqual(rejected);
+    const rejected = { status: 403, code: 'invalid_csrf' };
+    expect(await call('DELETE', '/v1/session', {})).toEqual(rejected);
+    expect(await call('DELETE', '/v1/session', { 'X-CSRF-Token': 'outro-valor' })).toEqual(rejected);
     expect(
-      await call('PUT', '/v1/sessao/tenant', { 'Content-Type': 'application/json' }, { tenant_id: session.tenant_atual.id }),
+      await call('PUT', '/v1/session/tenant', { 'Content-Type': 'application/json' }, { tenant_id: session.current_tenant.id }),
     ).toEqual(rejected);
 
     // Nothing changed: the session is still open.

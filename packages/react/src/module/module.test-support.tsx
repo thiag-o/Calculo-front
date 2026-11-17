@@ -6,50 +6,50 @@ import type { ScreenDefinition } from './screens';
 
 export const API = 'https://api.teste';
 
-export const HEADQUARTERS_TENANT = { id: '00000000-0000-0000-0000-00000000000a', nome: 'Matriz' };
-export const BRANCH_TENANT = { id: '00000000-0000-0000-0000-00000000000b', nome: 'Filial Nordeste e Centro-Oeste' };
+export const HEADQUARTERS_TENANT = { id: '00000000-0000-0000-0000-00000000000a', name: 'Matriz' };
+export const BRANCH_TENANT = { id: '00000000-0000-0000-0000-00000000000b', name: 'Filial Nordeste e Centro-Oeste' };
 
 export const headquartersSession: Session = {
-  usuario: { id: '00000000-0000-0000-0000-000000000001', nome: 'Ana Beatriz Souza', email: 'ana@exemplo.com' },
+  user: { id: '00000000-0000-0000-0000-000000000001', name: 'Ana Beatriz Souza', email: 'ana@exemplo.com' },
   tenants: [HEADQUARTERS_TENANT, BRANCH_TENANT],
-  tenant_atual: HEADQUARTERS_TENANT,
-  permissoes: ['workflows.ver', 'execucoes.ver'],
+  current_tenant: HEADQUARTERS_TENANT,
+  permissions: ['workflows.view', 'executions.view'],
 };
 
-export const branchSession: Session = { ...headquartersSession, tenant_atual: BRANCH_TENANT, permissoes: ['auditoria.ver'] };
+export const branchSession: Session = { ...headquartersSession, current_tenant: BRANCH_TENANT, permissions: ['audit.view'] };
 
 export const oneTenantSession: Session = { ...headquartersSession, tenants: [HEADQUARTERS_TENANT] };
 
 // Sessions per initial role (backend/docs/plano.md, initial roles), for the real <FluxoCalculo> screens.
 export const ADMIN_PERMISSIONS = [
-  'workflows.ver',
-  'workflows.editar',
-  'execucoes.ver',
-  'conexoes.ver',
-  'auditoria.ver',
-  'traces.ver',
-  'usuarios.gerenciar',
-  'papeis.gerenciar',
-  'integracao.gerenciar',
-  'seguranca.gerenciar',
+  'workflows.view',
+  'workflows.edit',
+  'executions.view',
+  'connections.view',
+  'audit.view',
+  'traces.view',
+  'users.manage',
+  'roles.manage',
+  'integration.manage',
+  'security.manage',
 ];
 export const CONFIGURATOR_PERMISSIONS = [
-  'workflows.ver',
-  'workflows.editar',
-  'testes.editar',
-  'versao.enviar_revisao',
-  'simulacao.rodar',
-  'conexoes.ver',
-  'execucoes.ver',
+  'workflows.view',
+  'workflows.edit',
+  'test_cases.edit',
+  'versions.submit',
+  'simulations.run',
+  'connections.view',
+  'executions.view',
 ];
-export const AUDITOR_PERMISSIONS = ['workflows.ver', 'conexoes.ver', 'execucoes.ver', 'auditoria.ver', 'traces.ver'];
+export const AUDITOR_PERMISSIONS = ['workflows.view', 'connections.view', 'executions.view', 'audit.view', 'traces.view'];
 
 /** Session in the Matriz tenant with the given permissions. */
 export function sessionWith(permissions: string[]): Session {
-  return { ...headquartersSession, permissoes: permissions };
+  return { ...headquartersSession, permissions: permissions };
 }
 
-/** Sample screens: one open, one for `workflows.ver` and one for `auditoria.ver`. */
+/** Sample screens: one open, one for `workflows.view` and one for `audit.view`. */
 export const testScreens: readonly ScreenDefinition[] = [
   { id: 'home', label: 'Início', path: 'home', icon: null, content: <h1>Tela Início</h1> },
   {
@@ -57,7 +57,7 @@ export const testScreens: readonly ScreenDefinition[] = [
     label: 'Workflows',
     path: 'workflows',
     icon: null,
-    permission: 'workflows.ver',
+    permission: 'workflows.view',
     content: <h1>Tela Workflows</h1>,
   },
   {
@@ -65,7 +65,7 @@ export const testScreens: readonly ScreenDefinition[] = [
     label: 'Auditoria',
     path: 'audit',
     icon: null,
-    permission: 'auditoria.ver',
+    permission: 'audit.view',
     content: <h1>Tela Auditoria</h1>,
   },
 ];
@@ -81,7 +81,7 @@ export function noContent(): Response {
 /** problem+json error of the contract. */
 export function problem(status: number, code: string): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
@@ -100,7 +100,7 @@ export function simulateApi(routes: RouteTable) {
   const simulatedFetch: SimulatedFetch = vi.fn(async (request: Request) => {
     const routeKey = `${request.method} ${new URL(request.url).pathname}`;
     const response = current[routeKey];
-    if (response === undefined) return problem(404, 'nao_encontrado');
+    if (response === undefined) return problem(404, 'not_found');
     // A Response can only be read once: each call gets a copy.
     const ready = await (typeof response === 'function' ? response(request) : response);
     return ready.clone();

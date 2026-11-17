@@ -114,7 +114,7 @@ describe('Auditoria › Acessos: lista', () => {
   });
 
   it('cada tipo tem a sua palavra; só login ok, falha e bloqueio têm cor, os demais são cinza', async () => {
-    const events = EVENT_TYPES.map((type, index) => event({ tipo: type.type, email_informado: `pessoa${index}@exemplo.com.br` }));
+    const events = EVENT_TYPES.map((type, index) => event({ type: type.type, provided_email: `pessoa${index}@exemplo.com.br` }));
     api.respond(ACCESS_EVENTS_ROUTE, pageResponse(events));
     renderAccessEvents();
     await screen.findByText('pessoa0@exemplo.com.br');
@@ -141,9 +141,9 @@ describe('Auditoria › Acessos: lista', () => {
   });
 
   it('tipo que o front não conhece: o código cru, com ponto cinza', async () => {
-    api.respond(ACCESS_EVENTS_ROUTE, pageResponse([event({ tipo: 'sessao_revogada' })]));
+    api.respond(ACCESS_EVENTS_ROUTE, pageResponse([event({ type: 'session_revoked' })]));
     renderAccessEvents();
-    expect(statusColor(await screen.findByText('sessao_revogada'))).toBe('fc-status-gray');
+    expect(statusColor(await screen.findByText('session_revoked'))).toBe('fc-status-gray');
   });
 
   it('enquanto carrega, mostra o esqueleto e anuncia', async () => {
@@ -181,7 +181,7 @@ describe('Auditoria › Acessos: lista', () => {
   });
 
   it('sem permissão: explica e não oferece tentar de novo', async () => {
-    api.respond(ACCESS_EVENTS_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(ACCESS_EVENTS_ROUTE, problem(403, 'no_permission'));
     renderAccessEvents();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(NO_PERMISSION_MESSAGE);
@@ -219,14 +219,14 @@ describe('Auditoria › Acessos: filtro por tipo', () => {
     await waitFor(() => expect(screen.queryByText('ana.souza@exemplo.com.br')).not.toBeInTheDocument());
     expect(screen.getByText('1 evento com esses filtros')).toBeInTheDocument();
     expect(typeField()).toHaveTextContent('Falha de login');
-    expect(lastFetch().getAll('tipo')).toEqual(['login_falhou']);
+    expect(lastFetch().getAll('type')).toEqual(['login_failed']);
     expect(lastFetch().has('cursor')).toBe(false);
 
     api.respond(ACCESS_EVENTS_ROUTE, pageResponse([ANA_LOGIN, BRUNO_FAILURE]));
     await chooseType(user, 'Todos os tipos');
     expect(await screen.findByText('ana.souza@exemplo.com.br')).toBeInTheDocument();
     expect(screen.getByText('2 eventos')).toBeInTheDocument();
-    expect(lastFetch().has('tipo')).toBe(false);
+    expect(lastFetch().has('type')).toBe(false);
   });
 
   it('pelo teclado: Enter abre, as setas escolhem e o foco volta ao filtro', async () => {
@@ -242,7 +242,7 @@ describe('Auditoria › Acessos: filtro por tipo', () => {
     await user.keyboard('{Enter}');
 
     expect(typeField()).toHaveFocus();
-    await waitFor(() => expect(lastFetch().getAll('tipo')).toEqual(['login_ok']));
+    await waitFor(() => expect(lastFetch().getAll('type')).toEqual(['login_succeeded']));
   });
 });
 
@@ -255,14 +255,14 @@ describe('Auditoria › Acessos: filtro por período', () => {
     expect(toField()).toHaveAttribute('type', 'date');
 
     await user.type(fromField(), '2026-11-01');
-    await waitFor(() => expect(lastFetch().get('desde')).toBe(new Date(2026, 10, 1).toISOString()));
-    expect(lastFetch().has('ate')).toBe(false);
+    await waitFor(() => expect(lastFetch().get('since')).toBe(new Date(2026, 10, 1).toISOString()));
+    expect(lastFetch().has('until')).toBe(false);
     // The "Até" calendar does not offer days before "De".
     expect(toField()).toHaveAttribute('min', '2026-11-01');
 
     await user.type(toField(), '2026-11-05');
-    await waitFor(() => expect(lastFetch().get('ate')).toBe(new Date(2026, 10, 6).toISOString()));
-    expect(lastFetch().get('desde')).toBe(new Date(2026, 10, 1).toISOString());
+    await waitFor(() => expect(lastFetch().get('until')).toBe(new Date(2026, 10, 6).toISOString()));
+    expect(lastFetch().get('since')).toBe(new Date(2026, 10, 1).toISOString());
     expect(fromField()).toHaveAttribute('max', '2026-11-05');
     expect(await screen.findByText('1 evento com esses filtros')).toBeInTheDocument();
   });
@@ -275,8 +275,8 @@ describe('Auditoria › Acessos: filtro por período', () => {
     await user.type(toField(), '2026-11-14');
     await user.type(fromField(), '2026-11-14');
 
-    await waitFor(() => expect(lastFetch().get('desde')).toBe(new Date(2026, 10, 14).toISOString()));
-    expect(lastFetch().get('ate')).toBe(new Date(2026, 10, 15).toISOString());
+    await waitFor(() => expect(lastFetch().get('since')).toBe(new Date(2026, 10, 14).toISOString()));
+    expect(lastFetch().get('until')).toBe(new Date(2026, 10, 15).toISOString());
     expect(toField()).not.toHaveAttribute('aria-invalid');
   });
 
@@ -297,15 +297,15 @@ describe('Auditoria › Acessos: filtro por período', () => {
 
     // The type still applies, with the last valid period.
     await chooseType(user, 'Saída');
-    await waitFor(() => expect(lastFetch().getAll('tipo')).toEqual(['logout']));
-    expect(lastFetch().has('desde')).toBe(false);
-    expect(lastFetch().get('ate')).toBe(new Date(2026, 10, 6).toISOString());
+    await waitFor(() => expect(lastFetch().getAll('type')).toEqual(['logout']));
+    expect(lastFetch().has('since')).toBe(false);
+    expect(lastFetch().get('until')).toBe(new Date(2026, 10, 6).toISOString());
 
     await user.clear(fromField());
     await user.type(fromField(), '2026-11-01');
     expect(toField()).not.toHaveAttribute('aria-invalid');
-    await waitFor(() => expect(lastFetch().get('desde')).toBe(new Date(2026, 10, 1).toISOString()));
-    expect(lastFetch().get('ate')).toBe(new Date(2026, 10, 6).toISOString());
+    await waitFor(() => expect(lastFetch().get('since')).toBe(new Date(2026, 10, 1).toISOString()));
+    expect(lastFetch().get('until')).toBe(new Date(2026, 10, 6).toISOString());
   });
 
   it('tipo e período juntos', async () => {
@@ -316,16 +316,16 @@ describe('Auditoria › Acessos: filtro por período', () => {
     await chooseType(user, 'Login bloqueado');
     await user.type(fromField(), '2026-11-01');
 
-    await waitFor(() => expect(lastFetch().get('desde')).toBe(new Date(2026, 10, 1).toISOString()));
-    expect(lastFetch().getAll('tipo')).toEqual(['login_bloqueado']);
+    await waitFor(() => expect(lastFetch().get('since')).toBe(new Date(2026, 10, 1).toISOString()));
+    expect(lastFetch().getAll('type')).toEqual(['login_locked']);
   });
 
-  it('dados_invalidos da API: o erro vai ao campo e oferece limpar os filtros', async () => {
+  it('invalid_data da API: o erro vai ao campo e oferece limpar os filtros', async () => {
     api.respond(ACCESS_EVENTS_ROUTE, pageResponse([ANA_LOGIN]));
     const { user } = renderAccessEvents();
     await screen.findByText('ana.souza@exemplo.com.br');
 
-    api.respond(ACCESS_EVENTS_ROUTE, problem(422, 'dados_invalidos', { campos: { ate: 'Data inválida.' } }), pageResponse([ANA_LOGIN]));
+    api.respond(ACCESS_EVENTS_ROUTE, problem(422, 'invalid_data', { fields: { until: 'Data inválida.' } }), pageResponse([ANA_LOGIN]));
     await user.type(toField(), '2026-11-05');
 
     const alert = await screen.findByRole('alert');
@@ -340,12 +340,12 @@ describe('Auditoria › Acessos: filtro por período', () => {
     expect(toField()).not.toHaveAttribute('aria-invalid');
   });
 
-  it('tipo_evento_invalido: explica e oferece limpar os filtros, não tentar de novo', async () => {
+  it('invalid_event_type: explica e oferece limpar os filtros, não tentar de novo', async () => {
     api.respond(ACCESS_EVENTS_ROUTE, pageResponse([ANA_LOGIN]));
     const { user } = renderAccessEvents();
     await screen.findByText('ana.souza@exemplo.com.br');
 
-    api.respond(ACCESS_EVENTS_ROUTE, problem(422, 'tipo_evento_invalido', { campos: { tipo: 'Tipo desconhecido.' } }));
+    api.respond(ACCESS_EVENTS_ROUTE, problem(422, 'invalid_event_type', { fields: { type: 'Tipo desconhecido.' } }));
     await chooseType(user, 'Senha redefinida');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(INVALID_TYPE_MESSAGE);
@@ -386,7 +386,7 @@ describe('Auditoria › Acessos: paginação por cursor', () => {
     await screen.findByText('ana.souza@exemplo.com.br');
     expect(screen.getByText('Mais de 2 eventos')).toBeInTheDocument();
 
-    api.respond(ACCESS_EVENTS_ROUTE, pageResponse([ANA_LOGIN], 'cursor-tipo-2'), pageResponse([event({ email_informado: 'carla@exemplo.com.br' })]));
+    api.respond(ACCESS_EVENTS_ROUTE, pageResponse([ANA_LOGIN], 'cursor-tipo-2'), pageResponse([event({ provided_email: 'carla@exemplo.com.br' })]));
     await chooseType(user, 'Login');
     await waitFor(() => expect(screen.getByText('Mais de 1 evento com esses filtros')).toBeInTheDocument());
 
@@ -397,7 +397,7 @@ describe('Auditoria › Acessos: paginação por cursor', () => {
     expect(screen.getByText('2 eventos com esses filtros')).toBeInTheDocument();
 
     expect(lastFetch().get('cursor')).toBe('cursor-tipo-2');
-    expect(lastFetch().getAll('tipo')).toEqual(['login_ok']);
+    expect(lastFetch().getAll('type')).toEqual(['login_succeeded']);
   });
 
   it('mudar um filtro volta para a primeira página', async () => {
@@ -432,8 +432,8 @@ describe('Auditoria › Acessos: paginação por cursor', () => {
     expect(lastFetch().get('cursor')).toBe('cursor-2');
   });
 
-  it('cursor_invalido: explica e "Recarregar lista" volta à primeira página', async () => {
-    api.respond(ACCESS_EVENTS_ROUTE, pageResponse([ANA_LOGIN], 'cursor-velho'), problem(422, 'cursor_invalido'), pageResponse([BRUNO_LOCK, ANA_LOGIN]));
+  it('invalid_cursor: explica e "Recarregar lista" volta à primeira página', async () => {
+    api.respond(ACCESS_EVENTS_ROUTE, pageResponse([ANA_LOGIN], 'cursor-velho'), problem(422, 'invalid_cursor'), pageResponse([BRUNO_LOCK, ANA_LOGIN]));
     const { user } = renderAccessEvents();
     await screen.findByText('ana.souza@exemplo.com.br');
 

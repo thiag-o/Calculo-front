@@ -17,8 +17,8 @@ import {
   type SecurityScreen,
 } from './security.test-support';
 
-const GET_ROUTE = 'GET /v1/configuracoes/seguranca';
-const PUT_ROUTE = 'PUT /v1/configuracoes/seguranca';
+const GET_ROUTE = 'GET /v1/settings/security';
+const PUT_ROUTE = 'PUT /v1/settings/security';
 
 let api: SimulatedApi;
 
@@ -111,7 +111,7 @@ describe('Segurança: carregar', () => {
   });
 
   it('sem permissão, explica e não oferece tentar de novo', async () => {
-    api.respond(GET_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(GET_ROUTE, problem(403, 'no_permission'));
     renderSecurity();
 
     const alert = await screen.findByRole('alert');
@@ -237,7 +237,7 @@ describe('Segurança: validação no cliente', () => {
 describe('Segurança: salvar com confirmação', () => {
   it('confirma mostrando só o que mudou, envia os cinco valores e avisa que salvou', async () => {
     setCsrfCookie('csrf-123');
-    const saved = withValues(DEFAULTS, { inatividade_minutos: 240, validade_link_horas: 1 });
+    const saved = withValues(DEFAULTS, { inactivity_minutes: 240, link_validity_hours: 1 });
     api.respond(PUT_ROUTE, json(saved));
     const { user } = await load();
 
@@ -261,11 +261,11 @@ describe('Segurança: salvar com confirmação', () => {
     const [call] = api.callsTo(PUT_ROUTE);
     expect(call).toBeDefined();
     expect(await call!.json()).toEqual({
-      inatividade_minutos: 240,
-      duracao_maxima_dias: 7,
-      senha_minima: 12,
-      validade_link_horas: 1,
-      validade_token_minutos: 15,
+      inactivity_minutes: 240,
+      max_duration_days: 7,
+      min_password_length: 12,
+      link_validity_hours: 1,
+      token_validity_minutes: 15,
     });
     expect(call!.headers.get('X-CSRF-Token')).toBe('csrf-123');
 
@@ -279,7 +279,7 @@ describe('Segurança: salvar com confirmação', () => {
   });
 
   it('o aviso de salvo some quando o formulário muda de novo', async () => {
-    api.respond(PUT_ROUTE, json(withValues(DEFAULTS, { senha_minima: 20 })));
+    api.respond(PUT_ROUTE, json(withValues(DEFAULTS, { min_password_length: 20 })));
     const { user } = await load();
     await replaceValue(user, password(), '20');
     await user.click(save());
@@ -322,7 +322,7 @@ describe('Segurança: salvar com confirmação', () => {
   });
 
   it('mostra o envio em andamento no botão da confirmação', async () => {
-    const pending = pendingResponse(() => json(withValues(DEFAULTS, { duracao_maxima_dias: 1 })));
+    const pending = pendingResponse(() => json(withValues(DEFAULTS, { max_duration_days: 1 })));
     api.respond(PUT_ROUTE, pending.promise);
     const { user } = await load();
     await replaceValue(user, duration(), '1');
@@ -343,21 +343,21 @@ describe('Segurança: salvar com confirmação', () => {
 });
 
 describe('Segurança: erros ao salvar', () => {
-  it('valor_fora_do_limite: mostra o erro da API em cada campo, foca o primeiro e busca os limites de novo', async () => {
+  it('value_out_of_range: mostra o erro da API em cada campo, foca o primeiro e busca os limites de novo', async () => {
     api.respond(
       PUT_ROUTE,
-      problem(422, 'valor_fora_do_limite', {
-        campos: {
-          inatividade_minutos: 'Informe um valor de 15 a 720.',
-          senha_minima: 'Informe um valor de 10 a 64.',
+      problem(422, 'value_out_of_range', {
+        fields: {
+          inactivity_minutes: 'Informe um valor de 15 a 720.',
+          min_password_length: 'Informe um valor de 10 a 64.',
         },
       }),
     );
     // The next GET brings the updated bounds.
     const newBounds = {
       ...DEFAULTS,
-      inatividade_minutos: { ...DEFAULTS.inatividade_minutos, maximo: 720 },
-      senha_minima: { ...DEFAULTS.senha_minima, minimo: 10 },
+      inactivity_minutes: { ...DEFAULTS.inactivity_minutes, max: 720 },
+      min_password_length: { ...DEFAULTS.min_password_length, min: 10 },
     };
     api.respond(GET_ROUTE, json(DEFAULTS), json(newBounds));
     const { user } = renderSecurity();
@@ -390,8 +390,8 @@ describe('Segurança: erros ao salvar', () => {
     expect(inactivity()).not.toHaveAttribute('aria-invalid');
   });
 
-  it('dados_invalidos com campos: mostra no campo', async () => {
-    api.respond(PUT_ROUTE, problem(422, 'dados_invalidos', { campos: { validade_token_minutos: 'Informe um número inteiro.' } }));
+  it('invalid_data com campos: mostra no campo', async () => {
+    api.respond(PUT_ROUTE, problem(422, 'invalid_data', { fields: { token_validity_minutes: 'Informe um número inteiro.' } }));
     const { user } = await load();
     await replaceValue(user, token(), '20');
     await user.click(save());
@@ -403,11 +403,11 @@ describe('Segurança: erros ao salvar', () => {
   });
 
   it.each([
-    ['sem_permissao', 403, NO_PERMISSION_MESSAGE],
-    ['csrf_invalido', 403, 'Texto do servidor para csrf_invalido.'],
+    ['no_permission', 403, NO_PERMISSION_MESSAGE],
+    ['invalid_csrf', 403, 'Texto do servidor para invalid_csrf.'],
     ['unavailable', 503, 'Texto do servidor para unavailable.'],
   ])('%s: o erro fica na confirmação, que continua aberta para tentar de novo', async (code, status, message) => {
-    api.respond(PUT_ROUTE, problem(status, code), json(withValues(DEFAULTS, { validade_token_minutos: 30 })));
+    api.respond(PUT_ROUTE, problem(status, code), json(withValues(DEFAULTS, { token_validity_minutes: 30 })));
     const { user } = await load();
     await replaceValue(user, token(), '30');
     await user.click(save());
@@ -445,7 +445,7 @@ describe('Segurança: atualização em segundo plano', () => {
     const { user, queryClient } = await load();
     await replaceValue(user, token(), '30');
 
-    api.respond(GET_ROUTE, json(withValues(DEFAULTS, { senha_minima: 14, validade_token_minutos: 20 })));
+    api.respond(GET_ROUTE, json(withValues(DEFAULTS, { min_password_length: 14, token_validity_minutes: 20 })));
     await queryClient.refetchQueries({ queryKey: ['admin', 'security'] });
 
     await waitFor(() => expect(password()).toHaveValue('14'));

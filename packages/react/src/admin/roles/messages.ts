@@ -18,13 +18,13 @@ export const ROLE_NOT_FOUND_MESSAGE = 'Este papel não existe mais neste tenant.
 const INVALID_DATA_MESSAGE = 'Confira os campos destacados e tente de novo.';
 const UNKNOWN_MESSAGE = 'Não foi possível concluir agora. Tente de novo em instantes.';
 
-/** API field name (problem+json `campos`) -> form field. */
-const FIELDS: Readonly<Record<string, RoleField>> = { nome: 'name', permissoes: 'permissions' };
+/** API field name (problem+json `fields`) -> form field. */
+const FIELDS: Readonly<Record<string, RoleField>> = { name: 'name', permissions: 'permissions' };
 
 function formFields(fields: Readonly<Record<string, string>>): Partial<Record<RoleField, string>> {
   const result: Partial<Record<RoleField, string>> = {};
   for (const [apiField, error] of Object.entries(fields)) {
-    // `permissoes.0` (error in a list item) counts for the `permissions` field.
+    // `permissions.0` (error in a list item) counts for the `permissions` field.
     const field = FIELDS[apiField.split('.')[0] ?? ''];
     if (field !== undefined && result[field] === undefined) result[field] = error;
   }
@@ -34,44 +34,44 @@ function formFields(fields: Readonly<Record<string, string>>): Partial<Record<Ro
 /** Error of a query (role list or permission catalog). */
 export function queryErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
-  if (error.code === 'sem_permissao') return NO_PERMISSION_MESSAGE;
-  // sem_conexao, resposta_inesperada…: the error's own pt-BR message.
+  if (error.code === 'no_permission') return NO_PERMISSION_MESSAGE;
+  // no_connection, unexpected_response…: the error's own pt-BR message.
   return error.message;
 }
 
-/** Error creating (`POST /v1/papeis`) or updating (`PUT /v1/papeis/{id}`) a role, by `codigo` (ADR 0008). */
+/** Error creating (`POST /v1/roles`) or updating (`PUT /v1/roles/{id}`) a role, by `code` (ADR 0008). */
 export function formError(error: unknown): ScreenError {
   if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE, fields: {} };
   switch (error.code) {
-    case 'papel_existente':
+    case 'role_already_exists':
       return { fields: { name: ROLE_ALREADY_EXISTS_MESSAGE } };
-    case 'papel_fixo':
+    case 'fixed_role':
       return { message: FIXED_ROLE_MESSAGE, fields: {} };
-    case 'nao_encontrado':
+    case 'not_found':
       return { message: ROLE_NOT_FOUND_MESSAGE, fields: {} };
-    case 'sem_permissao':
+    case 'no_permission':
       return { message: NO_PERMISSION_MESSAGE, fields: {} };
-    case 'dados_invalidos': {
+    case 'invalid_data': {
       const fields = formFields(error.fields);
       return Object.keys(fields).length > 0 ? { message: INVALID_DATA_MESSAGE, fields } : { message: error.message, fields: {} };
     }
     default:
-      // csrf_invalido, sem_conexao, resposta_inesperada…: the error's own pt-BR message.
+      // invalid_csrf, no_connection, unexpected_response…: the error's own pt-BR message.
       return { message: error.message, fields: {} };
   }
 }
 
-/** Error deleting a role (`DELETE /v1/papeis/{id}`). */
+/** Error deleting a role (`DELETE /v1/roles/{id}`). */
 export function deleteErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
   switch (error.code) {
-    case 'papel_em_uso':
+    case 'role_in_use':
       return ROLE_IN_USE_MESSAGE;
-    case 'papel_fixo':
+    case 'fixed_role':
       return FIXED_ROLE_MESSAGE;
-    case 'nao_encontrado':
+    case 'not_found':
       return ROLE_NOT_FOUND_MESSAGE;
-    case 'sem_permissao':
+    case 'no_permission':
       return NO_PERMISSION_MESSAGE;
     default:
       return error.message;

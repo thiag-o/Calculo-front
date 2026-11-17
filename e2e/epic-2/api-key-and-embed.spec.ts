@@ -19,7 +19,7 @@ async function deleteAuthorizedDomain(page: Page, origin: string): Promise<void>
   await page.getByRole('menuitem', { name: 'Remover domínio' }).click();
   const dialog = page.getByRole('dialog', { name: 'Remover domínio' });
   const [response] = await Promise.all([
-    page.waitForResponse((r) => r.request().method() === 'DELETE' && new URL(r.url()).pathname.startsWith('/v1/dominios-autorizados/')),
+    page.waitForResponse((r) => r.request().method() === 'DELETE' && new URL(r.url()).pathname.startsWith('/v1/authorized-domains/')),
     dialog.getByRole('button', { name: 'Remover domínio' }).click(),
   ]);
   expect(response.status(), 'remover o domínio').toBe(204);
@@ -33,7 +33,7 @@ async function deleteAuthorizedDomain(page: Page, origin: string): Promise<void>
 async function exchangeApiKeyForToken(hostApp: Page, apiKey: string, roles: string) {
   await hostApp.getByRole('textbox', { name: 'Chave de API' }).fill(apiKey);
   await hostApp.getByRole('textbox', { name: 'Papéis (nomes, separados por vírgula)' }).fill(roles);
-  return submit(hostApp, 'POST', '/v1/incorporacao/sessoes', hostApp.getByRole('button', { name: /^Obter token e montar/ }));
+  return submit(hostApp, 'POST', '/v1/embed/sessions', hostApp.getByRole('button', { name: /^Obter token e montar/ }));
 }
 
 test.describe('chave de API e incorporação', () => {
@@ -44,11 +44,11 @@ test.describe('chave de API e incorporação', () => {
   }) => {
     const apiKeyName = `E2E Hospedeiro ${suffix()}`;
     const origin = epic2.hostAppOrigin;
-    // Real mode: `preparar-local` already registers the host app origin. The test deletes it and registers it again through the screen and,
+    // Real mode: `prepare-local` already registers the host app origin. The test deletes it and registers it again through the screen and,
     // at the end, leaves it as it found it.
     let authorizedDomainAlreadyExists = false;
     let apiKey = '';
-    let createdApiKey: Schemas['ChaveApiCriada'] | undefined;
+    let createdApiKey: Schemas['CreatedApiKey'] | undefined;
 
     await signIn(page, api.account('admin'));
     await openFromMenu(page, 'Integração');
@@ -58,19 +58,19 @@ test.describe('chave de API e incorporação', () => {
       const dialog = page.getByRole('dialog', { name: 'Nova chave de API' });
       await dialog.getByRole('textbox', { name: 'Nome', exact: true }).fill(apiKeyName);
 
-      const response = await submit(page, 'POST', '/v1/chaves-api', dialog.getByRole('button', { name: 'Salvar' }));
+      const response = await submit(page, 'POST', '/v1/api-keys', dialog.getByRole('button', { name: 'Salvar' }));
 
       expect(response.status()).toBe(201);
-      createdApiKey = (await response.json()) as Schemas['ChaveApiCriada'];
+      createdApiKey = (await response.json()) as Schemas['CreatedApiKey'];
       await expect(dialog.getByText(KEY_SHOWN_ONCE_NOTICE)).toBeVisible();
       apiKey = await dialog.getByRole('textbox', { name: 'Chave', exact: true }).inputValue();
-      expect(apiKey).toBe(createdApiKey.chave);
+      expect(apiKey).toBe(createdApiKey.key);
 
       await page.keyboard.press('Escape');
       await expect(dialog).toBeHidden();
       // In the list, only the start of the key; the full key no longer shows.
       const apiKeyRow = row(apiKeysTable(page), apiKeyName);
-      await expect(apiKeyRow.getByText(`${createdApiKey.prefixo}…`, { exact: true })).toBeVisible();
+      await expect(apiKeyRow.getByText(`${createdApiKey.prefix}…`, { exact: true })).toBeVisible();
       await expect(apiKeyRow.getByText('Ativa', { exact: true })).toBeVisible();
       await expect(apiKeyRow.getByText('Nunca usada', { exact: true })).toBeVisible();
       await expect(page.getByText(apiKey)).toHaveCount(0);
@@ -78,7 +78,7 @@ test.describe('chave de API e incorporação', () => {
 
     await test.step('o Admin cadastra a origem do hospedeiro como domínio autorizado', async () => {
       await expect(authorizedDomainsTable(page)).not.toHaveAttribute('aria-busy', 'true');
-      // Real mode: registered by `preparar-local` (or by an interrupted previous run).
+      // Real mode: registered by `prepare-local` (or by an interrupted previous run).
       authorizedDomainAlreadyExists = (await row(authorizedDomainsTable(page), origin).count()) > 0;
       if (authorizedDomainAlreadyExists) await deleteAuthorizedDomain(page, origin);
 
@@ -86,7 +86,7 @@ test.describe('chave de API e incorporação', () => {
       const dialog = page.getByRole('dialog', { name: 'Novo domínio' });
       await dialog.getByRole('textbox', { name: 'Origem' }).fill(origin);
 
-      const response = await submit(page, 'POST', '/v1/dominios-autorizados', dialog.getByRole('button', { name: 'Salvar' }));
+      const response = await submit(page, 'POST', '/v1/authorized-domains', dialog.getByRole('button', { name: 'Salvar' }));
 
       expect(response.status()).toBe(201);
       await expect(dialog).toBeHidden();
@@ -113,7 +113,7 @@ test.describe('chave de API e incorporação', () => {
 
       // Switching tabs uses the token (Bearer) of the authorized origin and does not touch the host app URL.
       const [accessEvents] = await Promise.all([
-        apiResponse(hostApp, 'GET', '/v1/auditoria/acessos'),
+        apiResponse(hostApp, 'GET', '/v1/audit/access-events'),
         tabs.getByRole('link', { name: 'Auditoria', exact: true }).click(),
       ]);
       expect(accessEvents.status()).toBe(200);
@@ -129,7 +129,7 @@ test.describe('chave de API e incorporação', () => {
       await page.getByRole('menuitem', { name: 'Revogar chave' }).click();
       const dialog = page.getByRole('dialog', { name: 'Revogar chave' });
 
-      const response = await submit(page, 'DELETE', `/v1/chaves-api/${createdApiKey.id}`, dialog.getByRole('button', { name: 'Revogar chave' }));
+      const response = await submit(page, 'DELETE', `/v1/api-keys/${createdApiKey.id}`, dialog.getByRole('button', { name: 'Revogar chave' }));
 
       expect(response.status()).toBe(204);
       await expect(dialog).toBeHidden();
@@ -142,8 +142,8 @@ test.describe('chave de API e incorporação', () => {
       const exchange = await exchangeApiKeyForToken(hostApp, apiKey, 'Auditor');
 
       expect(exchange.status()).toBe(401);
-      expect(((await exchange.json()) as Schemas['Problema']).codigo).toBe('chave_invalida');
-      await expect(hostApp.getByRole('alert')).toHaveText('A API respondeu 401 (chave_invalida).');
+      expect(((await exchange.json()) as Schemas['Problem']).code).toBe('invalid_api_key');
+      await expect(hostApp.getByRole('alert')).toHaveText('A API respondeu 401 (invalid_api_key).');
       await expect(hostApp.getByRole('navigation', { name: 'Telas do Fluxo de Cálculo' })).toHaveCount(0);
     });
 

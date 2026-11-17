@@ -36,27 +36,27 @@ export function lockMessage(unlocksAt: unknown, now: Date = new Date()): string 
 function signInFields(fields: Readonly<Record<string, string>>): Partial<Record<SignInField, string>> {
   const result: Partial<Record<SignInField, string>> = {};
   if (fields.email) result.email = fields.email;
-  if (fields.senha) result.password = fields.senha;
+  if (fields.password) result.password = fields.password;
   return result;
 }
 
-/** Turns the `POST /v1/sessao` error into what the screen shows, always by `code` (ADR 0008). */
+/** Turns the `POST /v1/session` error into what the screen shows, always by `code` (ADR 0008). */
 export function signInError(error: unknown, now: Date = new Date()): SignInError {
   if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE, fields: {} };
   switch (error.code) {
-    case 'credenciais_invalidas':
+    case 'invalid_credentials':
       // Own, generic message: does not reveal whether the e-mail exists.
       return { message: INVALID_CREDENTIALS_MESSAGE, fields: {} };
-    case 'login_bloqueado':
-      return { message: lockMessage(error.body?.desbloqueia_em, now), fields: {} };
-    case 'muitas_tentativas':
+    case 'login_locked':
+      return { message: lockMessage(error.body?.unlocks_at, now), fields: {} };
+    case 'too_many_attempts':
       return { message: TOO_MANY_ATTEMPTS_MESSAGE, fields: {} };
-    case 'dados_invalidos': {
+    case 'invalid_data': {
       const fields = signInFields(error.fields);
       return { message: Object.keys(fields).length > 0 ? INVALID_DATA_MESSAGE : error.message, fields };
     }
     default:
-      // sem_conexao, resposta_inesperada, tipo_conteudo_invalido…: the error's own pt-BR message.
+      // no_connection, unexpected_response, invalid_content_type…: the error's own pt-BR message.
       return { message: error.message, fields: {} };
   }
 }

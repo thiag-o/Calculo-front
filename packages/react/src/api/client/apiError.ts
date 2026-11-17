@@ -1,14 +1,14 @@
 import type { components } from '../generated/schema';
 
-/** The contract's problem+json body, with each error's extension members (e.g. `desbloqueia_em`). */
-export type ProblemBody = components['schemas']['Problema'] & Readonly<Record<string, unknown>>;
+/** The contract's problem+json body, with each error's extension members (e.g. `unlocks_at`). */
+export type ProblemBody = components['schemas']['Problem'] & Readonly<Record<string, unknown>>;
 
 /**
  * Codes born in the client itself, when there is no problem+json to read.
  * The other codes come from the backend (OpenAPI contract).
  */
-export const NO_CONNECTION_CODE = 'sem_conexao';
-export const UNEXPECTED_RESPONSE_CODE = 'resposta_inesperada';
+export const NO_CONNECTION_CODE = 'no_connection';
+export const UNEXPECTED_RESPONSE_CODE = 'unexpected_response';
 
 const NO_CONNECTION_MESSAGE = 'Não foi possível falar com o servidor. Verifique a conexão e tente de novo.';
 const UNEXPECTED_RESPONSE_MESSAGE = 'O servidor respondeu de um jeito inesperado. Tente de novo em instantes.';
@@ -47,9 +47,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Reads the `codigo` of a problem+json body; `undefined` if the body is not one. */
+/** Reads the `code` of a problem+json body; `undefined` if the body is not one. */
 export function problemCode(body: unknown): string | undefined {
-  return isObject(body) && typeof body.codigo === 'string' && body.codigo !== '' ? body.codigo : undefined;
+  return isObject(body) && typeof body.code === 'string' && body.code !== '' ? body.code : undefined;
 }
 
 function problemFields(fields: unknown): Record<string, string> {
@@ -77,7 +77,7 @@ export function responseError(response: Response, body: unknown): ApiError {
     status: response.status,
     code,
     message,
-    fields: problemFields(body.campos),
+    fields: problemFields(body.fields),
     body: body as ProblemBody,
   });
 }
@@ -100,7 +100,7 @@ interface CallResult<D> {
 
 /**
  * Awaits the call and returns the data of the success response, or throws `ApiError`.
- * Typical use in a query: `queryFn: () => dataOrError(client.GET('/v1/sessao'))`.
+ * Typical use in a query: `queryFn: () => dataOrError(client.GET('/v1/session'))`.
  * Cancellation (`AbortError`, e.g. a query cancelled by TanStack Query) passes through without conversion.
  */
 export async function dataOrError<D>(call: Promise<CallResult<D>>): Promise<D> {

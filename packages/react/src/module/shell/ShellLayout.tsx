@@ -55,7 +55,7 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
         </nav>
 
         <div className="fc-sidebar-footer">
-          <UserMenu user={session.usuario} onFailure={(error) => setNotice(signOutErrorMessage(error))} />
+          <UserMenu user={session.user} onFailure={(error) => setNotice(signOutErrorMessage(error))} />
           {/* Below 1180px the menu is icons only anyway: there is nothing to expand. */}
           {narrow ? null : (
             <Button

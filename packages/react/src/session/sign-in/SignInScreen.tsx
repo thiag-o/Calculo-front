@@ -36,7 +36,7 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
   const apiError = signIn.error ? signInError(signIn.error) : undefined;
 
   const submit = handleSubmit((data) => {
-    signIn.mutate({ email: data.email, senha: data.password }, { onSuccess: (session) => onSignIn?.(session) });
+    signIn.mutate({ email: data.email, password: data.password }, { onSuccess: (session) => onSignIn?.(session) });
   });
 
   return (

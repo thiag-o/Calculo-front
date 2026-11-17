@@ -38,7 +38,7 @@ export function Security() {
   const titleId = useId();
   const query = useSecuritySettings();
   const settings = query.data;
-  const noPermission = query.error instanceof ApiError && query.error.code === 'sem_permissao';
+  const noPermission = query.error instanceof ApiError && query.error.code === 'no_permission';
 
   return (
     <section className="fc-security" aria-labelledby={titleId}>
@@ -217,7 +217,7 @@ function SecurityForm({ settings }: { settings: SecuritySettings }) {
               <legend className={`fc-security-caption ${textClasses({ variant: 'heading-14' })}`}>{group.title}</legend>
               {group.parameters.map((parameter) => {
                 const { field } = parameter;
-                const defaultValue = settings[field].padrao;
+                const defaultValue = settings[field].default;
                 return (
                   <div key={field} className="fc-security-parameter">
                     <TextField

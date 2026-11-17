@@ -5,7 +5,7 @@ import { SignOutIcon } from '../icons';
 import { Avatar } from './Avatar';
 
 export interface UserMenuProps {
-  user: Session['usuario'];
+  user: Session['user'];
   onFailure: (error: Error) => void;
 }
 
@@ -34,12 +34,12 @@ export function UserMenu({ user, onFailure }: UserMenuProps) {
         <button
           type="button"
           className="fc-user"
-          aria-label={`${user.nome}: opções da conta`}
+          aria-label={`${user.name}: opções da conta`}
           aria-busy={signOut.isPending || undefined}
         >
-          <Avatar name={user.nome} tone="strong" />
+          <Avatar name={user.name} tone="strong" />
           <span className="fc-user-text">
-            <span className="fc-user-name">{user.nome}</span>
+            <span className="fc-user-name">{user.name}</span>
             <span className="fc-user-email">{user.email}</span>
           </span>
         </button>

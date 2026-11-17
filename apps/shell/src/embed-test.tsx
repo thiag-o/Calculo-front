@@ -15,16 +15,16 @@ type State =
 
 async function exchangeApiKey(apiKey: string, body: object): Promise<State> {
   try {
-    const response = await fetch(`${apiUrl}/v1/incorporacao/sessoes`, {
+    const response = await fetch(`${apiUrl}/v1/embed/sessions`, {
       method: 'POST',
-      headers: { Authorization: `Chave ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `ApiKey ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const data: unknown = await response.json().catch(() => null);
     if (response.status === 201 && data && typeof data === 'object' && 'token' in data) {
       return { phase: 'ready', token: String(data.token) };
     }
-    const code = data && typeof data === 'object' && 'codigo' in data ? String(data.codigo) : '';
+    const code = data && typeof data === 'object' && 'code' in data ? String(data.code) : '';
     return { phase: 'error', message: `A API respondeu ${response.status}${code ? ` (${code})` : ''}.` };
   } catch {
     return { phase: 'error', message: `Não foi possível falar com a API em ${apiUrl}.` };
@@ -49,10 +49,10 @@ function EmbedTestPage() {
     setState({ phase: 'switching' });
     setState(
       await exchangeApiKey(apiKey.trim(), {
-        id_externo: 'teste-local',
+        external_id: 'teste-local',
         email: email.trim(),
-        nome: name.trim(),
-        papeis: roles
+        name: name.trim(),
+        roles: roles
           .split(',')
           .map((p) => p.trim())
           .filter((p) => p !== ''),

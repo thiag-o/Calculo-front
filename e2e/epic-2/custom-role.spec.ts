@@ -10,8 +10,8 @@ test.describe('papel personalizado', () => {
   test('o Admin cria um papel com as permissões escolhidas e o remove; o Admin fixo fica travado', async ({ page, api }) => {
     const name = `E2E Leitura ${suffix()}`;
     await signIn(page, api.account('admin'));
-    const [initialList] = await Promise.all([apiResponse(page, 'GET', '/v1/papeis'), openFromMenu(page, 'Papéis')]);
-    const roles = ((await initialList.json()) as Schemas['ListaPapeis']).itens;
+    const [initialList] = await Promise.all([apiResponse(page, 'GET', '/v1/roles'), openFromMenu(page, 'Papéis')]);
+    const roles = ((await initialList.json()) as Schemas['RoleList']).items;
     const table = page.getByRole('table', { name: 'Papéis do tenant' });
 
     await test.step('o Admin aparece travado, sem editar nem remover', async () => {
@@ -23,7 +23,7 @@ test.describe('papel personalizado', () => {
       await expect(adminRow.getByRole('button')).toHaveCount(0);
     });
 
-    let created: Schemas['Papel'] | undefined;
+    let created: Schemas['Role'] | undefined;
     await test.step('o Admin cria um papel só de leitura', async () => {
       await page.getByRole('button', { name: 'Novo papel' }).first().click();
       const dialog = page.getByRole('dialog', { name: 'Novo papel' });
@@ -32,12 +32,12 @@ test.describe('papel personalizado', () => {
       await dialog.getByRole('checkbox', { name: 'Ver auditoria', exact: true }).check();
       await expect(dialog.getByText(/^2 de \d+ marcadas$/)).toBeVisible();
 
-      const response = await submit(page, 'POST', '/v1/papeis', dialog.getByRole('button', { name: 'Salvar' }));
+      const response = await submit(page, 'POST', '/v1/roles', dialog.getByRole('button', { name: 'Salvar' }));
 
       expect(response.status()).toBe(201);
-      created = (await response.json()) as Schemas['Papel'];
-      expect(created).toMatchObject({ nome: name, fixo: false, total_usuarios: 0 });
-      expect([...created.permissoes].sort()).toEqual(['auditoria.ver', 'workflows.ver']);
+      created = (await response.json()) as Schemas['Role'];
+      expect(created).toMatchObject({ name: name, fixed: false, user_count: 0 });
+      expect([...created.permissions].sort()).toEqual(['audit.view', 'workflows.view']);
       await expect(dialog).toBeHidden();
       const roleRow = row(table, name);
       await expect(roleRow.getByText('2 permissões', { exact: true })).toBeVisible();
@@ -46,12 +46,12 @@ test.describe('papel personalizado', () => {
 
     if (api.mode === 'real' && api.apiUrl) {
       await test.step('modo real: a API recusa alterar e remover o Admin', async () => {
-        const admin = roles.find((role) => role.fixo);
+        const admin = roles.find((role) => role.fixed);
         if (!admin) throw new Error('O tenant não tem o papel Admin.');
-        const rejection = { status: 409, codigo: 'papel_fixo' };
+        const rejection = { status: 409, code: 'fixed_role' };
         const apiUrl = api.apiUrl ?? '';
-        expect(await callApi(page, apiUrl, 'PUT', `/v1/papeis/${admin.id}`, { nome: 'Admin', permissoes: [] })).toMatchObject(rejection);
-        expect(await callApi(page, apiUrl, 'DELETE', `/v1/papeis/${admin.id}`)).toMatchObject(rejection);
+        expect(await callApi(page, apiUrl, 'PUT', `/v1/roles/${admin.id}`, { name: 'Admin', permissions: [] })).toMatchObject(rejection);
+        expect(await callApi(page, apiUrl, 'DELETE', `/v1/roles/${admin.id}`)).toMatchObject(rejection);
       });
     }
 
@@ -62,7 +62,7 @@ test.describe('papel personalizado', () => {
       const dialog = page.getByRole('dialog', { name: 'Remover papel' });
       await expect(dialog).toContainText(`O papel ${name} deixa de existir neste tenant.`);
 
-      const response = await submit(page, 'DELETE', `/v1/papeis/${created.id}`, dialog.getByRole('button', { name: 'Remover papel' }));
+      const response = await submit(page, 'DELETE', `/v1/roles/${created.id}`, dialog.getByRole('button', { name: 'Remover papel' }));
 
       expect(response.status()).toBe(204);
       await expect(dialog).toBeHidden();

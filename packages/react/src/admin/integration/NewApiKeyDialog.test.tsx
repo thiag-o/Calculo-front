@@ -18,22 +18,22 @@ import {
 
 let api: SimulatedApi;
 
-const LIST_ROUTE = 'GET /v1/chaves-api';
-const CREATE_ROUTE = 'POST /v1/chaves-api';
+const LIST_ROUTE = 'GET /v1/api-keys';
+const CREATE_ROUTE = 'POST /v1/api-keys';
 const SECRET = 'fc_9xQ2segredo-inteiro-da-chave-de-api-0123456789';
-const CREATED = { id: '30000000-0000-0000-0000-000000000009', nome: 'Portal novo', prefixo: 'fc_9xQ2', chave: SECRET };
+const CREATED = { id: '30000000-0000-0000-0000-000000000009', name: 'Portal novo', prefix: 'fc_9xQ2', key: SECRET };
 const IN_LIST = {
   id: CREATED.id,
-  nome: CREATED.nome,
-  prefixo: CREATED.prefixo,
-  criada_em: PORTAL_API_KEY.criada_em,
-  ultimo_uso_em: null,
-  revogada_em: null,
+  name: CREATED.name,
+  prefix: CREATED.prefix,
+  created_at: PORTAL_API_KEY.created_at,
+  last_used_at: null,
+  revoked_at: null,
 };
 
 beforeEach(() => {
   api = simulateApi();
-  api.respond(LIST_ROUTE, json({ itens: [PORTAL_API_KEY], proximo_cursor: null }));
+  api.respond(LIST_ROUTE, json({ items: [PORTAL_API_KEY], next_cursor: null }));
   setCsrfCookie('csrf-123');
 });
 
@@ -81,7 +81,7 @@ describe('Integração: nova chave de API', () => {
     const { user } = renderScreen();
     const write = vi.spyOn(navigator.clipboard, 'writeText');
     const panel = await openNew(user);
-    api.respond(LIST_ROUTE, json({ itens: [IN_LIST, PORTAL_API_KEY], proximo_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: [IN_LIST, PORTAL_API_KEY], next_cursor: null }));
 
     await create(user, panel, '  Portal novo  ');
 
@@ -92,13 +92,13 @@ describe('Integração: nova chave de API', () => {
     expect(field).toHaveAccessibleDescription('Na lista, ela aparece só pelo começo: fc_9xQ2…');
     expect(within(panel).getByText(KEY_SHOWN_ONCE_NOTICE)).toBeInTheDocument();
     expect(panel).toHaveAccessibleDescription(
-      'Configure a chave Portal novo no backend do sistema hospedeiro, no cabeçalho Authorization: Chave <chave>.',
+      'Configure a chave Portal novo no backend do sistema hospedeiro, no cabeçalho Authorization: ApiKey <chave>.',
     );
     expect(within(panel).queryByRole('button', { name: 'Salvar' })).not.toBeInTheDocument();
 
     const [req] = api.callsTo(CREATE_ROUTE);
     expect(req!.headers.get('X-CSRF-Token')).toBe('csrf-123');
-    expect(await req!.json()).toEqual({ nome: 'Portal novo' });
+    expect(await req!.json()).toEqual({ name: 'Portal novo' });
 
     await user.click(within(panel).getByRole('button', { name: 'Copiar' }));
     expect(write).toHaveBeenCalledWith(SECRET);
@@ -114,7 +114,7 @@ describe('Integração: nova chave de API', () => {
     api.respond(CREATE_ROUTE, json(CREATED, 201));
     const { user, queryClient } = renderScreen();
     let panel = await openNew(user);
-    api.respond(LIST_ROUTE, json({ itens: [IN_LIST, PORTAL_API_KEY], proximo_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: [IN_LIST, PORTAL_API_KEY], next_cursor: null }));
     await create(user, panel);
     await within(panel).findByRole('textbox', { name: 'Chave' });
     expect(cacheContent(queryClient)).toContain(SECRET);
@@ -199,8 +199,8 @@ describe('Integração: nova chave de API', () => {
     expect(within(panel).getByRole('textbox', { name: 'Chave' })).toHaveValue(SECRET);
   });
 
-  it('dados_invalidos no nome: mostra o erro no campo', async () => {
-    api.respond(CREATE_ROUTE, problem(422, 'dados_invalidos', { campos: { nome: 'O nome tem no máximo 100 caracteres.' } }));
+  it('invalid_data no nome: mostra o erro no campo', async () => {
+    api.respond(CREATE_ROUTE, problem(422, 'invalid_data', { fields: { name: 'O nome tem no máximo 100 caracteres.' } }));
     const { user } = renderScreen();
     const panel = await openNew(user);
     await create(user, panel);
@@ -211,7 +211,7 @@ describe('Integração: nova chave de API', () => {
   });
 
   it('sem permissão: explica', async () => {
-    api.respond(CREATE_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(CREATE_ROUTE, problem(403, 'no_permission'));
     const { user } = renderScreen();
     const panel = await openNew(user);
     await create(user, panel);

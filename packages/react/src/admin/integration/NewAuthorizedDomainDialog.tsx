@@ -44,7 +44,7 @@ export function NewAuthorizedDomainDialog({ onClose, focusOnClose }: NewAuthoriz
 
   const submit = handleSubmit((data) => {
     if (create.isPending) return;
-    create.mutate({ origem: data.origin }, { onSuccess: onClose });
+    create.mutate({ origin: data.origin }, { onSuccess: onClose });
   });
 
   return (

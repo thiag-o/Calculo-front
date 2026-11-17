@@ -17,15 +17,15 @@ if (!('ResizeObserver' in globalThis)) {
 }
 
 const API = 'https://api.teste';
-const TENANT = { id: '00000000-0000-0000-0000-00000000000a', nome: 'Matriz' };
-const ALL = ['usuarios.gerenciar', 'papeis.gerenciar', 'integracao.gerenciar', 'seguranca.gerenciar', 'auditoria.ver'];
+const TENANT = { id: '00000000-0000-0000-0000-00000000000a', name: 'Matriz' };
+const ALL = ['users.manage', 'roles.manage', 'integration.manage', 'security.manage', 'audit.view'];
 
 function session(permissions: string[]) {
   return {
-    usuario: { id: '00000000-0000-0000-0000-000000000001', nome: 'Ana Beatriz Souza', email: 'ana@exemplo.com' },
+    user: { id: '00000000-0000-0000-0000-000000000001', name: 'Ana Beatriz Souza', email: 'ana@exemplo.com' },
     tenants: [TENANT],
-    tenant_atual: TENANT,
-    permissoes: permissions,
+    current_tenant: TENANT,
+    permissions: permissions,
   };
 }
 
@@ -35,7 +35,7 @@ function json(body: unknown, status = 200): Response {
 
 function problem(status: number, code: string): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
@@ -45,15 +45,15 @@ type RouteResponse = Response | Promise<Response>;
 /** fetch simulated per route ("METHOD /path"); an unexpected route answers 404. The areas get empty lists. */
 function simulateApi(sessionRoute: RouteResponse) {
   const routes: Record<string, RouteResponse> = {
-    'GET /v1/sessao': sessionRoute,
-    'GET /v1/usuarios': json({ itens: [], proximo_cursor: null }),
-    'GET /v1/papeis': json([]),
-    'GET /v1/chaves-api': json({ itens: [], proximo_cursor: null }),
-    'GET /v1/dominios-autorizados': json([]),
+    'GET /v1/session': sessionRoute,
+    'GET /v1/users': json({ items: [], next_cursor: null }),
+    'GET /v1/roles': json([]),
+    'GET /v1/api-keys': json({ items: [], next_cursor: null }),
+    'GET /v1/authorized-domains': json([]),
   };
   const simulatedFetch = vi.fn(async (request: Request) => {
     const response = routes[`${request.method} ${new URL(request.url).pathname}`];
-    if (response === undefined) return problem(404, 'nao_encontrado');
+    if (response === undefined) return problem(404, 'not_found');
     return (await response).clone();
   });
   vi.stubGlobal('fetch', simulatedFetch);
@@ -100,11 +100,11 @@ describe('<Admin>', () => {
     expect(tabNames()).toEqual(['Usuários', 'Papéis', 'Integração', 'Segurança']);
     expect(panel()).toHaveAccessibleName('Usuários');
     expect(within(panel()).getByRole('heading', { level: 2, name: 'Usuários' })).toBeInTheDocument();
-    expect(api.calls()).not.toContain('GET /v1/configuracoes/seguranca');
+    expect(api.calls()).not.toContain('GET /v1/settings/security');
   });
 
   it('cada aba aparece só com a permissão da sua área', async () => {
-    simulateApi(json(session(['integracao.gerenciar', 'seguranca.gerenciar'])));
+    simulateApi(json(session(['integration.manage', 'security.manage'])));
     renderScreen();
 
     expect(await screen.findByRole('tab', { name: 'Integração' })).toHaveAttribute('aria-selected', 'true');
@@ -182,7 +182,7 @@ describe('<Admin>', () => {
   });
 
   it('com a aba controlada sem permissão, abre a primeira permitida', async () => {
-    simulateApi(json(session(['papeis.gerenciar', 'seguranca.gerenciar'])));
+    simulateApi(json(session(['roles.manage', 'security.manage'])));
     renderScreen({ tab: 'users' });
 
     expect(await screen.findByRole('tab', { name: 'Papéis' })).toHaveAttribute('aria-selected', 'true');
@@ -190,13 +190,13 @@ describe('<Admin>', () => {
   });
 
   it('sem nenhuma permissão da Administração, diz que não há área disponível', async () => {
-    const api = simulateApi(json(session(['workflows.ver', 'auditoria.ver'])));
+    const api = simulateApi(json(session(['workflows.view', 'audit.view'])));
     renderScreen();
 
     expect(await screen.findByText('Nenhuma área da Administração disponível para você')).toBeInTheDocument();
     expect(screen.getByText('Peça ao administrador do cliente as permissões de que precisa.')).toBeInTheDocument();
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
-    expect(api.calls()).toEqual(['GET /v1/sessao']);
+    expect(api.calls()).toEqual(['GET /v1/session']);
   });
 
   it('enquanto a sessão chega, mostra o esqueleto', async () => {
@@ -219,7 +219,7 @@ describe('<Admin>', () => {
     expect(alert).toHaveTextContent('Não foi possível abrir a Administração');
     expect(alert).toHaveTextContent('Texto do servidor para unavailable.');
 
-    api.set('GET /v1/sessao', json(session(ALL)));
+    api.set('GET /v1/session', json(session(ALL)));
     await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByRole('tablist', { name: 'Administração' })).toBeInTheDocument();
   });

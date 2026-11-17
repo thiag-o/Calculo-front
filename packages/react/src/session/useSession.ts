@@ -7,11 +7,11 @@ export { SESSION_KEY } from './sessionCache';
 export type { Session } from './sessionCache';
 
 /**
- * Does the user have the `code` permission (e.g. `workflows.ver`) in the current tenant?
+ * Does the user have the `code` permission (e.g. `workflows.view`) in the current tenant?
  * Without a session (loading, error or signed out), the answer is always `false`.
  */
 export function hasPermission(session: Session | undefined, code: string): boolean {
-  return session?.permissoes.includes(code) ?? false;
+  return session?.permissions.includes(code) ?? false;
 }
 
 export type SessionResult = UseQueryResult<Session> & {
@@ -28,7 +28,7 @@ const checks = new WeakMap<ApiClient, Promise<void>>();
  * The API client changed (the host app passed another token). The new token may be another person's or another tenant's:
  * fetches the session with it and, if the identity changed, discards the previous token's cache as in a tenant switch
  * (ADR 0015); if it is the same, only writes the new session (the roles may have changed) and keeps the data.
- * Token already expired: the client notifies `onSessionExpired` (401 `sem_sessao`). Other failure: the session stays as is.
+ * Token already expired: the client notifies `onSessionExpired` (401 `no_session`). Other failure: the session stays as is.
  */
 function checkClientSession(queryClient: QueryClient, client: ApiClient): Promise<void> {
   const existing = checks.get(client);
@@ -41,7 +41,7 @@ function checkClientSession(queryClient: QueryClient, client: ApiClient): Promis
       return;
     }
     await queryClient.cancelQueries({ queryKey: SESSION_KEY });
-    const fresh = await dataOrError(client.GET('/v1/sessao'));
+    const fresh = await dataOrError(client.GET('/v1/session'));
     if (currentClient.get(queryClient) !== client) return;
     if (sameIdentity(previous, fresh)) queryClient.setQueryData(SESSION_KEY, fresh);
     else await replaceSessionInCache(queryClient, fresh);
@@ -51,13 +51,13 @@ function checkClientSession(queryClient: QueryClient, client: ApiClient): Promis
 }
 
 /**
- * The current session (`GET /v1/sessao`): user, tenants, current tenant and permissions.
+ * The current session (`GET /v1/session`): user, tenants, current tenant and permissions.
  * - **Cookie mode** (shell): the cookie session.
  * - **Token mode** (embedded): the token session, with `Authorization: Bearer`. When the host app passes another
  *   token, the session is checked again; if the new token is another person's or another tenant's, the previous one's cache
  *   is discarded.
  *
- * Without a valid session (expired session, expired token), the query fails with `ApiError` `sem_sessao` (no retry, being
+ * Without a valid session (expired session, expired token), the query fails with `ApiError` `no_session` (no retry, being
  * 4xx) and the client notifies the provider's `onSessionExpired`.
  */
 export function useSession(): SessionResult {
@@ -65,7 +65,7 @@ export function useSession(): SessionResult {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: SESSION_KEY,
-    queryFn: ({ signal }) => dataOrError(client.GET('/v1/sessao', { signal })),
+    queryFn: ({ signal }) => dataOrError(client.GET('/v1/session', { signal })),
   });
 
   const mountClient = useRef(client);

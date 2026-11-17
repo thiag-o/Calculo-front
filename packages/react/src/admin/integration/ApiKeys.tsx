@@ -11,7 +11,7 @@ import './integration.css';
 
 /** Why "Revogar chave" is disabled on an already revoked key. */
 export function revokedApiKeyReason(apiKey: ApiKey): string {
-  const when = apiKey.revogada_em ? day(apiKey.revogada_em) : '';
+  const when = apiKey.revoked_at ? day(apiKey.revoked_at) : '';
   return when ? `A chave já foi revogada em ${when}` : 'A chave já foi revogada';
 }
 
@@ -22,7 +22,7 @@ type OpenDialog = { type: 'new' } | { type: 'revoke'; apiKey: ApiKey };
 function summary(apiKeys: readonly ApiKey[], hasMore: boolean): string {
   if (hasMore) return `Mais de ${apiKeys.length.toLocaleString('pt-BR')} chaves`;
   const total = apiKeys.length === 1 ? '1 chave' : `${apiKeys.length.toLocaleString('pt-BR')} chaves`;
-  const revoked = apiKeys.filter((apiKey) => apiKey.revogada_em !== null).length;
+  const revoked = apiKeys.filter((apiKey) => apiKey.revoked_at !== null).length;
   if (revoked === 0) return total;
   return `${total} · ${revoked === 1 ? '1 revogada' : `${revoked.toLocaleString('pt-BR')} revogadas`}`;
 }
@@ -53,7 +53,7 @@ export function ApiKeys() {
   }
 
   const apiKeys = list.data;
-  const noPermission = list.error instanceof ApiError && list.error.code === 'sem_permissao';
+  const noPermission = list.error instanceof ApiError && list.error.code === 'no_permission';
   const newApiKey = (size: 'small' | 'default', variant: 'primary' | 'secondary', ref?: typeof newButton) => (
     <Button ref={ref} variant={variant} size={size} onClick={() => setDialog({ type: 'new' })}>
       Nova chave de API
@@ -68,10 +68,10 @@ export function ApiKeys() {
       cell: (apiKey) => (
         <div className="fc-integration-two-lines">
           <Text variant="label-14" medium className="fc-integration-wrap">
-            {apiKey.nome}
+            {apiKey.name}
           </Text>
           <Text variant="mono-13" emphasis="secondary" className="fc-integration-wrap">
-            {`${apiKey.prefixo}…`}
+            {`${apiKey.prefix}…`}
           </Text>
         </div>
       ),
@@ -83,7 +83,7 @@ export function ApiKeys() {
       skeletonWidth: 80,
       cell: (apiKey) => (
         <Text variant="label-14" className="fc-integration-number">
-          {day(apiKey.criada_em)}
+          {day(apiKey.created_at)}
         </Text>
       ),
     },
@@ -93,9 +93,9 @@ export function ApiKeys() {
       width: '180px',
       skeletonWidth: 120,
       cell: (apiKey) =>
-        apiKey.ultimo_uso_em ? (
+        apiKey.last_used_at ? (
           <Text variant="label-14" className="fc-integration-number">
-            {dateTime(apiKey.ultimo_uso_em)}
+            {dateTime(apiKey.last_used_at)}
           </Text>
         ) : (
           <Text variant="label-14" emphasis="secondary">
@@ -109,11 +109,11 @@ export function ApiKeys() {
       width: '140px',
       skeletonWidth: 60,
       cell: (apiKey) =>
-        apiKey.revogada_em ? (
+        apiKey.revoked_at ? (
           <div className="fc-integration-two-lines">
             <Status tone="gray">Revogada</Status>
             <Text variant="label-13" emphasis="secondary" className="fc-integration-number">
-              {`em ${day(apiKey.revogada_em)}`}
+              {`em ${day(apiKey.revoked_at)}`}
             </Text>
           </div>
         ) : (
@@ -134,7 +134,7 @@ export function ApiKeys() {
               iconOnly
               variant="ghost"
               size="small"
-              label={`Mais ações para a chave ${apiKey.nome}`}
+              label={`Mais ações para a chave ${apiKey.name}`}
               icon={<MoreActionsIcon />}
               data-fc-api-key-actions={apiKey.id}
             />
@@ -144,7 +144,7 @@ export function ApiKeys() {
               label: 'Revogar chave',
               danger: true,
               onSelect: () => setDialog({ type: 'revoke', apiKey }),
-              disabledReason: apiKey.revogada_em ? revokedApiKeyReason(apiKey) : undefined,
+              disabledReason: apiKey.revoked_at ? revokedApiKeyReason(apiKey) : undefined,
             },
           ]}
         />

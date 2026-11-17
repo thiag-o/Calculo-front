@@ -36,41 +36,41 @@ export function localIso(year: number, month: number, day: number, time = 12, mi
   return new Date(year, month - 1, day, time, minute).toISOString();
 }
 
-export const PORTAL_API_KEY: Schemas['ChaveApi'] = {
+export const PORTAL_API_KEY: Schemas['ApiKey'] = {
   id: '30000000-0000-0000-0000-000000000001',
-  nome: 'Portal do cliente',
-  prefixo: 'fc_3k9Q',
-  criada_em: localIso(2026, 11, 2),
-  ultimo_uso_em: localIso(2026, 11, 15, 9, 5),
-  revogada_em: null,
+  name: 'Portal do cliente',
+  prefix: 'fc_3k9Q',
+  created_at: localIso(2026, 11, 2),
+  last_used_at: localIso(2026, 11, 15, 9, 5),
+  revoked_at: null,
 };
-export const ERP_API_KEY: Schemas['ChaveApi'] = {
+export const ERP_API_KEY: Schemas['ApiKey'] = {
   id: '30000000-0000-0000-0000-000000000002',
-  nome: 'Integração do ERP corporativo de faturamento, conciliação e repasses',
-  prefixo: 'fc_Zp71',
-  criada_em: localIso(2026, 11, 10),
-  ultimo_uso_em: null,
-  revogada_em: null,
+  name: 'Integração do ERP corporativo de faturamento, conciliação e repasses',
+  prefix: 'fc_Zp71',
+  created_at: localIso(2026, 11, 10),
+  last_used_at: null,
+  revoked_at: null,
 };
-export const OLD_API_KEY: Schemas['ChaveApi'] = {
+export const OLD_API_KEY: Schemas['ApiKey'] = {
   id: '30000000-0000-0000-0000-000000000003',
-  nome: 'Portal antigo',
-  prefixo: 'fc_a0b1',
-  criada_em: localIso(2026, 1, 5),
-  ultimo_uso_em: localIso(2026, 3, 1, 18, 30),
-  revogada_em: localIso(2026, 3, 2),
+  name: 'Portal antigo',
+  prefix: 'fc_a0b1',
+  created_at: localIso(2026, 1, 5),
+  last_used_at: localIso(2026, 3, 1, 18, 30),
+  revoked_at: localIso(2026, 3, 2),
 };
 export const API_KEYS = [PORTAL_API_KEY, ERP_API_KEY, OLD_API_KEY];
 
-export const APP_AUTHORIZED_DOMAIN: Schemas['DominioAutorizado'] = {
+export const APP_AUTHORIZED_DOMAIN: Schemas['AuthorizedDomain'] = {
   id: '40000000-0000-0000-0000-000000000001',
-  origem: 'https://app.exemplo.com.br',
-  criado_em: localIso(2026, 11, 3),
+  origin: 'https://app.exemplo.com.br',
+  created_at: localIso(2026, 11, 3),
 };
-export const LOCAL_AUTHORIZED_DOMAIN: Schemas['DominioAutorizado'] = {
+export const LOCAL_AUTHORIZED_DOMAIN: Schemas['AuthorizedDomain'] = {
   id: '40000000-0000-0000-0000-000000000002',
-  origem: 'http://localhost:5274',
-  criado_em: localIso(2026, 11, 14),
+  origin: 'http://localhost:5274',
+  created_at: localIso(2026, 11, 14),
 };
 export const AUTHORIZED_DOMAINS = [APP_AUTHORIZED_DOMAIN, LOCAL_AUTHORIZED_DOMAIN];
 
@@ -86,7 +86,7 @@ export function noContent(): Response {
 /** problem+json error of the contract. */
 export function problem(status: number, code: string, extra: Record<string, unknown> = {}): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code, ...extra }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code, ...extra }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
@@ -95,7 +95,7 @@ type RouteResponse = Response | Promise<Response> | ((request: Request) => Respo
 
 /**
  * fetch simulated per route ("METHOD /path"). Each route has a queue of responses: the last one repeats.
- * A route without a configured response answers 599 (it becomes `resposta_inesperada` on screen).
+ * A route without a configured response answers 599 (it becomes `unexpected_response` on screen).
  */
 export function simulateApi() {
   const queues = new Map<string, RouteResponse[]>();

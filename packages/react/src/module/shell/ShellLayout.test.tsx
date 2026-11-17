@@ -46,7 +46,7 @@ const layout = (container: HTMLElement) => container.querySelector('.fc-shell') 
 
 describe('layout do casca', () => {
   it('mostra o seletor de cliente no topo, os itens do menu e quem está logado no rodapé', async () => {
-    simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+    simulateApi({ 'GET /v1/session': json(headquartersSession) });
     renderScreen();
 
     await screen.findByRole('heading', { name: 'Tela Início' });
@@ -61,7 +61,7 @@ describe('layout do casca', () => {
   });
 
   it('navega pelo menu e marca o item da tela aberta', async () => {
-    simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+    simulateApi({ 'GET /v1/session': json(headquartersSession) });
     const { user } = renderScreen();
 
     await screen.findByRole('heading', { name: 'Tela Início' });
@@ -74,42 +74,42 @@ describe('layout do casca', () => {
 
   describe('seletor de cliente', () => {
     it('lista os clientes do usuário, com o atual marcado e sem ação', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const { user } = renderScreen();
 
       await user.click(await screen.findByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
       const list = await screen.findByRole('menu');
       expect(list.closest('.fc-portals')).not.toBeNull();
       const items = within(list).getAllByRole('menuitem');
-      expect(items.map((item) => item.textContent)).toEqual(['MatrizCliente atual', BRANCH_TENANT.nome]);
+      expect(items.map((item) => item.textContent)).toEqual(['MatrizCliente atual', BRANCH_TENANT.name]);
       expect(items[0]).toHaveAttribute('aria-disabled', 'true');
       expect(items[0]).toHaveAccessibleDescription('Cliente atual');
     });
 
     it('troca de cliente pelo useSwitchTenant: o seletor e os itens do menu passam a ser os do cliente novo', async () => {
-      const api = simulateApi({ 'GET /v1/sessao': json(headquartersSession), 'PUT /v1/sessao/tenant': json(branchSession) });
+      const api = simulateApi({ 'GET /v1/session': json(headquartersSession), 'PUT /v1/session/tenant': json(branchSession) });
       const { user } = renderScreen();
 
       await user.click(await screen.findByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
-      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.nome }));
+      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
 
-      expect(await screen.findByRole('button', { name: `Trocar cliente. Atual: ${BRANCH_TENANT.nome}` })).toBeInTheDocument();
-      // Filial grants auditoria.ver and does not grant workflows.ver.
+      expect(await screen.findByRole('button', { name: `Trocar cliente. Atual: ${BRANCH_TENANT.name}` })).toBeInTheDocument();
+      // Filial grants audit.view and does not grant workflows.view.
       expect(menuLinks()).toEqual(['Início', 'Auditoria']);
 
-      const switchRequest = api.request(api.calls().indexOf('PUT /v1/sessao/tenant'));
+      const switchRequest = api.request(api.calls().indexOf('PUT /v1/session/tenant'));
       expect(await switchRequest.json()).toEqual({ tenant_id: BRANCH_TENANT.id });
       expect(switchRequest.headers.get('X-CSRF-Token')).toBe('csrf-de-teste');
     });
 
     it('a tela aberta que o cliente novo não permite volta para a tela inicial', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession), 'PUT /v1/sessao/tenant': json(branchSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession), 'PUT /v1/session/tenant': json(branchSession) });
       const { user } = renderScreen();
 
       await user.click(await screen.findByRole('link', { name: 'Workflows' }));
       await screen.findByRole('heading', { name: 'Tela Workflows' });
       await user.click(selector());
-      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.nome }));
+      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
 
       expect(await screen.findByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: 'Tela Workflows' })).not.toBeInTheDocument();
@@ -117,30 +117,30 @@ describe('layout do casca', () => {
 
     it('enquanto troca, o seletor fica ocupado', async () => {
       const pending = pendingResponse();
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession), 'PUT /v1/sessao/tenant': pending.promise });
+      simulateApi({ 'GET /v1/session': json(headquartersSession), 'PUT /v1/session/tenant': pending.promise });
       const { user } = renderScreen();
 
       await user.click(await screen.findByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
-      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.nome }));
+      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
       await waitFor(() => expect(selector()).toHaveAttribute('aria-busy', 'true'));
 
       pending.deliver(json(branchSession));
       await waitFor(() => expect(selector()).not.toHaveAttribute('aria-busy'));
-      expect(selector()).toHaveAccessibleName(`Trocar cliente. Atual: ${BRANCH_TENANT.nome}`);
+      expect(selector()).toHaveAccessibleName(`Trocar cliente. Atual: ${BRANCH_TENANT.name}`);
     });
 
     it('sem acesso ao cliente (403), avisa e busca a lista de clientes de novo; "Fechar aviso" tira a nota', async () => {
       const api = simulateApi({
-        'GET /v1/sessao': json(headquartersSession),
-        'PUT /v1/sessao/tenant': problem(403, 'sem_acesso_ao_tenant'),
+        'GET /v1/session': json(headquartersSession),
+        'PUT /v1/session/tenant': problem(403, 'no_tenant_access'),
       });
       const { user } = renderScreen();
 
       await user.click(await screen.findByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
-      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.nome }));
+      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(NO_TENANT_ACCESS_MESSAGE);
-      await waitFor(() => expect(api.calls().filter((call) => call === 'GET /v1/sessao')).toHaveLength(2));
+      await waitFor(() => expect(api.calls().filter((call) => call === 'GET /v1/session')).toHaveLength(2));
       expect(selector()).toHaveAccessibleName('Trocar cliente. Atual: Matriz');
 
       await user.click(screen.getByRole('button', { name: 'Fechar aviso' }));
@@ -148,24 +148,24 @@ describe('layout do casca', () => {
     });
 
     it('em outro erro, mostra a mensagem da API; a troca seguinte que dá certo tira a nota', async () => {
-      const api = simulateApi({ 'GET /v1/sessao': json(headquartersSession), 'PUT /v1/sessao/tenant': problem(403, 'csrf_invalido') });
+      const api = simulateApi({ 'GET /v1/session': json(headquartersSession), 'PUT /v1/session/tenant': problem(403, 'invalid_csrf') });
       const { user } = renderScreen();
 
       await user.click(await screen.findByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
-      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.nome }));
+      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
       expect(await screen.findByRole('alert')).toHaveTextContent(
-        'Não foi possível trocar de cliente. Texto do servidor para csrf_invalido.',
+        'Não foi possível trocar de cliente. Texto do servidor para invalid_csrf.',
       );
 
-      api.set({ 'PUT /v1/sessao/tenant': json(branchSession) });
+      api.set({ 'PUT /v1/session/tenant': json(branchSession) });
       await user.click(selector());
-      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.nome }));
+      await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
       await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
-      expect(selector()).toHaveAccessibleName(`Trocar cliente. Atual: ${BRANCH_TENANT.nome}`);
+      expect(selector()).toHaveAccessibleName(`Trocar cliente. Atual: ${BRANCH_TENANT.name}`);
     });
 
     it('com um cliente só, mostra o nome sem botão de troca', async () => {
-      simulateApi({ 'GET /v1/sessao': json(oneTenantSession) });
+      simulateApi({ 'GET /v1/session': json(oneTenantSession) });
       renderScreen();
 
       await screen.findByRole('heading', { name: 'Tela Início' });
@@ -176,7 +176,7 @@ describe('layout do casca', () => {
 
   describe('sair', () => {
     it('"Sair" encerra a sessão na API e avisa o onSessionExpired', async () => {
-      const api = simulateApi({ 'GET /v1/sessao': json(headquartersSession), 'DELETE /v1/sessao': noContent() });
+      const api = simulateApi({ 'GET /v1/session': json(headquartersSession), 'DELETE /v1/session': noContent() });
       const { user, onSessionExpired } = renderScreen();
 
       await user.click(await screen.findByRole('button', { name: 'Ana Beatriz Souza: opções da conta' }));
@@ -185,18 +185,18 @@ describe('layout do casca', () => {
       expect(await screen.findByText('A sessão terminou')).toBeInTheDocument();
       expect(onSessionExpired).toHaveBeenCalledTimes(1);
       expect(screen.queryByRole('complementary', { name: 'Menu lateral' })).not.toBeInTheDocument();
-      const output = api.request(api.calls().indexOf('DELETE /v1/sessao'));
+      const output = api.request(api.calls().indexOf('DELETE /v1/session'));
       expect(output.headers.get('X-CSRF-Token')).toBe('csrf-de-teste');
     });
 
     it('se a saída falha, a sessão continua e a nota diz o que houve', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession), 'DELETE /v1/sessao': problem(403, 'csrf_invalido') });
+      simulateApi({ 'GET /v1/session': json(headquartersSession), 'DELETE /v1/session': problem(403, 'invalid_csrf') });
       const { user, onSessionExpired } = renderScreen();
 
       await user.click(await screen.findByRole('button', { name: 'Ana Beatriz Souza: opções da conta' }));
       await user.click(await screen.findByRole('menuitem', { name: 'Sair' }));
 
-      expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível sair. Texto do servidor para csrf_invalido.');
+      expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível sair. Texto do servidor para invalid_csrf.');
       expect(onSessionExpired).not.toHaveBeenCalled();
       expect(screen.getByRole('heading', { name: 'Tela Início' })).toBeInTheDocument();
     });
@@ -204,7 +204,7 @@ describe('layout do casca', () => {
 
   describe('menu recolhível e larguras', () => {
     it('a partir de 1180px, o menu é completo e "Recolher menu" deixa só os ícones, com o nome na dica', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const { user, container } = renderScreen();
 
       await screen.findByRole('heading', { name: 'Tela Início' });
@@ -227,7 +227,7 @@ describe('layout do casca', () => {
     });
 
     it('abaixo de 1180px de largura do módulo, o menu fica só com ícones e não há o que expandir', async () => {
-      simulateApi({ 'GET /v1/sessao': json(headquartersSession) });
+      simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const { container } = renderScreen();
 
       await screen.findByRole('heading', { name: 'Tela Início' });

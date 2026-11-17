@@ -3,7 +3,7 @@
 Dicionário dos nomes do front depois da regra do dono de 2026-11-16: **todo o código em inglês; os textos para pessoas continuam em português** (ADR [0031](adr/0031-codigo-em-ingles.md), que segue a [0047 do back](../../backend/docs/adr/0047-codigo-em-ingles.md); decisão E3-20 do `docs/plano.md`).
 
 - **O que está aqui:** os nomes que **não são da API**: verticais e pastas, arquivos, componentes, props e os valores delas, hooks, tipos, classes `fc-`, tokens `--fc-*`, rotas da URL, chaves de cache, scripts e os nomes do e2e.
-- **Nomes da API** (caminhos, campos, códigos de erro, permissões, tipos de evento, esquemas, cookie): ficam no [`../backend/docs/glossario.md`](../../backend/docs/glossario.md). Até a F42 terminar, o código do front ainda usa os nomes da API **em português**, porque a API é a de hoje (veja [Nomes da API que ficam até a F42](#nomes-da-api-que-ficam-até-a-f42)).
+- **Nomes da API** (caminhos, campos, códigos de erro, permissões, tipos de evento, esquemas, cookie): ficam no [`../backend/docs/glossario.md`](../../backend/docs/glossario.md). Desde a F42, o código do front usa os nomes da API em inglês, como o contrato da B48 (veja [Nomes da API no front](#nomes-da-api-no-front)).
 - **Como ler:** cada linha é um conceito. A coluna "Português" traz o nome de antes da F41; a coluna "Inglês", o nome a usar. Código novo usa só a coluna "Inglês".
 - **Nome que não está aqui:** componha pelo [vocabulário](#vocabulário-do-front) e pelo vocabulário do glossário do back, seguindo as [regras de forma](#regras-de-forma). Se nenhum dos dois resolver, o nome novo entra aqui na mesma tarefa.
 - **Um termo por conceito**, como no back: o mesmo conceito tem o mesmo nome na API e no front (`role`, `user`, `session`, `api key`, `authorized domain`, `access event`).
@@ -35,8 +35,6 @@ Dicionário dos nomes do front depois da regra do dono de 2026-11-16: **todo o c
 | `@fluxo/react`, `FluxoCalculo`, `FluxoCalculoProps`, prefixo `Fluxo` em tipos públicos (`FluxoScreen`, `FluxoTheme`, `FluxoNavigation`, `FluxoEvent`, `FluxoRoot`, `FluxoModule`, `FluxoBrand`, `useFluxoPortal`) | nome do produto (E3-15) |
 | Prefixos `fc-` (classes), `--fc-` (tokens), `data-fc-` (atributos), `fc_` (cookies) | prefixos do produto (E3-15) |
 | `VITE_AMBIENTE` e os valores dele (`local`, `homologacao`, `producao`) | variável dos environments do GitHub (`.github/workflows`, fora da F41); muda junto com o deploy |
-| `E2E_CASCA_URL`, `E2E_ADMIN_SENHA`, `E2E_DOIS_TENANTS_*` | variáveis do e2e no modo real; a F42 as troca junto com as do back (`E2E_SAMPLE_*`) |
-| Rota legada `/redefinir` | o back ainda monta o link de redefinição com ela (`FLUXO_URL_CASCA/redefinir?token=…`); o casca aceita `/reset-password` e `/redefinir` até a F42/B48 |
 | Nomes dos papéis iniciais, tenants e contas de demonstração (`Admin`, `Configurador`, `Demonstração`, `Outra Empresa`) usados como chave ou dado nos testes | são dados (texto), não código |
 
 ## Verticais e pastas
@@ -145,7 +143,7 @@ Muda na versão maior da F41 (changeset `.changeset/f41-codigo-em-ingles.md`).
 | Português | Inglês |
 |---|---|
 | `/entrar` (casca) | `/sign-in` |
-| `/redefinir?token=…` (casca) | `/reset-password?token=…` (o casca ainda aceita `/redefinir`: veja [Exceções](#exceções)) |
+| `/redefinir?token=…` (casca) | `/reset-password?token=…` (o back monta o link com ela desde a B49; a rota `/redefinir` saiu na F42) |
 | `/inicio` | `/home` |
 | `/auditoria` | `/audit` |
 | `/administracao`, `/administracao/usuarios`, `/administracao/papeis`, `/administracao/integracao`, `/administracao/seguranca` | `/admin`, `/admin/users`, `/admin/roles`, `/admin/integration`, `/admin/security` |
@@ -200,9 +198,9 @@ Muda na versão maior da F41 (changeset `.changeset/f41-codigo-em-ingles.md`).
 | telas de abas: `aba`, `aoTrocarAba` | `tab`, `onTabChange` |
 | diálogos das telas: `aoFechar`, `focoAoFechar`, `aoConfirmar` | `onClose`, `focusOnClose`, `onConfirm` |
 | estado `DialogoAberto` das telas: `tipo` (`nova`, `novo`, `editar`, `remover`, `revogar`, `link`) | `OpenDialog`: `type` (`new`, `edit`, `delete`, `revoke`, `link`) |
-| campos dos formulários (`nome`, `papeis`, `ativo`, `senha`, `origem`, `permissoes`, `confirmacao`, `nova_senha`) | `name`, `roles`, `active`, `password`, `origin`, `permissions`, `confirmation`, `newPassword`. O corpo enviado à API e os `campos` do erro continuam com os nomes da API até a F42: o mapa fica nos `messages.ts` de cada tela |
+| campos dos formulários (`nome`, `papeis`, `ativo`, `senha`, `origem`, `permissoes`, `confirmacao`, `nova_senha`) | `name`, `roles`, `active`, `password`, `origin`, `permissions`, `confirmation`, `newPassword`. Desde a F42, o corpo enviado à API e os `fields` do erro usam os nomes da API em inglês (`name`, `roles`, `active`, `password`, `origin`, `permissions`, `new_password`); o mapa campo da API → campo do formulário continua nos `messages.ts` de cada tela |
 | `ErroApi`: `codigo`, `mensagem`, `campos`, `corpo` | `ApiError`: `code`, `message` (o de `Error`), `fields`, `body` |
-| códigos que nascem no cliente: `sem_conexao`, `resposta_inesperada` | ficam até a F42, junto com os códigos da API |
+| códigos que nascem no cliente: `sem_conexao`, `resposta_inesperada` | `no_connection`, `unexpected_response` (F42) |
 
 ## Classes CSS
 
@@ -295,15 +293,16 @@ Palavra a palavra, para compor nomes de componentes, props, classes e variáveis
 | `semX` | `noX`/`withoutX` | `SemTelas` → `NoScreens` |
 | `MENSAGEM_X`, `MOTIVO_X`, `ROTA_X`, `CHAVE_X` | `X_MESSAGE`, `X_REASON`, `X_ROUTE`, `X_KEY` | o qualificador vai para o fim |
 
-## Nomes da API que ficam até a F42
+## Nomes da API no front
 
-O código usa a API de hoje. Ficam em português, e a F42 os troca pelo glossário do back:
+Desde a F42, o front usa os nomes da API do contrato da B48 (`../backend/contracts/openapi.yaml`), pelo [`../backend/docs/glossario.md`](../../backend/docs/glossario.md):
 
-- caminhos `/v1/...`, campos do JSON (`itens`, `proximo_cursor`, `nome`, `papeis`, `codigo`, `campos`…), códigos de erro (`sem_sessao`, `dados_invalidos`…), permissões (`auditoria.ver`…), tipos de evento (`login_ok`…), parâmetros de consulta (`tipo`, `desde`, `ate`, `limite`) e o cookie `fc_sessao`;
-- as chaves dos esquemas gerados (`Schemas['Usuario']`, `Schemas['Sessao']`…); os nomes de tipo do front que as apelidam já estão em inglês (`type User = Schemas['Usuario']`);
-- os nomes dos exemplos do contrato no `e2e/support/contract.ts` (`DadosInvalidos`, `SemSessao`…), que são `components.examples` do contrato;
-- no e2e, as propriedades do estado simulado que espelham o JSON da API (`nome`, `papeis`, `ativo`, `permissoes`…);
-- os códigos que nascem no cliente (`sem_conexao`, `resposta_inesperada`) e o código simulado de teste `unavailable`.
+- caminhos `/v1/...` (`/v1/session`, `/v1/users/{id}/password-reset`, `/v1/audit/access-events`…), campos do JSON (`items`, `next_cursor`, `name`, `roles`, `code`, `fields`…), códigos de erro (`no_session`, `invalid_data`…), permissões (`audit.view`…), tipos de evento (`login_succeeded`…), parâmetros de consulta (`type`, `since`, `until`, `limit`), o esquema `Authorization: ApiKey <key>` da troca de chave e o cookie `fc_session`;
+- as chaves dos esquemas gerados (`Schemas['User']`, `Schemas['Session']`…) e os nomes dos exemplos do contrato no `e2e/support/contract.ts` (`InvalidData`, `NoSession`…), que são `components.examples` do contrato;
+- no e2e, as propriedades do estado simulado que espelham o JSON da API (`name`, `roles`, `active`, `permissions`…);
+- os códigos que nascem no cliente (`no_connection`, `unexpected_response`) e os códigos só da simulação de teste (`unavailable` e `route_not_simulated`, rota fora da API simulada).
+
+Variáveis do e2e no modo real (eram `E2E_ADMIN_SENHA`, `E2E_DOIS_TENANTS_EMAIL`, `E2E_DOIS_TENANTS_SENHA` e `E2E_CASCA_URL`): `E2E_ADMIN_PASSWORD`, `E2E_TWO_TENANTS_EMAIL`, `E2E_TWO_TENANTS_PASSWORD` e `E2E_SHELL_URL`; as do banco de exemplo do épico 3 usam o prefixo `E2E_SAMPLE_` (no lugar de `E2E_EXEMPLO_`). A lista está no README, seção do modo real.
 
 ## Componentes e tipos
 

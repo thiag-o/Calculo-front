@@ -21,8 +21,8 @@ import {
 
 let api: SimulatedApi;
 
-const LIST_ROUTE = 'GET /v1/chaves-api';
-const REVOKE_ROUTE = `DELETE /v1/chaves-api/${PORTAL_API_KEY.id}`;
+const LIST_ROUTE = 'GET /v1/api-keys';
+const REVOKE_ROUTE = `DELETE /v1/api-keys/${PORTAL_API_KEY.id}`;
 
 beforeEach(() => {
   api = simulateApi();
@@ -44,7 +44,7 @@ function rowOf(name: string): HTMLElement {
 
 describe('Integração: lista de chaves de API', () => {
   it('mostra nome e prefixo, criada, último uso e situação, com as revogadas', async () => {
-    api.respond(LIST_ROUTE, json({ itens: API_KEYS, proximo_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: API_KEYS, next_cursor: null }));
     renderScreen();
 
     expect(await screen.findByText('Portal do cliente')).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe('Integração: lista de chaves de API', () => {
     expect(portal.getByText('15/11/2026 às 09:05')).toBeInTheDocument();
     expect(portal.getByText('Ativa')).toBeInTheDocument();
 
-    const erp = within(rowOf(ERP_API_KEY.nome));
+    const erp = within(rowOf(ERP_API_KEY.name));
     expect(erp.getByText('Nunca usada')).toBeInTheDocument();
 
     const old = within(rowOf('Portal antigo'));
@@ -77,7 +77,7 @@ describe('Integração: lista de chaves de API', () => {
   });
 
   it('a lista nunca mostra a chave inteira, só o prefixo', async () => {
-    api.respond(LIST_ROUTE, json({ itens: [PORTAL_API_KEY], proximo_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: [PORTAL_API_KEY], next_cursor: null }));
     renderScreen();
     await screen.findByText('Portal do cliente');
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('Integração: lista de chaves de API', () => {
   });
 
   it('enquanto carrega, mostra o esqueleto e anuncia', async () => {
-    const pending = pendingResponse(() => json({ itens: [PORTAL_API_KEY], proximo_cursor: null }));
+    const pending = pendingResponse(() => json({ items: [PORTAL_API_KEY], next_cursor: null }));
     api.respond(LIST_ROUTE, pending.promise);
     renderScreen();
 
@@ -98,7 +98,7 @@ describe('Integração: lista de chaves de API', () => {
   });
 
   it('vazio: diz o que falta e oferece criar a primeira chave', async () => {
-    api.respond(LIST_ROUTE, json({ itens: [], proximo_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: [], next_cursor: null }));
     const { user } = renderScreen();
 
     expect(await screen.findByText('Nenhuma chave de API ainda')).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe('Integração: lista de chaves de API', () => {
   });
 
   it('erro ao carregar: explica e deixa tentar de novo', async () => {
-    api.respond(LIST_ROUTE, problem(503, 'unavailable'), json({ itens: [PORTAL_API_KEY], proximo_cursor: null }));
+    api.respond(LIST_ROUTE, problem(503, 'unavailable'), json({ items: [PORTAL_API_KEY], next_cursor: null }));
     const { user } = renderScreen();
 
     const alert = await screen.findByRole('alert');
@@ -123,7 +123,7 @@ describe('Integração: lista de chaves de API', () => {
   });
 
   it('sem permissão: explica e não oferece tentar de novo', async () => {
-    api.respond(LIST_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(LIST_ROUTE, problem(403, 'no_permission'));
     renderScreen();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(NO_PERMISSION_MESSAGE);
@@ -133,8 +133,8 @@ describe('Integração: lista de chaves de API', () => {
   it('pagina por cursor com "Carregar mais chaves"', async () => {
     api.respond(
       LIST_ROUTE,
-      json({ itens: [PORTAL_API_KEY, ERP_API_KEY], proximo_cursor: 'cursor-2' }),
-      json({ itens: [OLD_API_KEY], proximo_cursor: null }),
+      json({ items: [PORTAL_API_KEY, ERP_API_KEY], next_cursor: 'cursor-2' }),
+      json({ items: [OLD_API_KEY], next_cursor: null }),
     );
     const { user } = renderScreen();
 
@@ -152,9 +152,9 @@ describe('Integração: lista de chaves de API', () => {
   it('erro ao carregar a próxima página: a lista fica e dá para tentar de novo', async () => {
     api.respond(
       LIST_ROUTE,
-      json({ itens: [PORTAL_API_KEY], proximo_cursor: 'cursor-2' }),
+      json({ items: [PORTAL_API_KEY], next_cursor: 'cursor-2' }),
       problem(503, 'unavailable'),
-      json({ itens: [OLD_API_KEY], proximo_cursor: null }),
+      json({ items: [OLD_API_KEY], next_cursor: null }),
     );
     const { user } = renderScreen();
 
@@ -177,7 +177,7 @@ async function openRevoke(user: UserEvent, name = 'Portal do cliente') {
 
 describe('Integração: revogar chave', () => {
   beforeEach(() => {
-    api.respond(LIST_ROUTE, json({ itens: API_KEYS, proximo_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: API_KEYS, next_cursor: null }));
   });
 
   it('pede confirmação e cancelar não revoga; o foco volta ao "…" da linha', async () => {
@@ -196,11 +196,11 @@ describe('Integração: revogar chave', () => {
   });
 
   it('revoga com CSRF, fecha, atualiza a lista e devolve o foco à linha', async () => {
-    const revoked = { ...PORTAL_API_KEY, revogada_em: OLD_API_KEY.revogada_em };
+    const revoked = { ...PORTAL_API_KEY, revoked_at: OLD_API_KEY.revoked_at };
     api.respond(REVOKE_ROUTE, noContent());
     const { user } = renderScreen();
     const panel = await openRevoke(user);
-    api.respond(LIST_ROUTE, json({ itens: [revoked, ERP_API_KEY, OLD_API_KEY], proximo_cursor: null }));
+    api.respond(LIST_ROUTE, json({ items: [revoked, ERP_API_KEY, OLD_API_KEY], next_cursor: null }));
 
     await user.click(within(panel).getByRole('button', { name: 'Revogar chave' }));
 
@@ -240,10 +240,10 @@ describe('Integração: revogar chave', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('nao_encontrado: explica, não oferece revogar de novo e atualiza a lista', async () => {
-    api.respond(`DELETE /v1/chaves-api/${ERP_API_KEY.id}`, problem(404, 'nao_encontrado'));
+  it('not_found: explica, não oferece revogar de novo e atualiza a lista', async () => {
+    api.respond(`DELETE /v1/api-keys/${ERP_API_KEY.id}`, problem(404, 'not_found'));
     const { user } = renderScreen();
-    const panel = await openRevoke(user, ERP_API_KEY.nome);
+    const panel = await openRevoke(user, ERP_API_KEY.name);
 
     await user.click(within(panel).getByRole('button', { name: 'Revogar chave' }));
 
@@ -255,7 +255,7 @@ describe('Integração: revogar chave', () => {
   });
 
   it('sem permissão: explica', async () => {
-    api.respond(REVOKE_ROUTE, problem(403, 'sem_permissao'));
+    api.respond(REVOKE_ROUTE, problem(403, 'no_permission'));
     const { user } = renderScreen();
     const panel = await openRevoke(user);
 

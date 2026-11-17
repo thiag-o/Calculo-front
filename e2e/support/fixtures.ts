@@ -1,6 +1,6 @@
 // End-to-end test fixture: the same test files run in both projects of playwright.config.ts.
 // - simulated (pnpm e2e): the simulated API (`SimulatedApi`) is turned on for every page, with the accounts below;
-// - real (pnpm e2e:real): the shell talks to the real backend at E2E_API_URL, with the `preparar-local` accounts.
+// - real (pnpm e2e:real): the shell talks to the real backend at E2E_API_URL, with the `prepare-local` accounts.
 import { randomUUID } from 'node:crypto';
 import { test as base, expect, type TestInfo } from '@playwright/test';
 import { SimulatedApi, type SimulatedAccount } from './simulated-api';
@@ -14,7 +14,7 @@ export type AccountName = 'admin' | 'twoTenants';
 
 export interface LoginCredentials {
   email: string;
-  senha: string;
+  password: string;
 }
 
 export interface E2EApi {
@@ -27,40 +27,40 @@ export interface E2EApi {
   emailWithoutAccount(): string;
 }
 
-// Simulation accounts, in the format of the backend's `preparar-local` (tenants "Demonstração" and "Outra Empresa").
-const DEMO = { id: '7d0c1f6e-0000-4000-8000-000000000001', nome: 'Demonstração' };
-const OTHER_COMPANY = { id: '7d0c1f6e-0000-4000-8000-000000000002', nome: 'Outra Empresa' };
+// Simulation accounts, in the format of the backend's `prepare-local` (tenants "Demonstração" and "Outra Empresa").
+const DEMO = { id: '7d0c1f6e-0000-4000-8000-000000000001', name: 'Demonstração' };
+const OTHER_COMPANY = { id: '7d0c1f6e-0000-4000-8000-000000000002', name: 'Outra Empresa' };
 
 const SIMULATED_ACCOUNTS: Record<AccountName, SimulatedAccount> = {
   admin: {
     id: '7d0c1f6e-0000-4000-8000-0000000000a1',
     email: 'admin@demo.local',
-    senha: 'senha-simulada-admin',
-    nome: 'Administradora Demonstração',
-    tenants: [{ tenant: DEMO, permissoes: ['usuarios.gerenciar', 'workflows.ver', 'auditoria.ver'] }],
+    password: 'senha-simulada-admin',
+    name: 'Administradora Demonstração',
+    tenants: [{ tenant: DEMO, permissions: ['users.manage', 'workflows.view', 'audit.view'] }],
   },
   twoTenants: {
     id: '7d0c1f6e-0000-4000-8000-0000000000a2',
     email: 'dois.tenants@demo.local',
-    senha: 'senha-simulada-dois-tenants',
-    nome: 'Usuário de Dois Tenants',
+    password: 'senha-simulada-dois-tenants',
+    name: 'Usuário de Dois Tenants',
     tenants: [
-      { tenant: OTHER_COMPANY, permissoes: ['workflows.ver'] },
-      { tenant: DEMO, permissoes: ['workflows.ver', 'execucoes.ver'] },
+      { tenant: OTHER_COMPANY, permissions: ['workflows.view'] },
+      { tenant: DEMO, permissions: ['workflows.view', 'executions.view'] },
     ],
   },
 };
 
 /**
- * Real-mode account variables (the credentials the backend's `preparar-local` prints and documents in
+ * Real-mode account variables (the credentials the backend's `prepare-local` prints and documents in
  * `../backend/docs/ambientes.md`). The Admin e-mail has the backend plan's default; the passwords are required.
  */
-const REAL_ACCOUNTS: Record<AccountName, { email: string; senha: string; emailPattern?: string }> = {
-  admin: { email: 'E2E_ADMIN_EMAIL', senha: 'E2E_ADMIN_SENHA', emailPattern: 'admin@demo.local' },
-  twoTenants: { email: 'E2E_DOIS_TENANTS_EMAIL', senha: 'E2E_DOIS_TENANTS_SENHA' },
+const REAL_ACCOUNTS: Record<AccountName, { email: string; password: string; emailPattern?: string }> = {
+  admin: { email: 'E2E_ADMIN_EMAIL', password: 'E2E_ADMIN_PASSWORD', emailPattern: 'admin@demo.local' },
+  twoTenants: { email: 'E2E_TWO_TENANTS_EMAIL', password: 'E2E_TWO_TENANTS_PASSWORD' },
 };
 
-const ACCOUNTS_HELP = 'credenciais do preparar-local do back, em ../backend/docs/ambientes.md';
+const ACCOUNTS_HELP = 'credenciais do prepare-local do back, em ../backend/docs/ambientes.md';
 
 function variable(name: string, help: string, defaultValue?: string): string {
   const value = process.env[name]?.trim() || defaultValue;
@@ -96,7 +96,7 @@ export const test = base.extend<{ api: E2EApi }>({
         await use({
           mode,
           apiUrl: undefined,
-          account: (name) => ({ email: SIMULATED_ACCOUNTS[name].email, senha: SIMULATED_ACCOUNTS[name].senha }),
+          account: (name) => ({ email: SIMULATED_ACCOUNTS[name].email, password: SIMULATED_ACCOUNTS[name].password }),
           emailWithoutAccount,
         });
         if (simulated.unexpected.length > 0) {
@@ -121,7 +121,7 @@ export const test = base.extend<{ api: E2EApi }>({
         apiUrl,
         account: (name) => {
           const names = REAL_ACCOUNTS[name];
-          return { email: variable(names.email, ACCOUNTS_HELP, names.emailPattern), senha: variable(names.senha, ACCOUNTS_HELP) };
+          return { email: variable(names.email, ACCOUNTS_HELP, names.emailPattern), password: variable(names.password, ACCOUNTS_HELP) };
         },
         emailWithoutAccount,
       });

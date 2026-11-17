@@ -5,7 +5,7 @@
 // Types generated from the contract (ADR 0005). Never written by hand.
 export type { components, operations, paths } from './generated/schema';
 import type { components } from './generated/schema';
-/** The contract schemas (e.g. `Schemas['Sessao']`). */
+/** The contract schemas (e.g. `Schemas['Session']`). */
 export type Schemas = components['schemas'];
 
 // Cliente HTTP.

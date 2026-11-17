@@ -31,8 +31,8 @@ const rowOf = (name: string) => screen.getByRole('row', { name: new RegExp(name)
 
 describe('Usuários: lista', () => {
   it('mostra o esqueleto enquanto carrega e anuncia o carregamento', async () => {
-    const pending = pendingResponse(() => json({ itens: [ANA], proximo_cursor: null }));
-    api.respond('GET /v1/usuarios', pending.promise);
+    const pending = pendingResponse(() => json({ items: [ANA], next_cursor: null }));
+    api.respond('GET /v1/users', pending.promise);
     renderUsers();
 
     expect(screen.getByRole('heading', { level: 2, name: 'Usuários' })).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('Usuários: lista', () => {
   });
 
   it('mostra nome, e-mail, papéis e situação de cada usuário', async () => {
-    api.respond('GET /v1/usuarios', json({ itens: [ANA, BRUNO, CARLA, DAVI], proximo_cursor: null }));
+    api.respond('GET /v1/users', json({ items: [ANA, BRUNO, CARLA, DAVI], next_cursor: null }));
     renderUsers();
 
     await screen.findByText('Ana Beatriz Souza');
@@ -66,13 +66,13 @@ describe('Usuários: lista', () => {
     const davi = rowOf('Davi Externo');
     expect(within(davi).getByText('Incorporação')).toBeInTheDocument();
 
-    expect(api.callsTo('GET /v1/usuarios')).toHaveLength(1);
-    expect(new URL(api.callsTo('GET /v1/usuarios')[0]!.url).search).toBe('');
+    expect(api.callsTo('GET /v1/users')).toHaveLength(1);
+    expect(new URL(api.callsTo('GET /v1/users')[0]!.url).search).toBe('');
   });
 
   it('mostra o estado vazio com a ação de criar', async () => {
-    api.respond('GET /v1/usuarios', json({ itens: [], proximo_cursor: null }));
-    api.respond('GET /v1/papeis', json({ itens: [] }));
+    api.respond('GET /v1/users', json({ items: [], next_cursor: null }));
+    api.respond('GET /v1/roles', json({ items: [] }));
     const { user } = renderUsers();
 
     expect(await screen.findByText('Nenhum usuário ainda')).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('Usuários: lista', () => {
   });
 
   it('em erro, explica e tenta de novo', async () => {
-    api.respond('GET /v1/usuarios', problem(503, 'unavailable'), json({ itens: [ANA], proximo_cursor: null }));
+    api.respond('GET /v1/users', problem(503, 'unavailable'), json({ items: [ANA], next_cursor: null }));
     const { user } = renderUsers();
 
     const alert = await screen.findByRole('alert');
@@ -95,18 +95,18 @@ describe('Usuários: lista', () => {
     await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByText('Ana Beatriz Souza')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(api.callsTo('GET /v1/usuarios')).toHaveLength(2);
+    expect(api.callsTo('GET /v1/users')).toHaveLength(2);
   });
 
   it('sem conexão, mostra a mensagem do cliente', async () => {
-    api.respond('GET /v1/usuarios', () => Promise.reject(new TypeError('Failed to fetch')));
+    api.respond('GET /v1/users', () => Promise.reject(new TypeError('Failed to fetch')));
     renderUsers();
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível falar com o servidor');
   });
 
   it('sem permissão, diz o que fazer e não oferece tentar de novo', async () => {
-    api.respond('GET /v1/usuarios', problem(403, 'sem_permissao'));
+    api.respond('GET /v1/users', problem(403, 'no_permission'));
     renderUsers();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(NO_PERMISSION_MESSAGE);
@@ -115,9 +115,9 @@ describe('Usuários: lista', () => {
 
   it('carrega a próxima página pelo cursor', async () => {
     api.respond(
-      'GET /v1/usuarios',
-      json({ itens: [ANA, BRUNO], proximo_cursor: 'cursor-2' }),
-      json({ itens: [CARLA], proximo_cursor: null }),
+      'GET /v1/users',
+      json({ items: [ANA, BRUNO], next_cursor: 'cursor-2' }),
+      json({ items: [CARLA], next_cursor: null }),
     );
     const { user } = renderUsers();
 
@@ -128,16 +128,16 @@ describe('Usuários: lista', () => {
     expect(await screen.findByText('Carla Menezes')).toBeInTheDocument();
     expect(screen.getByText('3 usuários')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Carregar mais usuários' })).not.toBeInTheDocument();
-    const second = api.callsTo('GET /v1/usuarios')[1]!;
+    const second = api.callsTo('GET /v1/users')[1]!;
     expect(new URL(second.url).searchParams.get('cursor')).toBe('cursor-2');
   });
 
   it('se a próxima página falha, mantém a lista e tenta de novo', async () => {
     api.respond(
-      'GET /v1/usuarios',
-      json({ itens: [ANA], proximo_cursor: 'cursor-2' }),
-      problem(422, 'cursor_invalido'),
-      json({ itens: [CARLA], proximo_cursor: null }),
+      'GET /v1/users',
+      json({ items: [ANA], next_cursor: 'cursor-2' }),
+      problem(422, 'invalid_cursor'),
+      json({ items: [CARLA], next_cursor: null }),
     );
     const { user } = renderUsers();
 
@@ -154,7 +154,7 @@ describe('Usuários: lista', () => {
   });
 
   it('o menu de cada linha oferece editar e gerar o link, com o motivo quando não dá', async () => {
-    api.respond('GET /v1/usuarios', json({ itens: [ANA, CARLA, DAVI], proximo_cursor: null }));
+    api.respond('GET /v1/users', json({ items: [ANA, CARLA, DAVI], next_cursor: null }));
     const { user } = renderUsers();
     await screen.findByText('Ana Beatriz Souza');
 

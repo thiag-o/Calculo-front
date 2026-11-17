@@ -30,29 +30,29 @@ prototype.scrollIntoView ??= () => {};
 export const API = 'https://api.teste';
 
 /** Tenant that never changed the parameters: the contract defaults (G4), with the bounds of the GET table. */
-export const DEFAULTS: Schemas['ConfiguracaoSeguranca'] = {
-  inatividade_minutos: { valor: 480, padrao: 480, minimo: 15, maximo: 1440 },
-  duracao_maxima_dias: { valor: 7, padrao: 7, minimo: 1, maximo: 30 },
-  senha_minima: { valor: 12, padrao: 12, minimo: 8, maximo: 64 },
-  validade_link_horas: { valor: 24, padrao: 24, minimo: 1, maximo: 72 },
-  validade_token_minutos: { valor: 15, padrao: 15, minimo: 5, maximo: 60 },
+export const DEFAULTS: Schemas['SecuritySettings'] = {
+  inactivity_minutes: { value: 480, default: 480, min: 15, max: 1440 },
+  max_duration_days: { value: 7, default: 7, min: 1, max: 30 },
+  min_password_length: { value: 12, default: 12, min: 8, max: 64 },
+  link_validity_hours: { value: 24, default: 24, min: 1, max: 72 },
+  token_validity_minutes: { value: 15, default: 15, min: 5, max: 60 },
 };
 
 /** Tenant that already changed two parameters. */
-export const ADJUSTED: Schemas['ConfiguracaoSeguranca'] = {
+export const ADJUSTED: Schemas['SecuritySettings'] = {
   ...DEFAULTS,
-  inatividade_minutos: { ...DEFAULTS.inatividade_minutos, valor: 60 },
-  senha_minima: { ...DEFAULTS.senha_minima, valor: 16 },
+  inactivity_minutes: { ...DEFAULTS.inactivity_minutes, value: 60 },
+  min_password_length: { ...DEFAULTS.min_password_length, value: 16 },
 };
 
 /** The settings with other values in force (the rest the same). */
 export function withValues(
-  base: Schemas['ConfiguracaoSeguranca'],
-  values: Partial<Record<keyof Schemas['ConfiguracaoSeguranca'], number>>,
-): Schemas['ConfiguracaoSeguranca'] {
+  base: Schemas['SecuritySettings'],
+  values: Partial<Record<keyof Schemas['SecuritySettings'], number>>,
+): Schemas['SecuritySettings'] {
   const result = { ...base };
-  for (const [field, value] of Object.entries(values) as [keyof Schemas['ConfiguracaoSeguranca'], number][]) {
-    result[field] = { ...base[field], valor: value };
+  for (const [field, value] of Object.entries(values) as [keyof Schemas['SecuritySettings'], number][]) {
+    result[field] = { ...base[field], value: value };
   }
   return result;
 }
@@ -64,7 +64,7 @@ export function json(body: unknown, status = 200): Response {
 /** problem+json error of the contract. */
 export function problem(status: number, code: string, extra: Record<string, unknown> = {}): Response {
   return new Response(
-    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, codigo: code, ...extra }),
+    JSON.stringify({ type: 'about:blank', title: 'Erro', status, detail: `Texto do servidor para ${code}.`, code: code, ...extra }),
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
@@ -73,7 +73,7 @@ type RouteResponse = Response | Promise<Response> | ((request: Request) => Respo
 
 /**
  * fetch simulated per route ("METHOD /path"). Each route has a queue of responses: the last one repeats.
- * A route without a configured response answers 599 (it becomes `resposta_inesperada` on screen).
+ * A route without a configured response answers 599 (it becomes `unexpected_response` on screen).
  */
 export function simulateApi() {
   const queues = new Map<string, RouteResponse[]>();

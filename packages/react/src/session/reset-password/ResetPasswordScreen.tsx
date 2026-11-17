@@ -118,7 +118,7 @@ interface PasswordFormProps {
 
 function PasswordForm({ token, link, onSave }: PasswordFormProps) {
   const save = useResetPassword();
-  const schema = useMemo(() => passwordSchema(link.senha_minima), [link.senha_minima]);
+  const schema = useMemo(() => passwordSchema(link.min_password_length), [link.min_password_length]);
   const {
     register,
     handleSubmit,
@@ -142,10 +142,10 @@ function PasswordForm({ token, link, onSave }: PasswordFormProps) {
   }
 
   const apiError = save.error ? submitError(save.error) : undefined;
-  const expiry = expiryMessage(link.expira_em);
+  const expiry = expiryMessage(link.expires_at);
 
   const submit = handleSubmit((data) => {
-    save.mutate({ token, nova_senha: data.newPassword }, { onSuccess: () => onSave?.() });
+    save.mutate({ token, new_password: data.newPassword }, { onSuccess: () => onSave?.() });
   });
 
   return (
@@ -159,7 +159,7 @@ function PasswordForm({ token, link, onSave }: PasswordFormProps) {
           autoComplete="new-password"
           // The screen exists only for this; focus starts on the first field.
           autoFocus
-          tooltip={passwordRules(link.senha_minima)}
+          tooltip={passwordRules(link.min_password_length)}
           error={errors.newPassword?.message ?? apiError?.newPassword}
           {...register('newPassword')}
         />
