@@ -1,0 +1,282 @@
+/*
+ * Catalog › Datasets and the dataset detail (estilos.md §3, §4, §7.1, §7.2, §7.6, §7.7, §9 and §14). Only fc- classes
+ * and --fc-* variables; no global reset and no full-window measurement (ADR 0002).
+ */
+
+.fc-datasets,
+.fc-datasets-detail {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-datasets-detail {
+  gap: var(--fc-space-24);
+}
+
+.fc-datasets-top,
+.fc-datasets-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-datasets-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-datasets-title h2,
+.fc-datasets-title p,
+.fc-datasets-section h2,
+.fc-datasets-heading {
+  margin: 0;
+}
+
+.fc-datasets-heading {
+  overflow-wrap: anywhere;
+}
+
+/* "Voltar para datasets" sits on the left, above the title, without stretching. */
+.fc-datasets-back {
+  align-self: flex-start;
+}
+
+.fc-datasets-name,
+.fc-datasets-object {
+  overflow-wrap: anywhere;
+}
+
+/* The dataset name opens the detail: a link (estilos.md §3: no underline, underline on hover). */
+.fc-datasets-open {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-datasets-open:hover {
+  text-decoration: underline;
+}
+
+.fc-datasets-open:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Origin in two lines (estilos.md §7.6): the connection or file, and the object below. */
+.fc-datasets-origin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-datasets-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-datasets-facts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8) var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-datasets-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+}
+
+.fc-datasets-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+/* SQL of a dataset, read only: mono-13 on background-200 with a 6px radius (estilos.md §8, formula editor). */
+.fc-datasets-sql-view {
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--fc-space-12) var(--fc-space-16);
+  border-radius: 6px;
+  background-color: var(--fc-background-200);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* New dataset dialog: wider, for the object browser and the columns. */
+.fc-dialog.fc-datasets-dialog {
+  width: min(720px, calc(100% - var(--fc-space-32)));
+}
+
+.fc-datasets-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  margin: 0;
+}
+
+/* Free SQL area (estilos.md §7.2 for the border and focus; mono-13 for the text). */
+.fc-datasets-sql {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--fc-space-48) * 3);
+  margin: 0;
+  padding: var(--fc-space-8) var(--fc-space-12);
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  resize: vertical;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: box-shadow 150ms ease-out;
+}
+
+.fc-datasets-sql:hover {
+  box-shadow: 0 0 0 1px var(--fc-border-hover);
+}
+
+.fc-datasets-sql:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--fc-border-hover),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-datasets-sql[aria-invalid='true'] {
+  box-shadow: 0 0 0 1px var(--fc-red-700);
+}
+
+.fc-datasets-sql[aria-invalid='true']:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--fc-red-700),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Object browser: filter, the list of radio rows and "Carregar mais". */
+.fc-datasets-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fc-datasets-legend {
+  padding: 0;
+  margin-bottom: var(--fc-space-6);
+}
+
+.fc-datasets-objects {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(var(--fc-space-48) * 5);
+  overflow-y: auto;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+.fc-datasets-object-option {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+  min-height: var(--fc-space-32);
+  padding: var(--fc-space-4) var(--fc-space-12);
+  color: var(--fc-text);
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+/* Divider drawn once, between the rows (estilos.md §4). */
+.fc-datasets-object-option + .fc-datasets-object-option {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-datasets-object-option:hover {
+  background-color: var(--fc-hover);
+}
+
+.fc-datasets-object-option.fc-datasets-object-chosen {
+  background-color: var(--fc-active);
+}
+
+.fc-datasets-object-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-datasets-radio {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--fc-primary);
+  cursor: pointer;
+}
+
+.fc-datasets-radio:focus-visible {
+  outline: 2px solid var(--fc-focus);
+  outline-offset: 2px;
+}
+
+.fc-datasets-objects-empty {
+  margin: 0;
+}
+
+.fc-datasets-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+.fc-datasets-preview p {
+  margin: 0;
+}
+
+.fc-datasets-code {
+  font-family: var(--fc-font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-datasets-sql,
+  .fc-datasets-object-option {
+    transition: none;
+  }
+}

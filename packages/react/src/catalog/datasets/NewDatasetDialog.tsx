@@ -1,0 +1,280 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useId } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
+import { ApiError } from '../../api';
+import { Notice, Button, TextField, Loading, Dialog, DialogClose, Select, Text, type DialogProps } from '../../design-system';
+import { ColumnsTable } from '../columns';
+import { useCreateDataset, useDatasetConnections, useObjectColumns, type Dataset, type NewDataset } from './queries';
+import { ObjectPicker, type ChosenObject } from './ObjectPicker';
+import { SqlField } from './SqlField';
+import {
+  NO_CONNECTIONS_PERMISSION_MESSAGE,
+  UNKNOWN_CONNECTION_MESSAGE,
+  UNKNOWN_OBJECT_MESSAGE,
+  createError,
+  queryErrorMessage,
+} from './messages';
+
+export const CONNECTIONS_LOADING_REASON = 'Aguarde a lista de conexões';
+export const CONNECTIONS_ERROR_REASON = 'Carregue a lista de conexões para salvar';
+export const NO_CONNECTIONS_PERMISSION_REASON = 'Peça a permissão de ver conexões para criar um dataset';
+export const NO_CONNECTIONS_REASON = 'Cadastre uma conexão na aba Conexões para criar um dataset';
+
+/** The maximum SQL length the API accepts. */
+const SQL_MAX_LENGTH = 100_000;
+
+const schema = z
+  .object({
+    kind: z.enum(['table', 'sql']),
+    connectionId: z.string(),
+    object: z.object({ schema_name: z.string(), name: z.string() }).nullable(),
+    sql: z.string(),
+    name: z.string(),
+  })
+  // One refinement for everything, so every field error shows at once.
+  .superRefine((data, context) => {
+    if (data.connectionId === '') context.addIssue({ code: 'custom', path: ['connectionId'], message: 'Escolha a conexão' });
+    if (data.kind === 'table' && data.connectionId !== '' && data.object === null) {
+      context.addIssue({ code: 'custom', path: ['object'], message: 'Escolha uma tabela ou view' });
+    }
+    if (data.kind === 'sql' && data.sql.trim() === '') context.addIssue({ code: 'custom', path: ['sql'], message: 'Escreva o SQL' });
+    if (data.name.trim() === '') context.addIssue({ code: 'custom', path: ['name'], message: 'Informe o nome do dataset' });
+  });
+
+type FormFields = z.infer<typeof schema>;
+
+const KIND_OPTIONS = [
+  { value: 'table', label: 'Tabela ou view' },
+  { value: 'sql', label: 'SQL livre' },
+] as const;
+
+export interface NewDatasetDialogProps {
+  /** Who gets focus on close (the button that opened the dialog). */
+  focusOnClose?: DialogProps['focusOnClose'];
+  /** Whether the person may create a free SQL dataset (`free_sql.use`). Without it, only tables and views. */
+  allowSql: boolean;
+  /** Called on close without saving (Cancelar, Esc or "Fechar"). */
+  onClose: () => void;
+  /** Called after saving, with the created dataset. */
+  onCreated: (dataset: Dataset) => void;
+}
+
+/**
+ * "Novo dataset": pick the connection; then browse the tables and views (filter and "Carregar mais"), see the columns
+ * of the chosen one and give the name. With `free_sql.use`, the origin can be free SQL, in a monospaced area; a refused
+ * SQL shows the reason in the field. Mount it only while open: each opening starts from scratch.
+ */
+export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }: NewDatasetDialogProps) {
+  const formId = useId();
+  const connections = useDatasetConnections();
+  const create = useCreateDataset();
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    getFieldState,
+    clearErrors,
+    formState: { errors },
+  } = useForm<FormFields>({
+    resolver: zodResolver(schema),
+    defaultValues: { kind: 'table', connectionId: '', object: null, sql: '', name: '' },
+  });
+  const kind = useWatch({ control, name: 'kind' });
+  const connectionId = useWatch({ control, name: 'connectionId' });
+  const object = useWatch({ control, name: 'object' });
+
+  const apiError = create.error ? createError(create.error) : undefined;
+  const connectionsForbidden = connections.error instanceof ApiError && connections.error.code === 'no_permission';
+  const disabledReason = connections.isPending
+    ? CONNECTIONS_LOADING_REASON
+    : connectionsForbidden
+      ? NO_CONNECTIONS_PERMISSION_REASON
+      : connections.isError
+        ? CONNECTIONS_ERROR_REASON
+      : connections.data?.length === 0
+        ? NO_CONNECTIONS_REASON
+        : undefined;
+
+  const submit = handleSubmit((data) => {
+    if (disabledReason) return;
+    const name = data.name.trim();
+    const body: NewDataset =
+      data.kind === 'sql'
+        ? { type: 'sql', name, connection_id: data.connectionId, sql: data.sql }
+        : { type: 'table', name, connection_id: data.connectionId, schema_name: data.object?.schema_name ?? '', object_name: data.object?.name ?? '' };
+    create.mutate(body, { onSuccess: onCreated });
+  });
+
+  function chooseObject(chosen: ChosenObject) {
+    setValue('object', chosen);
+    clearErrors('object');
+    create.reset();
+    // The object name is a good starting name, while the person has not typed one.
+    if (!getFieldState('name').isDirty) setValue('name', chosen.name);
+  }
+
+  let connectionField;
+  if (connections.isPending) {
+    connectionField = <Loading label="Carregando conexões" rows={1} />;
+  } else if (connections.isError) {
+    connectionField = (
+      <Notice
+        type="error"
+        title="Não foi possível carregar as conexões"
+        actions={
+          connectionsForbidden ? undefined : (
+            <Button size="small" loading={connections.isFetching} onClick={() => void connections.refetch()}>
+              Tentar de novo
+            </Button>
+          )
+        }
+      >
+        {connectionsForbidden ? NO_CONNECTIONS_PERMISSION_MESSAGE : queryErrorMessage(connections.error, UNKNOWN_CONNECTION_MESSAGE)}
+      </Notice>
+    );
+  } else if (connections.data.length === 0) {
+    connectionField = (
+      <Notice type="warning" title="Nenhuma conexão ainda">
+        Cadastre uma conexão com o banco do cliente na aba Conexões e volte para criar o dataset.
+      </Notice>
+    );
+  } else {
+    connectionField = (
+      <Controller
+        control={control}
+        name="connectionId"
+        render={({ field }) => (
+          <Select
+            ref={field.ref}
+            label="Conexão"
+            options={connections.data.map((connection) => ({ value: connection.id, label: connection.name }))}
+            value={field.value}
+            onValueChange={(value) => {
+              field.onChange(value);
+              // Another connection: the chosen object belonged to the previous one.
+              setValue('object', null);
+              create.reset();
+            }}
+            onBlur={field.onBlur}
+            error={errors.connectionId?.message ?? apiError?.fields.connection}
+          />
+        )}
+      />
+    );
+  }
+
+  return (
+    <Dialog
+      open
+      focusOnClose={focusOnClose}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      className="fc-datasets-dialog"
+      title="Novo dataset"
+      description={
+        allowSql
+          ? 'Um dataset lê uma tabela, uma view ou um SQL de uma conexão. As colunas são lidas ao salvar.'
+          : 'Um dataset lê uma tabela ou uma view de uma conexão. As colunas são lidas ao salvar.'
+      }
+      actions={
+        <>
+          <DialogClose>
+            <Button>Cancelar</Button>
+          </DialogClose>
+          <Button type="submit" form={formId} variant="primary" loading={create.isPending} disabledReason={disabledReason}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} className="fc-datasets-form" onSubmit={submit} noValidate>
+        {allowSql ? (
+          <Controller
+            control={control}
+            name="kind"
+            render={({ field }) => (
+              <Select
+                ref={field.ref}
+                label="Origem"
+                options={KIND_OPTIONS}
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  create.reset();
+                }}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+        ) : null}
+
+        {connectionField}
+
+        {kind === 'table' && connectionId !== '' ? (
+          <>
+            <ObjectPicker
+              key={connectionId}
+              connectionId={connectionId}
+              value={object}
+              onChange={chooseObject}
+              error={errors.object?.message ?? apiError?.fields.object}
+            />
+            {object ? <ObjectColumns connectionId={connectionId} object={object} /> : null}
+          </>
+        ) : null}
+
+        {kind === 'sql' && connectionId !== '' ? (
+          <SqlField
+            label="SQL"
+            rows={8}
+            maxLength={SQL_MAX_LENGTH}
+            tooltip="Um comando só, que precisa ser SELECT. As colunas são lidas ao salvar."
+            error={errors.sql?.message ?? apiError?.fields.sql}
+            {...register('sql', { onChange: () => create.reset() })}
+          />
+        ) : null}
+
+        <TextField label="Nome" autoComplete="off" error={errors.name?.message ?? apiError?.fields.name} {...register('name')} />
+
+        {apiError?.message ? <Notice type="error">{apiError.message}</Notice> : null}
+      </form>
+    </Dialog>
+  );
+}
+
+/** The columns of the chosen table or view, to check before creating the dataset. */
+function ObjectColumns({ connectionId, object }: { connectionId: string; object: ChosenObject }) {
+  const columns = useObjectColumns(connectionId, object);
+  const qualified = `${object.schema_name}.${object.name}`;
+  return (
+    <div className="fc-datasets-preview">
+      <Text as="p" variant="label-13" emphasis="secondary">
+        Colunas de <span className="fc-datasets-code">{qualified}</span>
+      </Text>
+      <ColumnsTable
+        caption={`Colunas de ${qualified}`}
+        columns={columns.data}
+        loading={columns.isPending}
+        error={
+          columns.isError ? (
+            <Notice
+              type="error"
+              title="Não foi possível ler as colunas"
+              actions={
+                <Button size="small" loading={columns.isFetching} onClick={() => void columns.refetch()}>
+                  Tentar de novo
+                </Button>
+              }
+            >
+              {queryErrorMessage(columns.error, UNKNOWN_OBJECT_MESSAGE)}
+            </Notice>
+          ) : undefined
+        }
+      />
+    </div>
+  );
+}

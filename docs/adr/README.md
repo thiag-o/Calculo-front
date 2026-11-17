@@ -52,6 +52,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0030](0030-simulacao-e2e-intercepta-por-glob-com-fallback.md) | Simulação e2e intercepta a API por glob `**/v1/**` com `route.fallback()` (complementa 0029) | aceita, revisar no checkpoint | 2026-11-16 |
 | [0031](0031-codigo-em-ingles.md) | Código do front em inglês, textos para pessoas em português (segue a 0047 do back; glossário em `docs/glossario.md`) | aceita, revisar no checkpoint | 2026-11-16 |
 | [0032](0032-segredo-digitado-fora-do-cache-de-mutacao.md) | Segredo digitado pela pessoa: mutação sem variáveis, corpo lido na chamada, `gcTime: 0` (complementa 0021) | aceita, revisar no checkpoint | 2026-11-17 |
+| [0033](0033-chaves-de-cache-sob-catalogo.md) | Chaves de cache do Catálogo sob `['catalog', …]`, invalidadas pelo prefixo (segue a 0020) | aceita, revisar no checkpoint | 2026-11-17 |
 
 ## Pendentes (sem ADR ainda)
 

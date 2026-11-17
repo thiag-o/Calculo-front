@@ -1,0 +1,22 @@
+/*
+ * Catalog › columns table (estilos.md §3, §7.4, §7.6 and §9). Only fc- classes and --fc-* variables;
+ * no global reset and no full-window measurement (ADR 0002).
+ */
+
+.fc-columns {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+/* Column names and source types can be long: they break instead of widening the table. */
+.fc-columns-name,
+.fc-columns-source-type {
+  overflow-wrap: anywhere;
+}
+
+.fc-columns-note {
+  margin: 0;
+}
