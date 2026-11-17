@@ -565,7 +565,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F40 · Manutenção: abas no design system, títulos e estilos crus**
 - dep: F42
 - modelo: opus
-- arquivos: `packages/react/src/design-system/`, `packages/react/src/admin/`, `packages/react/src/module/`, `packages/react/src/audit/`, `packages/react/src/home/`, `packages/react/src/session/`, `apps/shell/src/`
+- arquivos: `packages/react/src/design-system/`, `packages/react/src/admin/`, `packages/react/src/module/`, `packages/react/src/audit/`, `packages/react/src/home/`, `packages/react/src/session/`, `apps/shell/src/`, `docs/adr/`, `e2e/epic-2/` (D10: a ADR 0027 e os fluxos do épico 2 que mudam com a navegação nova)
 - Fazer (pendências adiáveis do CK2, decididas pela sessão global):
   - **componente `Abas` no design system** (Radix Tabs, estilo do `estilos.md`), no lugar das abas repetidas em `administracao/` e `modulo/`. O `<Catalogo>` do épico 3 vai usá-lo;
   - **Administração uma vez só no casca:** o menu lateral mostra um item "Administração", e as áreas (Usuários, Papéis, Integração, Segurança) ficam só nas abas internas, como no incorporado. A ADR 0027 recebe uma atualização;
