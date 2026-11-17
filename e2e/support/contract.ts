@@ -290,6 +290,219 @@ export const EXAMPLES = {
       min_password_length: 'Informe um valor de 8 a 64.',
     },
   },
-} satisfies Record<string, ErrorBody>;
+  ConnectionFailed: {
+    type: 'about:blank',
+    title: 'Falha na conexão',
+    status: 422,
+    detail: 'O banco não respondeu a tempo.',
+    code: 'connection_failed'
+  },
+  ConnectionNotReadOnly: {
+    type: 'about:blank',
+    title: 'Usuário não é somente leitura',
+    status: 422,
+    detail: 'O usuário do banco pode alterar dados. Use um usuário só de leitura.',
+    code: 'connection_not_read_only',
+    privileges: [
+      'INSERT em public.notas_fiscais',
+      'CREATE no banco'
+    ]
+  },
+  ConnectionWithoutTls: {
+    type: 'about:blank',
+    title: 'Conexão sem TLS',
+    status: 422,
+    detail: 'O banco não aceitou uma conexão com TLS, que é obrigatória.',
+    code: 'connection_without_tls'
+  },
+  TargetNotAllowed: {
+    type: 'about:blank',
+    title: 'Destino não permitido',
+    status: 422,
+    detail: 'Este endereço de banco não é permitido.',
+    code: 'connection_target_not_allowed'
+  },
+  ConnectionRefused: {
+    type: 'about:blank',
+    title: 'Falha na conexão',
+    status: 422,
+    detail: 'O banco recusou a conexão.',
+    code: 'connection_failed'
+  },
+  HostNotFound: {
+    type: 'about:blank',
+    title: 'Falha na conexão',
+    status: 422,
+    detail: 'O endereço do banco não foi encontrado.',
+    code: 'connection_failed'
+  },
+  AuthenticationFailed: {
+    type: 'about:blank',
+    title: 'Falha na conexão',
+    status: 422,
+    detail: 'O banco recusou o usuário ou a senha.',
+    code: 'connection_failed'
+  },
+  InvalidSqlRejectedByDatabase: {
+    type: 'about:blank',
+    title: 'SQL inválido',
+    status: 422,
+    detail: 'O SQL não pode ser usado num dataset.',
+    code: 'invalid_sql',
+    fields: {
+      sql: 'O banco recusou o SQL ao ler as colunas.'
+    }
+  },
+  ConnectionAlreadyExists: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Já existe uma conexão com esse nome.',
+    code: 'connection_already_exists'
+  },
+  ConnectionInUse: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'A conexão é usada por datasets. Remova-os antes de remover a conexão.',
+    code: 'connection_in_use'
+  },
+  FileTooLarge: {
+    type: 'about:blank',
+    title: 'Arquivo grande demais',
+    status: 413,
+    detail: 'O arquivo passa do limite de 20 MB.',
+    code: 'file_too_large'
+  },
+  InvalidFile: {
+    type: 'about:blank',
+    title: 'Arquivo inválido',
+    status: 422,
+    detail: 'O arquivo não é uma planilha .xlsx que possa ser lida.',
+    code: 'invalid_file'
+  },
+  InvalidHeader: {
+    type: 'about:blank',
+    title: 'Cabeçalho inválido',
+    status: 422,
+    detail: 'A primeira linha de cada aba precisa ter um nome único em cada coluna.',
+    code: 'invalid_header',
+    fields: {
+      'Vendas!C1': 'Coluna sem nome.',
+      'Vendas!E1': "Nome repetido: 'valor'."
+    }
+  },
+  InvalidDataFile: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
+    code: 'invalid_data',
+    fields: {
+      file: 'Campo obrigatório.'
+    }
+  },
+  ExcelFileInUse: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'O arquivo é usado por datasets. Remova-os antes de remover o arquivo.',
+    code: 'excel_file_in_use'
+  },
+  InvalidDataConnectionId: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
+    code: 'invalid_data',
+    fields: {
+      connection_id: 'Informe um identificador válido.'
+    }
+  },
+  InvalidDataUnknownConnection: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
+    code: 'invalid_data',
+    fields: {
+      connection_id: 'Conexão não encontrada.'
+    }
+  },
+  InvalidSql: {
+    type: 'about:blank',
+    title: 'SQL inválido',
+    status: 422,
+    detail: 'O SQL não pode ser usado num dataset.',
+    code: 'invalid_sql',
+    fields: {
+      sql: 'Só é aceito um comando SELECT.'
+    }
+  },
+  UnknownObject: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'A tabela ou view não existe no banco da conexão.',
+    code: 'unknown_object',
+    fields: {
+      object_name: "Não existe 'public.vendas'."
+    }
+  },
+  UnknownSheet: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'A aba não existe no arquivo.',
+    code: 'unknown_sheet',
+    fields: {
+      sheet: "Não existe a aba 'Plan2'."
+    }
+  },
+  DatasetAlreadyExists: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Já existe um dataset com esse nome.',
+    code: 'dataset_already_exists'
+  },
+  VariableAlreadyExists: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Já existe uma variável com esse nome neste dataset.',
+    code: 'variable_already_exists'
+  },
+  UnknownColumn: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'A coluna não está no dataset.',
+    code: 'unknown_column',
+    fields: {
+      column: "Não existe a coluna 'vl_item'."
+    }
+  },
+  IncompatibleType: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'A coluna não pode virar uma variável desse tipo.',
+    code: 'incompatible_type',
+    fields: {
+      type: 'Uma coluna de texto não pode virar decimal.'
+    }
+  },
+  InvalidVariableName: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'O nome da variável não é válido.',
+    code: 'invalid_variable_name',
+    fields: {
+      name: 'Use letras minúsculas, números e _, começando por uma letra (até 63).'
+    }
+  },
+} satisfies Record<string, unknown>;
 
 export type ExampleName = keyof typeof EXAMPLES;

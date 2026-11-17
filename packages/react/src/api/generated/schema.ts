@@ -537,6 +537,443 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista as conexões do tenant
+         * @description Todas as conexões de banco do tenant atual, sem paginação.
+         *     Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
+         *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
+         *     `last_test` só com `ok`, `tested_at` e `error`.
+         */
+        get: operations["list_connections"];
+        put?: never;
+        /**
+         * Cria uma conexão com um banco do cliente
+         * @description Exige `connections.manage` e `credentials.manage`. Testa a credencial
+         *     antes de salvar (destino, conexão, TLS e privilégios); se o teste não
+         *     passar, nada é gravado:
+         *     - o `host` resolve para uma rede bloqueada:
+         *       `422 connection_target_not_allowed`;
+         *     - a conexão falhou (tempo esgotado, recusada, nome não encontrado ou
+         *       autenticação): `422 connection_failed`, com a mensagem fixa do motivo
+         *       no `detail`;
+         *     - o usuário do banco pode escrever: `422 connection_not_read_only`, com o
+         *       que foi achado em `privileges`;
+         *     - sem TLS, com a exigência ligada: `422 connection_without_tls`.
+         *
+         *     Nome repetido no tenant (sem os espaços das pontas e sem diferenciar
+         *     maiúsculas): `409 connection_already_exists`. O resultado do teste fica
+         *     em `last_test`. Auditado como `connection_created`, sem a credencial.
+         *
+         *     Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
+         *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
+         *     `last_test` só com `ok`, `tested_at` e `error`.
+         */
+        post: operations["create_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve uma conexão
+         * @description Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
+         *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
+         *     `last_test` só com `ok`, `tested_at` e `error`.
+         */
+        get: operations["get_connection"];
+        /**
+         * Renomeia uma conexão
+         * @description Troca só o nome; a credencial muda por `PUT /v1/connections/{id}/credential`.
+         *     Nome repetido no tenant: `409 connection_already_exists`. Auditado como
+         *     `connection_updated`.
+         *
+         *     Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
+         *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
+         *     `last_test` só com `ok`, `tested_at` e `error`.
+         */
+        put: operations["rename_connection"];
+        post?: never;
+        /**
+         * Remove uma conexão
+         * @description Remove a conexão e a credencial guardada. Conexão usada por algum dataset:
+         *     `409 connection_in_use`. Auditado como `connection_deleted`.
+         */
+        delete: operations["delete_connection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/{id}/credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Troca a credencial de uma conexão
+         * @description Exige os cinco campos da credencial de novo (a `password` guardada nunca
+         *     volta). Testa antes de salvar, como a criação:
+         *     `422 connection_target_not_allowed`, `422 connection_failed`,
+         *     `422 connection_not_read_only` ou `422 connection_without_tls`, sem gravar
+         *     nada. O resultado do teste fica em `last_test`. Auditado como
+         *     `credential_updated`, sem a credencial.
+         *
+         *     Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
+         *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
+         *     `last_test` só com `ok`, `tested_at` e `error`.
+         */
+        put: operations["update_credential"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Testa uma credencial sem salvar
+         * @description Exige `connections.manage` e `credentials.manage`. Abre a conexão e
+         *     confere o TLS e os privilégios, sem gravar nada. Um teste que não passa
+         *     responde `200` com `ok: false` e o `error` (mensagem fixa do motivo).
+         *     Destino numa rede bloqueada: `422 connection_target_not_allowed`, sem
+         *     tentar a conexão.
+         */
+        post: operations["test_credential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Testa uma conexão salva
+         * @description Testa a conexão com a credencial guardada (destino, conexão, TLS e
+         *     privilégios) e grava o resultado em `last_test`. Um teste que não passa,
+         *     inclusive por um destino que passou a ser bloqueado, responde `200` com
+         *     `ok: false` e o `error` (mensagem fixa do motivo).
+         *
+         *     Exige só `connections.manage`, mas o resultado segue a permissão de quem
+         *     chama: com `credentials.manage`, vem inteiro; sem ela, só com `ok`,
+         *     `tested_at` e `error` (`duration_ms`, `server_version`, `tls` e
+         *     `read_only` vêm `null`), como o `last_test`.
+         */
+        post: operations["test_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/{id}/objects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista as tabelas e views do banco da conexão
+         * @description As tabelas e views que o usuário da conexão enxerga, paginadas, em ordem de
+         *     `schema_name` e `name`. `search` filtra pelo nome do objeto.
+         *     Destino da conexão bloqueado: `422 connection_target_not_allowed`. A
+         *     conexão com o banco do cliente falhou ou passou do tempo:
+         *     `422 connection_failed`.
+         */
+        get: operations["list_objects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/{id}/objects/columns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista as colunas de uma tabela ou view
+         * @description As colunas do objeto, na ordem do banco, com o tipo da fonte e o
+         *     `DataType` correspondente. O objeto vai na consulta
+         *     (`?schema_name=&name=`), para um nome com `/` não quebrar o caminho.
+         *     Conexão ou objeto que não existe: `404 not_found`. Destino da conexão
+         *     bloqueado: `422 connection_target_not_allowed`. A conexão com o banco do
+         *     cliente falhou: `422 connection_failed`.
+         */
+        get: operations["list_object_columns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/excel-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os arquivos Excel do tenant
+         * @description Todos os arquivos Excel enviados ao tenant atual, com as abas e as colunas, sem paginação.
+         */
+        get: operations["list_excel_files"];
+        put?: never;
+        /**
+         * Envia um arquivo Excel
+         * @description Corpo `multipart/form-data` com o arquivo no campo `file`. Só `.xlsx`, até
+         *     `FLUXO_EXCEL_MAX_SIZE_MB` (padrão 20 MB). O arquivo é guardado cifrado,
+         *     com o SHA-256 registrado. A primeira linha de cada aba é o cabeçalho; os
+         *     tipos das colunas são inferidos pelas primeiras 1.000 linhas (coluna
+         *     vazia ou com tipos misturados vira `text`).
+         *     - Arquivo acima do limite: `413 file_too_large`.
+         *     - Arquivo que não é um `.xlsx` legível: `422 invalid_file`.
+         *     - Cabeçalho com nome vazio ou repetido: `422 invalid_header`, com um item
+         *       em `fields` por célula do cabeçalho, na referência do Excel
+         *       (`<sheet>!<cell>`, ex.: `Vendas!C1`).
+         *
+         *     Auditado como `excel_file_uploaded`.
+         */
+        post: operations["upload_excel_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/excel-files/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Devolve um arquivo Excel */
+        get: operations["get_excel_file"];
+        put?: never;
+        post?: never;
+        /**
+         * Remove um arquivo Excel
+         * @description Apaga o arquivo guardado. Arquivo usado por algum dataset:
+         *     `409 excel_file_in_use`. Auditado como `excel_file_deleted`.
+         */
+        delete: operations["delete_excel_file"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/datasets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os datasets do tenant
+         * @description Os datasets do tenant atual, sem paginação. Filtros opcionais, combinados
+         *     com E: `connection_id` (datasets da conexão) e `excel_file_id` (datasets
+         *     do arquivo). Um id que não é UUID: `422 invalid_data` com
+         *     `fields.<parameter>`.
+         */
+        get: operations["list_datasets"];
+        put?: never;
+        /**
+         * Cria um dataset
+         * @description Um de três tipos, escolhido por `type`:
+         *     - `table`: uma tabela ou view da conexão (`connection_id`, `schema_name`,
+         *       `object_name`); objeto que não existe: `422 unknown_object`
+         *       (`fields.object_name`);
+         *     - `sql`: um SQL livre na conexão (`connection_id`, `sql`, até 100.000
+         *       caracteres); exige também `free_sql.use` (sem ela, `403 no_permission`).
+         *       Um comando só, que
+         *       precisa ser `SELECT`, validado no dialeto da conexão; recusado pela
+         *       validação ou pelo banco ao ler as colunas: `422 invalid_sql`
+         *       (`fields.sql`, com o motivo da validação ou a mensagem fixa da recusa
+         *       pelo banco, nunca o texto do driver);
+         *     - `excel`: uma aba de um arquivo Excel (`excel_file_id`, `sheet`); aba que
+         *       não existe: `422 unknown_sheet` (`fields.sheet`).
+         *
+         *     As colunas são lidas na criação (introspecção). Conexão ou arquivo que não
+         *     existe: `422 invalid_data` (`fields.connection_id` ou `fields.excel_file_id`).
+         *     Nos tipos `table` e `sql`, destino da conexão bloqueado:
+         *     `422 connection_target_not_allowed`; a conexão com o banco do cliente
+         *     falhou: `422 connection_failed`. Nome
+         *     repetido no tenant (sem os espaços das pontas e sem diferenciar
+         *     maiúsculas): `409 dataset_already_exists`. Auditado como `dataset_created`.
+         */
+        post: operations["create_dataset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/datasets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Devolve um dataset */
+        get: operations["get_dataset"];
+        /**
+         * Altera o nome e o SQL de um dataset
+         * @description Troca o `name`; num dataset do tipo `sql`, troca também o `sql` (relendo as
+         *     colunas). `sql` ausente, nulo ou igual ao atual deixa o SQL como está e
+         *     não exige nada além de `datasets.manage`. "Igual" é a comparação exata,
+         *     byte a byte, com o texto guardado (sem `strip` nem normalização). Um `sql`
+         *     diferente do atual exige também `free_sql.use`: sem ela, `403 no_permission`, conferido
+         *     depois do `404` (dataset que não existe dá `404`, com ou sem a
+         *     permissão). `sql` num dataset de outro tipo: `422 invalid_data`
+         *     (`fields.sql`). SQL recusado: `422 invalid_sql`. Ao reler as colunas, destino
+         *     bloqueado: `422 connection_target_not_allowed`; falha da conexão:
+         *     `422 connection_failed`. Nome repetido no tenant:
+         *     `409 dataset_already_exists`. Auditado como `dataset_updated`.
+         */
+        put: operations["update_dataset"];
+        post?: never;
+        /**
+         * Remove um dataset
+         * @description Remove o dataset e as variáveis dele. Auditado como `dataset_deleted`.
+         */
+        delete: operations["delete_dataset"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/datasets/{id}/column-refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lê de novo as colunas de um dataset
+         * @description Introspecta a fonte de novo e substitui as `columns` (e o
+         *     `columns_refreshed_at`). Tabela ou view que deixou de existir:
+         *     `422 unknown_object`. SQL que o banco passou a recusar: `422 invalid_sql`.
+         *     Destino da conexão bloqueado: `422 connection_target_not_allowed`. A
+         *     conexão com o banco do cliente falhou: `422 connection_failed`.
+         *     Auditado como `dataset_updated`.
+         */
+        post: operations["refresh_dataset_columns"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/datasets/{id}/variables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista as variáveis de um dataset
+         * @description Todas as variáveis do dataset, sem paginação. Dataset que não existe, `404 not_found`.
+         */
+        get: operations["list_variables"];
+        put?: never;
+        /**
+         * Cria uma variável sobre uma coluna do dataset
+         * @description Dá um nome de negócio e um tipo a uma coluna do dataset.
+         *     - Coluna que não está no dataset: `422 unknown_column` (`fields.column`).
+         *     - `name` fora de `^[a-z][a-z0-9_]{0,62}$`: `422 invalid_variable_name`
+         *       (`fields.name`).
+         *     - Conversão não aceita da coluna para o `type` (aceitas: o mesmo tipo,
+         *       `integer` → `decimal`, `date` → `datetime` e qualquer tipo → `text`), ou
+         *       coluna sem tipo correspondente (`type` nulo): `422 incompatible_type`
+         *       (`fields.type`).
+         *     - `name` repetido no dataset: `409 variable_already_exists`.
+         *
+         *     A `scale` (casas decimais) acompanha o tipo `decimal`. Auditado como
+         *     `variable_created`.
+         */
+        post: operations["create_variable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/variables/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Altera o nome e o tipo de uma variável
+         * @description Substitui o nome, o tipo e a `scale`; a coluna não muda. Valem as regras
+         *     da criação: `422 invalid_variable_name`, `422 incompatible_type` e
+         *     `409 variable_already_exists`. Auditado como `variable_updated`.
+         */
+        put: operations["update_variable"];
+        post?: never;
+        /**
+         * Remove uma variável
+         * @description Auditado como `variable_deleted`.
+         */
+        delete: operations["delete_variable"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -707,7 +1144,7 @@ export interface components {
         };
         /** @description O link de redefinição de senha, mostrado uma vez só. */
         ResetLink: {
-            /** @description URL do casca com o token (`<FLUXO_URL_CASCA>/redefinir?token=...`). */
+            /** @description URL do casca com o token (`<FLUXO_SHELL_URL>/reset-password?token=...`). */
             link: string;
             /** Format: date-time */
             expires_at: string;
@@ -830,6 +1267,303 @@ export interface components {
             min_password_length: number;
             link_validity_hours: number;
             token_validity_minutes: number;
+        };
+        /**
+         * @description O `Problem` do `422` da criação de conexão e da troca de credencial.
+         *     `privileges` só vem no `connection_not_read_only`; `fields`, só no
+         *     `invalid_data`.
+         */
+        ConnectionRejectedProblem: {
+            /** @default about:blank */
+            type: string;
+            title: string;
+            status: number;
+            /** @description Mensagem em pt-BR para o usuário final. */
+            detail: string;
+            /** @description Identificador estável do erro (slug). */
+            code: string;
+            /** @description Erro por campo do corpo, quando houver (`{"<field>": "<error>"}`). */
+            fields?: {
+                [key: string]: string;
+            };
+            /** @description O que impede o somente leitura, um item por privilégio achado (texto para pessoas). */
+            privileges?: string[];
+        };
+        /**
+         * @description A credencial de acesso ao banco do cliente. Só vai nos corpos; é guardada
+         *     cifrada e nunca volta. O `422 invalid_data` não repete os valores enviados.
+         */
+        Credential: {
+            host: string;
+            port: number;
+            database: string;
+            username: string;
+            password: string;
+        };
+        /** @description Para onde a conexão aponta (a credencial sem a senha). */
+        ConnectionTarget: {
+            host: string;
+            port: number;
+            database: string;
+            username: string;
+        };
+        /**
+         * @description Por que o teste não passou. A lista de motivos é fechada, e o `message` é
+         *     sempre a mensagem fixa do `code`, sem o texto do driver, o host nem a
+         *     porta. O `detail` dos erros `422` da conexão usa as mesmas mensagens.
+         *
+         *     | Motivo | Mensagem |
+         *     |---|---|
+         *     | `connection_timeout` | O banco não respondeu a tempo. |
+         *     | `connection_refused` | O banco recusou a conexão. |
+         *     | `host_not_found` | O endereço do banco não foi encontrado. |
+         *     | `authentication_failed` | O banco recusou o usuário ou a senha. |
+         *     | `connection_without_tls` | O banco não aceitou uma conexão com TLS, que é obrigatória. |
+         *     | `connection_not_read_only` | O usuário do banco pode alterar dados. Use um usuário só de leitura. |
+         *     | `connection_target_not_allowed` | Este endereço de banco não é permitido. |
+         */
+        ConnectionTestError: {
+            /** @enum {string} */
+            code: "connection_timeout" | "connection_refused" | "host_not_found" | "authentication_failed" | "connection_without_tls" | "connection_not_read_only" | "connection_target_not_allowed";
+            /**
+             * @description A mensagem fixa do motivo, em pt-BR.
+             * @enum {string}
+             */
+            message: "O banco não respondeu a tempo." | "O banco recusou a conexão." | "O endereço do banco não foi encontrado." | "O banco recusou o usuário ou a senha." | "O banco não aceitou uma conexão com TLS, que é obrigatória." | "O usuário do banco pode alterar dados. Use um usuário só de leitura." | "Este endereço de banco não é permitido.";
+        };
+        /**
+         * @description O resultado de um teste de conexão. `ok` só quando o destino é permitido,
+         *     a conexão abriu, o TLS atende à exigência e o usuário do banco é somente
+         *     leitura. O que não chegou a ser conferido vem `null`. Para quem não tem
+         *     `credentials.manage` (no `last_test` e no `POST /v1/connections/{id}/test`),
+         *     `duration_ms`, `server_version`, `tls` e `read_only` vêm sempre `null`.
+         */
+        ConnectionTestResult: {
+            ok: boolean;
+            /** Format: date-time */
+            tested_at: string;
+            /** @description Quanto o teste levou, em milissegundos. */
+            duration_ms: number | null;
+            /** @description A versão informada pelo servidor do banco. */
+            server_version: string | null;
+            /** @description Se a conexão usou TLS. */
+            tls: boolean | null;
+            /** @description Se o usuário do banco é somente leitura. */
+            read_only: boolean | null;
+            error: components["schemas"]["ConnectionTestError"] | null;
+        };
+        /** @description Uma conexão com um banco do cliente, sem a credencial. */
+        Connection: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            type: "postgres" | "sqlserver";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /**
+             * @description O último teste da conexão. Sem `credentials.manage`, só `ok`,
+             *     `tested_at` e `error` vêm preenchidos.
+             */
+            last_test: components["schemas"]["ConnectionTestResult"] | null;
+            /** @description Preenchido só para quem tem `credentials.manage`. */
+            target: components["schemas"]["ConnectionTarget"] | null;
+        };
+        ConnectionList: {
+            items: components["schemas"]["Connection"][];
+        };
+        /** @description Corpo da criação de conexão. */
+        NewConnection: {
+            name: string;
+            /** @enum {string} */
+            type: "postgres" | "sqlserver";
+            credential: components["schemas"]["Credential"];
+        };
+        /** @description Corpo da alteração de conexão (só o nome). */
+        ConnectionUpdate: {
+            name: string;
+        };
+        /** @description Corpo do teste de uma credencial sem salvar. */
+        CredentialTest: {
+            /** @enum {string} */
+            type: "postgres" | "sqlserver";
+            credential: components["schemas"]["Credential"];
+        };
+        /** @description Uma tabela ou view do banco do cliente. */
+        DatabaseObject: {
+            /** @description O esquema (namespace) do objeto. */
+            schema_name: string;
+            name: string;
+            /** @enum {string} */
+            type: "table" | "view";
+        };
+        DatabaseObjectList: {
+            items: components["schemas"]["DatabaseObject"][];
+            next_cursor: string | null;
+        };
+        /**
+         * @description Tipo de dado de uma coluna ou variável.
+         * @enum {string}
+         */
+        DataType: "text" | "integer" | "decimal" | "date" | "datetime" | "boolean";
+        /** @description Uma coluna de uma fonte (tabela, view, SQL ou aba de Excel). */
+        Column: {
+            name: string;
+            /** @description O tipo como a fonte o descreve (ex.: `numeric(12,2)`). */
+            source_type: string;
+            /** @description O tipo correspondente; nulo quando o tipo da fonte não tem correspondência. */
+            type: components["schemas"]["DataType"] | null;
+            /** @description Casas decimais, só no tipo `decimal`. */
+            scale: number | null;
+            /** @description Se a coluna aceita valor vazio. */
+            nullable: boolean;
+        };
+        ColumnList: {
+            items: components["schemas"]["Column"][];
+        };
+        /** @description Uma aba do arquivo Excel. */
+        Sheet: {
+            name: string;
+            /** @description Quantas linhas, sem o cabeçalho, foram lidas para inferir os tipos (até 1.000). */
+            sampled_rows: number;
+            columns: components["schemas"]["Column"][];
+        };
+        /** @description Um arquivo Excel enviado, com as abas e as colunas lidas. */
+        ExcelFile: {
+            /** Format: uuid */
+            id: string;
+            /** @description O nome do arquivo enviado. */
+            file_name: string;
+            size_bytes: number;
+            /** @description O SHA-256 do arquivo, em hexadecimal. */
+            sha256: string;
+            /** Format: date-time */
+            uploaded_at: string;
+            sheets: components["schemas"]["Sheet"][];
+        };
+        ExcelFileList: {
+            items: components["schemas"]["ExcelFile"][];
+        };
+        /** @description Corpo do envio de arquivo Excel (`multipart/form-data`). */
+        ExcelFileUpload: {
+            file: string;
+        };
+        /**
+         * @description Um dataset, com as colunas já lidas. Os campos de origem que não são do
+         *     `type` vêm nulos: `table` usa `connection_id`, `schema_name` e
+         *     `object_name`; `sql` usa `connection_id` e `sql`; `excel` usa
+         *     `excel_file_id` e `sheet`.
+         */
+        Dataset: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            type: "table" | "sql" | "excel";
+            connection_id: string | null;
+            schema_name: string | null;
+            object_name: string | null;
+            sql: string | null;
+            excel_file_id: string | null;
+            sheet: string | null;
+            columns: components["schemas"]["Column"][];
+            /**
+             * Format: date-time
+             * @description Quando as colunas foram lidas pela última vez.
+             */
+            columns_refreshed_at: string;
+        };
+        DatasetList: {
+            items: components["schemas"]["Dataset"][];
+        };
+        /** @description Corpo da criação de dataset, um de três tipos escolhido por `type`. */
+        NewDataset: components["schemas"]["NewTableDataset"] | components["schemas"]["NewSqlDataset"] | components["schemas"]["NewExcelDataset"];
+        /** @description Dataset de uma tabela ou view da conexão. */
+        NewTableDataset: {
+            name: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "table";
+            /** Format: uuid */
+            connection_id: string;
+            schema_name: string;
+            object_name: string;
+        };
+        /** @description Dataset de um SQL livre na conexão (exige também `free_sql.use`). */
+        NewSqlDataset: {
+            name: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "sql";
+            /** Format: uuid */
+            connection_id: string;
+            sql: string;
+        };
+        /** @description Dataset de uma aba de um arquivo Excel. */
+        NewExcelDataset: {
+            name: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "excel";
+            /** Format: uuid */
+            excel_file_id: string;
+            sheet: string;
+        };
+        /**
+         * @description Corpo da alteração de dataset. `sql` só no tipo `sql` (exige também
+         *     `free_sql.use` para mudar); ausente, o SQL fica como está.
+         */
+        DatasetUpdate: {
+            name: string;
+            sql?: string | null;
+        };
+        /** @description Uma variável de negócio sobre uma coluna do dataset. */
+        Variable: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            dataset_id: string;
+            /** @description O nome da coluna do dataset. */
+            column: string;
+            /** @description Nome de negócio, único no dataset (`^[a-z][a-z0-9_]{0,62}$`). */
+            name: string;
+            type: components["schemas"]["DataType"];
+            /** @description Casas decimais, só no tipo `decimal`. */
+            scale: number | null;
+        };
+        VariableList: {
+            items: components["schemas"]["Variable"][];
+        };
+        /** @description Corpo da criação de variável. */
+        NewVariable: {
+            column: string;
+            /**
+             * @description Até 200 caracteres só como proteção do corpo (fora disso,
+             *     `invalid_data`). A regra do nome, `^[a-z][a-z0-9_]{0,62}$` (até 63
+             *     caracteres), dá `invalid_variable_name`.
+             */
+            name: string;
+            type: components["schemas"]["DataType"];
+            scale?: number | null;
+        };
+        /** @description Corpo da alteração de variável (substitui nome, tipo e `scale`). */
+        VariableUpdate: {
+            /**
+             * @description Até 200 caracteres só como proteção do corpo (fora disso,
+             *     `invalid_data`). A regra do nome, `^[a-z][a-z0-9_]{0,62}$` (até 63
+             *     caracteres), dá `invalid_variable_name`.
+             */
+            name: string;
+            type: components["schemas"]["DataType"];
+            scale?: number | null;
         };
     };
     responses: {
@@ -1087,6 +1821,84 @@ export interface components {
         };
         /** @description `authorized_domain_already_exists`: a origem (normalizada) já está cadastrada no tenant. */
         AuthorizedDomainAlreadyExists: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+         *     - `connection_target_not_allowed`: o `host` resolve para uma rede bloqueada;
+         *     - `connection_failed`: a conexão falhou (tempo esgotado, recusada, nome não
+         *       encontrado ou autenticação), com a mensagem fixa do motivo no `detail`;
+         *     - `connection_not_read_only`: o usuário do banco pode escrever (`privileges`);
+         *     - `connection_without_tls`: o banco não aceitou TLS, que é exigido.
+         *
+         *     O `detail` é sempre a mensagem fixa do motivo (lista em `ConnectionTestError`).
+         */
+        ConnectionRejected: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ConnectionRejectedProblem"];
+            };
+        };
+        /**
+         * @description `connection_already_exists`: já há uma conexão com esse nome no tenant
+         *     (sem os espaços das pontas e sem diferenciar maiúsculas).
+         */
+        ConnectionAlreadyExists: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description `connection_in_use`: a conexão é usada por algum dataset. */
+        ConnectionInUse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description `file_too_large`: o arquivo passa de `FLUXO_EXCEL_MAX_SIZE_MB` (padrão 20 MB). */
+        FileTooLarge: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description `excel_file_in_use`: o arquivo é usado por algum dataset. */
+        ExcelFileInUse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description `dataset_already_exists`: já há um dataset com esse nome no tenant (sem os
+         *     espaços das pontas e sem diferenciar maiúsculas).
+         */
+        DatasetAlreadyExists: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description `variable_already_exists`: já há uma variável com esse nome no dataset. */
+        VariableAlreadyExists: {
             headers: {
                 [name: string]: unknown;
             };
@@ -1967,6 +2779,813 @@ export interface operations {
                     "application/problem+json": components["schemas"]["InvalidDataProblem"];
                 };
             };
+        };
+    };
+    list_connections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As conexões do tenant. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+        };
+    };
+    create_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewConnection"];
+            };
+        };
+        responses: {
+            /** @description Conexão testada e criada. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            409: components["responses"]["ConnectionAlreadyExists"];
+            422: components["responses"]["ConnectionRejected"];
+        };
+    };
+    get_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A conexão. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    rename_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Conexão renomeada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ConnectionAlreadyExists"];
+            422: components["responses"]["InvalidDataWithId"];
+        };
+    };
+    delete_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conexão removida. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ConnectionInUse"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    update_credential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Credential"];
+            };
+        };
+        responses: {
+            /** @description Credencial testada e trocada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ConnectionRejected"];
+        };
+    };
+    test_credential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialTest"];
+            };
+        };
+        responses: {
+            /** @description O resultado do teste. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionTestResult"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            /**
+             * @description - `invalid_data`: o corpo não segue o esquema;
+             *     - `connection_target_not_allowed`: o `host` resolve para uma rede bloqueada.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    test_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O resultado do teste. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionTestResult"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    list_objects: {
+        parameters: {
+            query?: {
+                /** @description Trecho do nome do objeto. */
+                search?: string | null;
+                /** @description Quantos itens por página (1 a 200). */
+                limit?: components["parameters"]["Limit"];
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de objetos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseObjectList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `invalid_data`: `{id}` que não é UUID ou `limit` fora de 1..200
+             *       (`fields.<parameter>`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista;
+             *     - `connection_target_not_allowed`: o `host` da conexão resolve para uma rede bloqueada;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_object_columns: {
+        parameters: {
+            query: {
+                /** @description O esquema (namespace) do objeto no banco do cliente. */
+                schema_name: string;
+                /** @description O nome da tabela ou view. */
+                name: string;
+            };
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As colunas do objeto. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ColumnList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `invalid_data`: o `{id}` do caminho não é um UUID, ou falta
+             *       `schema_name` ou `name` (`fields.<parameter>`);
+             *     - `connection_target_not_allowed`: o `host` da conexão resolve para uma rede bloqueada;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_excel_files: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os arquivos Excel do tenant. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExcelFileList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+        };
+    };
+    upload_excel_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ExcelFileUpload"];
+            };
+        };
+        responses: {
+            /** @description Arquivo guardado, com as abas e as colunas lidas. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExcelFile"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            413: components["responses"]["FileTooLarge"];
+            /**
+             * @description - `invalid_data`: o corpo não traz o campo `file` (`fields.file`);
+             *     - `invalid_file`: o arquivo não é um `.xlsx` legível;
+             *     - `invalid_header`: nome vazio ou repetido no cabeçalho de alguma aba
+             *       (`fields` com cada célula, ex.: `Vendas!C1`).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_excel_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O arquivo, com as abas e as colunas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExcelFile"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    delete_excel_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Arquivo removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ExcelFileInUse"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    list_datasets: {
+        parameters: {
+            query?: {
+                /** @description Só os datasets desta conexão. */
+                connection_id?: string | null;
+                /** @description Só os datasets deste arquivo Excel. */
+                excel_file_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os datasets do tenant. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /** @description `invalid_data`: um filtro não é UUID (`fields.<parameter>`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
+                };
+            };
+        };
+    };
+    create_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewDataset"];
+            };
+        };
+        responses: {
+            /** @description Dataset criado, com as colunas. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dataset"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            409: components["responses"]["DatasetAlreadyExists"];
+            /**
+             * @description - `invalid_data`: o corpo não segue o esquema, ou a conexão ou o arquivo
+             *       não existe (`fields.connection_id`, `fields.excel_file_id`);
+             *     - `invalid_sql`: o SQL foi recusado (`fields.sql`, com o motivo da
+             *       validação ou a mensagem fixa da recusa pelo banco, nunca o texto do
+             *       driver);
+             *     - `unknown_object`: a tabela ou view não existe (`fields.object_name`);
+             *     - `unknown_sheet`: a aba não existe no arquivo (`fields.sheet`);
+             *     - `connection_target_not_allowed`: o `host` da conexão resolve para uma rede bloqueada;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O dataset, com as colunas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dataset"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    update_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasetUpdate"];
+            };
+        };
+        responses: {
+            /** @description Dataset alterado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dataset"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["DatasetAlreadyExists"];
+            /**
+             * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema,
+             *       ou `sql` num dataset que não é do tipo `sql`;
+             *     - `invalid_sql`: o SQL foi recusado (`fields.sql`, com o motivo da
+             *       validação ou a mensagem fixa da recusa pelo banco, nunca o texto do
+             *       driver);
+             *     - `connection_target_not_allowed`: o `host` da conexão resolve para uma rede bloqueada;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_dataset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dataset e variáveis removidos. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    refresh_dataset_columns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O dataset com as colunas relidas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dataset"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `invalid_data`: o `{id}` do caminho não é um UUID (`fields.id`);
+             *     - `invalid_sql`: o banco recusou o SQL do dataset (`fields.sql` com a
+             *       mensagem fixa da recusa, nunca o texto do driver);
+             *     - `unknown_object`: a tabela ou view não existe mais (`fields.object_name`);
+             *     - `connection_target_not_allowed`: o `host` da conexão resolve para uma rede bloqueada;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_variables: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description As variáveis do dataset. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VariableList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    create_variable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewVariable"];
+            };
+        };
+        responses: {
+            /** @description Variável criada. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Variable"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["VariableAlreadyExists"];
+            /**
+             * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+             *     - `unknown_column`: a coluna não está no dataset (`fields.column`);
+             *     - `incompatible_type`: a coluna não pode virar esse tipo (`fields.type`);
+             *     - `invalid_variable_name`: o nome não segue `^[a-z][a-z0-9_]{0,62}$`
+             *       (`fields.name`).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
+                };
+            };
+        };
+    };
+    update_variable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VariableUpdate"];
+            };
+        };
+        responses: {
+            /** @description Variável alterada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Variable"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["VariableAlreadyExists"];
+            /**
+             * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+             *     - `incompatible_type`: a coluna não pode virar esse tipo (`fields.type`);
+             *     - `invalid_variable_name`: o nome não segue `^[a-z][a-z0-9_]{0,62}$`
+             *       (`fields.name`).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
+                };
+            };
+        };
+    };
+    delete_variable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Variável removida. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
         };
     };
 }
