@@ -578,8 +578,18 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - **confirmado como está:** o Admin sem menu de ações e o selo "Sensível" em âmbar (F15); datas absolutas e o "…" desabilitado com motivo na chave revogada (F16); rótulos e cores dos 13 tipos de evento (F18).
 - Aceite: testes do `Abas` (teclado, foco, permissões); as telas de Administração e Auditoria continuam passando; `pnpm lint`, `typecheck`, `test`, `build` e `e2e` verdes; nenhum `--fc-` declarado fora do `tokens.css` e nenhum px de layout cru nos arquivos citados.
 
+**F43 · Manutenção: testes estáveis sob carga**
+- dep: F35
+- modelo: sonnet
+- arquivos: `packages/react/src/admin/`, `packages/react/src/catalog/datasets/`, `packages/react/vite.config.ts`
+- Fazer (achado da verificação da F31, decidido pela sessão global):
+  - no `pnpm test` completo sob carga, testes da Administração (como `admin/users/UserDialog.test.tsx`) e o "Carregar mais" de `catalog/datasets/` estouram o tempo e passam sozinhos;
+  - achar a causa em cada um (espera fixa, `waitFor` sem consulta assíncrona, `userEvent` com atraso, renderização pesada) e corrigir no teste ou no componente;
+  - aumentar o tempo limite global só se a causa for comprovadamente a máquina, e com o motivo num comentário.
+- Aceite: `pnpm test` completo três vezes seguidas, sem nenhuma falha por tempo, com a máquina ocupada pelo e2e simulado rodando em paralelo numa das vezes; lint, typecheck e build verdes.
+
 **F36 · Portão do épico 3**
 - tipo: portao
-- dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42
+- dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42, F43
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 3.
