@@ -469,11 +469,13 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - decisão D9 (sessão global, 2026-11-17): o teste de exemplos do contrato é conferido contra o contrato commitado da B48 (`git show <commit>:contracts/openapi.yaml` num arquivo temporário), porque o do disco tem a B26 em andamento; o `pnpm e2e:real` fica para o teste de integração do CK3;
   - nenhum campo, caminho ou código da API em português no código (`git grep` com a lista do glossário do back).
 
+**Posse no catálogo (D11, sessão global, 2026-11-17):** a F30 a F33 usam o design system como ele está. Peça visual nova que só o catálogo usa (área de soltar arquivo, campo de SQL monoespaçado) nasce dentro da sub-vertical que a usa, e só vai para o `design-system/` quando houver um segundo uso, numa tarefa própria. Consultas e testes ficam dentro da sub-vertical, como em `admin/`. A F34 é dona da raiz de `catalog/` (o `<Catalog>`, as abas e o `index.ts`) depois que a F30 a F33 terminam.
+
 **F29 · Tipos da API do épico 3**
 - tipo: contrato
 - dep: F42, B26
 - modelo: sonnet
-- arquivos: `packages/react/src/api/generated/`
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts` (D11)
 - Aceite: `pnpm generate:api` atualizado e compilando; o teste de exemplos do contrato (`contract-examples`) verde contra o contrato da B26, com os exemplos do épico 3 (D9).
 
 **F30 · Catálogo: conexões**
@@ -499,8 +501,9 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F31 · Catálogo: datasets de tabela e de SQL**
 - dep: F29
 - modelo: opus
-- arquivos: `packages/react/src/catalog/datasets/`
+- arquivos: `packages/react/src/catalog/datasets/`, `packages/react/src/catalog/columns/`
 - Fazer:
+  - **colunas compartilhadas (D11):** a tabela de colunas com tipos e os rótulos de `DataType` ficam em `catalog/columns/`, usados também pela F32 e pela F33;
   - **lista de datasets:** nome, tipo, origem e data das colunas;
   - **novo de tabela:**
     - escolher a conexão;
@@ -516,9 +519,9 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 - Aceite: testes de cada fluxo e de cada erro (`objeto_inexistente`, `dataset_existente`, `sql_invalido`); estados vazio, carregando e erro.
 
 **F32 · Catálogo: arquivos Excel**
-- dep: F29
+- dep: F29, F31
 - modelo: opus
-- arquivos: `packages/react/src/catalog/files/`
+- arquivos: `packages/react/src/catalog/files/`, `packages/react/src/api/client/` (só se o envio multipart pedir ajuste no cliente)
 - Fazer:
   - **envio:** arrastar e soltar, ou botão; só `.xlsx`; o limite de 20 MB é conferido também no cliente; progresso do envio;
   - **erros:** `arquivo_grande`, `arquivo_invalido` e `cabecalho_invalido`, este com as colunas apontadas;
@@ -541,7 +544,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F34 · Integração do épico 3: menu Catálogo, rotas e interface pública**
 - dep: F30, F32, F33, F40
 - modelo: sonnet
-- arquivos: `packages/react/src/catalog/index.ts`, `packages/react/src/module/`, `packages/react/src/index.ts`
+- arquivos: `packages/react/src/catalog/`, `packages/react/src/module/`, `packages/react/src/index.ts`, `apps/shell/src/`, `docs/incorporacao.md`, `README.md`, `.changeset/`
 - Fazer:
   - `catalogo/index.ts` exporta `<Catalogo>`, com as abas (cada uma com a sua permissão), e o detalhe do dataset;
   - item "Catálogo" no menu, com `conexoes.ver`;
@@ -553,7 +556,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F35 · Testes ponta a ponta do épico 3**
 - dep: F34
 - modelo: opus
-- arquivos: `e2e/epic-3/`, `e2e/support/`
+- arquivos: `e2e/epic-3/`, `e2e/support/`, `playwright.config.ts`, `README.md`
 - Fazer:
   - os fluxos do épico 3 do plano global: conexão Postgres de exemplo (testar, objetos e colunas com tipos), dataset com nome de negócio nas colunas (variáveis), envio de Excel com aba e tipos inferidos, e a credencial que nunca volta para o front;
   - no modo real:
