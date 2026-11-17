@@ -1,6 +1,6 @@
 # 0008. Verticais consomem a API por `useClienteApi()`, `dadosOuErro()` e `ErroApi.codigo`
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0015](0015-cache-na-troca-de-identidade-e-tenant.md))
+- **Status:** aceita, revisar no checkpoint (complementada por [0015](0015-cache-na-troca-de-identidade-e-tenant.md) e [0035](0035-envio-com-progresso-por-xhr-no-cliente-da-api.md))
 - **Data:** 2026-11-15
 - **Quem decidiu:** orquestração (tarefa F6)
 - **Relacionadas:** [0003](0003-codigo-por-verticais.md), [0005](0005-tipos-da-api-pelo-openapi.md), [0006](0006-roteamento-interno-e-configuracao-do-modulo.md)

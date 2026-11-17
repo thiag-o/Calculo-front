@@ -1,6 +1,7 @@
 import createClient, { type Client, type Middleware } from 'openapi-fetch';
 import type { paths } from '../generated/schema';
 import { problemCode } from './apiError';
+import { upload, type MultipartPath, type UploadOptions, type UploadResult } from './upload';
 
 /** `cookie`: shell app, cookie session with CSRF. `token`: embedded, `Authorization: Bearer`. */
 export type AuthMode = 'cookie' | 'token';
@@ -19,6 +20,12 @@ export interface ApiClient extends Client<paths> {
    * Returns the function that cancels the notification.
    */
   onSessionExpired(listener: () => void): () => void;
+  /**
+   * Sends a `multipart/form-data` POST (e.g. `/v1/excel-files`) reporting how much of the body went out, which fetch
+   * cannot do. Same authentication, errors and session notice as the other calls: resolves with the `201` body or
+   * rejects with `ApiError`; `signal` cancels it with an `AbortError`.
+   */
+  upload<P extends MultipartPath>(path: P, body: FormData, options?: UploadOptions): Promise<UploadResult<P>>;
 }
 
 /** Cookie with the CSRF token issued on sign-in (not HttpOnly, so the front can read it). */
@@ -57,6 +64,9 @@ async function responseCode(response: Response): Promise<string | undefined> {
 export function createApiClient({ apiUrl, token }: ApiClientOptions): ApiClient {
   const mode: AuthMode = token === undefined ? 'cookie' : 'token';
   const listeners = new Set<() => void>();
+  const notifySessionExpired = () => {
+    for (const listener of [...listeners]) listener();
+  };
 
   const http = createClient<paths>({
     baseUrl: apiUrl,
@@ -74,13 +84,21 @@ export function createApiClient({ apiUrl, token }: ApiClientOptions): ApiClient 
       return undefined;
     },
     async onResponse({ response }) {
-      if (response.status === 401 && (await responseCode(response)) === NO_SESSION_CODE) {
-        for (const listener of [...listeners]) listener();
-      }
+      if (response.status === 401 && (await responseCode(response)) === NO_SESSION_CODE) notifySessionExpired();
       return undefined;
     },
   };
   http.use(auth);
+
+  const uploadSettings = {
+    apiUrl,
+    token,
+    csrfHeader: () => {
+      const csrf = readCookie(CSRF_COOKIE);
+      return csrf === undefined ? undefined : ([CSRF_HEADER, csrf] as const);
+    },
+    onNoSession: notifySessionExpired,
+  };
 
   return Object.assign(http, {
     mode,
@@ -89,6 +107,9 @@ export function createApiClient({ apiUrl, token }: ApiClientOptions): ApiClient 
       return () => {
         listeners.delete(listener);
       };
+    },
+    upload<P extends MultipartPath>(path: P, body: FormData, options?: UploadOptions): Promise<UploadResult<P>> {
+      return upload(uploadSettings, path, body, options);
     },
   });
 }

@@ -1,0 +1,218 @@
+/*
+ * Catalog › Arquivos: list, upload area and detail of an Excel file (estilos.md §3, §4, §5, §7.1, §7.6, §7.7, §9 and §14).
+ * Only fc- classes and --fc-* variables; no global reset, no z-index and no full-window measurement (ADR 0002).
+ */
+
+.fc-files,
+.fc-files-upload-block,
+.fc-files-sheet {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-files-upload-block {
+  gap: var(--fc-space-12);
+}
+
+.fc-files-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-files-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-files-title h2,
+.fc-files-title p,
+.fc-files-section h3 {
+  margin: 0;
+}
+
+.fc-files-heading:focus {
+  outline: none;
+}
+
+.fc-files-heading:focus-visible {
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-files-wrap,
+.fc-files-hash {
+  overflow-wrap: anywhere;
+}
+
+.fc-files-number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The file name opens the detail: a link (estilos.md §3: --fc-link, no underline, underline on hover). */
+.fc-files-link {
+  box-sizing: border-box;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-files-link:hover {
+  text-decoration: underline;
+}
+
+.fc-files-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Two lines in a row (estilos.md §7.6): the count and, below, the sheet names. */
+.fc-files-two-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+/*
+ * Upload area (D11: a piece only the catalog uses). A box (12px radius) with a 1px dashed gray-500 border, like the group on
+ * the canvas (estilos.md §8): it marks a place to drop something. While a file is dragged over it, the border turns
+ * gray-1000 and the background --fc-hover. No color: the action is the black button (estilos.md §12).
+ */
+.fc-files-upload {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+  min-width: 0;
+  padding: var(--fc-space-20) var(--fc-space-24);
+  border: 1px dashed var(--fc-gray-500);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  transition:
+    border-color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.fc-files-upload.fc-files-upload-over {
+  border-color: var(--fc-gray-1000);
+  background-color: var(--fc-hover);
+}
+
+/* Outline icon (estilos.md §6 and §7.7): a 1px circle without color, never a colored circle. */
+.fc-files-upload-icon {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--fc-space-32);
+  height: var(--fc-space-32);
+  border: 1px solid var(--fc-border);
+  border-radius: 50%;
+  color: var(--fc-text-secondary);
+}
+
+.fc-files-upload-text {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-files-upload-text p {
+  margin: 0;
+}
+
+/* Meter (estilos.md §7.7): a 4px bar, gray-200 track, gray-1000 fill. */
+.fc-files-meter {
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background-color: var(--fc-gray-200);
+}
+
+.fc-files-meter-fill {
+  display: block;
+  height: 100%;
+  background-color: var(--fc-gray-1000);
+  transition: width 150ms ease-out;
+}
+
+.fc-files-notice-text {
+  margin: 0;
+}
+
+/* The header cells of an invalid_header error: the Excel reference in mono, then the problem. */
+.fc-files-cells {
+  margin: var(--fc-space-8) 0 0;
+  padding-left: var(--fc-space-20);
+}
+
+.fc-files-cells li + li {
+  margin-top: var(--fc-space-2);
+}
+
+.fc-files-cell {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fc-files-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-files-panel {
+  padding-top: var(--fc-space-16);
+}
+
+.fc-files-facts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8) var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-files-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-files-upload,
+  .fc-files-meter-fill {
+    transition: none;
+  }
+}

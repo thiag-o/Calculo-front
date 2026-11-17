@@ -61,8 +61,8 @@ function problemFields(fields: unknown): Record<string, string> {
   return result;
 }
 
-/** Converts the error response (and the already read body) into `ApiError`. */
-export function responseError(response: Response, body: unknown): ApiError {
+/** Converts the error response (and the already read body) into `ApiError`. Only the status of the response is read. */
+export function responseError(response: Pick<Response, 'status'>, body: unknown): ApiError {
   const code = problemCode(body);
   if (code === undefined || !isObject(body)) {
     return new ApiError({ status: response.status, code: UNEXPECTED_RESPONSE_CODE, message: UNEXPECTED_RESPONSE_MESSAGE });

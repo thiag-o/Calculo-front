@@ -54,6 +54,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0032](0032-segredo-digitado-fora-do-cache-de-mutacao.md) | Segredo digitado pela pessoa: mutação sem variáveis, corpo lido na chamada, `gcTime: 0` (complementa 0021) | aceita, revisar no checkpoint | 2026-11-17 |
 | [0033](0033-chaves-de-cache-sob-catalogo.md) | Chaves de cache do Catálogo sob `['catalog', …]`, invalidadas pelo prefixo (segue a 0020) | aceita, revisar no checkpoint (complementada por 0034) | 2026-11-17 |
 | [0034](0034-dados-filhos-do-dataset-sob-a-chave-do-detalhe.md) | Dados filhos do dataset (variáveis) sob a chave do detalhe, gravados com `setQueryData` (complementa 0033) | aceita, revisar no checkpoint | 2026-11-17 |
+| [0035](0035-envio-com-progresso-por-xhr-no-cliente-da-api.md) | Envio de arquivo com progresso por `client.upload` (XMLHttpRequest) no cliente da API (complementa 0008) | aceita, revisar no checkpoint | 2026-11-17 |
 
 ## Pendentes (sem ADR ainda)
 
