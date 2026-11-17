@@ -552,6 +552,10 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - rotas `/catalogo`, `/catalogo/conexoes/:id`, `/catalogo/datasets/:id` e `/catalogo/arquivos/:id`;
   - a prop `tela` aceita `catalogo`;
   - o pacote exporta `<Catalogo>` (Contratos: componentes por tela).
+- Achados da revisão da F32 (sessão global), na tela de arquivos:
+  - remover um arquivo tira também o detalhe dele do cache;
+  - o envio em andamento pode ser cancelado ("Cancelar"), sem deixar arquivo pela metade na lista;
+  - um 413, venha da API ou de um proxy, mostra a mensagem de tamanho máximo, sem "Tentar de novo".
 - Achados da revisão da F33 (sessão global), na tela do dataset:
   - quando a lista de variáveis falha, a coluna "Variáveis" mostra o estado de erro com "Tentar de novo", em vez de ficar vazia;
   - o diálogo da variável fecha assim que a API confirma; o recarregamento do catálogo segue em segundo plano;
