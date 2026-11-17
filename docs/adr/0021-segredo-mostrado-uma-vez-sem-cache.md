@@ -1,6 +1,6 @@
 # 0021. Segredo mostrado uma vez: mutação com `gcTime: 0`, presa ao diálogo
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0032](0032-segredo-digitado-fora-do-cache-de-mutacao.md))
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F14)
 - **Relacionadas:** ADRs 0008, 0015

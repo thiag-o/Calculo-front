@@ -1,0 +1,171 @@
+/*
+ * Catalog › Conexões (estilos.md §3, §4, §7.6, §9 and §14). Only fc- classes and --fc-* variables; no global reset, no
+ * z-index and no full-window measurement (ADR 0002).
+ */
+
+.fc-connections {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fc-connections-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fc-connections-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fc-connections-title h2,
+.fc-connections-title p {
+  margin: 0;
+}
+
+.fc-connections-title h2:focus {
+  outline: none;
+}
+
+.fc-connections-title h2:focus-visible {
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-connections-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-connections-wrap {
+  overflow-wrap: anywhere;
+}
+
+.fc-connections-number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The connection name opens the detail: a link (estilos.md §3: --fc-link, no underline, underline on hover). */
+.fc-connections-link {
+  box-sizing: border-box;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-connections-link:hover {
+  text-decoration: underline;
+}
+
+.fc-connections-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Last test: dot + word and the date beside it. */
+.fc-connections-test-status {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.fc-connections-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Label/value pairs (estilos.md §7.6): label above, value below. */
+.fc-connections-pairs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+}
+
+.fc-connections-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fc-connections-pair dt,
+.fc-connections-pair dd {
+  margin: 0;
+}
+
+/* Result of "Testar": box with 6px radius inside the dialog or the detail. */
+.fc-connections-result {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+}
+
+.fc-connections-result > p {
+  margin: 0;
+}
+
+/* Dialogs */
+
+.fc-connections-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+}
+
+.fc-connections-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fc-connections-host {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.fc-connections-port {
+  flex: 0 1 112px;
+  min-width: 88px;
+}
+
+.fc-connections-privileges {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.fc-connections-privileges li + li {
+  margin-top: 2px;
+}
