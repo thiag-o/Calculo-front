@@ -586,6 +586,17 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - **confirmado como está:** o Admin sem menu de ações e o selo "Sensível" em âmbar (F15); datas absolutas e o "…" desabilitado com motivo na chave revogada (F16); rótulos e cores dos 13 tipos de evento (F18).
 - Aceite: testes do `Abas` (teclado, foco, permissões); as telas de Administração e Auditoria continuam passando; `pnpm lint`, `typecheck`, `test`, `build` e `e2e` verdes; nenhum `--fc-` declarado fora do `tokens.css` e nenhum px de layout cru nos arquivos citados.
 
+**F44 · Manutenção: catálogo robusto (achados da revisão da F34)**
+- dep: F34
+- modelo: sonnet
+- arquivos: `packages/react/src/catalog/`
+- Fazer (decidido pela sessão global):
+  - um endereço mal formado em `/catalog/...` (id inválido, parte faltando) mostra o estado "não encontrado" com o caminho de volta, sem derrubar a tela;
+  - o "Tentar de novo" das variáveis aparece no lugar certo da tabela quando a lista falha, não só numa linha;
+  - o detector de cancelamento duplicado vira um só, dentro do catálogo;
+  - o envio de arquivo que continua ao trocar de aba fica como está, mas o resultado (sucesso ou erro) aparece na aba Arquivos quando a pessoa voltar.
+- Aceite: testes de cada caso; lint, typecheck, test e build verdes.
+
 **F43 · Manutenção: testes estáveis sob carga**
 - dep: F35
 - modelo: sonnet
@@ -598,6 +609,6 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 
 **F36 · Portão do épico 3**
 - tipo: portao
-- dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42, F43
+- dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42, F43, F44
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 3.
