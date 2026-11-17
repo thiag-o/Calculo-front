@@ -539,6 +539,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - editar e remover variáveis;
   - erros por `codigo`: `variavel_existente`, `tipo_incompativel` e `nome_variavel_invalido`; a regra do nome também é conferida no cliente;
   - sem `variaveis.gerenciar`, as variáveis aparecem só para leitura.
+  - achado da revisão da F31 (sessão global): uma falha ao recarregar a lista de conexões em segundo plano não esconde o seletor nem trava o "Salvar" do "Novo dataset"; os dados já carregados continuam valendo, com um aviso discreto de que não foi possível atualizar.
 - Aceite: testes de criar, editar e remover; cada erro; o seletor de tipo oferece só as conversões aceitas.
 
 **F34 · Integração do épico 3: menu Catálogo, rotas e interface pública**
