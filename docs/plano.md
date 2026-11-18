@@ -593,18 +593,19 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 - Fazer (decidido pela sessão global):
   - um endereço mal formado em `/catalog/...` (id inválido, parte faltando) mostra o estado "não encontrado" com o caminho de volta, sem derrubar a tela;
   - o "Tentar de novo" das variáveis aparece no lugar certo da tabela quando a lista falha, não só numa linha;
-  - o detector de cancelamento duplicado vira um só: fica o de `api/client/apiError.ts`, exposto pelo `api/index.ts`, e o catálogo apaga a cópia dele e passa a usar esse (decisão da sessão global na verificação da F44);
+  - o detector de cancelamento duplicado vira um só: fica o de `api/client/apiError.ts`, exposto pelo `api/index.ts`, e o catálogo apaga a cópia dele e passa a usar esse (decisão da sessão global na verificação da F44; a F44 foi reaberta para isso);
+  - com `invalid_data`, a lista de variáveis mostra "não encontrado", e não a mensagem crua da API (a função única de erros vem na F45);
   - o envio de arquivo que continua ao trocar de aba fica como está, mas o resultado (sucesso ou erro) aparece na aba Arquivos quando a pessoa voltar.
 - Aceite: testes de cada caso; lint, typecheck, test e build verdes.
 
-**F45 · Manutenção: erros e cancelamento do catálogo num lugar só**
+**F45 · Manutenção: erros do catálogo num lugar só**
 - dep: F44
 - modelo: sonnet
-- arquivos: `packages/react/src/catalog/`, `packages/react/src/api/index.ts`
+- arquivos: `packages/react/src/catalog/`
 - Fazer (observações da revisão da F44, decididas pela sessão global):
   - **erros:** uma função única do catálogo traduz o erro de consulta em mensagem; `not_found` e `invalid_data` viram "não encontrado" em todas as telas (conexões, datasets, arquivos e variáveis), no lugar da lista repetida em 4 telas e da mensagem crua da API;
-  - **cancelamento:** o `api/index.ts` passa a exportar o detector de cancelamento de `api/client/apiError.ts`; o catálogo apaga a cópia de `catalog/files/queries.ts` e usa o exportado.
-- Aceite: teste da função de erros com cada código; nenhuma cópia do detector no catálogo; lint (com as fronteiras), typecheck, test e build verdes.
+  - o cancelamento já fica unificado pela F44 reaberta.
+- Aceite: teste da função de erros com cada código; lint (com as fronteiras), typecheck, test e build verdes.
 
 **F43 · Manutenção: testes estáveis sob carga**
 - dep: F35
