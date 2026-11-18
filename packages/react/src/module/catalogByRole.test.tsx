@@ -79,10 +79,14 @@ function simulateCatalog(permissions: string[]) {
 }
 
 function renderScreen(props: Partial<FluxoCalculoProps> = {}) {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   render(<FluxoCalculo apiUrl={API} {...props} />);
   return { user };
 }
+
+// Waits get 4 s instead of the 1 s default: under load (e2e browsers running at the same time) these full-module renders took 2 to 3 s
+// and the finds failed with "Unable to find" (measured in F43); alone they finish in about 1 s.
+const SLOW = { timeout: 4000 };
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -92,9 +96,9 @@ const catalogTabs = () => screen.getByRole('tablist', { name: 'Catálogo' });
 const tabNames = () => within(catalogTabs()).getAllByRole('tab').map((tab) => tab.textContent);
 
 async function openCatalog(user: User) {
-  await screen.findByRole('heading', { level: 1, name: 'Início' });
+  await screen.findByRole('heading', { level: 1, name: 'Início' }, SLOW);
   await user.click(catalogItem());
-  return screen.findByRole('heading', { level: 1, name: 'Catálogo' });
+  return screen.findByRole('heading', { level: 1, name: 'Catálogo' }, SLOW);
 }
 
 describe('Catálogo no casca: Integrador', () => {
@@ -106,30 +110,30 @@ describe('Catálogo no casca: Integrador', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/catalog'));
     expect(catalogItem()).toHaveAttribute('aria-current', 'page');
     expect(tabNames()).toEqual(['Conexões', 'Datasets', 'Arquivos']);
-    expect(await screen.findByRole('button', { name: 'Nova conexão' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Nova conexão' }, SLOW)).toBeInTheDocument();
 
     // Connection detail, with the destination and the connection test.
-    await user.click(await screen.findByRole('button', { name: 'Postgres de exemplo' }));
-    expect(await screen.findByText('erp.interno')).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Postgres de exemplo' }, SLOW));
+    expect(await screen.findByText('erp.interno', undefined, SLOW)).toBeInTheDocument();
     expect(window.location.pathname).toBe(`/catalog/connections/${CONNECTION_ID}`);
     expect(catalogItem()).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('button', { name: 'Testar' })).toBeInTheDocument();
 
     // Datasets tab, list and detail with the variables editor.
     await user.click(within(catalogTabs()).getByRole('tab', { name: 'Datasets' }));
-    expect(await screen.findByRole('button', { name: 'Novo dataset' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Novo dataset' }, SLOW)).toBeInTheDocument();
     expect(window.location.pathname).toBe('/catalog/datasets');
-    await user.click(await screen.findByRole('button', { name: 'Itens de nota fiscal' }));
-    expect(await screen.findByRole('button', { name: 'Atualizar colunas' })).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Itens de nota fiscal' }, SLOW));
+    expect(await screen.findByRole('button', { name: 'Atualizar colunas' }, SLOW)).toBeInTheDocument();
     expect(window.location.pathname).toBe(`/catalog/datasets/${DATASET_ID}`);
     expect(screen.getAllByRole('button', { name: 'Nova variável' }).length).toBeGreaterThan(0);
 
     // Files tab.
     await user.click(within(catalogTabs()).getByRole('tab', { name: 'Arquivos' }));
-    expect(await screen.findByRole('button', { name: 'Enviar arquivo' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Enviar arquivo' }, SLOW)).toBeInTheDocument();
     expect(window.location.pathname).toBe('/catalog/files');
-    await user.click(await screen.findByRole('button', { name: 'metas-2026.xlsx' }));
-    expect(await screen.findByRole('button', { name: 'Remover arquivo' })).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'metas-2026.xlsx' }, SLOW));
+    expect(await screen.findByRole('button', { name: 'Remover arquivo' }, SLOW)).toBeInTheDocument();
     expect(window.location.pathname).toBe(`/catalog/files/${FILE_ID}`);
 
     expect(api.calls()).toContain(`GET /v1/excel-files/${FILE_ID}`);
@@ -140,7 +144,7 @@ describe('Catálogo no casca: Integrador', () => {
     simulateCatalog(INTEGRATOR_PERMISSIONS);
     renderScreen({ navigation: 'url' });
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Itens de nota fiscal' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Itens de nota fiscal' }, SLOW)).toBeInTheDocument();
     // One h1 only: the Catálogo title; the dataset title is an h2 and its sections h3.
     expect(screen.getAllByRole('heading', { level: 1 }).map((heading) => heading.textContent)).toEqual(['Catálogo']);
     expect(screen.getByRole('heading', { level: 3, name: 'Colunas' })).toBeInTheDocument();
@@ -152,9 +156,9 @@ describe('Catálogo no casca: Integrador', () => {
     simulateCatalog(INTEGRATOR_PERMISSIONS);
     const { user } = renderScreen({ navigation: 'url' });
 
-    await screen.findByRole('button', { name: 'Atualizar colunas' });
+    await screen.findByRole('button', { name: 'Atualizar colunas' }, SLOW);
     await user.click(screen.getByRole('button', { name: 'Voltar para datasets' }));
-    expect(await screen.findByRole('button', { name: 'Itens de nota fiscal' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Itens de nota fiscal' }, SLOW)).toBeInTheDocument();
     expect(window.location.pathname).toBe('/catalog/datasets');
   });
 });
@@ -169,17 +173,17 @@ describe.each([
     await openCatalog(user);
 
     expect(tabNames()).toEqual(['Conexões', 'Datasets', 'Arquivos']);
-    await user.click(await screen.findByRole('button', { name: 'Postgres de exemplo' }));
-    expect(await screen.findByRole('heading', { name: 'Postgres de exemplo' })).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Postgres de exemplo' }, SLOW));
+    expect(await screen.findByRole('heading', { name: 'Postgres de exemplo' }, SLOW)).toBeInTheDocument();
     expect(screen.queryByText('erp.interno')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Testar' })).not.toBeInTheDocument();
 
     await user.click(within(catalogTabs()).getByRole('tab', { name: 'Datasets' }));
-    expect(await screen.findByRole('button', { name: 'Itens de nota fiscal' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Itens de nota fiscal' }, SLOW)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Novo dataset' })).not.toBeInTheDocument();
 
     await user.click(within(catalogTabs()).getByRole('tab', { name: 'Arquivos' }));
-    expect(await screen.findByRole('button', { name: 'metas-2026.xlsx' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'metas-2026.xlsx' }, SLOW)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Enviar arquivo' })).not.toBeInTheDocument();
   });
 });
@@ -190,7 +194,7 @@ describe('Catálogo sem permissão', () => {
     simulateApi({ 'GET /v1/session': json(sessionWith(['workflows.view'])) });
     renderScreen({ navigation: 'url' });
 
-    await screen.findByRole('heading', { level: 1, name: 'Início' });
+    await screen.findByRole('heading', { level: 1, name: 'Início' }, SLOW);
     expect(within(sidebar()).queryByRole('link', { name: 'Catálogo' })).not.toBeInTheDocument();
     await waitFor(() => expect(window.location.pathname).toBe('/home'));
   });
@@ -201,10 +205,10 @@ describe('Catálogo no modo incorporado', () => {
     simulateCatalog(INTEGRATOR_PERMISSIONS);
     renderScreen({ token: 'token', screen: 'catalog' });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Catálogo' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Catálogo' }, SLOW)).toBeInTheDocument();
     const moduleTabs = screen.getByRole('tablist', { name: 'Telas do Fluxo de Cálculo' });
     expect(within(moduleTabs).getByRole('tab', { name: 'Catálogo' })).toHaveAttribute('aria-selected', 'true');
     expect(tabNames()).toEqual(['Conexões', 'Datasets', 'Arquivos']);
-    expect(await screen.findByRole('button', { name: 'Postgres de exemplo' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Postgres de exemplo' }, SLOW)).toBeInTheDocument();
   });
 });

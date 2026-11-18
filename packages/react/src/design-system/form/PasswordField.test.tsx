@@ -27,7 +27,7 @@ describe('PasswordField', () => {
   });
 
   it('mostra e oculta a senha pelo botão, que diz o estado em aria-pressed', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PasswordField label="Senha" />);
     const field = passwordField();
     await user.type(field, 'correta-cavalo-bateria');
@@ -46,7 +46,7 @@ describe('PasswordField', () => {
   });
 
   it('pelo teclado: Tab vai do campo ao botão, e Espaço e Enter alternam', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PasswordField label="Senha" />);
     await user.tab();
     expect(passwordField()).toHaveFocus();
@@ -61,7 +61,7 @@ describe('PasswordField', () => {
   });
 
   it('o botão de mostrar não envia o formulário', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onSubmit = vi.fn((event: { preventDefault(): void }) => event.preventDefault());
     render(
       <form onSubmit={onSubmit}>

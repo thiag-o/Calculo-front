@@ -36,7 +36,7 @@ function AdjustDialog({ onAdjust = () => {} }: { onAdjust?: () => void }) {
 }
 
 async function open() {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   render(<AdjustDialog />);
   await user.click(screen.getByRole('button', { name: 'Ajustar valor' }));
   const dialog = await screen.findByRole('dialog');
@@ -57,7 +57,7 @@ describe('Dialogo', () => {
   });
 
   it('o portal fica dentro da raiz do módulo, não no body', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<AdjustDialog />);
     const trigger = screen.getByRole('button', { name: 'Ajustar valor' });
     await user.click(trigger);
@@ -120,7 +120,7 @@ describe('Dialogo', () => {
 
   it('a ação do rodapé roda sem fechar sozinha', async () => {
     const onAdjust = vi.fn();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<AdjustDialog onAdjust={onAdjust} />);
     await user.click(screen.getByRole('button', { name: 'Ajustar valor' }));
     const buttons = await screen.findAllByRole('button', { name: 'Ajustar valor' });
@@ -130,7 +130,7 @@ describe('Dialogo', () => {
   });
 
   it('controlado: abre e fecha pelo estado de quem usa', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     function Controlled() {
       const [open, setOpen] = useState(false);
@@ -221,7 +221,7 @@ describe('Dialog com focusOnClose', () => {
   for (const [shape, withFunction] of shapes) {
     for (const [way, close] of ways) {
       it(`devolve o foco ao elemento informado (${shape}) ao fechar por ${way}`, async () => {
-        const user = userEvent.setup();
+        const user = userEvent.setup({ delay: null });
         render(<DialogWithGivenFocus withFunction={withFunction} />);
         await user.click(screen.getByRole('button', { name: 'Abrir de fora' }));
         await screen.findByRole('dialog');

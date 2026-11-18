@@ -66,7 +66,7 @@ function simulateApi(sessionRoute: RouteResponse) {
 }
 
 function renderScreen(props: AdminProps = {}) {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const queryClient = createQueryClient();
   queryClient.setDefaultOptions({ queries: { retry: false }, mutations: { retry: false } });
   const tree = (current: AdminProps) => (

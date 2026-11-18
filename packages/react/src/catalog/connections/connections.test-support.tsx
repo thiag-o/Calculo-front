@@ -201,7 +201,7 @@ export interface ConnectionsScreen {
 
 /** Renders the screen (by default, the whole `<Connections>`) with the API (cookie mode), the product QueryClient and the root. */
 export function renderConnections(screen: ReactElement = <Connections />): ConnectionsScreen {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const queryClient = createQueryClient();
   // Without retrying failed queries: the error tests do not wait for the 3 retries.
   queryClient.setDefaultOptions({ queries: { retry: false }, mutations: { retry: false } });

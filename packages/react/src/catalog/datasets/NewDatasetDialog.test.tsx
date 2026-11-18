@@ -164,7 +164,8 @@ describe('Novo dataset de tabela', () => {
   it('não troca o nome que a pessoa já escreveu ao escolher outra tabela', async () => {
     const { user } = renderScreen(<Datasets />);
     const dialog = await openDialog(user);
-    await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'Meu dataset');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Meu dataset');
     await choose(user, 'Conexão', 'Postgres de exemplo');
     await user.click(await within(dialog).findByRole('radio', { name: 'public.itens_nf Tabela' }));
 
@@ -182,7 +183,8 @@ describe('Novo dataset de tabela', () => {
 
     await choose(user, 'Conexão', 'Postgres de exemplo');
     await within(dialog).findByRole('radio', { name: 'public.itens_nf Tabela' });
-    await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'Itens');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Itens');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(dialog).findByText('Escolha uma tabela ou view')).toBeInTheDocument();
@@ -336,7 +338,8 @@ describe('Novo dataset de SQL', () => {
     const field = await writeSql(user, dialog, 'SELECT id FROM campanhas');
     expect(field).toHaveAttribute('spellcheck', 'false');
     expect(field).toHaveClass('fc-datasets-sql');
-    await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'Campanhas');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Campanhas');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -353,7 +356,8 @@ describe('Novo dataset de SQL', () => {
     const dialog = await openDialog(user);
     await choose(user, 'Origem', 'SQL livre');
     await choose(user, 'Conexão', 'ERP SQL Server');
-    await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'Campanhas');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Campanhas');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(dialog).findByText('Escreva o SQL')).toBeInTheDocument();
@@ -368,7 +372,8 @@ describe('Novo dataset de SQL', () => {
     const { user } = renderScreen(<Datasets />);
     const dialog = await openDialog(user);
     const field = await writeSql(user, dialog, 'DELETE FROM campanhas');
-    await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'Campanhas');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Campanhas');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(field).toHaveAttribute('aria-invalid', 'true'));

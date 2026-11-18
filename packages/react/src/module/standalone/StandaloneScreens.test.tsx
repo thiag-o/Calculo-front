@@ -89,7 +89,7 @@ describe('<Home> avulso', () => {
 
   it('se a sessão não abre, diz o que houve e tenta de novo', async () => {
     const api = simulateApi({ 'GET /v1/session': problem(403, 'origin_not_authorized') });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Home apiUrl={API} token="token" />);
 
     const alert = await screen.findByRole('alert');
@@ -115,7 +115,7 @@ describe('<Home> avulso', () => {
 describe('<Audit> avulsa', () => {
   it('só com apiUrl, usa o cookie e abre os acessos; a lista de tipos abre no portal da raiz, com o tema', async () => {
     const api = simulateApiWith(['audit.view']);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Audit apiUrl={API} theme="dark" />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Acessos' })).toBeInTheDocument();
@@ -157,7 +157,7 @@ describe('<Audit> avulsa', () => {
 describe('<Admin> avulsa', () => {
   it('só com apiUrl, usa o cookie; as abas trocam a área sem mexer na URL da página', async () => {
     const api = simulateApiWith(ADMIN_PERMISSIONS);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const historyBefore = window.history.length;
     render(<Admin apiUrl={API} />);
 
@@ -184,7 +184,7 @@ describe('<Admin> avulsa', () => {
 
   it('com token e tema, o diálogo abre no portal da raiz do módulo, com o tema', async () => {
     const api = simulateApiWith(ADMIN_PERMISSIONS);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Admin apiUrl={API} token="token-do-hospedeiro" theme="dark" />);
 
     const tabs = await screen.findByRole('tablist', { name: 'Administração' });
@@ -223,7 +223,7 @@ describe('<Admin> avulsa', () => {
 
   it('dentro de um hospedeiro com react-router, monta e não mexe no roteador dele', async () => {
     simulateApiWith(ADMIN_PERMISSIONS);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     function HostAppLocation() {
       const local = useLocation();
       return <p>Hospedeiro em {local.pathname}</p>;

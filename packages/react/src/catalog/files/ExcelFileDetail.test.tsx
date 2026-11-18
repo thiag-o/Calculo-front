@@ -157,7 +157,8 @@ describe('Arquivo Excel: novo dataset de uma aba', () => {
     expect(name).toHaveValue('Metas');
 
     await user.clear(name);
-    await user.type(name, '  Metas mensais ');
+    await user.click(name);
+    await user.paste('  Metas mensais ');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(onOpenDataset).toHaveBeenCalledWith(SHEET_DATASET.id));

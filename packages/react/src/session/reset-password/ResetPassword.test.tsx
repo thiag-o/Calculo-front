@@ -28,7 +28,7 @@ function noContent(): Response {
 /** Without options, opens with the link token; `{ token: undefined }` opens without a token. */
 function renderScreen({ token }: { token?: string | null } = { token: TOKEN }) {
   const onSave = vi.fn();
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const view = render(<ResetPassword apiUrl={API} theme="light" token={token} onSave={onSave} />);
   return { onSave, user, ...view };
 }
@@ -46,8 +46,12 @@ async function openForm() {
 }
 
 async function fill(user: ReturnType<typeof userEvent.setup>, password: string, confirmation = password) {
-  await user.type(passwordField(), password);
-  await user.type(confirmationField(), confirmation);
+  await user.click(passwordField());
+  await user.paste(password);
+  await user.click(confirmationField());
+  // Pasting is cheaper than typing; a trailing {Enter} is still pressed as a key.
+  await user.paste(confirmation.replace("{Enter}", ""));
+  if (confirmation.endsWith("{Enter}")) await user.keyboard("{Enter}");
 }
 
 describe('<ResetPassword> ao abrir', () => {

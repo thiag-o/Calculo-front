@@ -53,7 +53,8 @@ async function openNew(user: UserEvent) {
 }
 
 async function create(user: UserEvent, panel: HTMLElement, name = 'Portal novo') {
-  await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), name);
+  await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+  await user.paste(name);
   await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 }
 
@@ -68,7 +69,8 @@ describe('Integração: nova chave de API', () => {
     const name = within(panel).getByRole('textbox', { name: 'Nome' });
     expect(name).toHaveFocus();
 
-    await user.type(name, '   ');
+    await user.click(name);
+    await user.paste('   ');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(panel).findByText('Informe o nome')).toBeInTheDocument();

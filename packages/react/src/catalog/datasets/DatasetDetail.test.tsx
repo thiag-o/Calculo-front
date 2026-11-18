@@ -211,7 +211,8 @@ describe('Detalhe do dataset: renomear', () => {
     const name = within(dialog).getByRole('textbox', { name: 'Nome' });
     expect(name).toHaveValue('Itens de nota fiscal');
     await user.clear(name);
-    await user.type(name, '  Itens de NF ');
+    await user.click(name);
+    await user.paste('  Itens de NF ');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Itens de NF' })).toBeInTheDocument();

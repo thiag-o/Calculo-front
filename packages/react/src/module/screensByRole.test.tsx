@@ -41,7 +41,7 @@ function simulateApiWith(permissions: string[]) {
 }
 
 function renderScreen(props: Partial<FluxoCalculoProps> = {}) {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   render(<FluxoCalculo apiUrl={API} {...props} />);
   return { user };
 }

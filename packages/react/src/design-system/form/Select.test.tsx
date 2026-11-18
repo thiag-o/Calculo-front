@@ -37,7 +37,7 @@ describe('Selecao', () => {
   });
 
   it('abre pelo teclado com a lista dentro da raiz do módulo, não no body', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderScreen();
     await user.tab();
     const element = trigger();
@@ -58,7 +58,7 @@ describe('Selecao', () => {
   });
 
   it('as setas navegam, Enter escolhe e o foco volta ao gatilho', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     renderScreen({ onValueChange: onChange });
     await user.tab();
@@ -74,7 +74,7 @@ describe('Selecao', () => {
   });
 
   it('pula a opção desabilitada', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     renderScreen({ onValueChange: onChange, defaultValue: 'sqlserver' });
     await user.tab();
@@ -88,7 +88,7 @@ describe('Selecao', () => {
   });
 
   it('Esc fecha sem mudar o valor e devolve o foco', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     renderScreen({ onValueChange: onChange, defaultValue: 'postgres' });
     await user.tab();
@@ -102,7 +102,7 @@ describe('Selecao', () => {
   });
 
   it('escolhe pelo mouse', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderScreen();
     await user.click(trigger());
     await user.click(await screen.findByRole('option', { name: 'Excel' }));
@@ -110,6 +110,7 @@ describe('Selecao', () => {
   });
 
   it('controlada: o valor vem de fora', async () => {
+    // Keeps the default pause between keys: {Home}{Enter} only picks the first option when Radix has time to move focus.
     const user = userEvent.setup();
     function Controlled() {
       const [value, setValue] = useState('excel');
@@ -136,7 +137,7 @@ describe('Selecao', () => {
   });
 
   it('desabilitada: fora do Tab e não abre', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <FluxoRoot>
         <Select label="Tipo de conexão" options={fonts} disabled />

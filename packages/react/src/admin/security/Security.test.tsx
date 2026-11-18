@@ -50,7 +50,12 @@ async function load(settings = DEFAULTS): Promise<SecurityScreen> {
 
 async function replaceValue(user: SecurityScreen['user'], input: HTMLElement, value: string) {
   await user.clear(input);
-  if (value !== '') await user.type(input, value);
+  if (value !== '') {
+    await user.click(input);
+    // Pasting is cheaper than typing; a trailing {Enter} is still pressed as a key.
+    await user.paste(value.replace("{Enter}", ""));
+    if (value.endsWith("{Enter}")) await user.keyboard("{Enter}");
+  }
 }
 
 describe('Segurança: carregar', () => {

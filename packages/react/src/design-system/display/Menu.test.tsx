@@ -13,7 +13,7 @@ const reason = 'Conexão em uso por 2 workflows';
 
 function renderScreen(items?: MenuItem[]) {
   const actions = { download: vi.fn(), reprocess: vi.fn(), exclude: vi.fn() };
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   render(
     <FluxoRoot>
       <Menu

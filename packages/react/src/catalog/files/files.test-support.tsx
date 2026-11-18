@@ -257,7 +257,7 @@ export interface Screen {
 
 /** Renders a screen with the API (cookie mode), the product QueryClient and the module root. */
 export function renderScreen(screenElement: ReactElement): Screen {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const queryClient = createQueryClient();
   // Without retrying failed queries: the error tests do not wait for the 3 retries.
   queryClient.setDefaultOptions({ queries: { retry: false }, mutations: { retry: false } });

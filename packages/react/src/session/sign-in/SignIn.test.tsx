@@ -19,7 +19,7 @@ afterEach(() => {
 
 function renderScreen() {
   const onSignIn = vi.fn();
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const view = render(<SignIn apiUrl={API} theme="light" onSignIn={onSignIn} />);
   return { onSignIn, user, ...view };
 }
@@ -29,8 +29,10 @@ const passwordField = () => screen.getByLabelText('Senha');
 const signInButton = () => screen.getByRole('button', { name: 'Entrar' });
 
 async function fill(user: ReturnType<typeof userEvent.setup>, email = 'ana@exemplo.com', password = 'senha-segura-123') {
-  await user.type(emailField(), email);
-  await user.type(passwordField(), password);
+  await user.click(emailField());
+  await user.paste(email);
+  await user.click(passwordField());
+  await user.paste(password);
 }
 
 /** Local date (in the time zone of whoever runs the test), as ISO/UTC like the API sends. */
@@ -120,12 +122,14 @@ describe('<SignIn>', () => {
   it('campos obrigatórios: e-mail só com espaços conta como vazio; falta só a senha, foca a senha', async () => {
     const { user } = renderScreen();
 
-    await user.type(emailField(), '   ');
+    await user.click(emailField());
+    await user.paste('   ');
     await user.keyboard('{Enter}');
     expect(emailField()).toHaveAccessibleDescription('Informe o e-mail');
 
     await user.clear(emailField());
-    await user.type(emailField(), 'ana@exemplo.com');
+    await user.click(emailField());
+    await user.paste('ana@exemplo.com');
     await user.keyboard('{Enter}');
 
     expect(emailField()).not.toHaveAttribute('aria-invalid');

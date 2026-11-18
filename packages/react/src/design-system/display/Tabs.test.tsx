@@ -26,7 +26,7 @@ const CONTENT: Record<Area, string> = {
 };
 
 function renderTabs(props: Partial<TabsProps<Area>> = {}) {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const tree = (current: Partial<TabsProps<Area>>) => (
     <FluxoRoot>
       <button type="button">Antes</button>
@@ -151,7 +151,7 @@ describe('Abas', () => {
           </FluxoRoot>
         );
       }
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       render(<Controlled />);
 
       tab('Usuários').focus();

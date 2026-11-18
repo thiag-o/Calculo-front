@@ -17,7 +17,7 @@ describe('Checkbox', () => {
   });
 
   it('Tab foca e Espaço alterna', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     render(<Checkbox label="Encerrar as outras sessões" onCheckedChange={onChange} />);
     await user.tab();
@@ -32,7 +32,7 @@ describe('Checkbox', () => {
   });
 
   it('Enter não alterna (padrão de caixa de seleção)', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Checkbox label="Encerrar as outras sessões" />);
     await user.tab();
     await user.keyboard('{Enter}');
@@ -40,14 +40,14 @@ describe('Checkbox', () => {
   });
 
   it('clicar no rótulo alterna', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Checkbox label="Lembrar este dispositivo" />);
     await user.click(screen.getByText('Lembrar este dispositivo'));
     expect(screen.getByRole('checkbox', { name: 'Lembrar este dispositivo' })).toBeChecked();
   });
 
   it('controlada, inclusive no estado indeterminado (aria-checked="mixed")', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     function Controlled() {
       const [checked, setChecked] = useState<boolean | 'indeterminate'>('indeterminate');
       return <Checkbox label="Selecionar todas" checked={checked} onCheckedChange={setChecked} />;
@@ -68,7 +68,7 @@ describe('Checkbox', () => {
   });
 
   it('desabilitada: fora do Tab, sem alternar, com o rótulo em terciário', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { container } = render(
       <>
         <Checkbox label="Lembrar este dispositivo" disabled />
@@ -85,7 +85,7 @@ describe('Checkbox', () => {
   });
 
   it('com name, entra no envio do formulário', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const sent: FormData[] = [];
     render(
       <form

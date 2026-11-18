@@ -73,8 +73,10 @@ describe('Usuários: criar', () => {
     expect(within(group).getAllByRole('checkbox').map((checkbox) => checkbox.getAttribute('aria-checked'))).toEqual(['false', 'false', 'false']);
     expect(within(group).getByRole('checkbox', { name: 'Admin' })).toHaveAccessibleDescription(/Todas as permissões/);
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), '  bruno.figueiredo.de.albuquerque@exemplo.com ');
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Bruno Figueiredo de Albuquerque');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('  bruno.figueiredo.de.albuquerque@exemplo.com ');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Bruno Figueiredo de Albuquerque');
     await user.click(within(group).getByRole('checkbox', { name: 'Configurador' }));
     await user.click(within(group).getByRole('checkbox', { name: 'Auditor' }));
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
@@ -102,7 +104,8 @@ describe('Usuários: criar', () => {
     expect(within(panel).getByText('Informe o nome')).toBeInTheDocument();
     expect(within(panel).getByRole('textbox', { name: 'E-mail' })).toHaveAttribute('aria-invalid', 'true');
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'bruno');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('bruno');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
     expect(await within(panel).findByText('Informe um e-mail válido, como ana@empresa.com.br')).toBeInTheDocument();
     expect(api.callsTo('POST /v1/users')).toHaveLength(0);
@@ -113,9 +116,11 @@ describe('Usuários: criar', () => {
     const { user } = renderUsers();
     const panel = await openNew(user);
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'bruno@exemplo.com');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('bruno@exemplo.com');
     const name = within(panel).getByRole('textbox', { name: 'Nome' });
-    await user.type(name, 'Bruno');
+    await user.click(name);
+    await user.paste('Bruno');
     // The submit button is in the dialog footer, bound to the form by the `form` attribute. The browser uses it on
     // Enter (the form's default button); user-event only looks for buttons inside the <form>, so the submit is direct.
     fireEvent.submit((name as HTMLInputElement).form!);
@@ -130,8 +135,10 @@ describe('Usuários: criar', () => {
     const { user } = renderUsers();
     const panel = await openNew(user);
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'bruno@exemplo.com');
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Bruno');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('bruno@exemplo.com');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Bruno');
     const create = within(panel).getByRole('button', { name: 'Salvar' });
     await user.click(create);
     await waitFor(() => expect(create).toHaveAttribute('aria-busy', 'true'));
@@ -147,8 +154,10 @@ describe('Usuários: criar', () => {
     const { user } = renderUsers();
     const panel = await openNew(user);
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'ana@exemplo.com');
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Ana');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('ana@exemplo.com');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Ana');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     const email = within(panel).getByRole('textbox', { name: 'E-mail' });
@@ -163,8 +172,10 @@ describe('Usuários: criar', () => {
     const { user } = renderUsers();
     const panel = await openNew(user);
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'bruno@exemplo.com');
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Bruno');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('bruno@exemplo.com');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Bruno');
     await user.click(within(panel).getByRole('checkbox', { name: 'Auditor' }));
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
@@ -179,8 +190,10 @@ describe('Usuários: criar', () => {
     const { user } = renderUsers();
     const panel = await openNew(user);
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'bruno@exemplo.com');
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Bruno');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('bruno@exemplo.com');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Bruno');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(panel).findByText('E-mail com formato inválido.')).toBeInTheDocument();
@@ -193,8 +206,10 @@ describe('Usuários: criar', () => {
     const { user } = renderUsers();
     const panel = await openNew(user);
 
-    await user.type(within(panel).getByRole('textbox', { name: 'E-mail' }), 'bruno@exemplo.com');
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Bruno');
+    await user.click(within(panel).getByRole('textbox', { name: 'E-mail' }));
+    await user.paste('bruno@exemplo.com');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Bruno');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(panel).findByRole('alert')).toHaveTextContent('Texto do servidor para invalid_csrf.');
@@ -203,7 +218,8 @@ describe('Usuários: criar', () => {
   it('Cancelar fecha sem enviar', async () => {
     const { user } = renderUsers();
     const panel = await openNew(user);
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), 'Rascunho');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('Rascunho');
     await user.click(within(panel).getByRole('button', { name: 'Cancelar' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -314,7 +330,8 @@ describe('Usuários: editar', () => {
     expect(active).toHaveAccessibleDescription('Desativar encerra as sessões do usuário neste tenant.');
 
     await user.clear(name);
-    await user.type(name, 'Bruno F. Albuquerque');
+    await user.click(name);
+    await user.paste('Bruno F. Albuquerque');
     await user.click(within(panel).getByRole('checkbox', { name: 'Configurador' }));
     await user.click(active);
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
@@ -369,7 +386,8 @@ describe('Usuários: editar', () => {
     const panel = await openEdit(user, 'Bruno Figueiredo de Albuquerque');
 
     await user.clear(within(panel).getByRole('textbox', { name: 'Nome' }));
-    await user.type(within(panel).getByRole('textbox', { name: 'Nome' }), '   ');
+    await user.click(within(panel).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('   ');
     await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
 
     expect(await within(panel).findByText('Informe o nome')).toBeInTheDocument();

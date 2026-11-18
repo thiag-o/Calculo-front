@@ -11,7 +11,7 @@ afterEach(cleanup);
 
 describe('EmptyState', () => {
   it('mostra a frase, a ajuda e uma ação que funciona', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onRun = vi.fn();
     render(
       <FluxoRoot>

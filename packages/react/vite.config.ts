@@ -22,5 +22,12 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
     include: ['src/**/*.test.{ts,tsx}'],
+    // Measured on this 12-thread machine (F43): with the default of 11 workers, jsdom tests that take 1.7 s alone took up to 4.9 s
+    // (the 5 s limit was hit); with 4 workers the full run takes the same time (~170 s) and the slowest test stays under 2 s.
+    // The cause is CPU oversubscription, not a wait in the tests.
+    maxWorkers: 4,
+    // Same cause: with the e2e (6 browsers) running at the same time, tests that take ~1 s alone took up to 5 s and hit the default
+    // 5 s limit (measured in F43: 1 timeout in 913 tests with the e2e in parallel, 0 without it).
+    testTimeout: 15000,
   },
 });

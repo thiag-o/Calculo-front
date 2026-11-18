@@ -20,7 +20,7 @@ describe('TextField', () => {
   });
 
   it('recebe o foco pelo Tab e aceita digitação', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     render(<TextField label="Nome do workflow" onChange={onChange} />);
     await user.tab();
@@ -32,7 +32,7 @@ describe('TextField', () => {
   });
 
   it('clicar no rótulo foca o campo', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<TextField label="Nome do workflow" />);
     await user.click(screen.getByText('Nome do workflow'));
     expect(screen.getByRole('textbox')).toHaveFocus();
@@ -76,7 +76,7 @@ describe('TextField', () => {
   });
 
   it('desabilitado: fora do Tab e sem digitação', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <>
         <TextField label="Tenant" disabled defaultValue="Rede Exemplo" />
@@ -94,7 +94,7 @@ describe('TextField', () => {
   });
 
   it('data: calendário do navegador, com o rótulo, o valor aaaa-mm-dd e o erro', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     render(
       <TextField
@@ -120,7 +120,7 @@ describe('TextField', () => {
   });
 
   it('repassa a ref ao input e funciona com react-hook-form e zod', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const schema = z.object({ email: z.email('Informe um e-mail válido') });
     const onSubmit = vi.fn();
 

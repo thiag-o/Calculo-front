@@ -17,7 +17,7 @@ function renderScreen() {
       </Tooltip>
     </FluxoRoot>,
   );
-  return { user: userEvent.setup(), target: screen.getByRole('link', { name: 'r_1114_002' }) };
+  return { user: userEvent.setup({ delay: null }), target: screen.getByRole('link', { name: 'r_1114_002' }) };
 }
 
 describe('Dica', () => {

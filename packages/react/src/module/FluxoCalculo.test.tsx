@@ -32,7 +32,7 @@ afterEach(() => {
 
 function renderModule(props: Partial<FluxoModuleProps> = {}) {
   const onSessionExpired = vi.fn();
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const view = render(<FluxoModule apiUrl={API} screens={testScreens} onSessionExpired={onSessionExpired} {...props} />);
   return { user, onSessionExpired, ...view };
 }
@@ -263,7 +263,7 @@ describe('<FluxoCalculo>', () => {
         const local = useLocation();
         return <p>Hospedeiro em {local.pathname}</p>;
       }
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       render(
         <MemoryRouter initialEntries={['/relatorios/calculo']}>
           <HostAppLocation />

@@ -120,7 +120,7 @@ export interface SecurityScreen {
 
 /** Renders the screen with the API (cookie mode), the product QueryClient and the module root. */
 export function renderSecurity(): SecurityScreen {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null }); // no pause between actions: the default piles up on a busy machine (F43)
   const queryClient = createQueryClient();
   // Without retrying failed queries: the error tests do not wait for the 3 retries.
   queryClient.setDefaultOptions({ queries: { retry: false }, mutations: { retry: false } });

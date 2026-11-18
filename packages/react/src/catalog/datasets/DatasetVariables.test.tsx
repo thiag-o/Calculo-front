@@ -210,7 +210,8 @@ describe('Variáveis do dataset: criar', () => {
     expect(within(dialog).getByRole('combobox', { name: 'Tipo' })).toHaveTextContent('Inteiro');
     expect(within(dialog).queryByRole('textbox', { name: 'Casas decimais' })).not.toBeInTheDocument();
     await choose(user, dialog, 'Tipo', 'Decimal');
-    await user.type(within(dialog).getByRole('textbox', { name: 'Casas decimais' }), '3');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Casas decimais' }));
+    await user.paste('3');
     await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
     await user.paste('numero_nf');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
@@ -250,7 +251,8 @@ describe('Variáveis do dataset: criar', () => {
 
     const dialog = await openNew(user);
     await choose(user, dialog, 'Coluna', 'cliente · Texto');
-    await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'cliente');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('cliente');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(api.callsTo(CREATE)).toHaveLength(1));
@@ -335,7 +337,10 @@ describe('Variáveis do dataset: criar', () => {
     await user.paste('valor_total');
     const scale = within(dialog).getByRole('textbox', { name: 'Casas decimais' });
     await user.clear(scale);
-    if (value) await user.type(scale, value);
+    if (value) {
+      await user.click(scale);
+      await user.paste(value);
+    }
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(scale).toHaveAccessibleDescription(message));
@@ -348,7 +353,8 @@ describe('Variáveis do dataset: criar', () => {
     const dialog = await openNew(user);
     await choose(user, dialog, 'Coluna', 'cliente · Texto');
     const name = within(dialog).getByRole('textbox', { name: 'Nome' });
-    await user.type(name, 'valor_item');
+    await user.click(name);
+    await user.paste('valor_item');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(name).toHaveAccessibleDescription(new RegExp(`^${VARIABLE_ALREADY_EXISTS_MESSAGE}`)));
@@ -361,7 +367,8 @@ describe('Variáveis do dataset: criar', () => {
     const dialog = await openNew(user);
     await choose(user, dialog, 'Coluna', 'cliente · Texto');
     const name = within(dialog).getByRole('textbox', { name: 'Nome' });
-    await user.type(name, 'cliente');
+    await user.click(name);
+    await user.paste('cliente');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(name).toHaveAccessibleDescription(new RegExp(`^${INVALID_VARIABLE_NAME_MESSAGE}`)));
@@ -373,7 +380,8 @@ describe('Variáveis do dataset: criar', () => {
     const dialog = await openNew(user);
     await choose(user, dialog, 'Coluna', 'emitida_em · Data');
     await choose(user, dialog, 'Tipo', 'Data e hora');
-    await user.type(within(dialog).getByRole('textbox', { name: 'Nome' }), 'emitida_em');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('emitida_em');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
     const type = within(dialog).getByRole('combobox', { name: 'Tipo' });
@@ -397,7 +405,8 @@ describe('Variáveis do dataset: editar', () => {
     expect(within(dialog).getByRole('textbox', { name: 'Casas decimais' })).toHaveValue('2');
 
     await user.clear(name);
-    await user.type(name, 'valor_texto');
+    await user.click(name);
+    await user.paste('valor_texto');
     await choose(user, dialog, 'Tipo', 'Texto');
     expect(within(dialog).queryByRole('textbox', { name: 'Casas decimais' })).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));

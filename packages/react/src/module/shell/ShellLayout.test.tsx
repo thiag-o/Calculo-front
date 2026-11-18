@@ -32,7 +32,7 @@ afterEach(() => {
 
 function renderScreen() {
   const onSessionExpired = vi.fn();
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const view = render(
     <FluxoModule apiUrl={API} navigation="memory" screens={testScreens} onSessionExpired={onSessionExpired} />,
   );

@@ -42,7 +42,7 @@ describe('Aviso', () => {
   });
 
   it('mostra as ações para resolver, fora da nota, e elas funcionam pelo teclado', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const attempt = vi.fn();
     render(
       <FluxoRoot>

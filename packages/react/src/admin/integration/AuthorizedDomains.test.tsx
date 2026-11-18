@@ -139,7 +139,10 @@ async function openNew(user: UserEvent) {
 async function saveOrigin(user: UserEvent, panel: HTMLElement, origin: string) {
   const field = within(panel).getByRole('textbox', { name: 'Origem' });
   await user.clear(field);
-  if (origin) await user.type(field, origin);
+  if (origin) {
+    await user.click(field);
+    await user.paste(origin);
+  }
   await user.click(within(panel).getByRole('button', { name: 'Salvar' }));
   return field;
 }

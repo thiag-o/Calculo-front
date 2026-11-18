@@ -142,7 +142,7 @@ export interface IntegrationScreen {
 
 /** Renders the screen (by default, the whole `<Integration>`) with the API (cookie mode), the product QueryClient and the root. */
 export function renderIntegration(screen: ReactElement = <Integration />): IntegrationScreen {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null }); // no pause between actions: the default piles up on a busy machine (F43)
   const queryClient = createQueryClient();
   // Without retrying failed queries: the error tests do not wait for the 3 retries.
   queryClient.setDefaultOptions({ queries: { retry: false }, mutations: { retry: false } });

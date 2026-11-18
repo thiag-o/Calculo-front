@@ -44,7 +44,7 @@ describe('Botao', () => {
   });
 
   it('aciona pelo clique, pelo Enter e pelo Espaço', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onClick = vi.fn();
     render(<Button onClick={onClick}>Executar lote</Button>);
     await user.click(screen.getByRole('button'));
@@ -55,7 +55,7 @@ describe('Botao', () => {
   });
 
   it('recebe o foco pelo Tab', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Button>Executar lote</Button>);
     await user.tab();
     expect(screen.getByRole('button', { name: 'Executar lote' })).toHaveFocus();
@@ -105,7 +105,7 @@ describe('Botao desabilitado com motivo', () => {
   });
 
   it('continua focável pelo teclado, para o motivo ser lido', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { button } = renderScreen();
     await user.tab();
     await user.tab();
@@ -113,7 +113,7 @@ describe('Botao desabilitado com motivo', () => {
   });
 
   it('não aciona nem envia o formulário pelo clique, Enter, Espaço ou Enter no campo', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { onClick, onSubmit, button } = renderScreen();
     await user.click(button);
     button.focus();
@@ -126,7 +126,7 @@ describe('Botao desabilitado com motivo', () => {
   });
 
   it('mostra o motivo na dica ao receber o foco, dentro da raiz do módulo, e Esc fecha', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { button } = renderScreen();
     await user.tab();
     await user.tab();
@@ -142,7 +142,7 @@ describe('Botao desabilitado com motivo', () => {
   });
 
   it('mostra o motivo na dica ao passar o mouse', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { button } = renderScreen();
     await user.hover(button);
     expect(await screen.findByRole('tooltip')).toHaveTextContent(reason);
@@ -150,7 +150,7 @@ describe('Botao desabilitado com motivo', () => {
   });
 
   it('com o motivo ao lado: texto visível ligado por aria-describedby, sem dica', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { button } = renderScreen({ showReason: 'beside' });
     const text = screen.getByText(reason);
     expect(text).toBeVisible();
@@ -162,7 +162,7 @@ describe('Botao desabilitado com motivo', () => {
   });
 
   it('volta a funcionar quando o motivo some', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onClick = vi.fn();
     const { rerender } = render(
       <FluxoRoot>
@@ -188,7 +188,7 @@ describe('Botao desabilitado com motivo', () => {
 
 describe('Botao carregando', () => {
   it('marca aria-busy, troca o ícone pelo indicador e ignora cliques', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onClick = vi.fn();
     render(
       <Button variant="primary" loading icon={<TestIcon />} onClick={onClick}>
@@ -205,7 +205,7 @@ describe('Botao carregando', () => {
   });
 
   it('não perde o foco ao começar a carregar', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { rerender } = render(<Button type="submit">Entrar</Button>);
     await user.tab();
     rerender(
@@ -217,7 +217,7 @@ describe('Botao carregando', () => {
   });
 
   it('não envia o formulário enquanto carrega', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onSubmit = vi.fn((event: { preventDefault(): void }) => event.preventDefault());
     render(
       <form onSubmit={onSubmit}>
@@ -233,7 +233,7 @@ describe('Botao carregando', () => {
 
 describe('Botao só ícone', () => {
   it('é quadrado, usa o rótulo como nome acessível e mostra o nome na dica', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <FluxoRoot>
         <Button iconOnly label="Mais ações" icon={<TestIcon />} />
@@ -248,7 +248,7 @@ describe('Botao só ícone', () => {
   });
 
   it('desabilitado, mostra o nome e o motivo na dica', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <FluxoRoot>
         <Button iconOnly label="Excluir conexão" icon={<TestIcon />} variant="ghost" disabledReason="Conexão em uso por 2 workflows" />
