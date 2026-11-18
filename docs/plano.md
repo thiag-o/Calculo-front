@@ -589,11 +589,11 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F44 · Manutenção: catálogo robusto (achados da revisão da F34)**
 - dep: F34
 - modelo: sonnet
-- arquivos: `packages/react/src/catalog/`
+- arquivos: `packages/react/src/catalog/`, `packages/react/src/api/index.ts` (só para expor o detector de cancelamento de `api/client/apiError.ts`, se ainda não estiver exposto)
 - Fazer (decidido pela sessão global):
   - um endereço mal formado em `/catalog/...` (id inválido, parte faltando) mostra o estado "não encontrado" com o caminho de volta, sem derrubar a tela;
   - o "Tentar de novo" das variáveis aparece no lugar certo da tabela quando a lista falha, não só numa linha;
-  - o detector de cancelamento duplicado vira um só, dentro do catálogo;
+  - o detector de cancelamento duplicado vira um só: fica o de `api/client/apiError.ts`, exposto pelo `api/index.ts`, e o catálogo apaga a cópia dele e passa a usar esse (decisão da sessão global na verificação da F44);
   - o envio de arquivo que continua ao trocar de aba fica como está, mas o resultado (sucesso ou erro) aparece na aba Arquivos quando a pessoa voltar.
 - Aceite: testes de cada caso; lint, typecheck, test e build verdes.
 
