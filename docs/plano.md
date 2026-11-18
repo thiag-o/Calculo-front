@@ -632,15 +632,16 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - aumentar o tempo limite global só se a causa for comprovadamente a máquina, e com o motivo num comentário.
 - Aceite: `pnpm test` completo três vezes seguidas, sem nenhuma falha por tempo, com a máquina ocupada pelo e2e simulado rodando em paralelo numa das vezes; lint, typecheck e build verdes.
 
-**F60 · Catálogo — credencial ilegível (D44)**
+**F60 · Catálogo — credencial ilegível (D44) e conflito de versão**
 - dep: F45, B73
 - modelo: sonnet
 - arquivos: `packages/react/src/api/generated/`, `packages/react/src/catalog/connections/`
 - Fazer (D44 do back, decidida pela sessão global em 2026-11-18):
   - `pnpm generate:api` com o contrato da B73;
   - quando testar a conexão, abrir os objetos ou ver as colunas responder `409 connection_credential_unreadable`, mostrar a mensagem da API e oferecer a ação que já existe de trocar a credencial, para quem tem `credentials.manage`. Quem não tem essa permissão vê só a mensagem;
+  - `409 connection_changed` (conflito de versão, B73) ao renomear, trocar a credencial ou testar a conexão salva: mostrar a mensagem da API com **Recarregar**, que busca a conexão de novo, sem reenviar nada sozinho;
   - a lista e o detalhe continuam mostrando a conexão quando o `target` vem `null`. Esse caso já existe para quem não tem `credentials.manage`; confira que ele também cobre quem tem a permissão.
-- Aceite: testes do componente com o 409 nas três ações, com e sem `credentials.manage`, e com o `target` nulo para quem tem a permissão; tipos, lint, testes e build verdes.
+- Aceite: testes do componente com o 409 `connection_credential_unreadable` nas três ações, com e sem `credentials.manage`, com o 409 `connection_changed` nas três ações que gravam, e com o `target` nulo para quem tem a permissão; tipos, lint, testes e build verdes.
 
 **F36 · Portão do épico 3**
 - tipo: portao
