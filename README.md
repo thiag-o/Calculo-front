@@ -68,10 +68,10 @@ pnpm dev
 
 ## Testes ponta a ponta no modo real
 
-O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, com **2 workers**, fixados no próprio script do `package.json`. Nesta máquina, 6 navegadores em paralelo, o Vite dev e a API juntos saturam CPU e memória, e os logins estouram o tempo limite. Rode o comando como está, sem mudar os workers na mão. No modo real, cada teste e cada `expect` têm 60 s de tempo limite, porque o fluxo da auditoria chegou a 33 s sozinho, com a máquina carregada. O `pnpm e2e` (simulado) segue com o paralelismo padrão e os tempos limite padrão.
+O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, com **2 workers**, fixados no próprio script do `package.json`. Nesta máquina, 6 navegadores em paralelo, o Vite dev e a API juntos saturavam CPU e memória, e os logins estouravam o tempo limite (medido na F39, quando o casca ainda subia pelo Vite dev). Rode o comando como está, sem mudar os workers na mão. No modo real, cada teste e cada `expect` têm 60 s de tempo limite, porque o fluxo da auditoria chegou a 33 s sozinho, com a máquina carregada. O `pnpm e2e` (simulado) segue com o paralelismo padrão e os tempos limite padrão.
 
 O Playwright sobe dois servidores, nos dois modos:
-- o casca em `http://localhost:5173`;
+- o casca em `http://localhost:5173`, **compilado** (`vite build` em `node_modules/.cache/e2e-shell` e `vite preview`), e não pelo Vite dev. Pelo Vite dev, cada teste começa num navegador sem cache e baixa 41 módulos sem empacotar (só o `zod` tem 2,3 MB). Com 6 workers, abrir o `/sign-in` levava de 11 a 18 s dos 30 s do teste; compilado, menos de 1 s. A compilação roda uma vez, antes dos testes, com o `VITE_API_URL` da rodada. Antes dos testes, o `e2e/support/global-setup.ts` abre o casca uma vez e espera a tela de login, sem chamar a API, nos dois modos;
 - a página de teste de incorporação em `http://localhost:5274/embed-test.html` (`apps/shell/vite.embed.config.ts`). Ela é o "hospedeiro" dos testes de incorporação, numa origem diferente da do casca. É a origem que o `prepare-local` do back cadastra como domínio autorizado.
 
 1. Suba o back (veja `../backend/README.md` e `../backend/docs/ambientes.md`): copie o `.env.example` do back para `.env`, rode `docker compose up -d` e depois os comandos abaixo, na pasta `backend`.
@@ -90,6 +90,11 @@ uv run python -m fluxo.bootstrap api
    | `FLUXO_CORS_ORIGINS` | `http://localhost:5173` | A origem do casca; sem ela, todo login dá preflight 400. |
    | `FLUXO_SESSION_SECRET` | qualquer texto longo | Assina o token de incorporação; sem ela, a `api` não sobe. |
    | `FLUXO_LOGIN_IP_LIMIT_PER_MIN` | `1000` | Veja "Limite de logins por IP", abaixo. |
+   | `FLUXO_CONNECTIONS_ALLOW_LOOPBACK` | `true` | O `postgres-sample` está em `127.0.0.1`; sem ela, a conexão de exemplo é recusada como destino bloqueado (`connection_target_not_allowed`). |
+   | `FLUXO_CONNECTIONS_REQUIRE_TLS` | `false` | O Postgres do Compose não tem TLS; com a exigência ligada, a conexão de exemplo dá `connection_without_tls`. |
+   | `AWS_ENDPOINT_URL`, `FLUXO_S3_BUCKET` e as chaves AWS | os do `.env.example` (Moto) | A credencial da conexão é cifrada com a chave KMS do tenant e o Excel vai para o S3; os dois ficam no Moto. Se o Moto reiniciar, as conexões salvas antes deixam de abrir. |
+
+   O `docker compose up -d` do back já sobe o `postgres-sample` (o "banco do cliente" dos testes do Catálogo, na porta `5434`) e o Moto.
 
 2. Exporte o endereço da API (sem o `/v1`) e as contas que o `prepare-local` imprime (também em `../backend/docs/ambientes.md`):
 
@@ -99,6 +104,8 @@ export E2E_ADMIN_EMAIL=admin@demo.local
 export E2E_ADMIN_PASSWORD=demo-admin-local
 export E2E_TWO_TENANTS_EMAIL=dois.tenants@demo.local
 export E2E_TWO_TENANTS_PASSWORD=demo-dois-tenants-local
+export E2E_SAMPLE_READ_PASSWORD=exemplo_leitura_local
+export E2E_SAMPLE_WRITE_PASSWORD=exemplo_escrita_local
 ```
 
 No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
@@ -110,8 +117,15 @@ No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
 | `E2E_ADMIN_PASSWORD` | sim | Senha do Admin de demonstração. |
 | `E2E_TWO_TENANTS_EMAIL`, `E2E_TWO_TENANTS_PASSWORD` | sim | Conta com acesso aos dois tenants de demonstração (troca de tenant). |
 | `E2E_SHELL_URL` | não (padrão `http://localhost:5173`) | Endereço do casca que o Playwright abre. |
+| `E2E_SAMPLE_HOST` | não (padrão `127.0.0.1`) | Host do banco de exemplo (`postgres-sample`), visto pela **API** (é ela que conecta, não o navegador). |
+| `E2E_SAMPLE_PORT` | não (padrão `5434`) | Porta do banco de exemplo (`FLUXO_SAMPLE_POSTGRES_PORT` do back). |
+| `E2E_SAMPLE_DATABASE` | não (padrão `exemplo`) | Nome do banco de exemplo. |
+| `E2E_SAMPLE_READ_USER` | não (padrão `exemplo_leitura`) | Usuário só de leitura: a conexão com ele é salva. |
+| `E2E_SAMPLE_READ_PASSWORD` | sim | Senha do usuário só de leitura (`exemplo_leitura_local` no ambiente local). |
+| `E2E_SAMPLE_WRITE_USER` | não (padrão `exemplo_escrita`) | Usuário que pode gravar: a conexão com ele precisa ser recusada (`connection_not_read_only`). |
+| `E2E_SAMPLE_WRITE_PASSWORD` | sim | Senha do usuário que pode gravar (`exemplo_escrita_local` no ambiente local). |
 
-As variáveis do e2e estão em inglês desde a F42 (eram `E2E_ADMIN_SENHA`, `E2E_DOIS_TENANTS_EMAIL`, `E2E_DOIS_TENANTS_SENHA` e `E2E_CASCA_URL`). As credenciais do banco de exemplo (`postgres-sample`), que os testes do catálogo (épico 3) vão usar, seguem o mesmo padrão, com o prefixo `E2E_SAMPLE_`; elas entram nesta tabela com esses testes.
+As variáveis do e2e estão em inglês desde a F42 (eram `E2E_ADMIN_SENHA`, `E2E_DOIS_TENANTS_EMAIL`, `E2E_DOIS_TENANTS_SENHA` e `E2E_CASCA_URL`). As credenciais do banco de exemplo estão no `../backend/docs/ambientes.md` ("Banco de exemplo e SQL Server"); só os testes do Catálogo (`e2e/epic-3/`) as pedem, e as senhas não têm padrão, como as das contas.
 
 3. Rode:
 
@@ -119,7 +133,11 @@ As variáveis do e2e estão em inglês desde a F42 (eram `E2E_ADMIN_SENHA`, `E2E
 pnpm e2e:real
 ```
 
-- **Só `E2E_API_URL` basta para o endereço.** O `playwright.config.ts` sobe o casca e a página de teste com `VITE_API_URL` igual a `E2E_API_URL`. Se já houver um casca aberto em `localhost:5173`, ou uma página de teste em `localhost:5274`, o Playwright os reaproveita com o `VITE_API_URL` que tiverem. Se o casca chamar outra API, os testes reprovam e dizem isso. Nesse caso, feche esse servidor.
+- **Só `E2E_API_URL` basta para o endereço.** O `playwright.config.ts` compila o casca e sobe a página de teste com `VITE_API_URL` igual a `E2E_API_URL`. Se já houver um casca aberto em `localhost:5173` (até um `pnpm dev`), ou uma página de teste em `localhost:5274`, o Playwright os reaproveita com o `VITE_API_URL` que tiverem. Se o casca chamar outra API, os testes reprovam e dizem isso. Nesse caso, feche esse servidor. Um `pnpm dev` reaproveitado também deixa os testes bem mais lentos (veja acima).
 - **O casca usa o pacote compilado.** O `apps/shell` importa o `@fluxo/react` do `dist/`: rode `pnpm build` antes do `pnpm e2e` ou do `pnpm e2e:real` depois de mudar o pacote.
 - **Limite de logins por IP.** A suíte faz cerca de 27 logins por minuto do mesmo IP, e o back aceita 20 por padrão. Suba a `api` com `FLUXO_LOGIN_IP_LIMIT_PER_MIN=1000`: nenhum fluxo testa esse limite. Com o limite padrão, parte dos logins recebe `429 too_many_attempts`. As tentativas ficam gravadas no banco, então reiniciar a API não zera a contagem.
 - **O teste de bloqueio não atinge as contas acima.** Ele erra a senha de um e-mail novo a cada rodada.
+- **Os testes do Catálogo deixam dados no tenant de demonstração.** Cada rodada cria conexões, datasets, variáveis e arquivos Excel com um sufixo novo no nome (`Exemplo e2e 1a2b3c4d`), sem apagar os das rodadas anteriores. A planilha enviada é escrita pelo próprio teste (`e2e/epic-3/support/workbook.ts`), com os tipos que o back deve inferir em cada coluna.
+- **A senha da conexão nunca volta.** O teste `e2e/epic-3/credential-never-returned.spec.ts` lê o corpo de todas as respostas da API depois do login (salvar, abrir a conexão de novo, testar, recarregar a página) e reprova se alguma trouxer a senha; confere também que a tela, os campos e o armazenamento do navegador não a guardam.
+
+No modo simulado (`pnpm e2e`), o Catálogo é simulado por `e2e/epic-3/support/simulation.ts`, com as mesmas tabelas, view e colunas do `postgres-sample` (o `docker/postgres-sample/init.sql` do back). A planilha não é lida de verdade: a simulação devolve os tipos que o teste declarou para aquele arquivo. Quem prova a inferência é o modo real.

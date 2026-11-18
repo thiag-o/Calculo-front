@@ -1,6 +1,6 @@
 # 0030. Simulação e2e intercepta a API por glob `**/v1/**` com `route.fallback()`
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0036](0036-e2e-serve-o-shell-compilado-com-aquecimento.md))
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F39)
 - **Relacionadas:** ADR 0029 (e2e por épico), que esta complementa

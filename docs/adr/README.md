@@ -49,12 +49,13 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0027](0027-telas-de-abas-controladas-e-secoes-do-menu.md) | Telas de abas controláveis pela rota (`aba`/`aoTrocarAba`) e seção do menu como um item só, no casca e no incorporado; componente `Tabs` (complementa 0006) | aceita, revisar no checkpoint (complementada por 0028; atualizada na F40) | 2026-11-16 |
 | [0028](0028-telas-avulsas-com-provedor-interno.md) | Telas avulsas funcionam sozinhas, com provedor interno do módulo (complementa 0027) | aceita, revisar no checkpoint | 2026-11-16 |
 | [0029](0029-e2e-apoio-por-epico-e-contrato-unico.md) | Testes e2e: `apoio/` por épico com fixture estendida e cópia única dos exemplos do contrato | aceita, revisar no checkpoint (complementada por 0030) | 2026-11-16 |
-| [0030](0030-simulacao-e2e-intercepta-por-glob-com-fallback.md) | Simulação e2e intercepta a API por glob `**/v1/**` com `route.fallback()` (complementa 0029) | aceita, revisar no checkpoint | 2026-11-16 |
+| [0030](0030-simulacao-e2e-intercepta-por-glob-com-fallback.md) | Simulação e2e intercepta a API por glob `**/v1/**` com `route.fallback()` (complementa 0029) | aceita, revisar no checkpoint (complementada por 0036) | 2026-11-16 |
 | [0031](0031-codigo-em-ingles.md) | Código do front em inglês, textos para pessoas em português (segue a 0047 do back; glossário em `docs/glossario.md`) | aceita, revisar no checkpoint | 2026-11-16 |
 | [0032](0032-segredo-digitado-fora-do-cache-de-mutacao.md) | Segredo digitado pela pessoa: mutação sem variáveis, corpo lido na chamada, `gcTime: 0` (complementa 0021) | aceita, revisar no checkpoint | 2026-11-17 |
 | [0033](0033-chaves-de-cache-sob-catalogo.md) | Chaves de cache do Catálogo sob `['catalog', …]`, invalidadas pelo prefixo (segue a 0020) | aceita, revisar no checkpoint (complementada por 0034) | 2026-11-17 |
 | [0034](0034-dados-filhos-do-dataset-sob-a-chave-do-detalhe.md) | Dados filhos do dataset (variáveis) sob a chave do detalhe, gravados com `setQueryData` (complementa 0033) | aceita, revisar no checkpoint | 2026-11-17 |
 | [0035](0035-envio-com-progresso-por-xhr-no-cliente-da-api.md) | Envio de arquivo com progresso por `client.upload` (XMLHttpRequest) no cliente da API (complementa 0008) | aceita, revisar no checkpoint | 2026-11-17 |
+| [0036](0036-e2e-serve-o-shell-compilado-com-aquecimento.md) | Testes e2e servem o shell compilado (`vite preview`) e aquecem a página antes dos testes (complementa 0030) | aceita, revisar no checkpoint | 2026-11-18 |
 
 ## Pendentes (sem ADR ainda)
 
