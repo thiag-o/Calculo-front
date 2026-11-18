@@ -47,7 +47,7 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
   - `navegacao`:
     - `'url'`, no casca: as rotas internas sincronizadas com a URL, com `basename` fixo em `/` e sem prop (ADR 0017; decisão da sessão global no CK1: só vira prop quando um hospedeiro precisar montar o módulo fora da raiz);
     - `'memoria'`, padrão quando incorporado: não toca a URL do hospedeiro.
-- **Componentes por tela**, para quem quer só uma parte: épico 1 `<Inicio>`; épico 2 `<Administracao>` e `<Auditoria>`; épico 3 `<Catalogo>`. Cada um funciona sozinho: recebe as mesmas props do `<FluxoCalculo>` (`apiUrl`, `token?`, `tema?`, `onEvento?`, `onSessaoExpirada?`), monta internamente a raiz, a API e o cache, e navega sempre em memória (decisão da sessão global no épico 2, tarefa F38).
+- **Componentes por tela**, para quem quer só uma parte: épico 1 `<Inicio>`; épico 2 `<Administracao>` e `<Auditoria>`; épico 3 `<Catalogo>`; épico 4 `<Workflows>` (lista, Visão geral e editor; a prop `screen` aceita `workflows`). Cada um funciona sozinho: recebe as mesmas props do `<FluxoCalculo>` (`apiUrl`, `token?`, `tema?`, `onEvento?`, `onSessaoExpirada?`), monta internamente a raiz, a API e o cache, e navega sempre em memória (decisão da sessão global no épico 2, tarefa F38).
 - **Tela de login e de redefinição de senha:** exportadas para o casca (`<Entrar>`, `<RedefinirSenha>`).
 - **Roteamento:** `react-router` (modo memória quando incorporado).
 - **Estado do servidor:** TanStack Query.
@@ -61,6 +61,22 @@ Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria
 - `pnpm e2e`: contra a API **simulada**. As respostas vêm de exemplos do contrato (`page.route`) e o comando roda no portão do front.
 - `pnpm e2e:real`: contra o back de verdade (`E2E_API_URL`) e o casca, usando as credenciais do `preparar-local` do back. Roda no teste de integração do checkpoint.
 - Os mesmos arquivos de teste servem aos dois modos; a simulação é ligada por fixture.
+
+**Contrato do épico 4: workflows, rascunho e linguagem de fórmula**
+- **Rotas e esquemas:** os da B56 (`../backend/docs/plano.md`, épico 4). A especificação da linguagem (sintaxe, tipos, arredondamento, nulos, Tabela de Decisão, códigos de problema e de falha) está em Contratos do back, "Linguagem de fórmula e motor". O front nunca reimplementa as regras: tipos e problemas vêm sempre da API (`problems`, `symbols`, `GET /v1/formula-language`).
+- **Posições dos problemas:** `start` e `end` contam pontos de código; o front converte para as posições do Monaco (UTF-16) antes de marcar.
+- **Valores:**
+  - na API, números são texto com ponto (`"1500.00"`);
+  - na tela, o formulário de "Calcular" e o resultado usam o padrão brasileiro (`1.500,00`, E4-24);
+  - as fórmulas e as células da Tabela de Decisão são texto da linguagem, com ponto decimal (E4-3), e aparecem como foram digitadas.
+- **Rótulos fixos** (estilos §13), com uma frase por ação:
+  - **Novo workflow** e **Abrir editor**;
+  - **Calcular** (execução unitária com valores digitados, nome novo desta tabela);
+  - "Primeira" e "Única" (política de acerto);
+  - "Gerar erro", "Deixar vazio com aviso" e "Usar valor padrão" (política de erro);
+  - "Meio para cima", "Meio para o par" e "Cortar" (modo de arredondamento);
+  - "Herdar do workflow" (nó sem sobrescrita).
+- **Chaves de cache** (ADR 0033 e 0034): `['workflows', 'list', filtro]`, `['workflows', id]` e, sob ele, `['workflows', id, 'draft']`. Também `['formula-language']`. A análise e a execução unitária são POST sem efeito, tratados como consulta (ADR 0025), e não ficam no cache.
 
 ## Tarefas
 
@@ -621,3 +637,283 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 - dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42, F43, F44, F45
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 3.
+
+### Épico 4 — Linguagem de fórmula, Cálculo e Tabela de Decisão
+
+As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back (`../backend/docs/plano.md`, épico 4, e Contratos, "Linguagem de fórmula e motor"). O contrato é o da B56. Decisões do front, tomadas pela sessão global em 2026-11-18:
+- **E4-19, telas e verticais:**
+  - rotas `/workflows` (lista), `/workflows/:id` (Visão geral) e `/workflows/:id/editor` (editor);
+  - vertical `workflows/` (lista, novo workflow, Visão geral e as consultas do workflow), vertical `editor/` (tela cheia, rascunho, canvas, camadas, propriedades, grade da Tabela de Decisão, problemas e "Calcular") e vertical `formula/` (Monaco e a linguagem);
+  - o editor usa o `formula/` e o `workflows/` só pelo `index.ts` deles.
+  - Motivo: as verticais já existem vazias com esses papéis (ADR 0003).
+- **E4-20, editor:**
+  - **no casca:** tela cheia, sem o menu do app; barra de 48px com ←, caminho, selo "Rascunho", "● N problemas" clicável e "Salvo há…";
+  - **incorporado:** ocupa a área do módulo e esconde as abas, com ← para voltar;
+  - **painéis:** Camadas, canvas, Propriedades e o painel inferior com as abas **Problemas** e **Calcular**. Testes e Prévia entram nos épicos 10 e 5; Rodar testes, Simular e Enviar para revisão também ficam fora;
+  - **sem `workflows.edit`:** o editor abre só para leitura, e a aba Calcular aparece com `workflows.edit` ou `simulations.run`.
+  - Motivo: design §15 e estilos §9 e §16, mostrando só o que já funciona neste épico.
+- **E4-21, Monaco:**
+  - o pacote `monaco-editor` vem do npm, carregado por `import()` só quando um campo de fórmula aparece, sem CDN e sem os serviços de linguagem do Monaco (TypeScript, JSON, CSS): a linguagem `fluxo-formula` é nossa;
+  - o Monaco só serve à fórmula do Cálculo; as células e os cabeçalhos da Tabela de Decisão são campos de texto simples, monoespaçados;
+  - se o Monaco não carregar, o campo vira um campo de texto simples, com o aviso, e os problemas aparecem embaixo.
+  - Motivo: design §3 (Monaco sob demanda); um Monaco por célula pesaria demais numa grade de 500 regras.
+- **E4-22, grade da Tabela de Decisão:**
+  - "Abrir tabela", nas propriedades, abre a grade no lugar do canvas (Esc ou "Voltar ao canvas" fecha);
+  - nas propriedades ficam a política de acerto e as colunas;
+  - a grade tem teclado de planilha (setas, Enter, Tab, F2, digitar substitui) e aceita colar um bloco copiado do Excel (texto separado por tabulação).
+  - Motivo: o painel de 340px não comporta uma tabela, e o contador vem do Excel.
+- **E4-23, salvar e analisar:**
+  - o rascunho é salvo sozinho 2 s depois da última mudança, ao sair do editor e antes de "Calcular";
+  - enquanto se digita, a análise (`POST …/draft/analysis`) roda 400 ms depois da última tecla, só para os problemas e os símbolos, sem salvar;
+  - um `409 draft_conflict` para o salvamento e mostra "Este rascunho mudou em outra aba ou por outra pessoa", com **Recarregar rascunho**. Nada é mesclado.
+  - Motivo: a pessoa não perde o que digitou, e a auditoria não recebe um evento por tecla.
+- **E4-24, números na tela:**
+  - no "Calcular", os campos de número aceitam o padrão brasileiro (vírgula decimal, pontos de milhar opcionais: `1500,00` ou `1.500,00`) e mandam à API o texto com ponto;
+  - o resultado mostra `1.500,00`;
+  - um valor com mais casas que a entrada é recusado no próprio campo, sem arredondar.
+  - Motivo: estilos §3; a regra de nunca arredondar a entrada (E4-14).
+- **E4-25, navegação:**
+  - dentro de um workflow, o seletor de contexto mostra tenant › workflow, e o menu do nível do workflow tem só **Visão geral** neste épico. Versões, Execuções, Testes, Descrição e Configurações entram com os épicos deles;
+  - o Início passa a mostrar os workflows recentes (até 6, pelo `updated_at`), com **Novo workflow**.
+  - Motivo: estilos §12 (nada de item que não leva a lugar nenhum) e §16 (Início).
+
+**F46 · Tipos da API do épico 4**
+- tipo: contrato
+- dep: B56
+- modelo: sonnet
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`
+- Aceite: `pnpm generate:api` atualizado e compilando; o teste de exemplos do contrato (`contract-examples`) verde contra o contrato da B56, com os exemplos do épico 4 (rascunho do exemplo, análise com problema, execução unitária `ok`, `ok_with_warnings` e `error`) e o 429 do teste de conexão.
+
+**F47 · Dependências do editor**
+- dep: —
+- modelo: sonnet
+- arquivos: `package.json`, `pnpm-lock.yaml`, `packages/react/package.json`, `packages/react/vite.config.ts`, `docs/adr/`
+- Fazer:
+  - instalar `@xyflow/react` e `monaco-editor` como dependências do pacote, com versão fixada;
+  - configurar o build para o Monaco sair num pedaço próprio, carregado sob demanda (E4-21), com o worker do editor empacotado localmente. Sem worker, o Monaco roda na página, e isso fica registrado;
+  - a ADR "Monaco e React Flow no pacote": o carregamento sob demanda, o CSS de cada um (classes próprias, sem reset global, ADR 0002) e o tamanho medido.
+- Aceite (evidência no relatório):
+  - `pnpm build` gera o pacote com o Monaco num pedaço separado; a entrada principal (`dist/index.js`) não contém o código do Monaco;
+  - o build não tem URL de CDN (busca por `cdn` e `jsdelivr` no `dist/`);
+  - o CSS gerado continua sem seletor global (`*`, `html`, `body`, `:root`);
+  - `pnpm lint`, `typecheck` e `test` verdes.
+
+**F48 · Workflows: lista e novo workflow**
+- dep: F46
+- modelo: opus
+- arquivos: `packages/react/src/workflows/index.ts`, `packages/react/src/workflows/queries.ts`, `packages/react/src/workflows/list/`
+- Fazer:
+  - as consultas e mutações dos workflows (`queries.ts`: listar com filtro e cursor, ler, criar, alterar e remover), com as chaves de Contratos, expostas no `workflows/index.ts` para o editor e o Início;
+  - **lista** (`/workflows`):
+    - cards de workflow (estilos §7.6): ícone em contorno, nome, "Rascunho · N blocos", "editado por X há Y" e o selo âmbar de problemas quando houver;
+    - "Filtrar por nome" e "Carregar mais" (cursor);
+    - 3 colunas a partir de 1440px e 2 abaixo de 1180px (estilos §15);
+  - **Novo workflow** (só com `workflows.edit`): diálogo com nome e objetivo; `workflow_exists` aparece no campo do nome; ao salvar, abre a Visão geral do workflow novo;
+  - estados vazio ("Nenhum workflow ainda" · "Crie o primeiro workflow para montar o cálculo." · **Novo workflow**), carregando e erro.
+- Aceite: testes da lista, do filtro, do "Carregar mais", da criação (sucesso e `workflow_exists`), sem o botão para quem não tem `workflows.edit`; os quatro estados.
+
+**F49 · Workflows: Visão geral**
+- dep: F48
+- modelo: opus
+- arquivos: `packages/react/src/workflows/overview/`
+- Fazer (estilos §16, só o que existe no épico 4):
+  - título e objetivo, com **Abrir editor** como ação principal;
+  - **Versão em produção:** estado vazio "Nenhuma versão publicada" (versões são do épico 10);
+  - **Rascunho** em uma linha: revisão, quem editou e quando, número de blocos e o selo de problemas;
+  - **Execuções:** estado vazio;
+  - menu "…" com **Renomear** (nome e objetivo, `workflow_exists` no campo) e **Remover workflow** (confirmação com o nome; depois volta para a lista e tira o detalhe do cache);
+  - sem `workflows.edit`: sem o menu, e o botão continua **Abrir editor** (o editor abre só para leitura);
+  - `not_found` e id mal formado mostram "não encontrado", com o caminho de volta (como a F44).
+- Aceite: testes de cada parte, de renomear, de remover e dos erros; os quatro estados.
+
+**F50 · Editor: tela cheia, rascunho e problemas**
+- dep: F47, F48
+- modelo: opus
+- arquivos: `packages/react/src/editor/draft/`, `packages/react/src/editor/layout/`, `packages/react/src/editor/problems/`
+- Fazer:
+  - **rascunho:**
+    - as consultas do rascunho (`GET` e `PUT …/draft`, a análise);
+    - o estado da edição local (definição, item selecionado e "desfazer" de até 50 passos, com Ctrl Z e Ctrl Shift Z);
+    - o salvamento sozinho e a análise ao digitar (E4-23), com o "Salvo há…" e o "Salvando…";
+    - o conflito `draft_conflict` (E4-23);
+    - o modo só leitura (E4-20);
+  - **layout** (estilos §9 e §15):
+    - barra de 48px e painéis Camadas 260px, canvas, Propriedades 340px e inferior 220px recolhível (220px e 300px de 1180px a 1280px);
+    - os painéis recebem o conteúdo por propriedades, para a F57 montar;
+  - **problemas:**
+    - o contador "● N problemas" na barra, que abre a aba Problemas;
+    - a lista agrupada por bloco, com código e mensagem, e com o clique selecionando o bloco e o campo;
+    - a contagem por bloco, exposta para o canvas e as camadas.
+- Aceite (testes com a API simulada):
+  - salva 2 s depois da última mudança e não antes; salva ao sair;
+  - a análise roda 400 ms depois da última tecla e não salva;
+  - `409` mostra o aviso e **Recarregar rascunho** traz a versão nova;
+  - desfazer e refazer;
+  - só leitura sem `workflows.edit`;
+  - o contador e a lista de problemas, com o clique levando ao bloco;
+  - os quatro estados da tela.
+
+**F51 · Editor: canvas e camadas**
+- dep: F50
+- modelo: opus
+- arquivos: `packages/react/src/editor/canvas/`, `packages/react/src/editor/layers/`
+- Fazer (React Flow; estilos §8 e §11):
+  - **blocos** Cálculo e Tabela de Decisão: quadrado da categoria (`--fc-cat-calc`, `--fc-cat-decision`), nome em `mono-13`, tipo em 11px;
+    - portas de entrada à esquerda (as variáveis que o bloco lê) e de saída à direita (as que ele produz), com o tipo em `mono-12`;
+    - ícone vermelho e número de problemas no cabeçalho;
+  - **entradas e saída:** uma barra **Entradas** à esquerda (as entradas declaradas, com a múltipla mostrando os campos) e uma barra **Saída** à direita (os campos de saída), como as barras de Input e Output do grupo;
+  - **ligações:** vêm dos `symbols` e das referências da análise (E4-9), nunca são desenhadas à mão. As do bloco selecionado em `gray-1000`; as outras em `gray-500`;
+  - **barra de ferramentas** flutuante, embaixo e no centro, com Cálculo e Tabela de Decisão. Um bloco novo nasce com id e nome de saída livres (`calc_1`, `resultado_1`…), perto do centro da tela;
+  - mover o bloco grava a `position`; Delete remove o bloco selecionado, com a confirmação que diz quantos blocos usam a saída dele;
+  - **minimapa e zoom** no canto superior direito (o minimapa some abaixo de 1280px);
+  - **teclado:** Tab passa pelos blocos, as setas movem, Enter abre as propriedades, Esc tira a seleção;
+  - **camadas:** a árvore Entradas › blocos (na ordem de `root.nodes`) › Saída, em `mono-13`, com o ícone de problema e a seleção ligada ao canvas;
+  - só leitura: sem a barra de ferramentas, sem mover e sem remover.
+- Aceite: testes de cada item (incluir, mover, remover com confirmação, seleção ligada entre canvas e camadas, teclado, ícone de problema); ligações derivadas de um rascunho de exemplo; nada de ligação desenhada à mão.
+
+**F52 · Fórmula: editor Monaco e linguagem**
+- dep: F46, F47
+- modelo: opus
+- arquivos: `packages/react/src/formula/`
+- Fazer (E4-21; estilos §8, "Editor de fórmula"):
+  - `<FormulaEditor value onChange problems symbols context readOnly aria-label />`, exposto no `formula/index.ts`;
+  - a consulta `GET /v1/formula-language` e a linguagem `fluxo-formula` no Monaco: funções (com os sinônimos sem acento) em `--fc-cat-source`, números em `--fc-cat-calc`, palavras-chave em `--fc-cat-decision`; `mono-13`, fundo `background-200`, raio 6px; tema claro e escuro pelos tokens;
+  - **autocomplete:**
+    - os símbolos com nome, tipo e o quadrado da categoria da origem (entrada linear `--fc-cat-source`, múltipla `--fc-cat-multi`, Cálculo `--fc-cat-calc`, Tabela `--fc-cat-decision`);
+    - as funções do contexto, com a assinatura e a descrição;
+    - depois de um campo múltiplo, completa com `[]`;
+  - **problemas:** sublinhado ondulado `red-700` nas posições do problema (convertidas de pontos de código), a mensagem ao passar o mouse e uma nota vermelha embaixo. Com `suggestion`, a correção rápida "Trocar por X";
+  - **acessibilidade:** Tab sai do editor (o modo de foco por Tab do Monaco ligado), `aria-label` do campo e `aria-describedby` para a nota de problema;
+  - carregando: o esqueleto do campo; falha ao carregar: campo de texto simples com o aviso (E4-21).
+- Aceite (com o Monaco simulado nos testes de unidade, e um teste que carrega o de verdade):
+  - realce de cada classe de símbolo;
+  - autocomplete com símbolos e funções;
+  - marcação na posição certa com acento antes do trecho;
+  - a correção rápida troca o nome;
+  - Tab sai do editor;
+  - o Monaco não é pedido antes de o campo aparecer (o `import()` só roda ao montar);
+  - a falha ao carregar mostra o campo simples.
+
+**F53 · Editor: propriedades do Cálculo, das entradas, da saída e do workflow**
+- dep: F50, F52
+- modelo: opus
+- arquivos: `packages/react/src/editor/properties/`
+- Fazer:
+  - **Cálculo:**
+    - nome do bloco, descrição curta e a fórmula no `<FormulaEditor>`;
+    - a saída: nome da variável, tipo `integer` ou `decimal` e casas (padrão: as casas do workflow);
+    - modo de arredondamento e política de erro, cada um com "Herdar do workflow"; o valor padrão aparece só com "Usar valor padrão";
+  - **Entradas:**
+    - lista das entradas declaradas: nome, Linear ou Múltiplo (segmented control), tipo e casas;
+    - a múltipla tem os campos (nome, tipo, casas);
+    - incluir, remover (com aviso de quantos blocos usam a entrada) e reordenar;
+  - **Saída:** os campos (nome e variável escolhida entre os símbolos lineares);
+  - **Workflow** (nada selecionado): política de erro e arredondamento padrão (casas e modo);
+  - os problemas de cada campo aparecem junto do campo, pelo `path`;
+  - só leitura: tudo desabilitado, com o motivo "Você não tem permissão para editar este workflow".
+- Aceite: testes de cada formulário (mudança vai para o rascunho; o problema aparece no campo certo pelo `path`; o valor padrão só com a política certa; segmented control por teclado); só leitura.
+
+**F54 · Editor: grade da Tabela de Decisão**
+- dep: F50
+- modelo: opus
+- arquivos: `packages/react/src/editor/decision-table/`
+- Fazer (E4-22):
+  - **propriedades da Tabela:** nome, descrição, política de acerto ("Primeira" ou "Única"), modo de arredondamento e política de erro (com "Herdar do workflow"); colunas de condição (fórmula do cabeçalho) e de resultado (nome, tipo, casas e valor padrão); **Abrir tabela**;
+  - **grade:**
+    - cabeçalho com as condições e os resultados separados por uma divisória;
+    - linhas numeradas a partir de 1;
+    - células monoespaçadas: vazia mostra `-` em terciário;
+    - incluir, remover e mover regras (botões e Alt + seta);
+    - incluir e remover colunas;
+    - teclado de planilha e colar do Excel, que acrescenta linhas quando o bloco colado passa do fim;
+    - cada célula com problema tem borda `red-700`, e a mensagem aparece ao focar (`aria-describedby`) e na aba Problemas;
+  - **acessibilidade:** `role="grid"`, cabeçalhos ligados às células e o foco visível na célula;
+  - **até 500 regras** sem travar a digitação (lista virtualizada se precisar).
+- Aceite: testes de edição pelo teclado, colar um bloco 3 × 2 do Excel (inclusive passando do fim), incluir, remover e mover regras e colunas, a política de acerto, problema numa célula pelo `path`, só leitura; uma grade de 500 regras abre e responde à digitação sem atraso perceptível (teste com tempo limite).
+
+**F55 · Editor: calcular com valores digitados**
+- dep: F50
+- modelo: opus
+- arquivos: `packages/react/src/editor/unit-run/`
+- Fazer (E4-14, E4-24):
+  - aba **Calcular** no painel inferior, com o formulário gerado das entradas declaradas:
+    - texto: campo de texto;
+    - número: campo de número no padrão brasileiro;
+    - data e data e hora: campos próprios;
+    - booleano: seleção "vazio", "verdadeiro" e "falso";
+    - múltipla: uma tabela pequena de itens, com incluir e remover;
+  - campo vazio vai como nulo (múltipla vazia, como lista vazia);
+  - **Calcular:**
+    - salva o rascunho pendente antes de rodar;
+    - fica desabilitado com o motivo "Resolva N problemas para calcular" enquanto houver problema;
+    - `draft_conflict` mostra o aviso da E4-23;
+    - `invalid_inputs` marca o campo pelo `fields`;
+  - **resultado:**
+    - status com ponto e palavra (ok, com avisos, erro; estilos §7.5);
+    - as saídas;
+    - por bloco: os valores, "Regra N" na Tabela de Decisão, avisos e erro;
+    - o nome do bloco seleciona-o no canvas;
+    - os blocos não rodados em cinza;
+  - os últimos valores digitados ficam só na memória da tela, por workflow, enquanto o módulo estiver aberto (nada de `localStorage`, design §1, princípio 3).
+- Aceite:
+  - conversão de `1.500,00` e `1500,5` para `"1500.00"` e `"1500.5"`; recusa de `1500,005` numa entrada de 2 casas;
+  - o envio e cada estado do resultado (`ok`, `ok_with_warnings`, `error` com `not_run`);
+  - o botão desabilitado com motivo;
+  - `invalid_inputs` no campo certo;
+  - salva antes de rodar;
+  - nada em `localStorage` nem `sessionStorage` (teste que espia os dois).
+
+**F56 · Manutenção: pendências do CK3 no front**
+- dep: F46
+- modelo: sonnet
+- arquivos: `packages/react/src/design-system/`, `packages/react/src/catalog/connections/`, `packages/react/src/admin/integration/queries.ts`, `packages/react/src/admin/roles/queries.ts`, `packages/react/src/admin/security/queries.ts`, `packages/react/src/admin/users/queries.ts`, `packages/react/src/api/client/apiError.ts`, `packages/react/src/module/FluxoCalculo.tsx`, `packages/react/src/module/FluxoCalculo.test.tsx`, `packages/react/src/session/reset-password/passwordReset.ts`, `e2e/epic-1/csrf.spec.ts`, `e2e/epic-2/support/screens.ts`, `e2e/epic-3/credential-never-returned.spec.ts`
+- Fazer (pendências adiáveis do CK3, decididas pela sessão global):
+  - **px crus no design system:** os espaços em px dos CSS de `design-system/` (por exemplo, `tabs.css`, `menu.css`, `card.css`) passam a usar os tokens `--fc-space-*`; medidas que não são espaço (borda de 1px, alturas de controle, tamanhos de fonte) ficam como estão, se já forem tokens ou exceções listadas no `estilos.md`;
+  - **resíduos da F41:** `screen: screen` e `{ body: body }` viram a forma curta; as descrições de teste que ainda citam `navegacao` e `memoria` passam a citar `navigation` e `memory`. Os arquivos acima são os que a busca achou; confira de novo no começo da tarefa;
+  - **429 do teste de conexão (E4-16):** em `catalog/connections/`, o `too_many_connection_tests` mostra "Muitos testes de conexão seguidos. Tente de novo em N s.", com o `retry_after_seconds`, e desabilita **Testar** com esse motivo até o tempo passar.
+- Aceite:
+  - nenhum espaço em px cru nos CSS do `design-system/` (busca com o padrão, com a lista de exceções no relatório);
+  - nenhum `screen: screen`, `body: body`, `navegacao` nem `memoria` em `packages/`, `apps/` e `e2e/` (busca no relatório);
+  - teste do 429 com o tempo e o botão desabilitado com motivo;
+  - as telas continuam iguais na revisão de interface;
+  - `pnpm lint`, `typecheck`, `test`, `build` e `e2e` verdes.
+
+**F57 · Integração do épico 4: rotas, menu, Início e interface pública**
+- dep: F49, F51, F53, F54, F55, F56
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/workflows/index.ts`, `packages/react/src/workflows/Workflows.tsx`, `packages/react/src/module/`, `packages/react/src/home/`, `packages/react/src/index.ts`, `apps/shell/src/`, `docs/incorporacao.md`, `docs/glossario.md`, `README.md`, `.changeset/`
+- Fazer:
+  - **editor:** `<Editor>` monta o layout da F50 com o canvas e as camadas (F51), as propriedades por tipo de item (F53 e as da Tabela, da F54), a grade da F54 no lugar do canvas e as abas Problemas e Calcular (F50, F55);
+  - **rotas e menu:**
+    - `<Workflows>` com as rotas `/workflows`, `/workflows/:id` e `/workflows/:id/editor`;
+    - item "Workflows" no menu, com `workflows.view`;
+    - seletor de contexto tenant › workflow e o menu do nível do workflow (E4-25);
+    - o editor em tela cheia no casca e na área do módulo no incorporado (E4-20);
+  - a prop `screen` aceita `workflows`; o pacote exporta `<Workflows>` (Contratos: componentes por tela);
+  - **Início:** "Workflows recentes" com os dados reais e **Novo workflow** (E4-25);
+  - os nomes novos no `docs/glossario.md`; o guia de incorporação e um changeset `minor`.
+- Aceite: testes por papel (o Configurador cria e edita; o Operador e o Auditor veem a lista, a Visão geral e o editor só para leitura, sem "Calcular"; o Aprovador vê "Calcular" e não edita; o Integrador não vê "Workflows"); o editor sem o menu do casca; o Início com os recentes; `pnpm build` gera o pacote com o export novo.
+
+**F58 · Testes ponta a ponta do épico 4**
+- dep: F57
+- modelo: opus
+- arquivos: `e2e/epic-4/`, `e2e/support/`, `playwright.config.ts`, `README.md`
+- Fazer:
+  - os fluxos do épico 4 do plano global:
+    - criar um workflow e abrir o editor;
+    - declarar as entradas e montar a Tabela de Decisão e os Cálculos do exemplo;
+    - ver e corrigir o erro de tipo no bloco;
+    - calcular com valores digitados (`ok`, com a regra que casou, e com "Única" e duas regras casando);
+    - o rascunho salvo depois de recarregar;
+    - o aviso de conflito com duas abas;
+    - o editor só para leitura do Auditor;
+  - no modo real:
+    - usar o workflow "Pontuação de exemplo" do `prepare-local` e as contas por papel do épico 2;
+    - provar que `Calcular` com `valor_item` 1500,00, categoria A e meta verdadeiro mostra `pontos` 225,00 e "Regra 2".
+- Aceite: `pnpm e2e` passa. O modo real é exercitado no teste de integração do CK4.
+
+**F59 · Portão do épico 4**
+- tipo: portao
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58
+- modelo: sonnet
+- Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
