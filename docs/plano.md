@@ -602,7 +602,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 - modelo: sonnet
 - arquivos: `packages/react/src/catalog/`, `packages/react/src/api/index.ts`
 - Fazer (observações da revisão da F44, decididas pela sessão global):
-  - **erros:** uma função única do catálogo traduz o erro de consulta em mensagem; `not_found` e `invalid_data` viram "não encontrado" em todas as telas (conexões, datasets, arquivos e variáveis), no lugar da lista repetida em 4 telas e da mensagem crua da API;
+  - **erros:** uma função única do catálogo traduz o erro de consulta em mensagem; `not_found` vira "não encontrado" em todas as telas (conexões, datasets, arquivos e variáveis); `invalid_data` só vira "não encontrado" nas consultas de detalhe por id (id mal formado no endereço); nas listas, um 422 mostra a mensagem de erro da consulta com "Tentar de novo" (correção da sessão global na verificação da F45). Sai a lista repetida em 4 telas e a mensagem crua da API;
   - **cancelamento:** o `api/index.ts` passa a exportar o detector de cancelamento de `api/client/apiError.ts`; o catálogo apaga a cópia de `catalog/files/queries.ts` e usa o exportado.
 - Aceite: teste da função de erros com cada código; nenhuma cópia do detector no catálogo; lint (com as fronteiras), typecheck, test e build verdes.
 
