@@ -117,6 +117,14 @@ describe('Detalhe do dataset', () => {
     expect(onBack).toHaveBeenCalled();
   });
 
+  it('id mal formado (422 invalid_data): também diz que não existe, sem Tentar de novo', async () => {
+    api.respond(DETAIL, problem(422, 'invalid_data'));
+    renderScreen(<DatasetDetail datasetId={TABLE_DATASET.id} onBack={vi.fn()} />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(DATASET_NOT_FOUND_MESSAGE);
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument();
+  });
+
   it('erro passageiro: Tentar de novo carrega o dataset', async () => {
     api.respond(DETAIL, problem(503, 'unavailable'), json(TABLE_DATASET));
     const { user } = renderScreen(<DatasetDetail datasetId={TABLE_DATASET.id} />);

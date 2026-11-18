@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react';
 import { ApiError } from '../../api';
 import { Notice, Button, EmptyState, Menu, Badge, Table, Text, type TableColumn } from '../../design-system';
 import { dataTypeLabel } from '../columns';
+import { isNotFoundError } from '../errors';
 import { useDatasetVariables, type Dataset, type Variable } from './queries';
 import { canBecomeVariable } from './variableRules';
 import { VariableDialog } from './VariableDialog';
@@ -50,7 +51,7 @@ export function DatasetVariables({ dataset, canManage }: DatasetVariablesProps) 
   }
 
   const variables = list.data;
-  const stopRetry = list.error instanceof ApiError && ['no_permission', 'not_found', 'invalid_data'].includes(list.error.code);
+  const stopRetry = isNotFoundError(list.error, true) || (list.error instanceof ApiError && list.error.code === 'no_permission');
   const supportedColumns = new Set(dataset.columns.filter(canBecomeVariable).map((column) => column.name));
   const newReason = supportedColumns.size === 0 ? NO_SUPPORTED_COLUMN_REASON : undefined;
   const newVariable = (size: 'small' | 'default', variant: 'primary' | 'secondary') =>
@@ -160,7 +161,7 @@ export function DatasetVariables({ dataset, canManage }: DatasetVariablesProps) 
                 )
               }
             >
-              {queryErrorMessage(list.error)}
+              {queryErrorMessage(list.error, undefined, true)}
             </Notice>
           ) : undefined
         }
@@ -188,7 +189,7 @@ export function DatasetVariables({ dataset, canManage }: DatasetVariablesProps) 
             </Button>
           }
         >
-          {queryErrorMessage(list.error)}
+          {queryErrorMessage(list.error, undefined, true)}
         </Notice>
       ) : null}
 

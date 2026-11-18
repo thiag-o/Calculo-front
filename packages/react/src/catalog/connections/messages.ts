@@ -1,4 +1,5 @@
 import { ApiError } from '../../api';
+import { queryErrorMessage as sharedQueryErrorMessage } from '../errors';
 
 export const NO_PERMISSION_MESSAGE = 'Você não tem permissão para fazer isso neste tenant. Peça acesso a um Admin.';
 export const LIST_NO_PERMISSION_MESSAGE = 'Você não tem permissão para ver as conexões neste tenant. Peça acesso a um Admin.';
@@ -44,11 +45,8 @@ function fieldErrors(error: ApiError): Partial<Record<ConnectionField, string>> 
  * Error of a query (list or detail), by `code` (ADR 0008). The other codes (`no_connection`, `unexpected_response`…) show the
  * error's own pt-BR message.
  */
-export function queryErrorMessage(error: unknown, noPermission = NO_PERMISSION_MESSAGE): string {
-  if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
-  if (error.code === 'no_permission') return noPermission;
-  if (error.code === 'not_found') return NOT_FOUND_MESSAGE;
-  return error.message;
+export function queryErrorMessage(error: unknown, noPermission = NO_PERMISSION_MESSAGE, byId = false): string {
+  return sharedQueryErrorMessage(error, { notFound: NOT_FOUND_MESSAGE, noPermission, byId });
 }
 
 /**

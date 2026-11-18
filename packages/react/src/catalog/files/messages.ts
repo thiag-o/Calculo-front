@@ -1,4 +1,5 @@
 import { ApiError } from '../../api';
+import { queryErrorMessage as sharedQueryErrorMessage } from '../errors';
 import { MAX_FILE_BYTES, MAX_FILE_MB, fileSize, isXlsx } from './format';
 
 export const NO_PERMISSION_MESSAGE = 'Você não tem permissão para gerenciar arquivos e datasets neste tenant. Peça acesso a um Admin.';
@@ -65,11 +66,8 @@ export function uploadError(error: unknown): UploadError {
 }
 
 /** Error of a query (file list or file). */
-export function queryErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
-  if (error.code === 'not_found' || error.code === 'invalid_data') return FILE_NOT_FOUND_MESSAGE;
-  // no_permission, no_connection…: the API's own pt-BR message.
-  return error.message;
+export function queryErrorMessage(error: unknown, byId = false): string {
+  return sharedQueryErrorMessage(error, { notFound: FILE_NOT_FOUND_MESSAGE, byId });
 }
 
 /** What the new dataset dialog shows for an error: a general note and the name field error. */

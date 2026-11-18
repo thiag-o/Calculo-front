@@ -133,6 +133,15 @@ describe('Variáveis do dataset: lista', () => {
     expect(await within(variablesTable()).findByText('valor_item')).toBeInTheDocument();
   });
 
+  it('id mal formado (422 invalid_data): diz que o dataset não existe, sem Tentar de novo', async () => {
+    api.respond(VARIABLES, problem(422, 'invalid_data'));
+    renderScreen(<DatasetDetail datasetId={DATASET.id} />);
+
+    expect(await screen.findByText('Não foi possível carregar as variáveis')).toBeInTheDocument();
+    expect(screen.getByText('Este dataset não existe mais neste tenant.')).toBeInTheDocument();
+    expect(within(variablesTable()).queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument();
+  });
+
   it('sem variables.manage, as variáveis aparecem só para leitura', async () => {
     api = simulateApi([...READ_ONLY_PERMISSIONS, 'datasets.manage']);
     api.respond('GET /v1/connections', json({ items: [POSTGRES] }));

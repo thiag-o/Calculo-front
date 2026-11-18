@@ -87,7 +87,8 @@ export function noConnectionError(cause: unknown): ApiError {
   return new ApiError({ status: 0, code: NO_CONNECTION_CODE, message: NO_CONNECTION_MESSAGE, cause: cause });
 }
 
-function isCancellation(error: unknown): boolean {
+/** Whether the error is a cancelled request (`AbortError`), which is not a failure to show. */
+export function isCancellation(error: unknown): boolean {
   return isObject(error) && error.name === 'AbortError';
 }
 

@@ -3,6 +3,7 @@ import { ApiError } from '../../api';
 import { Badge, Button, EmptyState, Loading, Notice, Tabs, Text, textClasses } from '../../design-system';
 import { useSession } from '../../session';
 import { ColumnsTable } from '../columns';
+import { isNotFoundError } from '../errors';
 import { DeleteExcelFileDialog } from './DeleteExcelFileDialog';
 import { columnCount, dateTime, fileSize, sampledRows, sheetCount } from './format';
 import { BackIcon, SpreadsheetIcon } from './icons';
@@ -38,7 +39,7 @@ export function ExcelFileDetail({ fileId, onBack, onDeleted, onOpenDataset, focu
 
   if (!file) {
     if (query.isError) {
-      const notFound = query.error instanceof ApiError && ['not_found', 'invalid_data'].includes(query.error.code);
+      const notFound = isNotFoundError(query.error, true);
       const noPermission = query.error instanceof ApiError && query.error.code === 'no_permission';
       return (
         <DetailFrame onBack={onBack}>
@@ -53,7 +54,7 @@ export function ExcelFileDetail({ fileId, onBack, onDeleted, onOpenDataset, focu
               )
             }
           >
-            {queryErrorMessage(query.error)}
+            {queryErrorMessage(query.error, true)}
           </Notice>
         </DetailFrame>
       );
@@ -155,7 +156,7 @@ function LoadedDetail({ file, onBack, onDeleted, onOpenDataset, focusTitle, refe
             </Button>
           }
         >
-          {queryErrorMessage(refetchError)}
+          {queryErrorMessage(refetchError, true)}
         </Notice>
       ) : null}
 

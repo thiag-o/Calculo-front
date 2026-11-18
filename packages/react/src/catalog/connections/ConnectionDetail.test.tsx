@@ -151,6 +151,15 @@ describe('Conexões: detalhe', () => {
     await user.click(within(screen.getByRole('alert').parentElement!).getByRole('button', { name: 'Voltar para Conexões' }));
     expect(onConnectionChange).toHaveBeenCalledWith(null);
   });
+
+  it('id mal formado (422 invalid_data): também diz que não existe, sem tentar de novo', async () => {
+    const api = simulateApi();
+    api.respond(detailRoute(ERP), problem(422, 'invalid_data'));
+    renderConnections(<Connections connectionId={ERP.id} onConnectionChange={vi.fn()} />);
+
+    expect(await screen.findByText(NOT_FOUND_MESSAGE)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument();
+  });
 });
 
 describe('Conexões: Testar a conexão salva', () => {

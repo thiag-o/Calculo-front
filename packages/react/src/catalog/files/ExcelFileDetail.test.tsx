@@ -115,6 +115,14 @@ describe('Arquivo Excel: detalhe', () => {
     expect(screen.getByRole('button', { name: 'Voltar para Arquivos' })).toBeInTheDocument();
   });
 
+  it('id mal formado (422 invalid_data): também diz que não existe, sem "Tentar de novo"', async () => {
+    api.respond(FILE_ROUTE, problem(422, 'invalid_data'));
+    renderDetail();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Este arquivo não existe mais neste tenant.');
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument();
+  });
+
   it('erro passageiro: "Tentar de novo" busca de novo', async () => {
     api.respond(FILE_ROUTE, problem(500, 'internal_error'), json(EXCEL_FILE));
     const { user } = renderDetail();

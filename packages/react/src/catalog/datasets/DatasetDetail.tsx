@@ -3,6 +3,7 @@ import { ApiError } from '../../api';
 import { Notice, Button, Badge, EmptyState, Loading, Skeleton, Text, type TableColumn } from '../../design-system';
 import { useSession } from '../../session';
 import { ColumnsTable, type Column } from '../columns';
+import { isNotFoundError } from '../errors';
 import {
   useDataset,
   useDatasetConnections,
@@ -16,7 +17,7 @@ import { DATASET_TYPE_LABELS, dateTime, datasetOrigin } from './origin';
 import { RenameDatasetDialog } from './RenameDatasetDialog';
 import { DeleteDatasetDialog } from './DeleteDatasetDialog';
 import { BackIcon, RefreshIcon, TableIcon } from './icons';
-import { DATASET_NOT_FOUND_MESSAGE, queryErrorMessage, refreshErrorMessage } from './messages';
+import { queryErrorMessage, refreshErrorMessage } from './messages';
 import './datasets.css';
 
 export const COLUMNS_REFRESHED_MESSAGE = 'Colunas lidas de novo da origem.';
@@ -57,7 +58,7 @@ export function DatasetDetail({ datasetId, onBack, onDeleted }: DatasetDetailPro
   }
 
   const dataset = query.data;
-  const notFound = query.error instanceof ApiError && ['not_found', 'invalid_data'].includes(query.error.code);
+  const notFound = isNotFoundError(query.error, true);
   if (notFound || (!dataset && query.isError)) {
     return (
       <DetailFrame title="Dataset" back={back}>
@@ -72,7 +73,7 @@ export function DatasetDetail({ datasetId, onBack, onDeleted }: DatasetDetailPro
             )
           }
         >
-          {notFound ? DATASET_NOT_FOUND_MESSAGE : queryErrorMessage(query.error)}
+          {queryErrorMessage(query.error, undefined, true)}
         </Notice>
       </DetailFrame>
     );

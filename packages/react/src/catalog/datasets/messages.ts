@@ -1,4 +1,5 @@
 import { ApiError } from '../../api';
+import { queryErrorMessage as sharedQueryErrorMessage } from '../errors';
 
 /** Fields of the new dataset form. */
 export type DatasetField = 'connection' | 'object' | 'sql' | 'name';
@@ -45,12 +46,10 @@ function formFields(fields: Readonly<Record<string, string>>): Partial<Record<Da
  * Error of a query (dataset list, dataset, connections, objects or columns). `notFound` is what a `404 not_found`
  * means in that query (the dataset, the connection or the object is gone).
  */
-export function queryErrorMessage(error: unknown, notFound: string = DATASET_NOT_FOUND_MESSAGE): string {
-  if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
-  if (error.code === 'not_found') return notFound;
-  // no_permission, connection_failed, connection_target_not_allowed, no_connection…: the API's own pt-BR message
-  // (the connection errors are fixed texts of the API, never the driver's).
-  return error.message;
+export function queryErrorMessage(error: unknown, notFound: string = DATASET_NOT_FOUND_MESSAGE, byId = false): string {
+  // The other codes (no_permission, connection_failed, no_connection…) show the API's own pt-BR message (the connection
+  // errors are fixed texts of the API, never the driver's).
+  return sharedQueryErrorMessage(error, { notFound, byId });
 }
 
 /** Error creating a dataset (`POST /v1/datasets`), by `code` (ADR 0008). */

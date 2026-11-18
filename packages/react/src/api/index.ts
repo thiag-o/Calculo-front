@@ -11,7 +11,7 @@ export type Schemas = components['schemas'];
 // Cliente HTTP.
 export { createApiClient } from './client/createApiClient';
 export type { ApiClient, AuthMode, ApiClientOptions } from './client/createApiClient';
-export { UNEXPECTED_RESPONSE_CODE, NO_CONNECTION_CODE, ApiError, dataOrError } from './client/apiError';
+export { UNEXPECTED_RESPONSE_CODE, NO_CONNECTION_CODE, ApiError, dataOrError, isCancellation } from './client/apiError';
 export type { ProblemBody } from './client/apiError';
 export { ApiProvider, useApiClient } from './client/ApiProvider';
 export type { ApiProviderProps } from './client/ApiProvider';

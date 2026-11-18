@@ -6,7 +6,8 @@ import { CredentialDialog } from './CredentialDialog';
 import { DeleteConnectionDialog } from './DeleteConnectionDialog';
 import { dateTime, TYPE_LABELS } from './format';
 import { BackIcon, MoreActionsIcon } from './icons';
-import { NOT_FOUND_MESSAGE, formError, queryErrorMessage } from './messages';
+import { isNotFoundError } from '../errors';
+import { NO_PERMISSION_MESSAGE, formError, queryErrorMessage } from './messages';
 import { RenameConnectionDialog } from './RenameConnectionDialog';
 import { CONNECTIONS_MANAGE, CREDENTIALS_MANAGE, useConnection, useTestConnection, type Connection } from './queries';
 import { TestResult, TestStatus } from './TestStatus';
@@ -34,7 +35,7 @@ export function ConnectionDetail({ connectionId, onBack, focusTitle = false }: C
 
   if (!connection) {
     if (query.isError) {
-      const notFound = query.error instanceof ApiError && ['not_found', 'invalid_data'].includes(query.error.code);
+      const notFound = isNotFoundError(query.error, true);
       const noPermission = query.error instanceof ApiError && query.error.code === 'no_permission';
       return (
         <DetailFrame onBack={onBack}>
@@ -53,7 +54,7 @@ export function ConnectionDetail({ connectionId, onBack, focusTitle = false }: C
               )
             }
           >
-            {notFound ? NOT_FOUND_MESSAGE : queryErrorMessage(query.error)}
+            {queryErrorMessage(query.error, NO_PERMISSION_MESSAGE, true)}
           </Notice>
         </DetailFrame>
       );
@@ -147,7 +148,7 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError }: LoadedDe
         ) : null}
       </header>
 
-      {refetchError ? <Notice type="error" title="Não foi possível atualizar a conexão">{queryErrorMessage(refetchError)}</Notice> : null}
+      {refetchError ? <Notice type="error" title="Não foi possível atualizar a conexão">{queryErrorMessage(refetchError, NO_PERMISSION_MESSAGE, true)}</Notice> : null}
 
       <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
       {test.error ? <Notice type="error">{formError(test.error).message}</Notice> : null}

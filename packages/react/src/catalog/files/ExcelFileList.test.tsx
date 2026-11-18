@@ -115,6 +115,16 @@ describe('Arquivos: lista', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('422 na lista: mostra a mensagem do erro com "Tentar de novo", nunca "não encontrado"', async () => {
+    api.respond('GET /v1/excel-files', problem(422, 'invalid_data'));
+    renderScreen(<ExcelFileList onOpen={vi.fn()} />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Texto do servidor para invalid_data.');
+    expect(alert).not.toHaveTextContent('não existe mais');
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
+  });
+
   it('erro de permissão: sem "Tentar de novo"', async () => {
     api.respond('GET /v1/excel-files', problem(403, 'no_permission'));
     renderScreen(<ExcelFileList onOpen={vi.fn()} />);

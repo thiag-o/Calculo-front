@@ -113,6 +113,16 @@ describe('Datasets: lista', () => {
     expect(await screen.findByText('Itens de nota fiscal')).toBeInTheDocument();
   });
 
+  it('422 na lista: mostra a mensagem do erro com Tentar de novo, nunca "não encontrado"', async () => {
+    api.respond('GET /v1/datasets', problem(422, 'invalid_data'));
+    renderScreen(<Datasets />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Texto do servidor para invalid_data.');
+    expect(alert).not.toHaveTextContent('não existe mais');
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
+  });
+
   it('sem permissão, explica e não oferece Tentar de novo', async () => {
     api.respond('GET /v1/datasets', problem(403, 'no_permission'));
     renderScreen(<Datasets />);

@@ -131,6 +131,16 @@ describe('Conexões: lista', () => {
     await waitFor(() => expect(api.callsTo(LIST_ROUTE)).toHaveLength(2));
   });
 
+  it('422 na lista: mostra a mensagem do erro com tentar de novo, nunca "não existe mais"', async () => {
+    const api = simulateApi(INTEGRATOR);
+    api.respond(LIST_ROUTE, problem(422, 'invalid_data'));
+    renderConnections(<ConnectionList onOpen={() => {}} />);
+
+    expect(await screen.findByText('Texto do servidor para invalid_data.')).toBeInTheDocument();
+    expect(screen.queryByText(/não existe mais/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
+  });
+
   it('sem permissão de ver: explica e não oferece tentar de novo', async () => {
     const api = simulateApi([]);
     api.respond(LIST_ROUTE, problem(403, 'no_permission'));

@@ -1,6 +1,6 @@
 import { useIsMutating, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, dataOrError, useApiClient, type Schemas } from '../../api';
+import { ApiError, dataOrError, isCancellation, useApiClient, type Schemas } from '../../api';
 
 /** An uploaded Excel file, with the sheets and the columns read (generated from the contract). */
 export type ExcelFile = Schemas['ExcelFile'];
@@ -145,10 +145,6 @@ export function useUploadExcelFile() {
     setProgress(null);
   }
   return { ...mutation, progress, cancel };
-}
-
-function isCancellation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'AbortError';
 }
 
 /** Creates a dataset from a sheet (`POST /v1/datasets` with `type: excel`). */
