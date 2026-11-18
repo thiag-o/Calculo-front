@@ -625,11 +625,12 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F43 · Manutenção: testes estáveis sob carga**
 - dep: F35
 - modelo: sonnet
-- arquivos: `packages/react/src/admin/`, `packages/react/src/catalog/datasets/`, `packages/react/vite.config.ts`, `packages/react/src/module/catalogByRole.test.tsx`
+- arquivos: `packages/react/src/`, `packages/react/vite.config.ts` (D13: em `packages/react/src/`, só arquivos de teste `*.test.ts(x)` e de apoio aos testes; fora de `admin/` e `catalog/datasets/`, nenhum componente muda)
 - Fazer (achado da verificação da F31, decidido pela sessão global):
   - no `pnpm test` completo sob carga, testes da Administração (como `admin/users/UserDialog.test.tsx`) e o "Carregar mais" de `catalog/datasets/` estouram o tempo e passam sozinhos;
   - achar a causa em cada um (espera fixa, `waitFor` sem consulta assíncrona, `userEvent` com atraso, renderização pesada) e corrigir no teste ou no componente;
   - aumentar o tempo limite global só se a causa for comprovadamente a máquina, e com o motivo num comentário.
+  - **D13 (sessão global, 2026-11-18):** a causa do tempo (a pausa do `userEvent` a cada ação) vale para todos os testes do pacote. A correção (`delay: null` e colar o texto no lugar de digitar, onde isso não enfraquece a asserção) se aplica a todos os testes de `packages/react/src/` que usam `userEvent`, de uma vez, e não pasta por pasta. Fora de `admin/` e `catalog/datasets/`, mudam só os arquivos de teste e de apoio aos testes.
   - **D12 (sessão global, 2026-11-18):** a causa medida é saturação de CPU. Fica o `maxWorkers: 4` e entra `testTimeout: 15000` no `vite.config.ts`, os dois com a medição no comentário. No `module/catalogByRole.test.tsx`, as consultas `findByRole` que passaram de 1 s sob carga recebem `{ timeout: 4000 }` na própria chamada, com o motivo comentado. Não se cria arquivo de setup novo (`vitest.setup.ts`): a criação foi negada pelo controle de permissões, e o ajuste por chamada resolve sem ela.
 - Aceite: `pnpm test` completo três vezes seguidas, sem nenhuma falha por tempo, com a máquina ocupada pelo e2e simulado rodando em paralelo numa das vezes; lint, typecheck e build verdes.
 
