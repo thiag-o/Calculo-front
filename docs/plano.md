@@ -597,6 +597,15 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
   - o envio de arquivo que continua ao trocar de aba fica como está, mas o resultado (sucesso ou erro) aparece na aba Arquivos quando a pessoa voltar.
 - Aceite: testes de cada caso; lint, typecheck, test e build verdes.
 
+**F45 · Manutenção: erros e cancelamento do catálogo num lugar só**
+- dep: F44
+- modelo: sonnet
+- arquivos: `packages/react/src/catalog/`, `packages/react/src/api/index.ts`
+- Fazer (observações da revisão da F44, decididas pela sessão global):
+  - **erros:** uma função única do catálogo traduz o erro de consulta em mensagem; `not_found` e `invalid_data` viram "não encontrado" em todas as telas (conexões, datasets, arquivos e variáveis), no lugar da lista repetida em 4 telas e da mensagem crua da API;
+  - **cancelamento:** o `api/index.ts` passa a exportar o detector de cancelamento de `api/client/apiError.ts`; o catálogo apaga a cópia de `catalog/files/queries.ts` e usa o exportado.
+- Aceite: teste da função de erros com cada código; nenhuma cópia do detector no catálogo; lint (com as fronteiras), typecheck, test e build verdes.
+
 **F43 · Manutenção: testes estáveis sob carga**
 - dep: F35
 - modelo: sonnet
@@ -609,6 +618,6 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 
 **F36 · Portão do épico 3**
 - tipo: portao
-- dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42, F43, F44
+- dep: F29, F30, F31, F32, F33, F34, F35, F40, F41, F42, F43, F44, F45
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 3.
