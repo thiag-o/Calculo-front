@@ -3,7 +3,7 @@ import { Button, Notice, Text } from '../../design-system';
 import { MAX_FILE_MB, XLSX_ACCEPT, fileSize } from './format';
 import { UploadIcon } from './icons';
 import { ONE_FILE_MESSAGE, clientUploadError, uploadError, type UploadError } from './messages';
-import { useUploadExcelFile, type ExcelFile, type UploadProgress } from './queries';
+import { useUploadAwayOutcome, useUploadExcelFile, type ExcelFile, type UploadProgress } from './queries';
 
 export interface UploadAreaProps {
   /** Called with the stored file, its sheets and columns already read. */
@@ -28,6 +28,7 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
   const input = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
   const upload = useUploadExcelFile();
+  const away = useUploadAwayOutcome();
   const [chosen, setChosen] = useState<File | null>(null);
   const [clientError, setClientError] = useState<UploadError | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -41,6 +42,7 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
   }
 
   function send(file: File) {
+    away.dismiss();
     setChosen(file);
     const problem = clientUploadError(file);
     if (problem) {
@@ -53,7 +55,7 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
   }
 
   function receive(files: FileList | null) {
-    if (!files || files.length === 0 || upload.isPending) return;
+    if (!files || files.length === 0 || upload.isPending || awayRunning) return;
     if (files.length > 1) {
       upload.reset();
       setChosen(null);
@@ -73,7 +75,7 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
   function dragOver(event: DragEvent<HTMLDivElement>) {
     if (!hasFiles(event)) return;
     event.preventDefault();
-    event.dataTransfer.dropEffect = upload.isPending ? 'none' : 'copy';
+    event.dataTransfer.dropEffect = upload.isPending || awayRunning ? 'none' : 'copy';
   }
   function dragLeave() {
     dragDepth.current = Math.max(0, dragDepth.current - 1);
@@ -89,6 +91,9 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
 
   const error = clientError ?? (upload.isError ? uploadError(upload.error) : null);
   const pending = upload.isPending;
+  // An upload started before the person left this tab still goes on; its result is said here when it ends.
+  const awayRunning = !pending && away.running > 0;
+  const awayError = away.outcome?.status === 'error' && !error ? uploadError(away.outcome.error) : null;
   const percent = percentOf(upload.progress);
   const reading = pending && percent >= 100;
   const name = chosen?.name ?? '';
@@ -153,10 +158,50 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
           }}
         />
         {pending ? <Button onClick={cancelUpload}>Cancelar</Button> : null}
-        <Button ref={sendButton} variant="primary" loading={pending} onClick={() => input.current?.click()}>
+        <Button ref={sendButton} variant="primary" loading={pending || awayRunning} onClick={() => input.current?.click()}>
           Enviar arquivo
         </Button>
       </div>
+
+      {awayRunning ? (
+        <Notice type="warning">Um envio começado antes de você sair desta aba ainda está em andamento. O resultado aparece aqui.</Notice>
+      ) : null}
+
+      {!pending && !error && away.outcome?.status === 'success' ? (
+        <Notice
+          type="success"
+          title={`${away.outcome.file.file_name} foi enviado`}
+          actions={
+            <Button
+              size="small"
+              onClick={() => {
+                if (away.outcome?.status !== 'success') return;
+                const file = away.outcome.file;
+                away.dismiss();
+                onUploaded(file);
+              }}
+            >
+              Abrir arquivo
+            </Button>
+          }
+        >
+          O envio terminou enquanto você estava em outra aba. As abas e as colunas já foram lidas.
+        </Notice>
+      ) : null}
+
+      {!pending && awayError && away.outcome?.status === 'error' ? (
+        <Notice
+          type="error"
+          title={`Não foi possível enviar ${away.outcome.fileName}`}
+          actions={
+            <Button size="small" onClick={away.dismiss}>
+              Dispensar
+            </Button>
+          }
+        >
+          <p className="fc-files-notice-text">{awayError.message}</p>
+        </Notice>
+      ) : null}
 
       {error ? (
         <Notice

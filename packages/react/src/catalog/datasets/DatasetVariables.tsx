@@ -50,7 +50,7 @@ export function DatasetVariables({ dataset, canManage }: DatasetVariablesProps) 
   }
 
   const variables = list.data;
-  const stopRetry = list.error instanceof ApiError && ['no_permission', 'not_found'].includes(list.error.code);
+  const stopRetry = list.error instanceof ApiError && ['no_permission', 'not_found', 'invalid_data'].includes(list.error.code);
   const supportedColumns = new Set(dataset.columns.filter(canBecomeVariable).map((column) => column.name));
   const newReason = supportedColumns.size === 0 ? NO_SUPPORTED_COLUMN_REASON : undefined;
   const newVariable = (size: 'small' | 'default', variant: 'primary' | 'secondary') =>

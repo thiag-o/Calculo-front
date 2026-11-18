@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
 import { ExcelFileList } from '.';
+import { UploadArea } from './UploadArea';
 import { MAX_FILE_BYTES } from './format';
 import {
   API,
@@ -225,5 +227,75 @@ describe('Arquivos: envio', () => {
     expect(screen.getByRole('button', { name: 'Enviar arquivo' })).toHaveFocus();
     expect(onOpen).not.toHaveBeenCalled();
     await waitFor(() => expect(api.callsTo('GET /v1/excel-files')).toHaveLength(2));
+  });
+});
+
+describe('Arquivos: envio que continua ao trocar de aba', () => {
+  /** The upload area and a button that takes it off the screen, like leaving the Arquivos tab. */
+  function Tabs({ onUploaded }: { onUploaded: () => void }) {
+    const [open, setOpen] = useState(true);
+    return (
+      <>
+        <button type="button" onClick={() => setOpen((value) => !value)}>
+          Trocar de aba
+        </button>
+        {open ? <UploadArea onUploaded={onUploaded} /> : null}
+      </>
+    );
+  }
+
+  async function leaveWhileSending() {
+    const onUploaded = vi.fn();
+    const { user } = renderScreen(<Tabs onUploaded={onUploaded} />);
+    await user.upload(fileInput(), fileOf('metas-2026.xlsx', 2048));
+    const upload = await uploads.nth(1);
+    await user.click(screen.getByRole('button', { name: 'Trocar de aba' }));
+    return { user, upload, onUploaded };
+  }
+
+  it('ao voltar com o envio ainda em andamento, avisa e segura outro envio', async () => {
+    const { user, upload } = await leaveWhileSending();
+    await user.click(screen.getByRole('button', { name: 'Trocar de aba' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('ainda está em andamento');
+    expect(screen.getByRole('button', { name: 'Enviar arquivo' })).toHaveAttribute('aria-busy', 'true');
+    upload.respond(201, EXCEL_FILE);
+    expect(await screen.findByText('metas-2026.xlsx foi enviado')).toBeInTheDocument();
+    expect(screen.queryByText(/ainda está em andamento/)).not.toBeInTheDocument();
+  });
+
+  it('sucesso enquanto estava fora: ao voltar, mostra o resultado e abre o arquivo', async () => {
+    const { user, upload, onUploaded } = await leaveWhileSending();
+    upload.respond(201, EXCEL_FILE);
+    await user.click(screen.getByRole('button', { name: 'Trocar de aba' }));
+
+    expect(await screen.findByText('metas-2026.xlsx foi enviado')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Abrir arquivo' }));
+    expect(onUploaded).toHaveBeenCalledWith(EXCEL_FILE);
+    expect(screen.queryByText('metas-2026.xlsx foi enviado')).not.toBeInTheDocument();
+  });
+
+  it('erro enquanto estava fora: ao voltar, mostra o que corrigir e pode ser dispensado', async () => {
+    const { user, upload } = await leaveWhileSending();
+    upload.respond(413, {});
+    await user.click(screen.getByRole('button', { name: 'Trocar de aba' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Não foi possível enviar metas-2026.xlsx');
+    expect(alert).toHaveTextContent('tamanho máximo aceito');
+    await user.click(screen.getByRole('button', { name: 'Dispensar' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('o resultado visto na própria tela não reaparece depois', async () => {
+    const onUploaded = vi.fn();
+    const { user } = renderScreen(<Tabs onUploaded={onUploaded} />);
+    await user.upload(fileInput(), fileOf('metas-2026.xlsx', 2048));
+    (await uploads.nth(1)).respond(201, EXCEL_FILE);
+    await waitFor(() => expect(onUploaded).toHaveBeenCalled());
+
+    await user.click(screen.getByRole('button', { name: 'Trocar de aba' }));
+    await user.click(screen.getByRole('button', { name: 'Trocar de aba' }));
+    expect(screen.queryByText('metas-2026.xlsx foi enviado')).not.toBeInTheDocument();
   });
 });

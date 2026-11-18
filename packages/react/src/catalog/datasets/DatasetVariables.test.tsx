@@ -166,14 +166,16 @@ describe('Variáveis do dataset: lista', () => {
 });
 
 describe('Variáveis do dataset: coluna Variáveis das colunas', () => {
-  it('quando a lista falha, a coluna diz que não carregou e Tentar de novo busca de novo', async () => {
+  it('quando a lista falha, a coluna diz que não carregou e o Tentar de novo fica só na seção das variáveis', async () => {
     api.respond(VARIABLES, problem(503, 'unavailable'), json({ items: [ITEM_VALUE_VARIABLE] }));
     const { user } = renderScreen(<DatasetDetail datasetId={DATASET.id} />);
 
     const columns = await screen.findByRole('table', { name: `Colunas do dataset ${DATASET.name}` });
     await within(columns).findAllByText('Não carregou');
     expect(within(columns).getAllByText('Não carregou')).toHaveLength(DATASET.columns.length);
-    await user.click(within(columns).getByRole('button', { name: /Tentar de novo: variáveis das colunas/ }));
+    expect(within(columns).queryByRole('button', { name: /Tentar de novo/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Tentar de novo/ })).toHaveLength(1);
+    await user.click(within(variablesTable()).getByRole('button', { name: 'Tentar de novo' }));
 
     expect(await within(columnsTable()).findByText('valor_item')).toBeInTheDocument();
     expect(within(columnsTable()).queryByText('Não carregou')).not.toBeInTheDocument();

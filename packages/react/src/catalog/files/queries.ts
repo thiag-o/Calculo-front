@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useIsMutating, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { ApiError, dataOrError, useApiClient, type Schemas } from '../../api';
 
 /** An uploaded Excel file, with the sheets and the columns read (generated from the contract). */
@@ -25,6 +25,9 @@ export interface UploadProgress {
 const CATALOG_KEY = ['catalog'] as const;
 export const FILES_KEY = [...CATALOG_KEY, 'files'] as const;
 export const FILE_LIST_KEY = [...FILES_KEY, 'list'] as const;
+
+const UPLOAD_KEY = [...FILES_KEY, 'upload'] as const;
+const UPLOAD_OUTCOME_KEY = [...UPLOAD_KEY, 'outcome'] as const;
 
 export function fileKey(id: string) {
   return [...FILES_KEY, 'detail', id] as const;
@@ -65,6 +68,36 @@ function refreshCatalog(queryClient: QueryClient, keep?: readonly unknown[]) {
 }
 
 /**
+ * How an upload ended when nobody was looking: the person left the Arquivos tab while it went on (the upload is not
+ * cancelled by that) and the area was not on screen when it ended.
+ */
+export type UploadOutcome =
+  | { status: 'success'; file: ExcelFile }
+  | { status: 'error'; fileName: string; error: unknown };
+
+/**
+ * The result of an upload that ended while the upload area was not on screen, to say it when the person comes back, and
+ * whether another upload is still going on. `dismiss` forgets the result (it was read, or a new upload started).
+ */
+export function useUploadAwayOutcome() {
+  const queryClient = useQueryClient();
+  const outcome = useQuery({
+    queryKey: UPLOAD_OUTCOME_KEY,
+    queryFn: () => Promise.resolve<UploadOutcome | null>(null),
+    enabled: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+  const running = useIsMutating({ mutationKey: UPLOAD_KEY });
+  return {
+    outcome: outcome.data ?? null,
+    /** How many uploads run (this area's own one counts, when there is one). */
+    running,
+    dismiss: () => queryClient.setQueryData(UPLOAD_OUTCOME_KEY, null),
+  };
+}
+
+/**
  * Uploads an Excel file (`POST /v1/excel-files`, `multipart/form-data` with the `file` field) and follows how much of it
  * went out: `progress` is `null` before the first upload and is reset on each new one.
  */
@@ -73,7 +106,16 @@ export function useUploadExcelFile() {
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const controller = useRef<AbortController | null>(null);
+  // The callbacks of the mutation itself still run after the area leaves the screen; the ones of `mutate` do not.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const mutation = useMutation({
+    mutationKey: UPLOAD_KEY,
     mutationFn: (file: File) => {
       const body = new FormData();
       body.append('file', file);
@@ -83,12 +125,14 @@ export function useUploadExcelFile() {
     },
     onSuccess: (excelFile) => {
       queryClient.setQueryData(fileKey(excelFile.id), excelFile);
+      if (!mounted.current) queryClient.setQueryData(UPLOAD_OUTCOME_KEY, { status: 'success', file: excelFile } satisfies UploadOutcome);
       return refreshCatalog(queryClient, fileKey(excelFile.id));
     },
     // A cancelled upload may have reached the server before the cancel: the list is fetched again, so it shows the truth
     // (a file only appears in it after the API stored it whole).
-    onError: (error) => {
+    onError: (error, file) => {
       if (isCancellation(error)) return refreshCatalog(queryClient);
+      if (!mounted.current) queryClient.setQueryData(UPLOAD_OUTCOME_KEY, { status: 'error', fileName: file.name, error } satisfies UploadOutcome);
       return undefined;
     },
   });

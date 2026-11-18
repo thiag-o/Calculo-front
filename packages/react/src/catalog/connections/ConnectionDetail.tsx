@@ -6,7 +6,7 @@ import { CredentialDialog } from './CredentialDialog';
 import { DeleteConnectionDialog } from './DeleteConnectionDialog';
 import { dateTime, TYPE_LABELS } from './format';
 import { BackIcon, MoreActionsIcon } from './icons';
-import { formError, queryErrorMessage } from './messages';
+import { NOT_FOUND_MESSAGE, formError, queryErrorMessage } from './messages';
 import { RenameConnectionDialog } from './RenameConnectionDialog';
 import { CONNECTIONS_MANAGE, CREDENTIALS_MANAGE, useConnection, useTestConnection, type Connection } from './queries';
 import { TestResult, TestStatus } from './TestStatus';
@@ -34,7 +34,7 @@ export function ConnectionDetail({ connectionId, onBack, focusTitle = false }: C
 
   if (!connection) {
     if (query.isError) {
-      const notFound = query.error instanceof ApiError && query.error.code === 'not_found';
+      const notFound = query.error instanceof ApiError && ['not_found', 'invalid_data'].includes(query.error.code);
       const noPermission = query.error instanceof ApiError && query.error.code === 'no_permission';
       return (
         <DetailFrame onBack={onBack}>
@@ -53,7 +53,7 @@ export function ConnectionDetail({ connectionId, onBack, focusTitle = false }: C
               )
             }
           >
-            {queryErrorMessage(query.error)}
+            {notFound ? NOT_FOUND_MESSAGE : queryErrorMessage(query.error)}
           </Notice>
         </DetailFrame>
       );

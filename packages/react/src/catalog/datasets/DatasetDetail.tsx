@@ -16,7 +16,7 @@ import { DATASET_TYPE_LABELS, dateTime, datasetOrigin } from './origin';
 import { RenameDatasetDialog } from './RenameDatasetDialog';
 import { DeleteDatasetDialog } from './DeleteDatasetDialog';
 import { BackIcon, RefreshIcon, TableIcon } from './icons';
-import { queryErrorMessage, refreshErrorMessage } from './messages';
+import { DATASET_NOT_FOUND_MESSAGE, queryErrorMessage, refreshErrorMessage } from './messages';
 import './datasets.css';
 
 export const COLUMNS_REFRESHED_MESSAGE = 'Colunas lidas de novo da origem.';
@@ -72,7 +72,7 @@ export function DatasetDetail({ datasetId, onBack, onDeleted }: DatasetDetailPro
             )
           }
         >
-          {queryErrorMessage(query.error)}
+          {notFound ? DATASET_NOT_FOUND_MESSAGE : queryErrorMessage(query.error)}
         </Notice>
       </DetailFrame>
     );
@@ -139,24 +139,13 @@ function LoadedDetail({
     skeletonWidth: 100,
     cell: (column) => {
       if (variables.isPending) return <Skeleton width={80} />;
-      // The list failed: the column says so (not an empty cell, which would read as "no variables") and offers to try again,
-      // once, on the first row.
+      // The list failed: the column says so (not an empty cell, which would read as "no variables"). "Tentar de novo" is
+      // in the "Variáveis" section, in the place of its table, once.
       if (variables.isError && variables.data === undefined) {
         return (
-          <span className="fc-datasets-column-variables">
-            <Text variant="label-13" emphasis="secondary">
-              Não carregou
-            </Text>
-            {column === dataset.columns[0] && !(variables.error instanceof ApiError && variables.error.code === 'no_permission') ? (
-              <Button
-                size="small"
-                variant="ghost"
-                aria-label="Tentar de novo: variáveis das colunas"
-                loading={variables.isFetching} onClick={() => void variables.refetch()}>
-                Tentar de novo
-              </Button>
-            ) : null}
-          </span>
+          <Text variant="label-13" emphasis="secondary">
+            Não carregou
+          </Text>
         );
       }
       const names = (variables.data ?? []).filter((variable) => variable.column === column.name).map((variable) => variable.name);
