@@ -131,7 +131,7 @@ export function DatasetVariables({ dataset, canManage }: DatasetVariablesProps) 
     <section ref={section} className="fc-datasets-section" aria-labelledby={titleId}>
       <header className="fc-datasets-top">
         <div className="fc-datasets-title">
-          <Text as="h2" variant="heading-16" id={titleId}>
+          <Text as="h3" variant="heading-16" id={titleId}>
             Variáveis
           </Text>
           <Text as="p" variant="label-14" emphasis="secondary">

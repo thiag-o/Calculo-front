@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ApiError, dataOrError, useApiClient, type Schemas } from '../../api';
 
 /** An uploaded Excel file, with the sheets and the columns read (generated from the contract). */
@@ -72,19 +72,39 @@ export function useUploadExcelFile() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState<UploadProgress | null>(null);
+  const controller = useRef<AbortController | null>(null);
   const mutation = useMutation({
     mutationFn: (file: File) => {
       const body = new FormData();
       body.append('file', file);
       setProgress({ loaded: 0, total: file.size });
-      return client.upload('/v1/excel-files', body, { onProgress: setProgress });
+      controller.current = new AbortController();
+      return client.upload('/v1/excel-files', body, { onProgress: setProgress, signal: controller.current.signal });
     },
     onSuccess: (excelFile) => {
       queryClient.setQueryData(fileKey(excelFile.id), excelFile);
       return refreshCatalog(queryClient, fileKey(excelFile.id));
     },
+    // A cancelled upload may have reached the server before the cancel: the list is fetched again, so it shows the truth
+    // (a file only appears in it after the API stored it whole).
+    onError: (error) => {
+      if (isCancellation(error)) return refreshCatalog(queryClient);
+      return undefined;
+    },
   });
-  return { ...mutation, progress };
+  const { reset } = mutation;
+  /** Cancels the upload in progress: the request is aborted and the screen goes back to the start, with no error. */
+  function cancel() {
+    controller.current?.abort();
+    controller.current = null;
+    reset();
+    setProgress(null);
+  }
+  return { ...mutation, progress, cancel };
+}
+
+function isCancellation(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'AbortError';
 }
 
 /** Creates a dataset from a sheet (`POST /v1/datasets` with `type: excel`). */
@@ -105,7 +125,13 @@ export function useDeleteExcelFile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => dataOrError(client.DELETE('/v1/excel-files/{id}', { params: { path: { id } } })),
-    // The detail is gone: fetching it again would only give 404. A later visit fetches it on mount.
-    onSuccess: (_data, id) => refreshCatalog(queryClient, fileKey(id)),
+    // The detail is gone: it leaves the cache (a later visit would otherwise show the deleted file for a moment) and is not
+    // fetched again, which would only give 404.
+    onSuccess: (_data, id) => {
+      const key = fileKey(id);
+      const refreshed = refreshCatalog(queryClient, key);
+      queryClient.removeQueries({ queryKey: key });
+      return refreshed;
+    },
   });
 }

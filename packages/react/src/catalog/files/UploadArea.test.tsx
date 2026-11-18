@@ -198,4 +198,32 @@ describe('Arquivos: envio', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     await uploads.nth(1);
   });
+
+  it('413 de um proxy (sem problem+json): mostra o tamanho máximo, sem "Tentar de novo"', async () => {
+    await renderList();
+    dropFiles(dropArea(), [fileOf('grande.xlsx')]);
+    (await uploads.nth(1)).respond(413, {});
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Não foi possível enviar grande.xlsx');
+    expect(alert).toHaveTextContent('tamanho máximo aceito');
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument();
+  });
+
+  it('"Cancelar" aborta o envio, volta ao começo sem erro e busca a lista de novo', async () => {
+    const { user, onOpen } = await renderList();
+    await user.upload(fileInput(), fileOf('metas-2026.xlsx', 2048));
+    const upload = await uploads.nth(1);
+    upload.progress(512, 2048);
+    expect(screen.getByRole('progressbar', { name: 'Envio de metas-2026.xlsx' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar arquivo' })).toHaveFocus();
+    expect(onOpen).not.toHaveBeenCalled();
+    await waitFor(() => expect(api.callsTo('GET /v1/excel-files')).toHaveLength(2));
+  });
 });

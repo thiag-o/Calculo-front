@@ -5,7 +5,7 @@ import type { Schemas } from '../../api';
 import { DatasetDetail } from '.';
 import { COLUMN_GONE_LABEL, NO_SUPPORTED_COLUMN_REASON } from './DatasetVariables';
 import { DELETE_VARIABLE_NOT_FOUND_REASON } from './DeleteVariableDialog';
-import { columnGoneReason } from './VariableDialog';
+import { TYPE_NOT_ACCEPTED_MESSAGE, columnGoneReason } from './VariableDialog';
 import {
   INCOMPATIBLE_TYPE_MESSAGE,
   INVALID_VARIABLE_NAME_MESSAGE,
@@ -100,7 +100,7 @@ describe('Variáveis do dataset: lista', () => {
     api.respond(VARIABLES, pending.promise);
     renderScreen(<DatasetDetail datasetId={DATASET.id} />);
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Variáveis' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 3, name: 'Variáveis' })).toBeInTheDocument();
     expect(variablesTable()).toHaveAttribute('aria-busy', 'true');
     pending.release();
 
@@ -129,7 +129,7 @@ describe('Variáveis do dataset: lista', () => {
     const { user } = renderScreen(<DatasetDetail datasetId={DATASET.id} />);
 
     expect(await screen.findByText('Não foi possível carregar as variáveis')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+    await user.click(within(variablesTable()).getByRole('button', { name: 'Tentar de novo' }));
     expect(await within(variablesTable()).findByText('valor_item')).toBeInTheDocument();
   });
 
@@ -165,6 +165,21 @@ describe('Variáveis do dataset: lista', () => {
   });
 });
 
+describe('Variáveis do dataset: coluna Variáveis das colunas', () => {
+  it('quando a lista falha, a coluna diz que não carregou e Tentar de novo busca de novo', async () => {
+    api.respond(VARIABLES, problem(503, 'unavailable'), json({ items: [ITEM_VALUE_VARIABLE] }));
+    const { user } = renderScreen(<DatasetDetail datasetId={DATASET.id} />);
+
+    const columns = await screen.findByRole('table', { name: `Colunas do dataset ${DATASET.name}` });
+    await within(columns).findAllByText('Não carregou');
+    expect(within(columns).getAllByText('Não carregou')).toHaveLength(DATASET.columns.length);
+    await user.click(within(columns).getByRole('button', { name: /Tentar de novo: variáveis das colunas/ }));
+
+    expect(await within(columnsTable()).findByText('valor_item')).toBeInTheDocument();
+    expect(within(columnsTable()).queryByText('Não carregou')).not.toBeInTheDocument();
+  });
+});
+
 describe('Variáveis do dataset: criar', () => {
   it('dá nome e tipo a uma coluna, com as casas do decimal, e mostra a variável nova', async () => {
     const created: Schemas['Variable'] = {
@@ -197,6 +212,25 @@ describe('Variáveis do dataset: criar', () => {
     expect(within(row).getByText('Decimal (3 casas)')).toBeInTheDocument();
     expect(screen.getByText('2 variáveis')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Nova variável' })[0]).toHaveFocus();
+  });
+
+  it('o diálogo fecha assim que a API confirma, sem esperar o recarregamento do catálogo', async () => {
+    const slowRefresh = pendingResponse(() => json({ items: [POSTGRES] }));
+    api.respond('GET /v1/connections', json({ items: [POSTGRES] }), slowRefresh.promise);
+    api.respond(CREATE, json({ ...ITEM_VALUE_VARIABLE, id: '70000000-0000-0000-0000-000000000009', column: 'cliente', name: 'nome_cliente', type: 'text', scale: null }, 201));
+    const { user } = renderScreen(<DatasetDetail datasetId={DATASET.id} />);
+    await within(await findVariablesTable()).findByText('valor_item');
+
+    const dialog = await openNew(user);
+    await choose(user, dialog, 'Coluna', 'cliente · Texto');
+    await user.click(within(dialog).getByRole('textbox', { name: 'Nome' }));
+    await user.paste('nome_cliente');
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    // The reload is still waiting, in the background.
+    await waitFor(() => expect(api.callsTo('GET /v1/connections')).toHaveLength(2));
+    slowRefresh.release();
   });
 
   it('fora do decimal, envia scale nula', async () => {
@@ -402,6 +436,36 @@ describe('Variáveis do dataset: editar', () => {
 
     const name = within(dialog).getByRole('textbox', { name: 'Nome' });
     await waitFor(() => expect(name).toHaveAccessibleDescription(new RegExp(`^${INVALID_VARIABLE_NAME_MESSAGE}`)));
+  });
+
+  it('tipo que a coluna não aceita mais: aparece marcado e salvar exige escolher um tipo válido', async () => {
+    // The column vl_itm became text after "Atualizar colunas": a decimal variable is not accepted over it anymore.
+    const changed: Schemas['Dataset'] = {
+      ...DATASET,
+      columns: DATASET.columns.map((column) =>
+        column.name === 'vl_itm' ? { ...column, source_type: 'varchar(20)', type: 'text', scale: null } : column,
+      ),
+    };
+    api.respond(DETAIL, json(changed));
+    api.respond(`PUT ${VARIABLE}`, json({ ...ITEM_VALUE_VARIABLE, type: 'text', scale: null }));
+    const { user } = renderScreen(<DatasetDetail datasetId={DATASET.id} />);
+
+    const menu = await openRowMenu(user, 'valor_item');
+    await user.click(within(menu).getByRole('menuitem', { name: 'Editar variável' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Editar variável' });
+    expect(within(dialog).getByRole('combobox', { name: 'Tipo' })).toHaveTextContent('Decimal (não aceito mais)');
+
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+    await waitFor(() =>
+      expect(within(dialog).getByRole('combobox', { name: 'Tipo' })).toHaveAccessibleDescription(new RegExp(`^${TYPE_NOT_ACCEPTED_MESSAGE}`)),
+    );
+    expect(api.callsTo(`PUT ${VARIABLE}`)).toHaveLength(0);
+
+    expect(await optionsOf(user, dialog, 'Tipo')).toEqual(['Texto', 'Decimal (não aceito mais)']);
+    await choose(user, dialog, 'Tipo', 'Texto');
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(await bodyOf(api.callsTo(`PUT ${VARIABLE}`)[0]!)).toEqual({ name: 'valor_item', type: 'text', scale: null });
   });
 
   it('variável cuja coluna saiu do dataset: marca a linha e desabilita o Salvar com o motivo', async () => {

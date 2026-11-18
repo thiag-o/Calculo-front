@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Admin as AdminScreen, ADMIN_TAB_PERMISSIONS } from '../../admin';
 import { Audit as AuditScreen } from '../../audit';
+import { Catalog as CatalogScreen, CATALOG_PERMISSION } from '../../catalog';
 import { Home as HomeScreen } from '../../home';
 import { useSession } from '../../session';
 import { ModuleLoading, ModuleError, NoAccess } from '../ModuleStates';
@@ -17,6 +18,7 @@ export type StandaloneScreenProps = Pick<FluxoCalculoProps, 'apiUrl' | 'token' |
 export type HomeProps = StandaloneScreenProps;
 export type AdminProps = StandaloneScreenProps;
 export type AuditProps = StandaloneScreenProps;
+export type CatalogProps = StandaloneScreenProps;
 
 interface StandaloneDefinition {
   /** Screen name: label of the region that wraps it. */
@@ -91,6 +93,16 @@ const AUDIT_SCREEN: StandaloneDefinition = {
   content: <AuditScreen />,
 };
 
+const CATALOG_SCREEN: StandaloneDefinition = {
+  name: 'Catálogo',
+  target: 'o Catálogo',
+  access: {
+    allowed: (hasPermission) => hasPermission(CATALOG_PERMISSION),
+    noAccess: 'Você não tem acesso ao Catálogo',
+  },
+  content: <CatalogScreen />,
+};
+
 const ADMIN_SCREEN: StandaloneDefinition = {
   name: 'Administração',
   target: 'a Administração',
@@ -118,4 +130,12 @@ export function Admin(props: AdminProps) {
 /** The Audit, on its own, outside `<FluxoCalculo>`. Requires `audit.view`; without it, shows the "no access" state. */
 export function Audit(props: AuditProps) {
   return <StandaloneScreen {...props} definition={AUDIT_SCREEN} />;
+}
+
+/**
+ * The Catalog, on its own, outside `<FluxoCalculo>`: the Conexões, Datasets and Arquivos tabs and the details, switched
+ * without touching the URL. Requires `connections.view`; without it, shows the "no access" state.
+ */
+export function Catalog(props: CatalogProps) {
+  return <StandaloneScreen {...props} definition={CATALOG_SCREEN} />;
 }

@@ -31,6 +31,14 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
   const [chosen, setChosen] = useState<File | null>(null);
   const [clientError, setClientError] = useState<UploadError | null>(null);
   const [dragging, setDragging] = useState(false);
+  const sendButton = useRef<HTMLButtonElement>(null);
+
+  function cancelUpload() {
+    upload.cancel();
+    setChosen(null);
+    // The "Cancelar" button leaves with the upload: the focus goes back to "Enviar arquivo".
+    sendButton.current?.focus();
+  }
 
   function send(file: File) {
     setChosen(file);
@@ -144,7 +152,8 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
             event.target.value = '';
           }}
         />
-        <Button variant="primary" loading={pending} onClick={() => input.current?.click()}>
+        {pending ? <Button onClick={cancelUpload}>Cancelar</Button> : null}
+        <Button ref={sendButton} variant="primary" loading={pending} onClick={() => input.current?.click()}>
           Enviar arquivo
         </Button>
       </div>

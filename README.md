@@ -13,7 +13,7 @@ Para incorporar o módulo num sistema hospedeiro, veja o [guia de incorporação
 
 ```
 frontend/
-├── packages/react/   @fluxo/react: o produto, organizado por verticais (ADR 0003)
+├── packages/react/   @fluxo/react: o produto, organizado por verticais (ADR 0003); exporta <FluxoCalculo> e as telas avulsas <Home>, <Catalog>, <Audit> e <Admin>
 ├── apps/shell/       app casca (próprio): login + layout, usando o pacote (ADR 0002)
 ├── docs/
 │   ├── ambientes.md  local, homologação, produção e variáveis

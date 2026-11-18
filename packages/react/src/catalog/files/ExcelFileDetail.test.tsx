@@ -224,15 +224,18 @@ describe('Arquivo Excel: novo dataset de uma aba', () => {
 describe('Arquivo Excel: remover', () => {
   it('pede confirmação, remove e avisa quem usa a tela', async () => {
     api.respond(`DELETE /v1/excel-files/${EXCEL_FILE.id}`, new Response(null, { status: 204 }));
-    const { user, onDeleted } = renderDetail();
+    const { user, onDeleted, queryClient } = renderDetail();
 
     await user.click(await screen.findByRole('button', { name: 'Remover arquivo' }));
     const dialog = await screen.findByRole('dialog', { name: 'Remover arquivo' });
     expect(dialog).toHaveAccessibleDescription(/metas-2026.xlsx sai do catálogo/);
+    expect(queryClient.getQueryData(['catalog', 'files', 'detail', EXCEL_FILE.id])).toBeDefined();
     await user.click(within(dialog).getByRole('button', { name: 'Remover arquivo' }));
 
     await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('metas-2026.xlsx'));
     expect(api.callsTo(`DELETE /v1/excel-files/${EXCEL_FILE.id}`)).toHaveLength(1);
+    // The deleted file's detail is out of the cache.
+    expect(queryClient.getQueryData(['catalog', 'files', 'detail', EXCEL_FILE.id])).toBeUndefined();
   });
 
   it('cancelar não remove e devolve o foco ao botão', async () => {

@@ -1,0 +1,17 @@
+/*
+ * Catalog screen (estilos.md §3, §7.7 and §9): the h1 title, 16px above the internal tabs, and the chosen tab 32px below
+ * them. The tabs come from the design system (`Tabs`, small size); in embedded mode they sit below the module tabs.
+ * Only fc- classes and --fc-* variables; no global reset, no z-index and no full-window measurement (ADR 0002).
+ */
+
+.fc-catalog {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fc-catalog-tabs {
+  gap: 32px;
+}

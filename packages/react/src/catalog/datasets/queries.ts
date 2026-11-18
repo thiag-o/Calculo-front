@@ -226,11 +226,12 @@ type VariableList = Schemas['VariableList'];
 
 /**
  * After a variable change: the list in the cache gets the answer right away (`change`), and the rest of the catalog is
- * fetched again, except the dataset detail and its variables (ADR 0033).
+ * fetched again in the background, except the dataset detail and its variables (ADR 0033). It does not wait for that: the
+ * dialog closes as soon as the API confirms.
  */
 function afterVariableChange(queryClient: QueryClient, datasetId: string, change: (items: Variable[]) => Variable[]) {
   queryClient.setQueryData<VariableList>(variablesKey(datasetId), (list) => (list ? { items: change(list.items) } : list));
-  return refreshCatalog(queryClient, datasetKey(datasetId));
+  void refreshCatalog(queryClient, datasetKey(datasetId));
 }
 
 /**

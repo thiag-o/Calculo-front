@@ -33,6 +33,17 @@ export const ADMIN_PERMISSIONS = [
   'integration.manage',
   'security.manage',
 ];
+/** The Integrador: manages the whole catalog (connections, credentials, datasets and variables). */
+export const INTEGRATOR_PERMISSIONS = [
+  'workflows.view',
+  'executions.view',
+  'connections.view',
+  'connections.manage',
+  'credentials.manage',
+  'datasets.manage',
+  'variables.manage',
+  'free_sql.use',
+];
 export const CONFIGURATOR_PERMISSIONS = [
   'workflows.view',
   'workflows.edit',

@@ -139,6 +139,26 @@ function LoadedDetail({
     skeletonWidth: 100,
     cell: (column) => {
       if (variables.isPending) return <Skeleton width={80} />;
+      // The list failed: the column says so (not an empty cell, which would read as "no variables") and offers to try again,
+      // once, on the first row.
+      if (variables.isError && variables.data === undefined) {
+        return (
+          <span className="fc-datasets-column-variables">
+            <Text variant="label-13" emphasis="secondary">
+              Não carregou
+            </Text>
+            {column === dataset.columns[0] && !(variables.error instanceof ApiError && variables.error.code === 'no_permission') ? (
+              <Button
+                size="small"
+                variant="ghost"
+                aria-label="Tentar de novo: variáveis das colunas"
+                loading={variables.isFetching} onClick={() => void variables.refetch()}>
+                Tentar de novo
+              </Button>
+            ) : null}
+          </span>
+        );
+      }
       const names = (variables.data ?? []).filter((variable) => variable.column === column.name).map((variable) => variable.name);
       if (names.length === 0) return null;
       return (
@@ -204,7 +224,7 @@ function LoadedDetail({
 
       {dataset.type === 'sql' && dataset.sql ? (
         <section className="fc-datasets-section" aria-labelledby={sqlTitleId}>
-          <Text as="h2" variant="heading-16" id={sqlTitleId}>
+          <Text as="h3" variant="heading-16" id={sqlTitleId}>
             SQL
           </Text>
           <pre className="fc-datasets-sql-view">
@@ -215,7 +235,7 @@ function LoadedDetail({
 
       <section className="fc-datasets-section" aria-labelledby={columnsTitleId}>
         <div className="fc-datasets-title">
-          <Text as="h2" variant="heading-16" id={columnsTitleId}>
+          <Text as="h3" variant="heading-16" id={columnsTitleId}>
             Colunas
           </Text>
           <Text as="p" variant="label-14" emphasis="secondary">
@@ -260,12 +280,12 @@ function LoadedDetail({
   );
 }
 
-/** The screen title (h1), the same in every state, with "Voltar para datasets" above it. */
+/** The detail title (h2, under the Catalog h1), the same in every state, with "Voltar para datasets" above it. */
 function DetailFrame({ title, back, children }: { title: string; back: ReactNode; children: ReactNode }) {
   return (
     <div className="fc-datasets-detail">
       {back}
-      <Text as="h1" variant="heading-24" className="fc-datasets-heading">
+      <Text as="h2" variant="heading-24" className="fc-datasets-heading">
         {title}
       </Text>
       {children}

@@ -115,7 +115,11 @@ function ModuleRoutes({ embedded, session, screens, initial }: ModuleRoutesProps
       <Route element={embedded ? <EmbeddedLayout screens={screens} /> : <ShellLayout session={session} screens={screens} />}>
         <Route index element={toInitial} />
         {screens.map((definition) => (
-          <Route key={definition.id} path={definition.path} element={definition.content} />
+          <Route
+            key={definition.id}
+            path={definition.nested ? `${definition.path}/*` : definition.path}
+            element={definition.content}
+          />
         ))}
         {sections.map((group) => (
           <Route

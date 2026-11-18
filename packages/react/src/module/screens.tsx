@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Admin, ADMIN_TAB_PERMISSIONS, type AdminTab } from '../admin';
 import { Audit } from '../audit';
+import { Catalog, CATALOG_PERMISSION, type CatalogLocation, type CatalogTab } from '../catalog';
 import { Home } from '../home';
-import { AdminIcon, AuditIcon, HomeIcon } from './icons';
+import { AdminIcon, AuditIcon, CatalogIcon, HomeIcon } from './icons';
 
 /** Sidebar sections (estilos.md §9). Screens without a section stay at the top of the menu. */
 export type MenuSection = 'admin';
@@ -23,12 +24,13 @@ export const SECTIONS: Record<MenuSection, { label: string; path: string; icon: 
 /**
  * The screens `<FluxoCalculo>` can open through the `screen` prop. Each epic adds its own.
  * - `home`: Início, open to everyone;
+ * - `catalog`: Catálogo (`connections.view`);
  * - `audit`: Auditoria (`audit.view`);
  * - `admin`: Administração, on the first allowed area;
  * - `users`, `roles`, `integration` and `security`: Administração already on one area, each with its own permission.
  * Without the permission, the module opens on the first allowed screen.
  */
-export type FluxoScreen = 'home' | 'audit' | MenuSection | AdminTab;
+export type FluxoScreen = 'home' | 'catalog' | 'audit' | MenuSection | AdminTab;
 
 /** A module screen: internal route and sidebar item (shell) or tab (embedded). */
 export interface ScreenDefinition {
@@ -46,6 +48,8 @@ export interface ScreenDefinition {
    * (embedded mode), and the screen itself navigates between its screens with internal tabs.
    */
   section?: MenuSection;
+  /** The screen owns the routes below its path (`path/*`, e.g. the Catalog details); without it, only `path` itself opens. */
+  nested?: boolean;
   content: ReactNode;
 }
 
@@ -61,6 +65,41 @@ function RoutedAdmin({ tab }: { tab: AdminTab }) {
   return <Admin tab={tab} onTabChange={(other) => void navigate(`/${adminPath(other)}`)} />;
 }
 
+const CATALOG_PATH = 'catalog';
+const CATALOG_TABS: readonly CatalogTab[] = ['connections', 'datasets', 'files'];
+
+/**
+ * Reads the Catalog location from the address: `/catalog` (the Conexões list), `/catalog/connections/:id`,
+ * `/catalog/datasets` and `/catalog/datasets/:id`, `/catalog/files` and `/catalog/files/:id`.
+ */
+function catalogLocation(pathname: string): CatalogLocation {
+  const [, , tab, id] = pathname.split('/');
+  const known = CATALOG_TABS.find((candidate) => candidate === tab);
+  return { tab: known ?? 'connections', id: known && id ? safeDecode(id) : null };
+}
+
+/** `decodeURIComponent` that does not throw on a malformed address (`%zz`): the id stays as typed and the API answers "not found". */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/** Route path of a Catalog location (the Conexões list is the Catalog's own path). */
+function catalogPath({ tab, id }: CatalogLocation): string {
+  if (id) return `/${CATALOG_PATH}/${tab}/${encodeURIComponent(id)}`;
+  return tab === 'connections' ? `/${CATALOG_PATH}` : `/${CATALOG_PATH}/${tab}`;
+}
+
+/** The `<Catalog>` inside the module: the tab and the open item are the route, so the sidebar and the address agree. */
+function RoutedCatalog() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  return <Catalog location={catalogLocation(pathname)} onLocationChange={(next) => void navigate(catalogPath(next))} />;
+}
+
 /** An Admin area: route with its permission, inside the Administração section (internal tab of `<Admin>`). */
 function adminArea(id: AdminTab, label: string): ScreenDefinition & { id: FluxoScreen } {
   return {
@@ -74,12 +113,21 @@ function adminArea(id: AdminTab, label: string): ScreenDefinition & { id: FluxoS
 }
 
 /**
- * The module screens, in menu order (design.md §15): Início and Auditoria; then the Administração section, with
+ * The module screens, in menu order (design.md §15): Início, Catálogo and Auditoria; then the Administração section, with
  * Usuários, Papéis, Integração and Segurança, each with its area's permission. The sidebar items and the embedded mode
- * tabs are the same: Início, Auditoria and Administração.
+ * tabs are the same: Início, Catálogo, Auditoria and Administração.
  */
 export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
   { id: 'home', label: 'Início', path: 'home', icon: <HomeIcon />, content: <Home /> },
+  {
+    id: 'catalog',
+    label: 'Catálogo',
+    path: CATALOG_PATH,
+    icon: <CatalogIcon />,
+    permission: CATALOG_PERMISSION,
+    nested: true,
+    content: <RoutedCatalog />,
+  },
   {
     id: 'audit',
     label: 'Auditoria',

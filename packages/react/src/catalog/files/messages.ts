@@ -13,6 +13,7 @@ export const SPLIT_FILE_HINT = 'Divida a planilha ou tire as abas que não vão 
 export const FILE_IN_USE_MESSAGE = 'O arquivo é usado por datasets. Remova esses datasets antes de remover o arquivo.';
 export const DATASET_ALREADY_EXISTS_MESSAGE = 'Já existe um dataset com esse nome neste tenant. Escolha outro nome.';
 export const UNKNOWN_SHEET_MESSAGE = 'A aba não existe mais no arquivo. Envie o arquivo de novo e crie o dataset a partir dele.';
+const TOO_LARGE_MESSAGE = `O arquivo passa do tamanho máximo aceito (${MAX_FILE_MB} MB).`;
 const MISSING_FILE_MESSAGE = 'Escolha um arquivo .xlsx para enviar.';
 const UNKNOWN_MESSAGE = 'Não foi possível concluir agora. Tente de novo em instantes.';
 
@@ -41,6 +42,10 @@ export function clientUploadError(file: Pick<File, 'name' | 'size'>): UploadErro
 /** Error of `POST /v1/excel-files`, by `code` (ADR 0008). */
 export function uploadError(error: unknown): UploadError {
   if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE, cells: [], retry: true };
+  // A proxy in front of the API may refuse the size with a 413 that is not problem+json: same message, and no retry.
+  if (error.status === 413 && error.code !== 'file_too_large') {
+    return { message: `${TOO_LARGE_MESSAGE} ${SPLIT_FILE_HINT}`, cells: [], retry: false };
+  }
   switch (error.code) {
     case 'file_too_large':
       // The API says the limit it applies (it may be set below the default).

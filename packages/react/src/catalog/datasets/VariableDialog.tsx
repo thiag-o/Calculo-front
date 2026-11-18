@@ -14,6 +14,8 @@ export function columnGoneReason(column: string): string {
 }
 
 export const NAME_TOOLTIP = 'Letras minúsculas sem acento, números e _, começando por uma letra. Ex.: valor_item';
+export const TYPE_NOT_ACCEPTED_LABEL = 'não aceito mais';
+export const TYPE_NOT_ACCEPTED_MESSAGE = 'O tipo atual não é mais aceito para esta coluna. Escolha outro tipo.';
 export const TYPE_TOOLTIP = 'Só aparecem os tipos aceitos para o tipo da coluna.';
 
 function scaleTooltip(minimum: number): string {
@@ -47,6 +49,11 @@ function createSchema(columns: readonly Column[]) {
         context.addIssue({ code: 'custom', path: ['name'], message: INVALID_VARIABLE_NAME_MESSAGE });
       }
       if (data.column !== '' && data.type === '') context.addIssue({ code: 'custom', path: ['type'], message: 'Escolha o tipo' });
+      // The column changed after the variable was made (someone used "Atualizar colunas"): the current type may not be
+      // accepted anymore, and saving needs a valid one.
+      else if (column && data.type !== '' && !acceptedTypes(column).some((accepted) => accepted === data.type)) {
+        context.addIssue({ code: 'custom', path: ['type'], message: TYPE_NOT_ACCEPTED_MESSAGE });
+      }
       if (data.type === 'decimal') {
         const minimum = minimumScale(column);
         const scale = data.scale.trim();
@@ -114,6 +121,13 @@ export function VariableDialog({ dataset, variable, onClose, focusOnClose }: Var
 
   const column = supportedColumns.find((item) => item.name === columnName);
   const types = column ? acceptedTypes(column) : [];
+  // Editing: the variable's current type no longer in the column's accepted ones. It stays in the picker, marked and not
+  // selectable again once changed, so the person sees what it was.
+  const staleType = editing && column && !types.includes(variable.type) ? variable.type : undefined;
+  const typeOptions = [
+    ...types.map((value) => ({ value, label: DATA_TYPE_LABELS[value] })),
+    ...(staleType ? [{ value: staleType, label: `${DATA_TYPE_LABELS[staleType]} (${TYPE_NOT_ACCEPTED_LABEL})`, disabled: true }] : []),
+  ];
   // Editing a variable whose column left the dataset (or lost its type) after "Atualizar colunas": nothing to save.
   const columnGone = editing && column === undefined;
   const disabledReason = columnGone ? columnGoneReason(variable.column) : undefined;
@@ -217,7 +231,7 @@ export function VariableDialog({ dataset, variable, onClose, focusOnClose }: Var
               <Select
                 ref={field.ref}
                 label="Tipo"
-                options={types.map((value) => ({ value, label: DATA_TYPE_LABELS[value] }))}
+                options={typeOptions}
                 value={field.value}
                 onValueChange={(value) => {
                   field.onChange(value);

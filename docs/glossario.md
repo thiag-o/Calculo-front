@@ -151,6 +151,25 @@ Muda na versão maior da F41 (changeset `.changeset/f41-codigo-em-ingles.md`).
 | `teste-incorporacao.html` (página de teste) | `embed-test.html` |
 | elemento `#raiz` do `index.html` | `#root` |
 
+## Catálogo (épico 3)
+
+Nomes nascidos já em inglês no épico 3 (F29 a F34), pelo vocabulário do back. Não há "português" de antes: a coluna da esquerda é o conceito.
+
+| Conceito | Nome no código |
+|---|---|
+| tela do Catálogo, com as abas Conexões, Datasets e Arquivos | `<Catalog>`, `CatalogProps`, `CatalogTab` (`connections`, `datasets`, `files`), `CatalogLocation` (`tab`, `id`); `<Catalog>` avulso do pacote com `CatalogProps` de `StandaloneScreenProps` |
+| permissões do Catálogo | `CATALOG_PERMISSION`, `CATALOG_TAB_PERMISSIONS` (todas `connections.view`) |
+| conexões (aba Conexões) | `Connections`, `ConnectionList`, `ConnectionDetail`, `NewConnectionDialog`, `CredentialDialog`, `RenameConnectionDialog`, `DeleteConnectionDialog` |
+| datasets (aba Datasets) | `Datasets`, `DatasetDetail`, `NewDatasetDialog`, `RenameDatasetDialog`, `DeleteDatasetDialog` |
+| variáveis do dataset | `DatasetVariables`, `VariableDialog`, `DeleteVariableDialog`, `variableRules.ts` |
+| colunas e rótulos de `DataType` | `ColumnsTable`, `DATA_TYPE_LABELS`, `dataTypeLabel`, `columnTypeLabel` (`catalog/columns/`) |
+| arquivos Excel (aba Arquivos) | `ExcelFiles`, `ExcelFileList`, `ExcelFileDetail`, `UploadArea`, `NewSheetDatasetDialog`, `DeleteExcelFileDialog` |
+| rotas da URL | `/catalog`, `/catalog/connections/:id`, `/catalog/datasets`, `/catalog/datasets/:id`, `/catalog/files`, `/catalog/files/:id` |
+| valor de `screen` | `catalog` |
+| chaves de cache | `['catalog', 'connections' \| 'datasets' \| 'files', …]` (ADR 0033) |
+| pastas | `catalog/connections`, `catalog/datasets`, `catalog/files`, `catalog/columns` |
+| ícone do menu | `CatalogIcon` (`module/icons.tsx`) |
+
 ## Chaves de cache (TanStack Query)
 
 | Português | Inglês |

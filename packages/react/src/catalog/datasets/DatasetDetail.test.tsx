@@ -62,12 +62,12 @@ describe('Detalhe do dataset', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Carregando o dataset');
     pending.release();
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Itens de nota fiscal' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Itens de nota fiscal' })).toBeInTheDocument();
     expect(screen.getByText('Tabela ou view')).toBeInTheDocument();
     expect(await screen.findByText('Postgres de exemplo')).toBeInTheDocument();
     expect(screen.getByText('public.itens_nf')).toBeInTheDocument();
     expect(screen.getByText(/^Colunas lidas em \d{2}\/\d{2}\/2026 às \d{2}:\d{2}$/)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Colunas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Colunas' })).toBeInTheDocument();
     expect(screen.getByText('3 colunas')).toBeInTheDocument();
 
     const headers = within(columnsTable()).getAllByRole('columnheader').map((header) => header.textContent);
@@ -94,7 +94,7 @@ describe('Detalhe do dataset', () => {
     api.respond(`GET /v1/datasets/${SQL_DATASET.id}`, json(SQL_DATASET));
     renderScreen(<DatasetDetail datasetId={SQL_DATASET.id} />);
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'SQL' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 3, name: 'SQL' })).toBeInTheDocument();
     expect(screen.getByText(SQL_DATASET.sql!)).toBeInTheDocument();
     expect(await screen.findByText('ERP SQL Server')).toBeInTheDocument();
     cleanup();
@@ -123,7 +123,7 @@ describe('Detalhe do dataset', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Texto do servidor para unavailable.');
     await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Itens de nota fiscal' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Itens de nota fiscal' })).toBeInTheDocument();
   });
 
   it('sem datasets.manage, mostra só para leitura', async () => {
@@ -206,7 +206,7 @@ describe('Detalhe do dataset: renomear', () => {
     await user.type(name, '  Itens de NF ');
     await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Itens de NF' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Itens de NF' })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Renomear dataset' })).toHaveFocus();
     const [request] = api.callsTo(`PUT /v1/datasets/${TABLE_DATASET.id}`);
@@ -250,7 +250,7 @@ describe('Detalhe do dataset: remover', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Remover dataset' }));
 
     await waitFor(() => expect(onDeleted).toHaveBeenCalled());
-    expect(await screen.findByRole('heading', { level: 1, name: 'Dataset removido' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Dataset removido' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(api.callsTo(DETAIL)).toHaveLength(1);
   });
