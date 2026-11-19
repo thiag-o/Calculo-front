@@ -887,6 +887,9 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
     - o "Recarregar" do `409 connection_changed` trata a falha da própria recarga, com a mensagem e a opção de tentar de novo;
     - o diálogo não fecha quando a recarga falha, e o texto digitado fica;
     - o link "Abrir conexão" dentro do "Novo dataset" pede confirmação, ou abre a conexão sem descartar o formulário, antes de trocar de aba;
+    - quando a API não manda mensagem, o aviso de conflito no detalhe da conexão usa um texto padrão em pt-BR, nunca vazio;
+    - o `isCredentialUnreadable` duplicado em `connections/messages.ts` e `datasets/messages.ts` vira uma função só, no lugar comum do catálogo;
+    - o PUT de renomear dataset também pode responder `409 connection_credential_unreadable`: a tela de renomear mostra a mesma mensagem das outras telas de dataset;
   - **resíduos da F41:** `screen: screen` e `{ body: body }` viram a forma curta; as descrições de teste que ainda citam `navegacao` e `memoria` passam a citar `navigation` e `memory`. Os arquivos acima são os que a busca achou; confira de novo no começo da tarefa;
   - **429 do teste de conexão (E4-16):** em `catalog/connections/`, o `too_many_connection_tests` mostra "Muitos testes de conexão seguidos. Tente de novo em N s.", com o `retry_after_seconds`, e desabilita **Testar** com esse motivo até o tempo passar.
 - Aceite:
