@@ -25,6 +25,7 @@ Executado pela skill `orquestrar-frente` (frente `frontend`), sob a orquestraç�
   - dicionários: `../backend/docs/glossario.md` (API) e `docs/glossario.md` (front, tarefa F41). Até a F42 terminar, o código ainda tem nomes em português; código novo usa os nomes dos glossários;
   - os nomes desta seção e da seção "Contratos" (`apps/casca`, `api/gerado`, `pnpm gerar:api`, `<FluxoCalculo tela tema navegacao onEvento …>`, `<Inicio>`, `<Catalogo>` etc.) valem, depois da F41 e da F42, pela tradução do glossário (lista no começo do épico 3).
 - **Nunca agir com dúvida** (skill orquestrar-frente §3).
+- **Portas proibidas (regra do dono, 2026-11-19):** nunca use as portas 5000 nem 5001 no host, como padrão, em teste, na integração ou em release. Isso vale para Compose, `.env`, servidores de desenvolvimento, Playwright e scripts. A porta interna de um container (o Moto escuta na 5000 dentro dele) pode ficar; só a porta publicada no host muda.
 
 ## Contratos
 Valem para todas as tarefas. Mudar um contrato exige tarefa de contrato própria.
