@@ -360,6 +360,20 @@ export const EXAMPLES = {
     detail: 'Já existe uma conexão com esse nome.',
     code: 'connection_already_exists'
   },
+  ConnectionChanged: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'A conexão foi alterada por outra ação enquanto esta acontecia. Confira e tente de novo.',
+    code: 'connection_changed'
+  },
+  ConnectionCredentialUnreadable: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'A credencial desta conexão não pôde ser lida. Cadastre a credencial de novo.',
+    code: 'connection_credential_unreadable'
+  },
   ConnectionInUse: {
     type: 'about:blank',
     title: 'Conflito',

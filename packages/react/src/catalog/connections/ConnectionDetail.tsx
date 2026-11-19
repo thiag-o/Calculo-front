@@ -7,7 +7,8 @@ import { DeleteConnectionDialog } from './DeleteConnectionDialog';
 import { dateTime, TYPE_LABELS } from './format';
 import { BackIcon, MoreActionsIcon } from './icons';
 import { isNotFoundError } from '../errors';
-import { NO_PERMISSION_MESSAGE, formError, queryErrorMessage } from './messages';
+import { NO_PERMISSION_MESSAGE, formError, isConnectionChanged, isCredentialUnreadable, queryErrorMessage } from './messages';
+import { ReloadNotice } from './ReloadNotice';
 import { RenameConnectionDialog } from './RenameConnectionDialog';
 import { CONNECTIONS_MANAGE, CREDENTIALS_MANAGE, useConnection, useTestConnection, type Connection } from './queries';
 import { TestResult, TestStatus } from './TestStatus';
@@ -66,7 +67,13 @@ export function ConnectionDetail({ connectionId, onBack, focusTitle = false }: C
     );
   }
 
-  return <LoadedDetail connection={connection} onBack={onBack} focusTitle={focusTitle} refetchError={query.isError ? query.error : null} />;
+  return <LoadedDetail
+      connection={connection}
+      onBack={onBack}
+      focusTitle={focusTitle}
+      refetchError={query.isError ? query.error : null}
+      onReload={() => query.refetch()}
+    />;
 }
 
 /** The "Voltar para Conexões" button above the detail, in every state. */
@@ -88,9 +95,11 @@ interface LoadedDetailProps {
   onBack: () => void;
   focusTitle: boolean;
   refetchError: Error | null;
+  /** Fetches the connection again (the "Recarregar" of a version conflict). */
+  onReload: () => Promise<unknown>;
 }
 
-function LoadedDetail({ connection, onBack, focusTitle, refetchError }: LoadedDetailProps) {
+function LoadedDetail({ connection, onBack, focusTitle, refetchError, onReload }: LoadedDetailProps) {
   const titleId = useId();
   const session = useSession();
   const test = useTestConnection(connection.id);
@@ -110,6 +119,11 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError }: LoadedDe
   if (canManage) items.push({ type: 'separator' }, { label: 'Remover conexão', danger: true, onSelect: () => setDialog('delete') });
 
   const close = () => setDialog(null);
+  // After a version conflict: the connection is fetched again and the dialog closes, so it opens again with the current data.
+  const reloadAndClose = async () => {
+    await onReload();
+    close();
+  };
   const target = canManageCredentials ? connection.target : null;
   const lastTest = connection.last_test;
 
@@ -151,7 +165,28 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError }: LoadedDe
       {refetchError ? <Notice type="error" title="Não foi possível atualizar a conexão">{queryErrorMessage(refetchError, NO_PERMISSION_MESSAGE, true)}</Notice> : null}
 
       <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
-      {test.error ? <Notice type="error">{formError(test.error).message}</Notice> : null}
+      {test.error && isConnectionChanged(test.error) ? (
+        <ReloadNotice
+          message={formError(test.error).message ?? ''}
+          onReload={async () => {
+            await onReload();
+            test.reset();
+          }}
+        />
+      ) : test.error ? (
+        <Notice
+          type="error"
+          actions={
+            isCredentialUnreadable(test.error) && canManageCredentials ? (
+              <Button size="small" onClick={() => setDialog('credential')}>
+                Trocar credencial
+              </Button>
+            ) : undefined
+          }
+        >
+          {formError(test.error).message}
+        </Notice>
+      ) : null}
 
       <Card as="div">
         <dl className="fc-connections-pairs">
@@ -186,9 +221,9 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError }: LoadedDe
         </dl>
       </Card>
 
-      {dialog === 'rename' ? <RenameConnectionDialog connection={connection} onClose={close} focusOnClose={moreButton} /> : null}
+      {dialog === 'rename' ? <RenameConnectionDialog connection={connection} onClose={close} onReload={reloadAndClose} focusOnClose={moreButton} /> : null}
       {dialog === 'credential' && canManageCredentials ? (
-        <CredentialDialog connection={connection} canTest={canManage} onClose={close} focusOnClose={moreButton} />
+        <CredentialDialog connection={connection} canTest={canManage} onClose={close} onReload={reloadAndClose} focusOnClose={moreButton} />
       ) : null}
       {dialog === 'delete' ? (
         <DeleteConnectionDialog connection={connection} onClose={close} onDeleted={onBack} focusOnClose={moreButton} />

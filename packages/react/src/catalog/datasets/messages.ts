@@ -195,3 +195,8 @@ export function deleteVariableErrorMessage(error: unknown): string {
       return error.message;
   }
 }
+
+/** `409 connection_credential_unreadable`: the stored credential of the connection cannot be read; it must be registered again. */
+export function isCredentialUnreadable(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'connection_credential_unreadable';
+}

@@ -13,8 +13,10 @@ import {
   UNKNOWN_CONNECTION_MESSAGE,
   UNKNOWN_OBJECT_MESSAGE,
   createError,
+  isCredentialUnreadable,
   queryErrorMessage,
 } from './messages';
+import { UnreadableCredentialNotice } from './UnreadableCredentialNotice';
 
 export const CONNECTIONS_LOADING_REASON = 'Aguarde a lista de conexões';
 export const CONNECTIONS_ERROR_REASON = 'Carregue a lista de conexões para salvar';
@@ -60,6 +62,8 @@ export interface NewDatasetDialogProps {
   onClose: () => void;
   /** Called after saving, with the created dataset. */
   onCreated: (dataset: Dataset) => void;
+  /** Opens a connection, from the unreadable credential notice. */
+  onOpenConnection?: (id: string) => void;
 }
 
 /**
@@ -67,7 +71,7 @@ export interface NewDatasetDialogProps {
  * of the chosen one and give the name. With `free_sql.use`, the origin can be free SQL, in a monospaced area; a refused
  * SQL shows the reason in the field. Mount it only while open: each opening starts from scratch.
  */
-export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }: NewDatasetDialogProps) {
+export function NewDatasetDialog({ allowSql, onClose, onCreated, onOpenConnection, focusOnClose }: NewDatasetDialogProps) {
   const formId = useId();
   const connections = useDatasetConnections();
   const create = useCreateDataset();
@@ -229,9 +233,10 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }:
               connectionId={connectionId}
               value={object}
               onChange={chooseObject}
+              onOpenConnection={onOpenConnection}
               error={errors.object?.message ?? apiError?.fields.object}
             />
-            {object ? <ObjectColumns connectionId={connectionId} object={object} /> : null}
+            {object ? <ObjectColumns connectionId={connectionId} object={object} onOpenConnection={onOpenConnection} /> : null}
           </>
         ) : null}
 
@@ -248,14 +253,26 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, focusOnClose }:
 
         <TextField label="Nome" autoComplete="off" error={errors.name?.message ?? apiError?.fields.name} {...register('name')} />
 
-        {apiError?.message ? <Notice type="error">{apiError.message}</Notice> : null}
+        {apiError?.message && isCredentialUnreadable(create.error) ? (
+          <UnreadableCredentialNotice message={apiError.message} connectionId={connectionId} onOpenConnection={onOpenConnection} />
+        ) : apiError?.message ? (
+          <Notice type="error">{apiError.message}</Notice>
+        ) : null}
       </form>
     </Dialog>
   );
 }
 
 /** The columns of the chosen table or view, to check before creating the dataset. */
-function ObjectColumns({ connectionId, object }: { connectionId: string; object: ChosenObject }) {
+function ObjectColumns({
+  connectionId,
+  object,
+  onOpenConnection,
+}: {
+  connectionId: string;
+  object: ChosenObject;
+  onOpenConnection?: (id: string) => void;
+}) {
   const columns = useObjectColumns(connectionId, object);
   const qualified = `${object.schema_name}.${object.name}`;
   return (
@@ -268,7 +285,13 @@ function ObjectColumns({ connectionId, object }: { connectionId: string; object:
         columns={columns.data}
         loading={columns.isPending}
         error={
-          columns.isError ? (
+          columns.isError && isCredentialUnreadable(columns.error) ? (
+            <UnreadableCredentialNotice
+              message={queryErrorMessage(columns.error, UNKNOWN_OBJECT_MESSAGE)}
+              connectionId={connectionId}
+              onOpenConnection={onOpenConnection}
+            />
+          ) : columns.isError ? (
             <Notice
               type="error"
               title="Não foi possível ler as colunas"

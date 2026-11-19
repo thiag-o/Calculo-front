@@ -17,7 +17,8 @@ import { DATASET_TYPE_LABELS, dateTime, datasetOrigin } from './origin';
 import { RenameDatasetDialog } from './RenameDatasetDialog';
 import { DeleteDatasetDialog } from './DeleteDatasetDialog';
 import { BackIcon, RefreshIcon, TableIcon } from './icons';
-import { queryErrorMessage, refreshErrorMessage } from './messages';
+import { isCredentialUnreadable, queryErrorMessage, refreshErrorMessage } from './messages';
+import { UnreadableCredentialNotice } from './UnreadableCredentialNotice';
 import './datasets.css';
 
 export const COLUMNS_REFRESHED_MESSAGE = 'Colunas lidas de novo da origem.';
@@ -29,6 +30,8 @@ export interface DatasetDetailProps {
   onBack?: () => void;
   /** Called after the dataset is deleted (the module goes back to the list). Without it, the screen says it was deleted. */
   onDeleted?: () => void;
+  /** Opens the connection of the dataset (Catalog > Conexões), from the unreadable credential notice. */
+  onOpenConnection?: (id: string) => void;
 }
 
 type OpenDialog = 'rename' | 'delete' | null;
@@ -39,7 +42,7 @@ type OpenDialog = 'rename' | 'delete' | null;
  * rename and delete (the variables go along). Below, the "Variáveis" section: read only, or with create, edit and delete
  * under `variables.manage`. Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals of dialogs).
  */
-export function DatasetDetail({ datasetId, onBack, onDeleted }: DatasetDetailProps) {
+export function DatasetDetail({ datasetId, onBack, onDeleted, onOpenConnection }: DatasetDetailProps) {
   const session = useSession();
   const query = useDataset(datasetId);
   const [deleted, setDeleted] = useState(false);
@@ -93,6 +96,7 @@ export function DatasetDetail({ datasetId, onBack, onDeleted }: DatasetDetailPro
       back={back}
       canManage={session.hasPermission('datasets.manage')}
       canManageVariables={session.hasPermission('variables.manage')}
+      onOpenConnection={onOpenConnection}
       onDeleted={() => {
         setDeleted(true);
         onDeleted?.();
@@ -107,12 +111,14 @@ function LoadedDetail({
   canManage,
   canManageVariables,
   onDeleted,
+  onOpenConnection,
 }: {
   dataset: Dataset;
   back: ReactNode;
   canManage: boolean;
   canManageVariables: boolean;
   onDeleted: () => void;
+  onOpenConnection?: (id: string) => void;
 }) {
   const columnsTitleId = useId();
   const sqlTitleId = useId();
@@ -197,7 +203,13 @@ function LoadedDetail({
         ) : null}
       </div>
 
-      {refresh.isError ? (
+      {refresh.isError && isCredentialUnreadable(refresh.error) && dataset.connection_id ? (
+        <UnreadableCredentialNotice
+          message={refreshErrorMessage(refresh.error)}
+          connectionId={dataset.connection_id}
+          onOpenConnection={onOpenConnection}
+        />
+      ) : refresh.isError ? (
         <Notice
           type="error"
           title="Não foi possível atualizar as colunas"

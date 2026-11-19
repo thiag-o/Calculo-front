@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form';
 import { Notice, Button, Dialog, DialogClose, type DialogProps } from '../../design-system';
 import { CredentialFields, FormErrorNotice, credentialSchema, toCredential, useResetOnChange, type CredentialValues } from './CredentialFields';
 import { DEFAULT_PORTS } from './format';
-import { formError } from './messages';
+import { formError, isConnectionChanged } from './messages';
+import { ReloadNotice } from './ReloadNotice';
 import { useTestCredential, useUpdateCredential, type Connection } from './queries';
 import { TestResult } from './TestStatus';
 
@@ -14,6 +15,8 @@ export interface CredentialDialogProps {
   canTest: boolean;
   /** Called on close (Cancelar, Esc, "Fechar" or after saving). The form state goes away with the dialog. */
   onClose: () => void;
+  /** Fetches the connection again after a `409 connection_changed` ("Recarregar"). */
+  onReload: () => Promise<unknown>;
   /** Element that gets focus on close (see `Dialog`). */
   focusOnClose?: DialogProps['focusOnClose'];
 }
@@ -23,7 +26,7 @@ export interface CredentialDialogProps {
  * password empty, because the stored one never comes back; saving needs the five fields, and the API tests them before
  * saving. Mount it only while open: closing unmounts the form and discards what was typed (design.md §4).
  */
-export function CredentialDialog({ connection, canTest, onClose, focusOnClose }: CredentialDialogProps) {
+export function CredentialDialog({ connection, canTest, onClose, onReload, focusOnClose }: CredentialDialogProps) {
   const formId = useId();
   const target = connection.target;
   const {
@@ -92,7 +95,11 @@ export function CredentialDialog({ connection, canTest, onClose, focusOnClose }:
     >
       <form id={formId} className="fc-connections-form" onSubmit={save} noValidate>
         <CredentialFields register={register} errors={errors} apiError={apiError} />
-        <FormErrorNotice error={apiError} />
+        {apiError?.message && isConnectionChanged(update.error) ? (
+          <ReloadNotice message={apiError.message} onReload={onReload} />
+        ) : (
+          <FormErrorNotice error={apiError} />
+        )}
         <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
         {testError?.message ? <Notice type="error">{testError.message}</Notice> : null}
       </form>

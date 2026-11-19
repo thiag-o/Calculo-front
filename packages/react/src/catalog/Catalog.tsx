@@ -106,9 +106,17 @@ export function Catalog({ location, onLocationChange }: CatalogProps = {}) {
         ) : null}
         {current.id === 'datasets' ? (
           id ? (
-            <DatasetDetail key={id} datasetId={id} onBack={() => go({ tab: 'datasets', id: null })} />
+            <DatasetDetail
+              key={id}
+              datasetId={id}
+              onBack={() => go({ tab: 'datasets', id: null })}
+              onOpenConnection={(next) => go({ tab: 'connections', id: next })}
+            />
           ) : (
-            <Datasets onOpenDataset={(next) => go({ tab: 'datasets', id: next })} />
+            <Datasets
+              onOpenDataset={(next) => go({ tab: 'datasets', id: next })}
+              onOpenConnection={(next) => go({ tab: 'connections', id: next })}
+            />
           )
         ) : null}
         {current.id === 'files' ? (

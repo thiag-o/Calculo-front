@@ -550,6 +550,11 @@ export interface paths {
          *     Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
          *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
          *     `last_test` só com `ok`, `tested_at` e `error`.
+         *
+         *     O `target` também vem `null` para uma conexão cuja credencial guardada
+         *     está ilegível (o cofre a recusou ou ela não tem os campos esperados), mesmo
+         *     com `credentials.manage`. A lista não falha por causa dessa conexão; ela
+         *     sai com `target: null`, e o `last_test` segue só a permissão.
          */
         get: operations["list_connections"];
         put?: never;
@@ -594,17 +599,25 @@ export interface paths {
          * @description Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
          *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
          *     `last_test` só com `ok`, `tested_at` e `error`.
+         *
+         *     O `target` também vem `null` quando a credencial guardada está ilegível,
+         *     mesmo com `credentials.manage`; a resposta não falha, e o `last_test`
+         *     segue só a permissão.
          */
         get: operations["get_connection"];
         /**
          * Renomeia uma conexão
          * @description Troca só o nome; a credencial muda por `PUT /v1/connections/{id}/credential`.
-         *     Nome repetido no tenant: `409 connection_already_exists`. Auditado como
-         *     `connection_updated`.
+         *     Nome repetido no tenant: `409 connection_already_exists`. A conexão mudou
+         *     depois de lida (alterada ou removida por outra ação): `409 connection_changed`. Auditado
+         *     como `connection_updated`.
          *
          *     Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
          *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
          *     `last_test` só com `ok`, `tested_at` e `error`.
+         *
+         *     O `target` também vem `null` quando a credencial guardada está ilegível,
+         *     mesmo com `credentials.manage`. O `last_test` só é reduzido sem `credentials.manage`.
          */
         put: operations["rename_connection"];
         post?: never;
@@ -634,7 +647,10 @@ export interface paths {
          *     `422 connection_target_not_allowed`, `422 connection_failed`,
          *     `422 connection_not_read_only` ou `422 connection_without_tls`, sem gravar
          *     nada. O resultado do teste fica em `last_test`. Auditado como
-         *     `credential_updated`, sem a credencial.
+         *     `credential_updated`, sem a credencial. A conexão mudou depois de lida:
+         *     `409 connection_changed`. Esta rota não decifra a credencial antiga: é o
+         *     caminho de conserto de uma credencial ilegível e não responde
+         *     `connection_credential_unreadable`.
          *
          *     Na resposta, o `target` e o `last_test` seguem a permissão de quem chama:
          *     com `credentials.manage`, vêm inteiros; sem ela, o `target` vem `null` e o
@@ -692,6 +708,12 @@ export interface paths {
          *     chama: com `credentials.manage`, vem inteiro; sem ela, só com `ok`,
          *     `tested_at` e `error` (`duration_ms`, `server_version`, `tls` e
          *     `read_only` vêm `null`), como o `last_test`.
+         *
+         *     Credencial guardada ilegível (o cofre a recusou ou ela não tem os campos
+         *     esperados): `409 connection_credential_unreadable`, sem abrir a rede e
+         *     sem gravar `last_test`; cadastre a credencial de novo. A credencial foi
+         *     trocada (ou a conexão removida) durante o teste: `409 connection_changed`,
+         *     e o resultado não é gravado.
          */
         post: operations["test_connection"];
         delete?: never;
@@ -713,7 +735,8 @@ export interface paths {
          *     `schema_name` e `name`. `search` filtra pelo nome do objeto.
          *     Destino da conexão bloqueado: `422 connection_target_not_allowed`. A
          *     conexão com o banco do cliente falhou ou passou do tempo:
-         *     `422 connection_failed`.
+         *     `422 connection_failed`. Credencial guardada ilegível:
+         *     `409 connection_credential_unreadable`.
          */
         get: operations["list_objects"];
         put?: never;
@@ -738,7 +761,8 @@ export interface paths {
          *     (`?schema_name=&name=`), para um nome com `/` não quebrar o caminho.
          *     Conexão ou objeto que não existe: `404 not_found`. Destino da conexão
          *     bloqueado: `422 connection_target_not_allowed`. A conexão com o banco do
-         *     cliente falhou: `422 connection_failed`.
+         *     cliente falhou: `422 connection_failed`. Credencial guardada ilegível:
+         *     `409 connection_credential_unreadable`.
          */
         get: operations["list_object_columns"];
         put?: never;
@@ -842,7 +866,8 @@ export interface paths {
          *     existe: `422 invalid_data` (`fields.connection_id` ou `fields.excel_file_id`).
          *     Nos tipos `table` e `sql`, destino da conexão bloqueado:
          *     `422 connection_target_not_allowed`; a conexão com o banco do cliente
-         *     falhou: `422 connection_failed`. Nome
+         *     falhou: `422 connection_failed`; credencial guardada da conexão ilegível:
+         *     `409 connection_credential_unreadable`. Nome
          *     repetido no tenant (sem os espaços das pontas e sem diferenciar
          *     maiúsculas): `409 dataset_already_exists`. Auditado como `dataset_created`.
          */
@@ -873,7 +898,8 @@ export interface paths {
          *     permissão). `sql` num dataset de outro tipo: `422 invalid_data`
          *     (`fields.sql`). SQL recusado: `422 invalid_sql`. Ao reler as colunas, destino
          *     bloqueado: `422 connection_target_not_allowed`; falha da conexão:
-         *     `422 connection_failed`. Nome repetido no tenant:
+         *     `422 connection_failed`; credencial guardada da conexão ilegível:
+         *     `409 connection_credential_unreadable`. Nome repetido no tenant:
          *     `409 dataset_already_exists`. Auditado como `dataset_updated`.
          */
         put: operations["update_dataset"];
@@ -903,7 +929,8 @@ export interface paths {
          *     `columns_refreshed_at`). Tabela ou view que deixou de existir:
          *     `422 unknown_object`. SQL que o banco passou a recusar: `422 invalid_sql`.
          *     Destino da conexão bloqueado: `422 connection_target_not_allowed`. A
-         *     conexão com o banco do cliente falhou: `422 connection_failed`.
+         *     conexão com o banco do cliente falhou: `422 connection_failed`. Credencial
+         *     guardada da conexão ilegível: `409 connection_credential_unreadable`.
          *     Auditado como `dataset_updated`.
          */
         post: operations["refresh_dataset_columns"];
@@ -1368,7 +1395,12 @@ export interface components {
              *     `tested_at` e `error` vêm preenchidos.
              */
             last_test: components["schemas"]["ConnectionTestResult"] | null;
-            /** @description Preenchido só para quem tem `credentials.manage`. */
+            /**
+             * @description Vem `null` em dois casos: quem chama não tem `credentials.manage`, ou a
+             *     credencial guardada está ilegível (o cofre a recusou ou ela não tem os
+             *     campos esperados). No segundo caso a resposta não falha; cadastre a
+             *     credencial de novo por `PUT /v1/connections/{id}/credential`.
+             */
             target: components["schemas"]["ConnectionTarget"] | null;
         };
         ConnectionList: {
@@ -1851,6 +1883,68 @@ export interface components {
          *     (sem os espaços das pontas e sem diferenciar maiúsculas).
          */
         ConnectionAlreadyExists: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description `connection_changed`: a conexão foi alterada (ou removida) depois de lida;
+         *     confira e tente de novo.
+         */
+        ConnectionChanged: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description `connection_credential_unreadable`: a credencial guardada não pôde ser
+         *     lida; cadastre-a de novo. Sai antes de abrir a rede.
+         */
+        ConnectionCredentialUnreadable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `connection_changed`: a credencial foi trocada (ou a conexão removida)
+         *       durante o teste; o resultado não é gravado;
+         *     - `connection_credential_unreadable`: a credencial guardada não pôde ser lida.
+         */
+        ConnectionChangedOrUnreadable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `dataset_already_exists`: já há um dataset com esse nome no tenant;
+         *     - `connection_credential_unreadable`: a credencial guardada da conexão não
+         *       pôde ser lida; cadastre-a de novo. Sai antes de abrir a rede.
+         */
+        DatasetNameTakenOrCredentialUnreadable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `connection_already_exists`: já há uma conexão com esse nome no tenant;
+         *     - `connection_changed`: a conexão foi alterada (ou removida) depois de lida.
+         */
+        ConnectionNameTakenOrChanged: {
             headers: {
                 [name: string]: unknown;
             };
@@ -2886,7 +2980,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["ConnectionAlreadyExists"];
+            409: components["responses"]["ConnectionNameTakenOrChanged"];
             422: components["responses"]["InvalidDataWithId"];
         };
     };
@@ -2944,6 +3038,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ConnectionChanged"];
             422: components["responses"]["ConnectionRejected"];
         };
     };
@@ -3009,6 +3104,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ConnectionChangedOrUnreadable"];
             422: components["responses"]["InvalidId"];
         };
     };
@@ -3043,6 +3139,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenRead"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ConnectionCredentialUnreadable"];
             /**
              * @description - `invalid_data`: `{id}` que não é UUID ou `limit` fora de 1..200
              *       (`fields.<parameter>`);
@@ -3089,6 +3186,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenRead"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ConnectionCredentialUnreadable"];
             /**
              * @description - `invalid_data`: o `{id}` do caminho não é um UUID, ou falta
              *       `schema_name` ou `name` (`fields.<parameter>`);
@@ -3281,7 +3379,7 @@ export interface operations {
             };
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
-            409: components["responses"]["DatasetAlreadyExists"];
+            409: components["responses"]["DatasetNameTakenOrCredentialUnreadable"];
             /**
              * @description - `invalid_data`: o corpo não segue o esquema, ou a conexão ou o arquivo
              *       não existe (`fields.connection_id`, `fields.excel_file_id`);
@@ -3358,7 +3456,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["DatasetAlreadyExists"];
+            409: components["responses"]["DatasetNameTakenOrCredentialUnreadable"];
             /**
              * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema,
              *       ou `sql` num dataset que não é do tipo `sql`;
@@ -3427,6 +3525,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ConnectionCredentialUnreadable"];
             /**
              * @description - `invalid_data`: o `{id}` do caminho não é um UUID (`fields.id`);
              *     - `invalid_sql`: o banco recusou o SQL do dataset (`fields.sql` com a

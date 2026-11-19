@@ -15,6 +15,8 @@ export interface DatasetsProps {
    * and a new dataset opens right after it is saved. Without it, the names are plain text.
    */
   onOpenDataset?: (id: string) => void;
+  /** Opens a connection (Catalog > Conexões), from the unreadable credential notice of the new dataset. */
+  onOpenConnection?: (id: string) => void;
 }
 
 function count(total: number): string {
@@ -26,7 +28,7 @@ function count(total: number): string {
  * `datasets.manage`, "Novo dataset" creates one from a table or view, or from free SQL (only with `free_sql.use`).
  * Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals of dialogs and menus).
  */
-export function Datasets({ onOpenDataset }: DatasetsProps = {}) {
+export function Datasets({ onOpenDataset, onOpenConnection }: DatasetsProps = {}) {
   const titleId = useId();
   const session = useSession();
   const list = useDatasetList();
@@ -170,6 +172,7 @@ export function Datasets({ onOpenDataset }: DatasetsProps = {}) {
           allowSql={session.hasPermission('free_sql.use')}
           focusOnClose={newButton}
           onClose={() => setCreating(false)}
+          onOpenConnection={onOpenConnection}
           onCreated={(dataset) => {
             setCreating(false);
             onOpenDataset?.(dataset.id);

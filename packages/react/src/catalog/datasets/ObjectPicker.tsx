@@ -2,7 +2,8 @@ import { useEffect, useId, useState } from 'react';
 import { ApiError } from '../../api';
 import { Notice, Button, Badge, FieldMessage, Loading, TextField, Text, textClasses } from '../../design-system';
 import { useConnectionObjects, type DatabaseObject } from './queries';
-import { UNKNOWN_CONNECTION_MESSAGE, queryErrorMessage } from './messages';
+import { UNKNOWN_CONNECTION_MESSAGE, isCredentialUnreadable, queryErrorMessage } from './messages';
+import { UnreadableCredentialNotice } from './UnreadableCredentialNotice';
 
 /** How long the filter waits after the last key before asking the API (ms). */
 export const SEARCH_DELAY_MS = 300;
@@ -18,6 +19,8 @@ export interface ObjectPickerProps {
   onChange: (object: ChosenObject) => void;
   /** Field error ("Escolha uma tabela ou view", `unknown_object`). */
   error?: string;
+  /** Opens the connection, from the unreadable credential notice. */
+  onOpenConnection?: (id: string) => void;
 }
 
 function sameObject(a: ChosenObject | null, b: ChosenObject): boolean {
@@ -28,7 +31,7 @@ function sameObject(a: ChosenObject | null, b: ChosenObject): boolean {
  * Browser of the tables and views a connection sees: "Filtrar por nome" (asks the API after a short pause) and
  * "Carregar mais" by cursor. One choice, as radio buttons (arrows move between them).
  */
-export function ObjectPicker({ connectionId, value, onChange, error }: ObjectPickerProps) {
+export function ObjectPicker({ connectionId, value, onChange, error, onOpenConnection }: ObjectPickerProps) {
   const legendId = useId();
   const errorId = useId();
   const radioName = useId();
@@ -49,6 +52,14 @@ export function ObjectPicker({ connectionId, value, onChange, error }: ObjectPic
   let content;
   if (objects.isPending) {
     content = <Loading label="Carregando tabelas e views" rows={4} />;
+  } else if (objects.isError && items === undefined && isCredentialUnreadable(objects.error)) {
+    content = (
+      <UnreadableCredentialNotice
+        message={queryErrorMessage(objects.error, UNKNOWN_CONNECTION_MESSAGE)}
+        connectionId={connectionId}
+        onOpenConnection={onOpenConnection}
+      />
+    );
   } else if (objects.isError && items === undefined) {
     content = (
       <Notice

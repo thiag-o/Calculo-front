@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Notice, Button, Dialog, DialogClose, TextField, type DialogProps } from '../../design-system';
 import { fieldError } from './CredentialFields';
-import { formError } from './messages';
+import { formError, isConnectionChanged } from './messages';
+import { ReloadNotice } from './ReloadNotice';
 import { useRenameConnection, type Connection } from './queries';
 
 const schema = z.object({ name: z.string().trim().min(1, 'Informe o nome da conexão') });
@@ -15,12 +16,14 @@ export interface RenameConnectionDialogProps {
   connection: Connection;
   /** Called on close (Cancelar, Esc, "Fechar" or after saving). */
   onClose: () => void;
+  /** Fetches the connection again after a `409 connection_changed` ("Recarregar"). */
+  onReload: () => Promise<unknown>;
   /** Element that gets focus on close (see `Dialog`). */
   focusOnClose?: DialogProps['focusOnClose'];
 }
 
 /** "Renomear conexão": changes only the name; the credential changes through "Trocar credencial". */
-export function RenameConnectionDialog({ connection, onClose, focusOnClose }: RenameConnectionDialogProps) {
+export function RenameConnectionDialog({ connection, onClose, onReload, focusOnClose }: RenameConnectionDialogProps) {
   const formId = useId();
   const rename = useRenameConnection(connection.id);
   const {
@@ -57,7 +60,13 @@ export function RenameConnectionDialog({ connection, onClose, focusOnClose }: Re
     >
       <form id={formId} className="fc-connections-form" onSubmit={save} noValidate>
         <TextField label="Nome" autoComplete="off" error={fieldError(errors, apiError, 'name')} {...register('name')} />
-        {apiError?.message ? <Notice type="error">{apiError.message}</Notice> : null}
+        {apiError?.message ? (
+          isConnectionChanged(rename.error) ? (
+            <ReloadNotice message={apiError.message} onReload={onReload} />
+          ) : (
+            <Notice type="error">{apiError.message}</Notice>
+          )
+        ) : null}
       </form>
     </Dialog>
   );

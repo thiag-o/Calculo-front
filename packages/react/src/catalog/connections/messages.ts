@@ -80,3 +80,13 @@ export function deleteErrorMessage(error: unknown): string {
   if (error instanceof ApiError && error.code === 'connection_in_use') return IN_USE_MESSAGE;
   return queryErrorMessage(error);
 }
+
+/** `409 connection_credential_unreadable`: the stored credential cannot be read; the fix is to register it again. */
+export function isCredentialUnreadable(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'connection_credential_unreadable';
+}
+
+/** `409 connection_changed`: the connection changed (or was removed) after the screen read it; fetch it again. */
+export function isConnectionChanged(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'connection_changed';
+}
