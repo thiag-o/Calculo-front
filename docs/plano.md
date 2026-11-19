@@ -637,7 +637,7 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F60 · Catálogo — credencial ilegível (D44) e conflito de versão**
 - dep: F45, B73
 - modelo: sonnet
-- arquivos: `packages/react/src/api/generated/`, `packages/react/src/catalog/connections/`, `packages/react/src/catalog/datasets/`
+- arquivos: `packages/react/src/api/generated/`, `packages/react/src/catalog/connections/`, `packages/react/src/catalog/datasets/`, `packages/react/src/catalog/Catalog.tsx`, `e2e/support/contract.ts` (ampliada na dúvida da F60, como a D11 da F29)
 - Fazer (D44 do back, decidida pela sessão global em 2026-11-18):
   - `pnpm generate:api` com o contrato da B73;
   - quando testar a conexão, abrir os objetos ou ver as colunas responder `409 connection_credential_unreadable`, mostrar a mensagem da API e oferecer a ação que já existe de trocar a credencial, para quem tem `credentials.manage`. Quem não tem essa permissão vê só a mensagem;
