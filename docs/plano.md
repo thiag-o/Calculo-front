@@ -25,6 +25,7 @@ Executado pela skill `orquestrar-frente` (frente `frontend`), sob a orquestraç�
   - dicionários: `../backend/docs/glossario.md` (API) e `docs/glossario.md` (front, tarefa F41). Até a F42 terminar, o código ainda tem nomes em português; código novo usa os nomes dos glossários;
   - os nomes desta seção e da seção "Contratos" (`apps/casca`, `api/gerado`, `pnpm gerar:api`, `<FluxoCalculo tela tema navegacao onEvento …>`, `<Inicio>`, `<Catalogo>` etc.) valem, depois da F41 e da F42, pela tradução do glossário (lista no começo do épico 3).
 - **Nunca agir com dúvida** (skill orquestrar-frente §3).
+- **Modo worktree (regra do dono, 2026-11-19):** inativo até a F61 concluir; a sessão global troca para "Modo worktree: ativo". Ativo, cada tarefa roda numa worktree própria (`../worktrees/frontend/<T>`, branch `task/<T>`), com as portas do e2e escolhidas por `FLUXO_TEST_ISOLATION_ID`, sem trava de build e com até 3 ou 4 tarefas ao mesmo tempo (skill `orquestrar-frente` §2.0).
 - **Portas proibidas (regra do dono, 2026-11-19):** nunca use as portas 5000 nem 5001 no host, como padrão, em teste, na integração ou em release. Isso vale para Compose, `.env`, servidores de desenvolvimento, Playwright e scripts. A porta interna de um container (o Moto escuta na 5000 dentro dele) pode ficar; só a porta publicada no host muda.
 
 ## Contratos
@@ -935,8 +936,20 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
     - provar que `Calcular` com `valor_item` 1500,00, categoria A e meta verdadeiro mostra `pontos` 225,00 e "Regra 2".
 - Aceite: `pnpm e2e` passa. O modo real é exercitado no teste de integração do CK4.
 
+**F61 · e2e isolado por worktree**
+- dep: —
+- modelo: sonnet
+- revisão: não
+- arquivos: `playwright.config.ts`, `e2e/support/`, `apps/shell/vite.config.ts`, `apps/shell/vite.embed.config.ts`, `scripts/e2e-ports.mjs`, `README.md`
+- Fazer (regra do dono de 2026-11-19, modo worktree no Contexto):
+  - com `FLUXO_TEST_ISOLATION_ID=<id>` definida, o e2e simulado usa portas próprias para o shell e para a página de incorporação, derivadas do id de forma determinística, numa faixa fixa (por exemplo, 6100 a 6999), sem nunca cair em 5000 ou 5001;
+  - sem a variável, as portas de hoje (5173 e 5274) continuam;
+  - o modo real (`e2e:real`) não muda: ele roda só na integração do checkpoint;
+  - a seção "Testes em paralelo (worktrees)" no README.
+- Aceite: dois `pnpm e2e` simulados rodando ao mesmo tempo com ids diferentes passam sem disputar porta; sem a variável, o comportamento é o de antes; um teste das portas derivadas confere a faixa e a ausência de 5000 e 5001.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
