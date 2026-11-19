@@ -890,6 +890,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
     - quando a API não manda mensagem, o aviso de conflito no detalhe da conexão usa um texto padrão em pt-BR, nunca vazio;
     - o `isCredentialUnreadable` duplicado em `connections/messages.ts` e `datasets/messages.ts` vira uma função só, no lugar comum do catálogo;
     - o PUT de renomear dataset também pode responder `409 connection_credential_unreadable`: a tela de renomear mostra a mesma mensagem das outras telas de dataset;
+    - os `409 dataset_changed` e `variable_changed` (B77, back) nas telas de dataset e de variável mostram a mensagem da API com **Recarregar**, como o conflito da conexão; o erro de validação do upload chega em `fields.file`;
   - **resíduos da F41:** `screen: screen` e `{ body: body }` viram a forma curta; as descrições de teste que ainda citam `navegacao` e `memoria` passam a citar `navigation` e `memory`. Os arquivos acima são os que a busca achou; confira de novo no começo da tarefa;
   - **429 do teste de conexão (E4-16):** em `catalog/connections/`, o `too_many_connection_tests` mostra "Muitos testes de conexão seguidos. Tente de novo em N s.", com o `retry_after_seconds`, e desabilita **Testar** com esse motivo até o tempo passar.
 - Aceite:
