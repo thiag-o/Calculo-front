@@ -637,10 +637,11 @@ As decisões E3-1 a E3-19 e as permissões de cada rota estão no plano do back 
 **F60 · Catálogo — credencial ilegível (D44) e conflito de versão**
 - dep: F45, B73
 - modelo: sonnet
-- arquivos: `packages/react/src/api/generated/`, `packages/react/src/catalog/connections/`
+- arquivos: `packages/react/src/api/generated/`, `packages/react/src/catalog/connections/`, `packages/react/src/catalog/datasets/`
 - Fazer (D44 do back, decidida pela sessão global em 2026-11-18):
   - `pnpm generate:api` com o contrato da B73;
   - quando testar a conexão, abrir os objetos ou ver as colunas responder `409 connection_credential_unreadable`, mostrar a mensagem da API e oferecer a ação que já existe de trocar a credencial, para quem tem `credentials.manage`. Quem não tem essa permissão vê só a mensagem;
+  - a B73 também declara o `409 connection_credential_unreadable` nas rotas de dataset que abrem o banco do cliente (criar dataset, atualizar colunas e prévia, conforme o contrato): nas telas de `catalog/datasets/`, mostrar a mesma mensagem, com um link para a conexão do dataset em vez da ação de trocar a credencial;
   - `409 connection_changed` (conflito de versão, B73) ao renomear, trocar a credencial ou testar a conexão salva: mostrar a mensagem da API com **Recarregar**, que busca a conexão de novo, sem reenviar nada sozinho;
   - a lista e o detalhe continuam mostrando a conexão quando o `target` vem `null`. Esse caso já existe para quem não tem `credentials.manage`; confira que ele também cobre quem tem a permissão.
 - Aceite: testes do componente com o 409 `connection_credential_unreadable` nas três ações, com e sem `credentials.manage`, com o 409 `connection_changed` nas três ações que gravam, e com o `target` nulo para quem tem a permissão; tipos, lint, testes e build verdes.
