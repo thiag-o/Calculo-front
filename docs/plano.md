@@ -880,9 +880,13 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 **F56 · Manutenção: pendências do CK3 no front**
 - dep: F46
 - modelo: sonnet
-- arquivos: `packages/react/src/design-system/`, `packages/react/src/catalog/connections/`, `packages/react/src/admin/integration/queries.ts`, `packages/react/src/admin/roles/queries.ts`, `packages/react/src/admin/security/queries.ts`, `packages/react/src/admin/users/queries.ts`, `packages/react/src/api/client/apiError.ts`, `packages/react/src/module/FluxoCalculo.tsx`, `packages/react/src/module/FluxoCalculo.test.tsx`, `packages/react/src/session/reset-password/passwordReset.ts`, `e2e/epic-1/csrf.spec.ts`, `e2e/epic-2/support/screens.ts`, `e2e/epic-3/credential-never-returned.spec.ts`
+- arquivos: `packages/react/src/design-system/`, `packages/react/src/catalog/connections/`, `packages/react/src/catalog/datasets/`, `packages/react/src/catalog/Catalog.tsx`, `packages/react/src/admin/integration/queries.ts`, `packages/react/src/admin/roles/queries.ts`, `packages/react/src/admin/security/queries.ts`, `packages/react/src/admin/users/queries.ts`, `packages/react/src/api/client/apiError.ts`, `packages/react/src/module/FluxoCalculo.tsx`, `packages/react/src/module/FluxoCalculo.test.tsx`, `packages/react/src/session/reset-password/passwordReset.ts`, `e2e/epic-1/csrf.spec.ts`, `e2e/epic-2/support/screens.ts`, `e2e/epic-3/credential-never-returned.spec.ts`
 - Fazer (pendências adiáveis do CK3, decididas pela sessão global):
   - **px crus no design system:** os espaços em px dos CSS de `design-system/` (por exemplo, `tabs.css`, `menu.css`, `card.css`) passam a usar os tokens `--fc-space-*`; medidas que não são espaço (borda de 1px, alturas de controle, tamanhos de fonte) ficam como estão, se já forem tokens ou exceções listadas no `estilos.md`;
+  - **achados médios da revisão da F60** (sessão global, 2026-11-19), para a pessoa não perder o que digitou:
+    - o "Recarregar" do `409 connection_changed` trata a falha da própria recarga, com a mensagem e a opção de tentar de novo;
+    - o diálogo não fecha quando a recarga falha, e o texto digitado fica;
+    - o link "Abrir conexão" dentro do "Novo dataset" pede confirmação, ou abre a conexão sem descartar o formulário, antes de trocar de aba;
   - **resíduos da F41:** `screen: screen` e `{ body: body }` viram a forma curta; as descrições de teste que ainda citam `navegacao` e `memoria` passam a citar `navigation` e `memory`. Os arquivos acima são os que a busca achou; confira de novo no começo da tarefa;
   - **429 do teste de conexão (E4-16):** em `catalog/connections/`, o `too_many_connection_tests` mostra "Muitos testes de conexão seguidos. Tente de novo em N s.", com o `retry_after_seconds`, e desabilita **Testar** com esse motivo até o tempo passar.
 - Aceite:
