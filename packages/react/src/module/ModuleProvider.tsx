@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createQueryClient, ApiProvider } from '../api';
 import { FluxoRoot, type FluxoTheme } from '../design-system';
+import { clearSessionData } from '../session';
 import { EndSessionContext } from './sessionEnd';
 import { EndedSession } from './ModuleStates';
 import './module.css';
@@ -53,12 +54,12 @@ export function ModuleProvider({ apiUrl, token, theme, onSessionExpired, childre
     notifyHostApp.current?.();
   }, []);
 
-  // Without a session, nothing of the previous user stays in the cache (ADR 0008 and 0015). Runs after the content left the screen,
-  // so no mounted query fetches again.
+  // Without a session, nothing of the previous user stays in the module: the cache and the memories kept outside it
+  // (ADR 0008, 0015 and 0045). Runs after the content left the screen, so no mounted query fetches again (ADR 0019); the
+  // screen shown meanwhile is the session-ended notice, which shows no data.
   useEffect(() => {
     if (!ended) return;
-    void queryClient.cancelQueries();
-    queryClient.clear();
+    clearSessionData(queryClient);
   }, [ended, queryClient]);
 
   return (

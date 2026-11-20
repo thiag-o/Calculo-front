@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { dataOrError, useApiClient, type ApiClient, type Schemas } from '../../api';
+import { sameSessionData, sessionDataMark } from '../../session';
 import { WORKFLOW_LISTS_KEY, workflowDraftKey, workflowKey } from '../../workflows';
 
 /** The draft of a workflow, with the problems and the symbols (generated from the contract). */
@@ -58,14 +59,16 @@ export async function draftSavesSettled(queryClient: QueryClient, workflowId: st
  * Reads the draft after the saves of the workflow still running. A read never ends older than what the editor already
  * knows: if a save started while the `GET` was on the way (a prefetch, or the editor opened while another one closed),
  * the draft is read again after it; and an answer with a lower revision than the cached draft (written by a save that
- * finished meanwhile) gives way to the cached one.
+ * finished meanwhile) gives way to the cached one. A read that the session data left meanwhile (sign-out, `401`, tenant
+ * switch, another person) is of the previous one: it is read again, now under the session in the module.
  */
 async function readDraft(queryClient: QueryClient, client: ApiClient, workflowId: string, signal: AbortSignal): Promise<Draft> {
   for (;;) {
     await draftSavesSettled(queryClient, workflowId);
     const started = startedSaves(queryClient, workflowId);
+    const mark = sessionDataMark(queryClient);
     const read = await dataOrError(client.GET('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, signal }));
-    if (startedSaves(queryClient, workflowId) !== started) continue;
+    if (startedSaves(queryClient, workflowId) !== started || !sameSessionData(queryClient, mark)) continue;
     const cached = queryClient.getQueryData<Draft>(workflowDraftKey(workflowId));
     return cached && cached.workflow_id === read.workflow_id && cached.revision > read.revision ? cached : read;
   }
@@ -115,7 +118,9 @@ export function prefetchDraft(queryClient: QueryClient, client: ApiClient, workf
  * Saves the draft over `revision` (`PUT /v1/workflows/{id}/draft`). It is not a `useMutation`: the editor saves by itself,
  * one save at a time, and also when it closes, after the screen is gone. On success the draft goes to the cache, the
  * workflow (its draft summary) and the lists are fetched again when someone shows them. Errors are `ApiError`, such as
- * `409 draft_conflict` (with `current_revision`), `422 invalid_data` and `413 definition_too_large`.
+ * `409 draft_conflict` (with `current_revision`), `422 invalid_data` and `413 definition_too_large`. A save that answers
+ * after the session data left the module (sign-out, `401`, tenant switch, another person) writes nothing to the cache:
+ * it is of the previous one, and the cache is already the next one's (`sessionDataMark`).
  */
 export async function saveDraft(
   queryClient: QueryClient,
@@ -123,7 +128,9 @@ export async function saveDraft(
   workflowId: string,
   body: Schemas['DraftUpdate'],
 ): Promise<Draft> {
+  const mark = sessionDataMark(queryClient);
   const draft = await dataOrError(client.PUT('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, body }));
+  if (!sameSessionData(queryClient, mark)) return draft;
   queryClient.setQueryData(workflowDraftKey(workflowId), draft);
   // `exact`: only the workflow itself, not the draft just written under it.
   void queryClient.invalidateQueries({ queryKey: workflowKey(workflowId), exact: true });

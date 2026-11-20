@@ -16,7 +16,18 @@ import {
   BRANCH_TENANT,
   type SimulatedFetch,
 } from './api.test-support';
-import { hasPermission, useSignIn, useSignOut, useSession, useSwitchTenant } from '.';
+import {
+  clearSessionData,
+  hasPermission,
+  onSessionDataCleared,
+  sameSessionData,
+  sessionDataMark,
+  useSessionGeneration,
+  useSignIn,
+  useSignOut,
+  useSession,
+  useSwitchTenant,
+} from '.';
 
 let simulatedFetch: SimulatedFetch;
 
@@ -129,20 +140,24 @@ describe('useSignIn', () => {
 });
 
 describe('useSignOut', () => {
-  it('faz DELETE /v1/session com o X-CSRF-Token e apaga o cache do usuário', async () => {
+  it('faz DELETE /v1/session com o X-CSRF-Token e não limpa nada sozinho, com a tela ainda montada', async () => {
     setCsrfCookie('csrf-123');
     simulatedFetch.mockResolvedValue(new Response(null, { status: 204 }));
     const { Providers, queryClient } = createProviders();
     queryClient.setQueryData(['session'], headquartersSession);
     queryClient.setQueryData(['workflows'], 'dados da Ana');
+    const told = vi.fn();
+    onSessionDataCleared(queryClient, told);
     const { result } = renderHook(() => useSignOut(), { wrapper: Providers });
 
     await act(() => result.current.mutateAsync());
 
     expect(calledRoutes(simulatedFetch)).toEqual(['DELETE /v1/session']);
     expect(request(simulatedFetch).headers.get('X-CSRF-Token')).toBe('csrf-123');
-    expect(queryClient.getQueryData(['session'])).toBeUndefined();
-    expect(queryClient.getQueryData(['workflows'])).toBeUndefined();
+    // The module clears once, after the screen leaves (ADR 0019): clearing here would make the mounted queries fetch
+    // again and get 401.
+    expect(told).not.toHaveBeenCalled();
+    expect(queryClient.getQueryData(['session'])).toEqual(headquartersSession);
   });
 
   it('em erro (invalid_csrf), mantém a sessão no cache', async () => {
@@ -259,5 +274,101 @@ describe('useSwitchTenant', () => {
 
     await waitFor(() => expect(result.current.switchTenant.isError).toBe(true));
     expect(calledRoutes(simulatedFetch)).toEqual(['GET /v1/session', 'PUT /v1/session/tenant']);
+  });
+});
+
+describe('o que sai com a sessão', () => {
+  it('depois da limpeza do logout, nada fica no cache, a memória registrada é avisada e a tela seguinte busca de novo', async () => {
+    setCsrfCookie('csrf-123');
+    simulatedFetch.mockImplementation(async (req) => (req.method === 'DELETE' ? new Response(null, { status: 204 }) : problem(401, 'no_session')));
+    const { Providers, queryClient } = createProviders();
+    queryClient.setQueryData(['session'], headquartersSession);
+    queryClient.setQueryData(['workflows'], 'dados da Ana');
+    const told = vi.fn();
+    onSessionDataCleared(queryClient, told);
+    const { result } = renderHook(() => useSignOut(), { wrapper: Providers });
+
+    // What the module does after "Sair": ends the session and, once the screen left, clears.
+    await act(() => result.current.mutateAsync(undefined, { onSuccess: () => clearSessionData(queryClient) }));
+
+    expect(queryClient.getQueryCache().getAll()).toEqual([]);
+    expect(queryClient.getMutationCache().getAll()).toEqual([]);
+    expect(told).toHaveBeenCalledTimes(1);
+    expect(told).toHaveBeenCalledWith(undefined);
+    // The next screen does not get the session from the cache: it asks the API (which ended it).
+    const next = renderHook(() => useSession(), { wrapper: Providers });
+    await waitFor(() => expect(next.result.current.isError).toBe(true));
+    expect(calledRoutes(simulatedFetch)).toEqual(['DELETE /v1/session', 'GET /v1/session']);
+  });
+
+  it('clearSessionData (o que o módulo faz no 401) esvazia o cache e avisa a memória registrada', () => {
+    const queryClient = createProviders().queryClient;
+    queryClient.setQueryData(['session'], headquartersSession);
+    queryClient.setQueryData(['workflows'], 'dados da Ana');
+    const told = vi.fn();
+    const stop = onSessionDataCleared(queryClient, told);
+
+    clearSessionData(queryClient);
+
+    expect(queryClient.getQueryCache().getAll()).toEqual([]);
+    expect(told).toHaveBeenCalledTimes(1);
+    expect(told).toHaveBeenCalledWith(undefined);
+    stop();
+    clearSessionData(queryClient);
+    expect(told).toHaveBeenCalledTimes(1);
+  });
+
+  it('na troca de tenant, as consultas que ninguém mostra e as mutações encerradas saem, e a geração das telas muda', async () => {
+    setCsrfCookie('csrf-123');
+    simulatedFetch.mockImplementation(async (req) => (req.method === 'PUT' ? json(branchSession) : json(headquartersSession)));
+    const { Providers, queryClient } = createProviders();
+    queryClient.setQueryData(['session'], headquartersSession);
+    queryClient.setQueryData(['workflows', 'list'], 'lista da Matriz, que nenhuma tela mostra');
+    const told = vi.fn();
+    onSessionDataCleared(queryClient, told);
+    const { result } = renderHook(() => ({ generation: useSessionGeneration(), switchTenant: useSwitchTenant() }), { wrapper: Providers });
+    expect(result.current.generation).toBe(0);
+
+    await act(() => result.current.switchTenant.mutateAsync(BRANCH_TENANT.id));
+
+    await waitFor(() => expect(result.current.generation).toBe(1));
+    expect(told).toHaveBeenCalledWith(branchSession);
+    expect(queryClient.getQueryCache().getAll().map((query) => query.queryKey)).toEqual([['session']]);
+    expect(queryClient.getQueryData(['session'])).toEqual(branchSession);
+    // Only the switch itself, which was still running when the cache was cleared, can be left (it settles afterwards).
+    expect(queryClient.getMutationCache().getAll().length).toBeLessThanOrEqual(1);
+  });
+
+  it('cada limpeza muda a marca da sessão: quem a guardou antes da requisição não grava depois', () => {
+    const queryClient = createProviders().queryClient;
+    const before = sessionDataMark(queryClient);
+    expect(sameSessionData(queryClient, before)).toBe(true);
+
+    clearSessionData(queryClient);
+
+    expect(sameSessionData(queryClient, before)).toBe(false);
+  });
+
+  it('uma troca de tenant que responde depois do logout não devolve a sessão ao cache já limpo', async () => {
+    setCsrfCookie('csrf-123');
+    let respond: (response: Response) => void = () => {};
+    simulatedFetch.mockImplementation((req) =>
+      req.method === 'PUT' ? new Promise<Response>((resolver) => (respond = resolver)) : Promise.resolve(problem(401, 'no_session')),
+    );
+    const { Providers, queryClient } = createProviders();
+    queryClient.setQueryData(['session'], headquartersSession);
+    const told = vi.fn();
+    onSessionDataCleared(queryClient, told);
+    const { result } = renderHook(() => useSwitchTenant(), { wrapper: Providers });
+
+    act(() => result.current.mutate(BRANCH_TENANT.id));
+    await waitFor(() => expect(calledRoutes(simulatedFetch)).toEqual(['PUT /v1/session/tenant']));
+    act(() => clearSessionData(queryClient));
+    await act(async () => respond(json(branchSession)));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(queryClient.getQueryData(['session'])).toBeUndefined();
+    expect(queryClient.getQueryCache().getAll()).toEqual([]);
+    expect(told).toHaveBeenCalledTimes(1);
   });
 });

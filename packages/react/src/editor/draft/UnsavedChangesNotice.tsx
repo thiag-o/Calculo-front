@@ -3,9 +3,13 @@ import { useEffect, useRef } from 'react';
 import { Button, Notice } from '../../design-system';
 import { useSession } from '../../session';
 import { WORKFLOWS_EDIT_PERMISSION } from '../../workflows';
-import { NO_PERMISSION_MESSAGE, saveErrorMessage } from './messages';
-import { draftOwner, dropUnsavedChange, useUnsavedDraftChanges, type UnsavedDraftChange } from './unsavedChanges';
+import { saveErrorMessage } from './messages';
+import { draftOwner, dropUnsavedChange, keptUntilSignOut, useUnsavedDraftChanges, type UnsavedDraftChange } from './unsavedChanges';
 import './unsaved-changes.css';
+
+/** The person can no longer edit the workflow: the change is not lost, it stays in memory until sign-out or switch. */
+export const PERMISSION_LOST_MESSAGE =
+  'Você não tem mais permissão para editar este workflow. A mudança fica guardada até você sair.';
 
 export interface UnsavedChangesNoticeProps {
   /** "Voltar ao editor": opens the editor of that workflow, which starts from the change and saves it again. */
@@ -20,8 +24,10 @@ export interface UnsavedChangesNoticeProps {
  * mudança de {workflow}.". The change is only in the module's memory (never in `localStorage` nor `sessionStorage`).
  * - Saving again may work (no connection, server error, conflict) and the person can edit: "Voltar ao editor", and the
  *   note stays until the reopened editor saves the change.
- * - It would fail again (invalid definition, no permission, workflow removed), or the person can no longer edit: the
- *   note says why, without the button, and is gone once this screen is left (nothing more can be done with it).
+ * - The person can no longer edit (the session lost `workflows.edit`, or the save got `403 no_permission`): the note
+ *   says so, without the button, and the change stays in memory until sign-out or tenant switch.
+ * - It would fail again (invalid definition, workflow removed): the note says why, without the button, and is gone once
+ *   this screen is left (nothing more can be done with it).
  * Nothing when every change was saved.
  */
 export function UnsavedChangesNotice({ onReturn, workflowId, className }: UnsavedChangesNoticeProps) {
@@ -32,7 +38,7 @@ export function UnsavedChangesNotice({ onReturn, workflowId, className }: Unsave
     (change) => workflowId === undefined || change.workflowId === workflowId,
   );
   const canReturn = (change: UnsavedDraftChange) => change.recoverable && canEdit;
-  const dead = changes.filter((change) => !canReturn(change));
+  const dead = changes.filter((change) => !canReturn(change) && !keptUntilSignOut(change));
 
   // The notes without a way back that were on screen are dropped when this screen goes away. The drop waits a turn, so
   // the unmount and mount again of React's development mode (StrictMode) do not drop them while still on screen.
@@ -65,7 +71,7 @@ export function UnsavedChangesNotice({ onReturn, workflowId, className }: Unsave
         if (!canReturn(change)) {
           return (
             <Notice key={change.workflowId} type="error" title={what}>
-              {change.recoverable ? NO_PERMISSION_MESSAGE : saveErrorMessage(change.error)}
+              {keptUntilSignOut(change) ? PERMISSION_LOST_MESSAGE : saveErrorMessage(change.error)}
             </Notice>
           );
         }

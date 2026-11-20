@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe('aviso de mudança não salva', () => {
-  it('sem permissão de editar, diz por que e não oferece "Voltar ao editor"', async () => {
+  it('sem permissão de editar, diz que a mudança fica guardada e não oferece "Voltar ao editor"', async () => {
     simulateApi(VIEWER_PERMISSIONS);
     const queryClient = testQueryClient();
     queryClient.setQueryData(workflowKey(WORKFLOW.id), WORKFLOW);
@@ -39,7 +39,7 @@ describe('aviso de mudança não salva', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Não deu para salvar a última mudança de Pontuação de exemplo.');
-    expect(alert).toHaveTextContent('Você não tem permissão para editar este workflow.');
+    expect(alert).toHaveTextContent('Você não tem mais permissão para editar este workflow. A mudança fica guardada até você sair.');
     expect(screen.queryByRole('button', { name: 'Voltar ao editor' })).not.toBeInTheDocument();
   });
 

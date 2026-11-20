@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { Notice, Button, Tooltip } from '../../design-system';
-import type { Session } from '../../session';
+import { useSessionGeneration, type Session } from '../../session';
 import { ExpandMenuIcon, CollapseMenuIcon } from '../icons';
 import { groupBySection, type ScreenDefinition } from '../screens';
 import { signOutErrorMessage, switchErrorMessage } from './messages';
@@ -28,6 +28,8 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const navigationId = useId();
+  // Another tenant took over: the screen starts over (the sidebar and the focus on the selector stay).
+  const generation = useSessionGeneration();
   const compact = narrow || collapsed;
   const { unsectioned, sections } = groupBySection(screens);
 
@@ -92,7 +94,7 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
               {notice}
             </Notice>
           ) : null}
-          <Outlet />
+          <Outlet key={generation} />
         </div>
       </main>
     </div>

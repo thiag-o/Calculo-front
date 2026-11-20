@@ -3,7 +3,7 @@ import { Admin as AdminScreen, ADMIN_TAB_PERMISSIONS } from '../../admin';
 import { Audit as AuditScreen } from '../../audit';
 import { Catalog as CatalogScreen, CATALOG_PERMISSION } from '../../catalog';
 import { Home as HomeScreen } from '../../home';
-import { useSession } from '../../session';
+import { useSession, useSessionGeneration } from '../../session';
 import { ModuleLoading, ModuleError, NoAccess } from '../ModuleStates';
 import type { FluxoCalculoProps } from '../FluxoCalculo';
 import { ModuleProvider } from '../ModuleProvider';
@@ -51,6 +51,8 @@ function StandaloneScreen({ definition, ...props }: StandaloneScreenProps & { de
 
 function StandaloneContent({ definition }: { definition: StandaloneDefinition }) {
   const session = useSession();
+  // Another person's token took over: the screen starts over, without the previous one's local state.
+  const generation = useSessionGeneration();
 
   // With a session in the cache, an error on a new fetch does not take the screen down; without it, shows the fetch state.
   if (!session.data) {
@@ -71,7 +73,7 @@ function StandaloneContent({ definition }: { definition: StandaloneDefinition })
   if (access && !access.allowed(session.hasPermission)) return <NoAccess title={access.noAccess} />;
 
   return (
-    <ModuleRouter navigation="memory" initialPath="/">
+    <ModuleRouter key={generation} navigation="memory" initialPath="/">
       <div className="fc-module-page">{definition.content}</div>
     </ModuleRouter>
   );

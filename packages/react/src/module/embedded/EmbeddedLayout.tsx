@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Tabs } from '../../design-system';
+import { useSessionGeneration } from '../../session';
 import { groupBySection, type ScreenDefinition } from '../screens';
 import './embedded.css';
 
@@ -19,6 +20,8 @@ export interface EmbeddedLayoutProps {
 export function EmbeddedLayout({ screens }: EmbeddedLayoutProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  // Another person's token took over: the screen starts over, without the previous one's local state.
+  const generation = useSessionGeneration();
   const { unsectioned, sections } = groupBySection(screens);
   const tabs = [
     ...unsectioned.map((screen) => ({ value: screen.id, label: screen.label, path: screen.path })),
@@ -42,7 +45,7 @@ export function EmbeddedLayout({ screens }: EmbeddedLayoutProps) {
         panelClassName="fc-module-content fc-embedded-panel"
       >
         <div className="fc-module-page">
-          <Outlet />
+          <Outlet key={generation} />
         </div>
       </Tabs>
     </section>
