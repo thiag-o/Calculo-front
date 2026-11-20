@@ -87,7 +87,7 @@ export function UnitRunPanel() {
   const showError = run.isError && (conflict || !isConflict(run.error));
 
   const reading = useMemo(() => readForm(inputs, values, incomplete), [inputs, values, incomplete]);
-  const typing: FieldErrors = reading.ok ? {} : reading.errors;
+  const typing = useMemo<FieldErrors>(() => (reading.ok ? {} : reading.errors), [reading]);
   // The values changed after "Calcular": the result is of the values before.
   const stale = request !== null && (!reading.ok || !sameInputs(reading.inputs, request.inputs));
   const errorAt = useCallback(
@@ -179,6 +179,7 @@ export function UnitRunPanel() {
     const first = formPaths(inputs, values).find((path) => serverErrors[path]);
     if (first) setFocusPath({ path: first });
     // Only when the answer arrives, not on each keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run.error]);
 
   // After the save (or at once when read-only): what is on screen NOW is read, in the render that has the save in it,
@@ -202,7 +203,8 @@ export function UnitRunPanel() {
     runs.current += 1;
     setEdited(new Set());
     setRequest({ id: runs.current, revision: saved.revision, inputs: after.inputs, definition: latest.current.definition });
-    // Only when the save comes back.
+    // Only when the save comes back (readScreen reads the latest screen through a ref).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved]);
 
   let disabledReason: string | undefined;

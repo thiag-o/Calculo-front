@@ -184,6 +184,8 @@ function TableGrid({ node, onClose }: { node: DecisionTableNode; onClose: () => 
       focusPending.current = true;
     }
     // Only when the selection changes (a new click picks the same field again with a new selection).
+    // The other values it reads (field, node, definition) are the ones of that same render; listing them would move the active cell again on every edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection]);
 
   const moveTo = useCallback((row: number, column: number) => {

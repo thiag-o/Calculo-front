@@ -1,5 +1,6 @@
 // Boundaries between the @fluxo/react verticals (ADR 0003), with eslint-plugin-boundaries v7.
 import boundaries from 'eslint-plugin-boundaries';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 const src = 'packages/react/src';
@@ -22,6 +23,15 @@ function elementsOf(type, folder, capture) {
 export default tseslint.config(
   { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', '**/generated/**'] },
   ...tseslint.configs.recommended,
+  {
+    // Hook rules only (not the React Compiler rules of the plugin's recommended preset).
+    files: ['packages/react/src/**/*.{ts,tsx}', 'apps/shell/src/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+    },
+  },
   {
     files: [`${src}/**/*.{ts,tsx}`],
     plugins: { boundaries },

@@ -180,6 +180,7 @@ function Probe({ item, field }: { item?: EditorItem; field?: string }) {
   useEffect(() => {
     if (item) select(item, field ?? null);
     // Only on mount: the selection afterwards is the panel's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <>

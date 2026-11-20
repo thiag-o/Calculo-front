@@ -182,6 +182,7 @@ export function MonacoField({
       modelRef.current = null;
     };
     // Created once per Monaco: value, options and problems follow through the effects below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monaco]);
 
   // A `value` from outside (undo of the editor screen, reloaded draft) replaces the text, keeping Monaco's own undo.
