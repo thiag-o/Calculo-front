@@ -14,7 +14,7 @@ import {
 } from './definition';
 import { CommitTextField, ErrorPolicyField, PathSelect, PropertiesFrame, RoundingModeField, parseScale, useFocusOnSelection } from './fields';
 import { DUPLICATE_VARIABLE_MESSAGE, NAME_RULE_MESSAGE, NAME_TOOLTIP, SCALE_RULE_MESSAGE, calculationTypeOptions, duplicateWarning } from './labels';
-import { analyzedNodePath, nodePathAt, otherProblems, problemsAt } from './problemPaths';
+import { analyzedNodePath, otherProblems, problemsAt } from './problemPaths';
 
 export interface CalculationPropertiesProps {
   /** The Calculation, as it is in the definition being edited. */
@@ -30,9 +30,8 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
   const { definition, analyzedDefinition, problems, symbols, readOnly, change } = useDraftEditor();
   const formula = useRef<HTMLDivElement>(null);
 
-  // The problems point into the analysed definition; the merge keys, into the current one.
+  // The problems point into the analysed definition; the merge keys follow the block id, wherever it is in the list.
   const at = analyzedNodePath(analyzedDefinition, node.id);
-  const here = nodePathAt(definition.root.nodes.findIndex((candidate) => candidate.id === node.id));
   const path = (field: string) => (at === null ? null : `${at}.${field}`);
   const fieldProblems = (field: string) => problemsAt(problems, path(field));
 
@@ -51,7 +50,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
   function update(field: string, apply: (current: CalculationNode, definition: WorkflowDefinition) => CalculationNode, merge = false) {
     change(
       (current) => updateCalculation(current, node.id, (item) => apply(item, current)),
-      merge ? { mergeKey: `${here}.${field}` } : undefined,
+      merge ? { mergeKey: `calculation:${node.id}.${field}` } : undefined,
     );
   }
 
@@ -66,6 +65,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
     >
       <CommitTextField
         label="Nome do bloco"
+        scope={node.name}
         value={node.name}
         maxLength={NODE_NAME_MAX}
         path={path('name')}
@@ -75,6 +75,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
       />
       <CommitTextField
         label="Descrição curta"
+        scope={node.name}
         value={node.description ?? ''}
         maxLength={DESCRIPTION_MAX}
         path={path('description')}
@@ -101,6 +102,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
         <legend className="fc-properties-group-title">Saída</legend>
         <CommitTextField
           label="Nome da variável"
+          scope={node.name}
           value={node.output.name}
           mono
           maxLength={63}
@@ -114,6 +116,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
         <div className="fc-properties-row">
           <PathSelect
             label="Tipo"
+            scope={node.name}
             value={node.output.type}
             options={calculationTypeOptions(node.output.type)}
             path={path('output.type')}
@@ -128,6 +131,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
           {node.output.type === 'decimal' ? (
             <CommitTextField
               label="Casas decimais"
+              scope={node.name}
               value={String(node.output.scale ?? '')}
               inputMode="numeric"
               maxLength={2}
@@ -142,6 +146,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
 
       <RoundingModeField
         value={node.rounding_mode}
+        scope={node.name}
         inherited={settings.rounding.mode}
         path={path('rounding_mode')}
         problems={fieldProblems('rounding_mode')}
@@ -149,6 +154,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
       />
       <ErrorPolicyField
         value={node.error_policy}
+        scope={node.name}
         inherited={settings.error_policy}
         path={path('error_policy')}
         problems={fieldProblems('error_policy')}
@@ -157,6 +163,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
       {showsDefault ? (
         <CommitTextField
           label="Valor padrão"
+          scope={node.name}
           value={node.default_value ?? ''}
           mono
           maxLength={10000}

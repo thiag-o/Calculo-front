@@ -49,7 +49,10 @@ export function useBlockRemoval({ announce, focusAfterRemoval, focusOnCancel }: 
     [readOnly],
   );
 
-  const block = removing === null ? undefined : definition.root.nodes.find((node) => node.id === removing);
+  const block = removing === null || readOnly ? undefined : definition.root.nodes.find((node) => node.id === removing);
+  // The block went away (Ctrl Z of its inclusion) or the editor became read-only while the confirmation was open: it closes
+  // for good, so the same id coming back (Ctrl Shift Z) does not open it again by itself.
+  if (removing !== null && !block) setRemoving(null);
   let readers: Readers = 'checking';
   if (!problemsOutdated) readers = block ? readersOf(block.id, definition, symbols, dependencies) : 0;
   else if (analysisFailed) readers = 'unknown';
@@ -60,6 +63,7 @@ export function useBlockRemoval({ announce, focusAfterRemoval, focusOnCancel }: 
       readers={readers}
       onClose={() => setRemoving(null)}
       onRemove={() => {
+        if (readOnly) return;
         const nodes = definition.root.nodes;
         const index = nodes.findIndex((node) => node.id === block.id);
         const neighbour = nodes[index + 1] ?? nodes[index - 1] ?? null;

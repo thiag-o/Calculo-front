@@ -33,6 +33,7 @@ import {
   READ_ONLY_REASON,
   SCALE_RULE_MESSAGE,
   duplicateWarning,
+  scopedName,
 } from './labels';
 import { INPUTS_PATH, inputPath, ofPresentItems, otherProblems, problemsAt } from './problemPaths';
 
@@ -253,6 +254,7 @@ function InputItem({ input, place, first, last, names, onRemove }: InputItemProp
       <div role="group" aria-label={`Entrada ${input.name}`} className="fc-properties-item-group">
         <CommitTextField
           label="Nome"
+          scope={input.name}
           value={input.name}
           mono
           maxLength={63}
@@ -265,6 +267,7 @@ function InputItem({ input, place, first, last, names, onRemove }: InputItemProp
         />
         <SegmentedControl
           label="Cardinalidade"
+          scope={input.name}
           options={CARDINALITY_OPTIONS}
           value={input.cardinality}
           path={path('cardinality')}
@@ -275,6 +278,7 @@ function InputItem({ input, place, first, last, names, onRemove }: InputItemProp
           <TypeAndScale
             item={input}
             at={at}
+            scope={input.name}
             onType={(type) =>
               update((current, definition) =>
                 current.cardinality === 'linear' ? withType(current, type, definition.settings.rounding.scale) : current,
@@ -290,7 +294,7 @@ function InputItem({ input, place, first, last, names, onRemove }: InputItemProp
             iconOnly
             variant="ghost"
             size="small"
-            label="Mover para cima"
+            label={scopedName('Mover para cima', input.name)}
             icon={<ArrowUpIcon size={14} />}
             disabledReason={reason(first ? 'Já é a primeira entrada' : undefined)}
             onClick={() => change((current) => updateInputs(current, (all) => moveItem(all, input, -1)))}
@@ -299,7 +303,7 @@ function InputItem({ input, place, first, last, names, onRemove }: InputItemProp
             iconOnly
             variant="ghost"
             size="small"
-            label="Mover para baixo"
+            label={scopedName('Mover para baixo', input.name)}
             icon={<ArrowDownIcon size={14} />}
             disabledReason={reason(last ? 'Já é a última entrada' : undefined)}
             onClick={() => change((current) => updateInputs(current, (all) => moveItem(all, input, 1)))}
@@ -308,7 +312,7 @@ function InputItem({ input, place, first, last, names, onRemove }: InputItemProp
             iconOnly
             variant="ghost"
             size="small"
-            label="Remover entrada"
+            label={scopedName('Remover entrada', input.name)}
             icon={<TrashIcon size={14} />}
             disabledReason={reason(undefined)}
             onClick={(event) => onRemove(event.currentTarget)}
@@ -323,17 +327,20 @@ interface TypeAndScaleProps {
   item: { type: DataType; scale?: number | null };
   /** The path of the item in the analysed definition (`root.inputs[0]`, `root.inputs[1].fields[0]`), or `null`. */
   at: string | null;
+  /** The input or field the controls belong to (part of their accessible names). */
+  scope: string;
   onType: (type: DataType) => void;
   onScale: (scale: number) => void;
 }
 
-function TypeAndScale({ item, at, onType, onScale }: TypeAndScaleProps) {
+function TypeAndScale({ item, at, scope, onType, onScale }: TypeAndScaleProps) {
   const { problems } = useDraftEditor();
   const path = (field: string) => (at === null ? null : `${at}.${field}`);
   return (
     <div className="fc-properties-row">
       <PathSelect
         label="Tipo"
+        scope={scope}
         value={item.type}
         options={DATA_TYPE_OPTIONS}
         path={path('type')}
@@ -343,6 +350,7 @@ function TypeAndScale({ item, at, onType, onScale }: TypeAndScaleProps) {
       {item.type === 'decimal' ? (
         <CommitTextField
           label="Casas decimais"
+          scope={scope}
           value={String(item.scale ?? '')}
           inputMode="numeric"
           maxLength={2}
@@ -393,6 +401,7 @@ function MultipleFields({ input, place, names }: MultipleFieldsProps) {
               <div role="group" aria-label={`Campo ${field.name}`} className="fc-properties-subitem-group">
                 <CommitTextField
                   label="Nome do campo"
+                  scope={field.name}
                   value={field.name}
                   mono
                   maxLength={63}
@@ -405,6 +414,7 @@ function MultipleFields({ input, place, names }: MultipleFieldsProps) {
                 <TypeAndScale
                   item={field}
                   at={fieldAt}
+                  scope={field.name}
                   onType={(type) => updateField(field, (current, definition) => withType(current, type, definition.settings.rounding.scale))}
                   onScale={(scale) => updateField(field, (current) => ({ ...current, scale }), 'scale')}
                 />
@@ -413,7 +423,7 @@ function MultipleFields({ input, place, names }: MultipleFieldsProps) {
                     iconOnly
                     variant="ghost"
                     size="small"
-                    label="Remover campo"
+                    label={scopedName('Remover campo', field.name)}
                     icon={<TrashIcon size={14} />}
                     disabledReason={readOnly ? READ_ONLY_REASON : only ? 'A entrada múltipla precisa de pelo menos um campo' : undefined}
                     onClick={() => updateFields((fields) => removeItem(fields, field))}
@@ -428,6 +438,7 @@ function MultipleFields({ input, place, names }: MultipleFieldsProps) {
         size="small"
         icon={<PlusIcon size={14} />}
         className="fc-properties-add"
+        aria-label={scopedName('Incluir campo', input.name)}
         disabledReason={readOnly ? READ_ONLY_REASON : full ? `A entrada múltipla aceita até ${INPUT_FIELDS_MAX} campos.` : undefined}
         onClick={() => {
           updateFields((fields, definition) => [...fields, newInputField(definition)]);

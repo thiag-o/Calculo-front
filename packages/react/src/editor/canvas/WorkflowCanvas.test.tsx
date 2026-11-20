@@ -230,6 +230,58 @@ describe('WorkflowCanvas', () => {
     expect(blockOf(probe.definition, 'td_elegibilidade')).toBeUndefined();
   });
 
+  it('a confirmação não reabre sozinha quando o bloco some com Ctrl Z e volta com o mesmo id', async () => {
+    const { user, probe } = await renderCanvas();
+    await user.click(within(screen.getByRole('toolbar', { name: 'Incluir bloco' })).getByRole('button', { name: 'Cálculo' }));
+    (await screen.findByRole('group', { name: 'Cálculo 1, Cálculo' })).focus();
+    await user.keyboard('{Delete}');
+    expect(await screen.findByRole('dialog', { name: 'Remover bloco' })).toBeInTheDocument();
+
+    act(() => probe.undo());
+    expect(blockOf(probe.definition, 'calc_1')).toBeUndefined();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    act(() => probe.redo());
+    expect(blockOf(probe.definition, 'calc_1')).toBeDefined();
+    expect(await screen.findByRole('group', { name: 'Cálculo 1, Cálculo' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('com o editor só para leitura, a confirmação aberta se fecha e nada é anunciado como removido', async () => {
+    const { user, probe, setReadOnly } = await renderCanvas();
+    node('Elegibilidade, Tabela de Decisão').focus();
+    await user.keyboard('{Delete}');
+    expect(await screen.findByRole('dialog', { name: 'Remover bloco' })).toBeInTheDocument();
+
+    setReadOnly(true);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(blockOf(probe.definition, 'td_elegibilidade')).toBeDefined();
+    expect(screen.getByRole('status')).not.toHaveTextContent('removido');
+  });
+
+  it('a troca de "Conferindo…" para a contagem é anunciada pela região de status da confirmação', async () => {
+    const { user } = await renderCanvas();
+    node('Elegibilidade, Tabela de Decisão').focus();
+    await user.keyboard('{ArrowRight}{Delete}');
+    const dialog = await screen.findByRole('dialog', { name: 'Remover bloco' });
+    const status = within(dialog).getByRole('status');
+    expect(status).toBeEmptyDOMElement();
+    await waitFor(() => expect(status).toHaveTextContent('1 bloco usa a saída dele e passa a mostrar problema.'), { timeout: 3000 });
+  });
+
+  it('um anúncio igual ao anterior muda o texto da região para ser lido de novo', async () => {
+    const { user, probe } = await renderCanvas();
+    const calculation = within(screen.getByRole('toolbar', { name: 'Incluir bloco' })).getByRole('button', { name: 'Cálculo' });
+    await user.click(calculation);
+    const status = screen.getByRole('status');
+    const first = status.textContent;
+    expect(first).toBe('Bloco Cálculo 1 incluído');
+
+    act(() => probe.undo());
+    await user.click(calculation);
+    expect(status).toHaveTextContent('Bloco Cálculo 1 incluído');
+    expect(status.textContent).not.toBe(first);
+  });
+
   it('incluir um bloco é anunciado ao leitor de tela', async () => {
     const { user } = await renderCanvas();
     await user.click(within(screen.getByRole('toolbar', { name: 'Incluir bloco' })).getByRole('button', { name: 'Tabela de Decisão' }));

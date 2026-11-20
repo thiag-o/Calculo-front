@@ -226,3 +226,12 @@ export function renderPanel({ draft = exampleDraft(), readOnly = false, item, fi
 export function currentDefinition(): WorkflowDefinition {
   return JSON.parse(screen.getByRole('status', { name: 'Definição' }).textContent ?? '{}') as WorkflowDefinition;
 }
+
+/**
+ * Resolves when `element` gets the focus (right away if it already has it): the test waits for the event, not for a
+ * time. A focus that never comes ends in the test's own timeout.
+ */
+export function whenFocused(element: HTMLElement): Promise<void> {
+  if (element.ownerDocument.activeElement === element) return Promise.resolve();
+  return new Promise((resolve) => element.addEventListener('focus', () => resolve(), { once: true }));
+}

@@ -5,7 +5,7 @@ import { NAME_PATTERN, moveItem, newOutputField, removeItem, replaceItem, update
 import { CommitTextField, PathSelect, PropertiesFrame } from './fields';
 import { ArrowDownIcon, ArrowUpIcon, ListIcon, PlusIcon, TrashIcon } from './icons';
 import { indexOfItem, itemKey } from './itemIdentity';
-import { DUPLICATE_OUTPUT_FIELD_MESSAGE, NAME_RULE_MESSAGE, NAME_TOOLTIP, READ_ONLY_REASON, duplicateWarning } from './labels';
+import { DUPLICATE_OUTPUT_FIELD_MESSAGE, NAME_RULE_MESSAGE, NAME_TOOLTIP, READ_ONLY_REASON, duplicateWarning, scopedName } from './labels';
 import { OUTPUT_PATH, ofPresentItems, otherProblems, outputFieldPath, problemsAt } from './problemPaths';
 
 const NO_VARIABLE_REASON = 'Declare uma entrada ou crie um bloco para ter uma variável para a saída';
@@ -94,6 +94,7 @@ export function OutputProperties() {
                 <div role="group" aria-label={`Campo ${field.name}`} className="fc-properties-item-group">
                   <CommitTextField
                     label="Nome"
+                    scope={field.name}
                     value={field.name}
                     mono
                     maxLength={63}
@@ -106,6 +107,7 @@ export function OutputProperties() {
                   />
                   <PathSelect
                     label="Variável"
+                    scope={field.name}
                     value={field.variable}
                     options={options}
                     className="fc-properties-mono"
@@ -139,7 +141,7 @@ function OutputActions({ field, first, last, reason }: OutputActionsProps) {
         iconOnly
         variant="ghost"
         size="small"
-        label="Mover para cima"
+        label={scopedName('Mover para cima', field.name)}
         icon={<ArrowUpIcon size={14} />}
         disabledReason={reason(first ? 'Já é o primeiro campo' : undefined)}
         onClick={() => change((current) => updateOutputFields(current, (all) => moveItem(all, field, -1)))}
@@ -148,7 +150,7 @@ function OutputActions({ field, first, last, reason }: OutputActionsProps) {
         iconOnly
         variant="ghost"
         size="small"
-        label="Mover para baixo"
+        label={scopedName('Mover para baixo', field.name)}
         icon={<ArrowDownIcon size={14} />}
         disabledReason={reason(last ? 'Já é o último campo' : undefined)}
         onClick={() => change((current) => updateOutputFields(current, (all) => moveItem(all, field, 1)))}
@@ -157,7 +159,7 @@ function OutputActions({ field, first, last, reason }: OutputActionsProps) {
         iconOnly
         variant="ghost"
         size="small"
-        label="Remover campo"
+        label={scopedName('Remover campo', field.name)}
         icon={<TrashIcon size={14} />}
         disabledReason={reason(undefined)}
         onClick={() => change((current) => updateOutputFields(current, (all) => removeItem(all, field)))}

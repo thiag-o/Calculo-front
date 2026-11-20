@@ -18,7 +18,8 @@ import { usePanelWidths } from '../layout';
 import { useProblemCounts } from '../problems';
 import { addBlock, freePosition, moveBlocks, newBlock, type Position } from './blocks';
 import { useBlockRemoval } from './BlockRemoval';
-import { keep, settle, type KeptObjects } from './keptObjects';
+import { useAnnouncement } from './announcement';
+import { keep, useStableList, type KeptObjects } from './keptObjects';
 import { INPUTS_ID, OUTPUT_ID, canvasGraph, type Block, type BlockKind, type CanvasGraph } from './graph';
 import { BlocksIcon, FitIcon, ZoomInIcon, ZoomOutIcon } from './icons';
 import { BLOCK_KEYS_HELP, BLOCK_KEYS_HELP_READ_ONLY, blockAddedText, blockLabel, linkLabel, movedText } from './messages';
@@ -99,11 +100,12 @@ type CanvasGraphInput = Parameters<typeof canvasGraph>;
  */
 function useStableGraph(definition: CanvasGraphInput[0], symbols: CanvasGraphInput[1], dependencies: CanvasGraphInput[2]): CanvasGraph {
   const previous = useRef<CanvasGraph | null>(null);
-  return useMemo(() => {
-    const graph = canvasGraph(definition, symbols, dependencies, previous.current);
+  const graph = useMemo(() => canvasGraph(definition, symbols, dependencies, previous.current), [definition, symbols, dependencies]);
+  // Remembered after the commit, so building the graph has no side effect.
+  useEffect(() => {
     previous.current = graph;
-    return graph;
-  }, [definition, symbols, dependencies]);
+  }, [graph]);
+  return graph;
 }
 
 function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
@@ -114,19 +116,17 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
   const compact = usePanelWidths(frame) === 'narrow';
   const [measured, setMeasured] = useState<ReadonlyMap<string, Size>>(() => new Map());
   const [dragged, setDragged] = useState<ReadonlyMap<string, Position>>(() => new Map());
-  const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncement] = useAnnouncement();
   const [openProperties, setOpenProperties] = useState(0);
   // The selection came from the canvas itself (no need to bring the block into view).
   const selectedHere = useRef(false);
   const nodeCache = useRef<KeptObjects<CanvasNode>>(new Map());
   const edgeCache = useRef<KeptObjects<Edge>>(new Map());
-  const previousNodes = useRef<CanvasNode[] | null>(null);
-  const previousEdges = useRef<Edge[] | null>(null);
 
   const graph = useStableGraph(definition, symbols, dependencies);
   const selectedId = flowId(selection.item);
 
-  const nodes = useMemo<CanvasNode[]>(() => {
+  const builtNodes = useMemo<CanvasNode[]>(() => {
     const cache = nodeCache.current;
     const cached = (id: string, parts: readonly unknown[], make: () => CanvasNode) => keep(cache, id, parts, make);
     const draggable = !readOnly;
@@ -177,19 +177,18 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       domAttributes: { 'aria-current': selectedId === OUTPUT_ID ? 'true' : undefined },
     }));
     // The DOM order is the Tab order: Entradas, the blocks in the order of root.nodes, Saída.
-    const next = settle(cache, previousNodes.current, [inputs, ...blocks, output]);
-    previousNodes.current = next;
-    return next;
+    return [inputs, ...blocks, output];
   }, [graph, counts, selectedId, measured, dragged, readOnly]);
+  const nodes = useStableList(nodeCache.current, builtNodes);
 
-  const edges = useMemo<Edge[]>(() => {
+  const builtEdges = useMemo<Edge[]>(() => {
     const names = new Map<string, string>([
       [INPUTS_ID, 'Entradas'],
       [OUTPUT_ID, 'Saída'],
     ]);
     for (const view of graph.blocks) names.set(view.block.id, view.block.name || view.block.id);
     const cache = edgeCache.current;
-    const next = graph.links.map((link) => {
+    return graph.links.map((link) => {
       const active = selectedId !== null && (link.source === selectedId || link.target === selectedId);
       const source = names.get(link.source) ?? link.source;
       const target = names.get(link.target) ?? link.target;
@@ -208,10 +207,8 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
         ariaLabel: linkLabel(link.name, source, target),
       }));
     });
-    const settled = settle(cache, previousEdges.current, next);
-    previousEdges.current = settled;
-    return settled;
   }, [graph.blocks, graph.links, selectedId]);
+  const edges = useStableList(edgeCache.current, builtEdges);
 
   // The selection read by the handlers, so they keep their identity while it changes (React Flow gets them as props).
   const selected = useRef(selection.item);

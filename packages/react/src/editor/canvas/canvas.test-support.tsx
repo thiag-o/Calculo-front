@@ -174,6 +174,7 @@ export interface Probe {
   selection: EditorSelection;
   select: (item: EditorItem, field?: string | null) => void;
   undo: () => void;
+  redo: () => void;
   canUndo: boolean;
 }
 
@@ -183,6 +184,7 @@ function ProbePanel({ probe }: { probe: Probe }) {
   probe.selection = editor.selection;
   probe.select = editor.select;
   probe.undo = editor.undo;
+  probe.redo = editor.redo;
   probe.canUndo = editor.canUndo;
   return null;
 }
@@ -191,6 +193,8 @@ export interface Rendered {
   user: UserEvent;
   probe: Probe;
   unmount: () => void;
+  /** Renders again with the editor read-only (or not), as when the permission is lost while the screen is open. */
+  setReadOnly: (readOnly: boolean) => void;
 }
 
 export interface RenderOptions {
@@ -224,10 +228,11 @@ export function renderWithDraft(panels: ReactNode, { draft = exampleDraft(), rea
     selection: { item: { type: 'workflow' }, field: null },
     select: () => {},
     undo: () => {},
+    redo: () => {},
     canUndo: false,
   };
   const user = userEvent.setup({ delay: null });
-  const { unmount } = render(
+  const tree = (readOnly: boolean) => (
     <FluxoRoot theme="light">
       <ApiProvider apiUrl={API}>
         <QueryClientProvider client={queryClient}>
@@ -245,9 +250,10 @@ export function renderWithDraft(panels: ReactNode, { draft = exampleDraft(), rea
           </DraftEditorProvider>
         </QueryClientProvider>
       </ApiProvider>
-    </FluxoRoot>,
+    </FluxoRoot>
   );
-  return { user, probe, unmount };
+  const { unmount, rerender } = render(tree(readOnly));
+  return { user, probe, unmount, setReadOnly: (value) => rerender(tree(value)) };
 }
 
 export function blockOf(definition: WorkflowDefinition, id: string) {

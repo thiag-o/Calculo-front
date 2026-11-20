@@ -12,6 +12,7 @@ import {
   READ_ONLY_REASON,
   ROUNDING_MODE_LABELS,
   ROUNDING_MODE_OPTIONS,
+  scopedName,
 } from './labels';
 import { problemText } from './problemPaths';
 import './properties.css';
@@ -129,6 +130,8 @@ export interface CommitTextFieldProps {
   /** The field's `path` in the analysed definition: its problems and the focus from the Problems tab. */
   path: string | null;
   problems: readonly WorkflowProblem[];
+  /** The block or input the field belongs to: part of its accessible name (`aria-label`), so equal labels differ. */
+  scope?: string;
   tooltip?: ReactNode;
   /** Variable names and formulas, in mono-13. */
   mono?: boolean;
@@ -150,6 +153,7 @@ export function CommitTextField({
   warn,
   path,
   problems,
+  scope,
   tooltip,
   mono = false,
   maxLength,
@@ -157,8 +161,11 @@ export function CommitTextField({
   className,
 }: CommitTextFieldProps) {
   const { readOnly, reasonId } = useFieldsState();
-  const [shown, setShown] = useState({ text: value, from: value });
-  if (shown.from !== value) setShown({ text: value, from: value });
+  const { definition } = useDraftEditor();
+  // The text on screen follows the definition: a new value, or any other change of the definition (undo, redo, reload,
+  // another field), takes back a text that was never committed.
+  const [shown, setShown] = useState({ text: value, from: value, definition });
+  if (shown.from !== value || shown.definition !== definition) setShown({ text: value, from: value, definition });
   const input = useRef<HTMLInputElement>(null);
   useFocusOnSelection(path, () => input.current);
 
@@ -169,6 +176,7 @@ export function CommitTextField({
     <TextField
       ref={input}
       label={label}
+      aria-label={scope ? scopedName(label, scope) : undefined}
       value={shown.text}
       maxLength={maxLength}
       inputMode={inputMode}
@@ -195,20 +203,31 @@ export interface PathSelectProps {
   onChange: (value: string) => void;
   path: string | null;
   problems: readonly WorkflowProblem[];
+  /** The block or input the select belongs to: the label read by screen readers has it, so equal labels differ. */
+  scope?: string;
   tooltip?: ReactNode;
   placeholder?: string;
   className?: string;
 }
 
 /** A select bound to the definition, with its problems and the focus from the Problems tab. */
-export function PathSelect({ label, value, options, onChange, path, problems, tooltip, placeholder, className }: PathSelectProps) {
+export function PathSelect({ label, value, options, onChange, path, problems, scope, tooltip, placeholder, className }: PathSelectProps) {
   const { readOnly, reasonId } = useFieldsState();
   const trigger = useRef<HTMLButtonElement>(null);
   useFocusOnSelection(path, () => trigger.current);
   return (
     <Select
       ref={trigger}
-      label={label}
+      label={
+        scope ? (
+          <>
+            <span aria-hidden="true">{label}</span>
+            <span className="fc-properties-visually-hidden">{scopedName(label, scope)}</span>
+          </>
+        ) : (
+          label
+        )
+      }
       value={value}
       options={options}
       placeholder={placeholder}
@@ -239,10 +258,12 @@ interface PolicyFieldProps<T extends string> {
   inherited?: T;
   path: string | null;
   problems: readonly WorkflowProblem[];
+  /** The block the field belongs to (see `PathSelect`). */
+  scope?: string;
 }
 
 function policyField<T extends string>(label: string, labels: Readonly<Record<T, string>>, options: readonly SelectOption[]) {
-  return function PolicyField({ value, onChange, inherited, path, problems }: PolicyFieldProps<T>) {
+  return function PolicyField({ value, onChange, inherited, path, problems, scope }: PolicyFieldProps<T>) {
     const withInherit = inherited !== undefined;
     const all = withInherit ? [{ value: INHERIT_VALUE, label: INHERIT_LABEL }, ...options] : options;
     return (
@@ -252,6 +273,7 @@ function policyField<T extends string>(label: string, labels: Readonly<Record<T,
         options={all}
         path={path}
         problems={problems}
+        scope={scope}
         tooltip={withInherit && value === null ? `O workflow usa: ${labels[inherited]}` : undefined}
         onChange={(next) => onChange(next === INHERIT_VALUE ? null : (next as T))}
       />
@@ -278,6 +300,8 @@ export interface SegmentedControlProps<T extends string> {
   /** The control's `path` in the analysed definition: its problems and the focus from the Problems tab. */
   path?: string | null;
   problems?: readonly WorkflowProblem[];
+  /** The block or input the control belongs to: part of the group's accessible name. */
+  scope?: string;
   className?: string;
 }
 
@@ -292,6 +316,7 @@ export function SegmentedControl<T extends string>({
   onChange,
   path = null,
   problems = [],
+  scope,
   className,
 }: SegmentedControlProps<T>) {
   const { readOnly, reasonId } = useFieldsState();
@@ -325,7 +350,8 @@ export function SegmentedControl<T extends string>({
       </span>
       <div
         role="radiogroup"
-        aria-labelledby={labelId}
+        aria-labelledby={scope ? undefined : labelId}
+        aria-label={scope ? scopedName(label, scope) : undefined}
         aria-describedby={describedBy(error ? errorId : undefined, reasonId)}
         aria-invalid={error ? true : undefined}
         className="fc-segmented"

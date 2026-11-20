@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button, Dialog, DialogClose, type DialogProps } from '../../design-system';
 import { CHECKING_READERS_REASON, readersText } from './messages';
 
@@ -23,6 +24,9 @@ export interface RemoveBlockDialogProps {
  */
 export function RemoveBlockDialog({ name, readers, onRemove, onClose, focusOnClose }: RemoveBlockDialogProps) {
   const checking = readers === 'checking';
+  // The description does not speak when it changes: the count that replaces "Conferindo…" is announced by a status region.
+  const [waited, setWaited] = useState(false);
+  if (checking && !waited) setWaited(true);
   return (
     <Dialog
       open
@@ -42,6 +46,10 @@ export function RemoveBlockDialog({ name, readers, onRemove, onClose, focusOnClo
           </Button>
         </>
       }
-    />
+    >
+      <p className="fc-canvas-visually-hidden" role="status">
+        {waited && !checking ? readersText(readers) : ''}
+      </p>
+    </Dialog>
   );
 }

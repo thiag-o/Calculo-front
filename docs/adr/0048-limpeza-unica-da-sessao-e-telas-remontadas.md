@@ -31,4 +31,10 @@ A ADR 0015 trocava de tenant com `resetQueries` e saía com remoção do cache. 
 
 - **Bom:** um caminho só para logout, 401, troca de tenant e de pessoa; nada da pessoa anterior fica na tela, no cache ou na memória.
 - **Ruim:** telas remontam na troca (o editor aberto perde o estado local). Quem criar memória nova e esquecer de registrar vaza valores até o fim da página.
-- **A fazer:** esvaziar o salvamento do editor (`flush`) antes do `PUT /v1/session/tenant`, para não mandar PUT do tenant antigo (hoje o back recusa com 404 e nada é guardado). Documentar a regra de remontar o módulo nas telas avulsas.
+- **A fazer:** esvaziar o salvamento do editor (`flush`) antes do `PUT /v1/session/tenant`, para não mandar PUT do tenant antigo (hoje o back recusa com 404 e nada é guardado). Documentar a regra de remontar o módulo nas telas avulsas (feito abaixo).
+
+## Telas avulsas em modo cookie (sem código, decidido na F81)
+
+- **O caso:** uma tela avulsa (`<Catalog>`, `<Workflows>`, `<Audit>`…) em modo cookie, fora do casca. Quando a API responde `401`, o módulo limpa a sessão uma vez e avisa `onSessionExpired` uma vez (ADR 0019). Como o `lastSessionEnd` não é rearmado, um novo login na mesma instância não avisaria de novo se a sessão caísse outra vez.
+- **Regra:** quem monta uma tela avulsa em modo cookie, ao receber `onSessionExpired`, desmonta o módulo e monta um novo depois de o login terminar, como faz o casca. Com o módulo novo, o fim da sessão volta a ser avisado.
+- **Por que não rearmar:** não há caso real na interface pública hoje (o login vive no casca, e no incorporado o fim é por token), e rearmar arrisca avisar o hospedeiro várias vezes. Se um hospedeiro precisar de login dentro do mesmo módulo, abre-se tarefa e ADR próprias.

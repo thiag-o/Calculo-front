@@ -1,5 +1,6 @@
+import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { keep, settle, type KeptObjects } from './keptObjects';
+import { keep, settle, useStableList, type KeptObjects } from './keptObjects';
 
 interface Item {
   id: string;
@@ -37,5 +38,34 @@ describe('keep e settle', () => {
     expect(settle(cache, previous, [a, b])).toBe(previous);
     const next = [a, { id: 'b', label: 'B' }];
     expect(settle(cache, previous, next)).toBe(next);
+  });
+});
+
+describe('useStableList', () => {
+  it('poda o cache depois de desenhar, não enquanto monta a lista', () => {
+    const cache: KeptObjects<Item> = new Map();
+    const a = keep(cache, 'a', [1], () => ({ id: 'a', label: 'A' }));
+    const b = keep(cache, 'b', [1], () => ({ id: 'b', label: 'B' }));
+    const seenWhileRendering: string[][] = [];
+    const { rerender } = renderHook(
+      ({ list }) => {
+        seenWhileRendering.push([...cache.keys()]);
+        return useStableList(cache, list);
+      },
+      { initialProps: { list: [a, b] } },
+    );
+    rerender({ list: [b] });
+    // The render of [b] still saw "a" in the cache; it left only after the commit.
+    expect(seenWhileRendering.at(-1)).toEqual(['a', 'b']);
+    expect([...cache.keys()]).toEqual(['b']);
+  });
+
+  it('devolve a lista anterior enquanto todos os itens são os mesmos objetos', () => {
+    const cache: KeptObjects<Item> = new Map();
+    const a = { id: 'a', label: 'A' };
+    const first = [a];
+    const { result, rerender } = renderHook(({ list }) => useStableList(cache, list), { initialProps: { list: first } });
+    rerender({ list: [a] });
+    expect(result.current).toBe(first);
   });
 });

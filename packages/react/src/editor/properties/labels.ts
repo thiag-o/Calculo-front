@@ -57,3 +57,11 @@ export const DUPLICATE_OUTPUT_FIELD_MESSAGE = 'Já existe um campo de saída com
 export function duplicateWarning(counts: ReadonlyMap<string, number>, current: string, message: string) {
   return (text: string) => ((counts.get(text) ?? 0) > (text === current ? 1 : 0) ? message : null);
 }
+
+/**
+ * The accessible name of a control that repeats (one "Nome" per input, one "Remover campo" per field): the label and, in
+ * parentheses, the name of the block or input it belongs to. The visible text starts the same, so it stays in the name.
+ */
+export function scopedName(label: string, scope: string | undefined): string {
+  return scope ? `${label} (${scope})` : label;
+}

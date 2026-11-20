@@ -250,6 +250,30 @@ describe('useSwitchTenant', () => {
     expect(queryClient.getQueryData(['workflows'])).toBe('workflows da Filial');
   });
 
+  it('a troca que responde depois de um logout não grava nada: nem a sessão, nem o cache, nem a memória avisada de novo', async () => {
+    let answer: (response: Response) => void = () => {};
+    simulatedFetch.mockImplementation((req) => new Promise<Response>((resolver) => (answer = req.method === 'PUT' ? resolver : () => {})));
+    const { Providers, queryClient } = createProviders();
+    const told = vi.fn();
+    onSessionDataCleared(queryClient, told);
+    const { result } = renderHook(() => useSwitchTenant(), { wrapper: Providers });
+
+    act(() => result.current.mutate(BRANCH_TENANT.id));
+    await waitFor(() => expect(result.current.isPending).toBe(true));
+    await waitFor(() => expect(calledRoutes(simulatedFetch)).toEqual(['PUT /v1/session/tenant']));
+
+    // Sign-out while the PUT is on the way: everything of the session leaves.
+    await act(() => clearSessionData(queryClient));
+    expect(told).toHaveBeenCalledTimes(1);
+
+    await act(async () => answer(json(branchSession)));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(queryClient.getQueryData(['session'])).toBeUndefined();
+    expect(told).toHaveBeenCalledTimes(1);
+    expect(calledRoutes(simulatedFetch)).toEqual(['PUT /v1/session/tenant']);
+  });
+
   it('em 403 no_tenant_access, mantém o tenant e busca a sessão de novo (a lista de tenants mudou)', async () => {
     simulatedFetch.mockImplementation(async (req) => (req.method === 'PUT' ? problem(403, 'no_tenant_access') : json(headquartersSession)));
     const { Providers } = createProviders();
