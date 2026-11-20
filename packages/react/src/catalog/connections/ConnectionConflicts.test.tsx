@@ -112,6 +112,44 @@ describe('Conexões: conflito de versão (connection_changed)', () => {
   });
 });
 
+describe('Conexões: Recarregar que falha', () => {
+  it('ao renomear: a recarga falha, o diálogo não fecha, o texto fica e dá para tentar de novo', async () => {
+    const { user, api } = await openDetail(INTEGRATOR);
+    api.respond(RENAME_ROUTE, problem(409, 'connection_changed'));
+    await openMenuItem(user, 'Renomear conexão');
+    const dialog = await screen.findByRole('dialog', { name: 'Renomear conexão' });
+    const name = within(dialog).getByLabelText('Nome');
+    await write(user, name, ' novo');
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+    await within(dialog).findByText(CHANGED);
+
+    api.respond(DETAIL_ROUTE, problem(500, 'internal_error'), json(ERP));
+    await user.click(within(dialog).getByRole('button', { name: 'Recarregar' }));
+
+    expect(await within(dialog).findByText(/Não foi possível recarregar agora/)).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Renomear conexão' })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Nome')).toHaveValue(`${ERP.name} novo`);
+
+    await user.click(within(dialog).getByRole('button', { name: 'Tentar de novo' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('sem mensagem da API, o aviso de conflito do detalhe usa um texto padrão em pt-BR', async () => {
+    const { user, api } = await openDetail(INTEGRATOR);
+    api.respond(
+      TEST_ROUTE,
+      new Response(JSON.stringify({ type: 'about:blank', title: '', status: 409, detail: '', code: 'connection_changed' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Testar' }));
+
+    expect(await screen.findByText(/Os dados mudaram desde que você abriu esta tela/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Recarregar' })).toBeInTheDocument();
+  });
+});
+
 describe('Conexões: destino nulo', () => {
   it('com credentials.manage e target nulo: o detalhe aparece sem o destino e Trocar credencial abre com os campos vazios', async () => {
     const { user } = await openDetail(INTEGRATOR, { ...ERP, target: null });

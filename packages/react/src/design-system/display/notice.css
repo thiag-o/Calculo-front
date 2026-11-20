@@ -8,9 +8,9 @@
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--fc-space-8);
   min-width: 0;
-  padding: 10px 12px;
+  padding: 10px var(--fc-space-12);
   border-radius: 6px;
   font-family: var(--fc-font-sans);
   font-size: 13px;
@@ -23,13 +23,13 @@
   flex: none;
   width: 14px;
   height: 14px;
-  margin-top: 2px;
+  margin-top: var(--fc-space-2);
 }
 
 .fc-notice-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--fc-space-2);
   min-width: 0;
 }
 
@@ -56,7 +56,7 @@
 .fc-notice-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--fc-space-8);
   min-width: 0;
 }
 
@@ -64,5 +64,5 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--fc-space-8);
 }

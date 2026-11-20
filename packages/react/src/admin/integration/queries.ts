@@ -46,7 +46,7 @@ export function useCreateApiKey() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: NewApiKey) => dataOrError(client.POST('/v1/api-keys', { body: body })),
+    mutationFn: (body: NewApiKey) => dataOrError(client.POST('/v1/api-keys', { body })),
     gcTime: 0,
     // Without waiting for the list: the key shows as soon as the API answers.
     onSuccess: () => {
@@ -84,7 +84,7 @@ export function useCreateAuthorizedDomain() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: NewAuthorizedDomain) => dataOrError(client.POST('/v1/authorized-domains', { body: body })),
+    mutationFn: (body: NewAuthorizedDomain) => dataOrError(client.POST('/v1/authorized-domains', { body })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY }),
     onError: (error) => {
       // The origin was already registered (maybe by someone else): the list is fetched again to show it.

@@ -4,7 +4,8 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Notice, Button, TextField, Dialog, DialogClose, Select, Text, type DialogProps } from '../../design-system';
 import { DATA_TYPE_LABELS, columnTypeLabel, type Column, type DataType } from '../columns';
-import { useCreateVariable, useUpdateVariable, type Dataset, type Variable } from './queries';
+import { ReloadNotice } from '../errors';
+import { useCreateVariable, useReloadDataset, useUpdateVariable, type Dataset, type Variable } from './queries';
 import { SCALE_MAX, VARIABLE_NAME_PATTERN, acceptedTypes, canBecomeVariable, minimumScale } from './variableRules';
 import { INVALID_VARIABLE_NAME_MESSAGE, variableError } from './messages';
 
@@ -98,6 +99,7 @@ export function VariableDialog({ dataset, variable, onClose, focusOnClose }: Var
   const create = useCreateVariable(dataset.id);
   const update = useUpdateVariable(dataset.id);
   const mutation = editing ? update : create;
+  const reloadDataset = useReloadDataset(dataset.id);
   const supportedColumns = dataset.columns.filter(canBecomeVariable);
 
   const {
@@ -258,7 +260,18 @@ export function VariableDialog({ dataset, variable, onClose, focusOnClose }: Var
           />
         ) : null}
 
-        {apiError?.message ? <Notice type="error">{apiError.message}</Notice> : null}
+        {apiError?.message && apiError.conflict ? (
+          // The dialog closes only after the fetch works, so what was typed stays when it fails.
+          <ReloadNotice
+            message={apiError.message}
+            onReload={async () => {
+              await reloadDataset();
+              onClose();
+            }}
+          />
+        ) : apiError?.message ? (
+          <Notice type="error">{apiError.message}</Notice>
+        ) : null}
       </form>
     </Dialog>
   );

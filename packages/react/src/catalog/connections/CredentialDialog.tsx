@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form';
 import { Notice, Button, Dialog, DialogClose, type DialogProps } from '../../design-system';
 import { CredentialFields, FormErrorNotice, credentialSchema, toCredential, useResetOnChange, type CredentialValues } from './CredentialFields';
 import { DEFAULT_PORTS } from './format';
-import { formError, isConnectionChanged } from './messages';
-import { ReloadNotice } from './ReloadNotice';
+import { ReloadNotice, conflictMessage } from '../errors';
+import { formError, isConnectionChanged, isTooManyTests } from './messages';
 import { useTestCredential, useUpdateCredential, type Connection } from './queries';
 import { TestResult } from './TestStatus';
+import { useTestCooldown } from './useTestCooldown';
 
 export interface CredentialDialogProps {
   connection: Connection;
@@ -53,6 +54,8 @@ export function CredentialDialog({ connection, canTest, onClose, onReload, focus
 
   const apiError = update.error ? formError(update.error) : undefined;
   const testError = test.error ? formError(test.error) : undefined;
+  // The limit is shared by the test and the save: a `429` from either one holds "Testar" until the wait ends.
+  const cooldown = useTestCooldown([test.error, update.error].find(isTooManyTests));
 
   const runTest = handleSubmit(() => {
     if (!test.isPending) test.mutate();
@@ -83,7 +86,7 @@ export function CredentialDialog({ connection, canTest, onClose, onReload, focus
             <Button>Cancelar</Button>
           </DialogClose>
           {canTest ? (
-            <Button loading={test.isPending} onClick={() => void runTest()}>
+            <Button loading={test.isPending} disabledReason={cooldown.reason} showReason="beside" onClick={() => void runTest()}>
               Testar
             </Button>
           ) : null}
@@ -96,12 +99,12 @@ export function CredentialDialog({ connection, canTest, onClose, onReload, focus
       <form id={formId} className="fc-connections-form" onSubmit={save} noValidate>
         <CredentialFields register={register} errors={errors} apiError={apiError} />
         {apiError?.message && isConnectionChanged(update.error) ? (
-          <ReloadNotice message={apiError.message} onReload={onReload} />
+          <ReloadNotice message={conflictMessage(update.error)} onReload={onReload} />
         ) : (
           <FormErrorNotice error={apiError} />
         )}
         <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
-        {testError?.message ? <Notice type="error">{testError.message}</Notice> : null}
+        {testError?.message && !isTooManyTests(test.error) ? <Notice type="error">{testError.message}</Notice> : null}
       </form>
     </Dialog>
   );

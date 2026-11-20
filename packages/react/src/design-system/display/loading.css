@@ -11,13 +11,13 @@
 .fc-loading-shape {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--fc-space-16);
 }
 
 .fc-loading-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--fc-space-16);
 }
 
 .fc-skeleton {

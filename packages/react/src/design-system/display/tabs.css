@@ -20,7 +20,7 @@
 .fc-tabs-list {
   box-sizing: border-box;
   display: flex;
-  gap: 4px;
+  gap: var(--fc-space-4);
   overflow-x: auto;
 }
 
@@ -28,7 +28,7 @@
   box-sizing: border-box;
   flex: none;
   margin: 0 0 -1px;
-  padding: 10px 10px 12px;
+  padding: 10px 10px var(--fc-space-12);
   border: 0;
   border-bottom: 2px solid transparent;
   border-radius: 6px 6px 0 0;
@@ -48,7 +48,7 @@
 }
 
 .fc-tabs-small .fc-tab {
-  padding: 8px 10px 10px;
+  padding: var(--fc-space-8) 10px 10px;
   font-size: 13px;
   line-height: 16px;
 }

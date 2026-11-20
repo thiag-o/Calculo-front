@@ -3,12 +3,13 @@ import { ApiError } from '../../api';
 import { Notice, Button, Badge, EmptyState, Loading, Skeleton, Text, type TableColumn } from '../../design-system';
 import { useSession } from '../../session';
 import { ColumnsTable, type Column } from '../columns';
-import { isNotFoundError } from '../errors';
 import {
+  errorWithCode,
   useDataset,
   useDatasetConnections,
   useDatasetExcelFiles,
   useDatasetVariables,
+  useReloadDataset,
   useRefreshDatasetColumns,
   type Dataset,
 } from './queries';
@@ -17,7 +18,8 @@ import { DATASET_TYPE_LABELS, dateTime, datasetOrigin } from './origin';
 import { RenameDatasetDialog } from './RenameDatasetDialog';
 import { DeleteDatasetDialog } from './DeleteDatasetDialog';
 import { BackIcon, RefreshIcon, TableIcon } from './icons';
-import { isCredentialUnreadable, queryErrorMessage, refreshErrorMessage } from './messages';
+import { ReloadNotice, isCredentialUnreadable, isNotFoundError } from '../errors';
+import { queryErrorMessage, refreshErrorMessage } from './messages';
 import { UnreadableCredentialNotice } from './UnreadableCredentialNotice';
 import './datasets.css';
 
@@ -125,6 +127,7 @@ function LoadedDetail({
   const connections = useDatasetConnections(dataset.type !== 'excel');
   const excelFiles = useDatasetExcelFiles(dataset.type === 'excel');
   const refresh = useRefreshDatasetColumns();
+  const reloadDataset = useReloadDataset(dataset.id);
   const variables = useDatasetVariables(dataset.id);
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const renameButton = useRef<HTMLButtonElement>(null);
@@ -208,6 +211,14 @@ function LoadedDetail({
           message={refreshErrorMessage(refresh.error)}
           connectionId={dataset.connection_id}
           onOpenConnection={onOpenConnection}
+        />
+      ) : refresh.isError && errorWithCode(refresh.error, ['dataset_changed']) ? (
+        <ReloadNotice
+          message={refreshErrorMessage(refresh.error)}
+          onReload={async () => {
+            await reloadDataset();
+            refresh.reset();
+          }}
         />
       ) : refresh.isError ? (
         <Notice

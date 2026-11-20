@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { ApiError } from '../../api';
@@ -13,9 +13,9 @@ import {
   UNKNOWN_CONNECTION_MESSAGE,
   UNKNOWN_OBJECT_MESSAGE,
   createError,
-  isCredentialUnreadable,
   queryErrorMessage,
 } from './messages';
+import { isCredentialUnreadable } from '../errors';
 import { UnreadableCredentialNotice } from './UnreadableCredentialNotice';
 
 export const CONNECTIONS_LOADING_REASON = 'Aguarde a lista de conexões';
@@ -91,8 +91,18 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, onOpenConnectio
   const kind = useWatch({ control, name: 'kind' });
   const connectionId = useWatch({ control, name: 'connectionId' });
   const object = useWatch({ control, name: 'object' });
+  const typedName = useWatch({ control, name: 'name' });
+  const typedSql = useWatch({ control, name: 'sql' });
 
   const apiError = create.error ? createError(create.error) : undefined;
+
+  // "Abrir conexão" leaves the dialog (and the tab), discarding the form: with an object chosen, a name or an SQL typed,
+  // it asks first. Only the connection chosen is not worth asking about.
+  const [pendingConnection, setPendingConnection] = useState<string | null>(null);
+  const hasWork = object !== null || typedName.trim() !== '' || typedSql.trim() !== '';
+  const openConnection = onOpenConnection
+    ? (id: string) => (hasWork ? setPendingConnection(id) : onOpenConnection(id))
+    : undefined;
   // A failed refetch in the background keeps the list already loaded: it still holds, with a discreet warning. Only a
   // list that never arrived blocks the picker and "Salvar".
   const connectionList = connections.data;
@@ -179,87 +189,109 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, onOpenConnectio
   }
 
   return (
-    <Dialog
-      open
-      focusOnClose={focusOnClose}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      className="fc-datasets-dialog"
-      title="Novo dataset"
-      description={
-        allowSql
-          ? 'Um dataset lê uma tabela, uma view ou um SQL de uma conexão. As colunas são lidas ao salvar.'
-          : 'Um dataset lê uma tabela ou uma view de uma conexão. As colunas são lidas ao salvar.'
-      }
-      actions={
-        <>
-          <DialogClose>
-            <Button>Cancelar</Button>
-          </DialogClose>
-          <Button type="submit" form={formId} variant="primary" loading={create.isPending} disabledReason={disabledReason}>
-            Salvar
-          </Button>
-        </>
-      }
-    >
-      <form id={formId} className="fc-datasets-form" onSubmit={submit} noValidate>
-        {allowSql ? (
-          <Controller
-            control={control}
-            name="kind"
-            render={({ field }) => (
-              <Select
-                ref={field.ref}
-                label="Origem"
-                options={KIND_OPTIONS}
-                value={field.value}
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  create.reset();
-                }}
-                onBlur={field.onBlur}
-              />
-            )}
-          />
-        ) : null}
-
-        {connectionField}
-
-        {kind === 'table' && connectionId !== '' ? (
+    <>
+      <Dialog
+        open
+        focusOnClose={focusOnClose}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+        className="fc-datasets-dialog"
+        title="Novo dataset"
+        description={
+          allowSql
+            ? 'Um dataset lê uma tabela, uma view ou um SQL de uma conexão. As colunas são lidas ao salvar.'
+            : 'Um dataset lê uma tabela ou uma view de uma conexão. As colunas são lidas ao salvar.'
+        }
+        actions={
           <>
-            <ObjectPicker
-              key={connectionId}
-              connectionId={connectionId}
-              value={object}
-              onChange={chooseObject}
-              onOpenConnection={onOpenConnection}
-              error={errors.object?.message ?? apiError?.fields.object}
-            />
-            {object ? <ObjectColumns connectionId={connectionId} object={object} onOpenConnection={onOpenConnection} /> : null}
+            <DialogClose>
+              <Button>Cancelar</Button>
+            </DialogClose>
+            <Button type="submit" form={formId} variant="primary" loading={create.isPending} disabledReason={disabledReason}>
+              Salvar
+            </Button>
           </>
-        ) : null}
+        }
+      >
+        <form id={formId} className="fc-datasets-form" onSubmit={submit} noValidate>
+          {allowSql ? (
+            <Controller
+              control={control}
+              name="kind"
+              render={({ field }) => (
+                <Select
+                  ref={field.ref}
+                  label="Origem"
+                  options={KIND_OPTIONS}
+                  value={field.value}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    create.reset();
+                  }}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
+          ) : null}
 
-        {kind === 'sql' && connectionId !== '' ? (
-          <SqlField
-            label="SQL"
-            rows={8}
-            maxLength={SQL_MAX_LENGTH}
-            tooltip="Um comando só, que precisa ser SELECT. As colunas são lidas ao salvar."
-            error={errors.sql?.message ?? apiError?.fields.sql}
-            {...register('sql', { onChange: () => create.reset() })}
-          />
-        ) : null}
+          {connectionField}
 
-        <TextField label="Nome" autoComplete="off" error={errors.name?.message ?? apiError?.fields.name} {...register('name')} />
+          {kind === 'table' && connectionId !== '' ? (
+            <>
+              <ObjectPicker
+                key={connectionId}
+                connectionId={connectionId}
+                value={object}
+                onChange={chooseObject}
+                onOpenConnection={openConnection}
+                error={errors.object?.message ?? apiError?.fields.object}
+              />
+              {object ? <ObjectColumns connectionId={connectionId} object={object} onOpenConnection={openConnection} /> : null}
+            </>
+          ) : null}
 
-        {apiError?.message && isCredentialUnreadable(create.error) ? (
-          <UnreadableCredentialNotice message={apiError.message} connectionId={connectionId} onOpenConnection={onOpenConnection} />
-        ) : apiError?.message ? (
-          <Notice type="error">{apiError.message}</Notice>
-        ) : null}
-      </form>
-    </Dialog>
+          {kind === 'sql' && connectionId !== '' ? (
+            <SqlField
+              label="SQL"
+              rows={8}
+              maxLength={SQL_MAX_LENGTH}
+              tooltip="Um comando só, que precisa ser SELECT. As colunas são lidas ao salvar."
+              error={errors.sql?.message ?? apiError?.fields.sql}
+              {...register('sql', { onChange: () => create.reset() })}
+            />
+          ) : null}
+
+          <TextField label="Nome" autoComplete="off" error={errors.name?.message ?? apiError?.fields.name} {...register('name')} />
+
+          {apiError?.message && isCredentialUnreadable(create.error) ? (
+            <UnreadableCredentialNotice message={apiError.message} connectionId={connectionId} onOpenConnection={openConnection} />
+          ) : apiError?.message ? (
+            <Notice type="error">{apiError.message}</Notice>
+          ) : null}
+        </form>
+      </Dialog>
+      {pendingConnection !== null && onOpenConnection ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setPendingConnection(null);
+          }}
+          title="Descartar o novo dataset?"
+          description="Abrir a conexão fecha este formulário, e o que você preencheu se perde."
+          actions={
+            <>
+              <DialogClose>
+                <Button>Continuar editando</Button>
+              </DialogClose>
+              <Button variant="danger" onClick={() => onOpenConnection(pendingConnection)}>
+                Descartar e abrir conexão
+              </Button>
+            </>
+          }
+        />
+      ) : null}
+    </>
   );
 }
 

@@ -56,7 +56,7 @@ export interface FluxoModuleProps extends Omit<FluxoCalculoProps, 'screen'> {
  * The module with the given screens: the internal provider (root, API, cache and session end) and, inside it, the
  * router and the mode layout (shell or embedded).
  */
-export function FluxoModule({ apiUrl, token, screen: screen, theme, navigation, onSessionExpired, screens }: FluxoModuleProps) {
+export function FluxoModule({ apiUrl, token, screen, theme, navigation, onSessionExpired, screens }: FluxoModuleProps) {
   const embedded = token !== undefined;
   const navigationMode: FluxoNavigation = navigation ?? (embedded ? 'memory' : 'url');
   return (

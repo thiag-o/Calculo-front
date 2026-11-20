@@ -61,6 +61,8 @@ export function formError(error: unknown): FormError {
       return { message: error.message, privileges: privilegesOf(error), fields: {} };
     case 'connection_already_exists':
       return { fields: { name: ALREADY_EXISTS_MESSAGE } };
+    case 'too_many_connection_tests':
+      return { message: tooManyTestsMessage(retryAfterSeconds(error) ?? 1), fields: {} };
     case 'no_permission':
       return { message: NO_PERMISSION_MESSAGE, fields: {} };
     case 'not_found':
@@ -81,9 +83,21 @@ export function deleteErrorMessage(error: unknown): string {
   return queryErrorMessage(error);
 }
 
-/** `409 connection_credential_unreadable`: the stored credential cannot be read; the fix is to register it again. */
-export function isCredentialUnreadable(error: unknown): boolean {
-  return error instanceof ApiError && error.code === 'connection_credential_unreadable';
+/** `429 too_many_connection_tests` (E4-16): too many connection tests in a row; `retry_after_seconds` says when one is accepted. */
+export function isTooManyTests(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'too_many_connection_tests';
+}
+
+/** The seconds until a test is accepted again, from the `retry_after_seconds` of a `429` (at least 1); `undefined` for other errors. */
+export function retryAfterSeconds(error: unknown): number | undefined {
+  if (!isTooManyTests(error)) return undefined;
+  const seconds = (error as ApiError).body?.retry_after_seconds;
+  return typeof seconds === 'number' && Number.isFinite(seconds) ? Math.max(1, Math.ceil(seconds)) : 1;
+}
+
+/** The text of the `429` (and the reason beside "Testar" while it lasts), with the seconds left. */
+export function tooManyTestsMessage(seconds: number): string {
+  return `Muitos testes de conexão seguidos. Tente de novo em ${seconds} s.`;
 }
 
 /** `409 connection_changed`: the connection changed (or was removed) after the screen read it; fetch it again. */

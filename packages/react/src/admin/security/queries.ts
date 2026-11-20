@@ -32,7 +32,7 @@ export function useUpdateSecuritySettings() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: SecuritySettingsUpdate) => dataOrError(client.PUT('/v1/settings/security', { body: body })),
+    mutationFn: (body: SecuritySettingsUpdate) => dataOrError(client.PUT('/v1/settings/security', { body })),
     onSuccess: (data) => queryClient.setQueryData(SECURITY_KEY, data),
     onError: (error) => {
       if (error instanceof ApiError && error.code === 'value_out_of_range') {

@@ -31,7 +31,7 @@ export function useResetPassword(): UseMutationResult<void, Error, NewPassword> 
   const client = useApiClient();
   return useMutation({
     mutationFn: async (body: NewPassword) => {
-      await dataOrError(client.POST('/v1/password-reset', { body: body }));
+      await dataOrError(client.POST('/v1/password-reset', { body }));
     },
   });
 }

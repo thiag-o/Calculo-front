@@ -204,7 +204,7 @@ describe('<FluxoCalculo>', () => {
   });
 
   describe('navegação', () => {
-    it('no modo memoria, a URL da página não muda, nem ao abrir nem ao navegar', async () => {
+    it('no modo memory, a URL da página não muda, nem ao abrir nem ao navegar', async () => {
       simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const historyBefore = window.history.length;
       const { user } = renderModule({ navigation: 'memory' });
@@ -217,7 +217,7 @@ describe('<FluxoCalculo>', () => {
       expect(window.history.length).toBe(historyBefore);
     });
 
-    it('com token e sem navegacao, o padrão é memoria: a URL do hospedeiro não muda', async () => {
+    it('com token e sem navigation, o padrão é memory: a URL do hospedeiro não muda', async () => {
       simulateApi({ 'GET /v1/session': json(headquartersSession) });
       const { user } = renderModule({ token: 'token' });
 
@@ -241,7 +241,7 @@ describe('<FluxoCalculo>', () => {
       expect(window.location.pathname).toBe('/workflows');
     });
 
-    it('sem token e sem navegacao, o padrão é url: abre a tela do endereço atual', async () => {
+    it('sem token e sem navigation, o padrão é url: abre a tela do endereço atual', async () => {
       window.history.replaceState(null, '', '/workflows');
       simulateApi({ 'GET /v1/session': json(headquartersSession) });
       renderModule();

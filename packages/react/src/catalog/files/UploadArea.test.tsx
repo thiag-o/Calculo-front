@@ -175,6 +175,20 @@ describe('Arquivos: envio', () => {
     expect(items).toEqual(['Vendas!C1 Coluna sem nome.', "Vendas!E1 Nome repetido: 'valor'."]);
   });
 
+  it('invalid_data em fields.file: a mensagem da API aparece no campo do arquivo', async () => {
+    await renderList();
+    dropFiles(dropArea(), [fileOf('metas-2026.xlsx')]);
+    (await uploads.nth(1)).respond(
+      422,
+      problemBody(422, 'invalid_data', { fields: { file: 'Envie o arquivo no campo file.' } }),
+    );
+
+    await screen.findByText('Envie o arquivo no campo file.');
+    expect(fileInput()).toHaveAttribute('aria-invalid', 'true');
+    expect(fileInput()).toHaveAccessibleDescription('Envie o arquivo no campo file.');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('sem resposta do servidor: "Tentar de novo" envia o mesmo arquivo', async () => {
     const { user, onOpen } = await renderList();
     const file = fileOf('metas-2026.xlsx');

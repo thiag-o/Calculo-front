@@ -3,7 +3,8 @@ import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Notice, Button, TextField, Dialog, DialogClose, type DialogProps } from '../../design-system';
-import { useRenameDataset, type Dataset } from './queries';
+import { ReloadNotice } from '../errors';
+import { useReloadDataset, useRenameDataset, type Dataset } from './queries';
 import { renameError } from './messages';
 
 const schema = z.object({ name: z.string().trim().min(1, 'Informe o nome do dataset') });
@@ -21,6 +22,7 @@ export interface RenameDatasetDialogProps {
 export function RenameDatasetDialog({ dataset, onClose, focusOnClose }: RenameDatasetDialogProps) {
   const formId = useId();
   const rename = useRenameDataset();
+  const reloadDataset = useReloadDataset(dataset.id);
   const {
     register,
     handleSubmit,
@@ -52,7 +54,18 @@ export function RenameDatasetDialog({ dataset, onClose, focusOnClose }: RenameDa
     >
       <form id={formId} className="fc-datasets-form" onSubmit={submit} noValidate>
         <TextField label="Nome" autoComplete="off" error={errors.name?.message ?? apiError?.fields.name} {...register('name')} />
-        {apiError?.message ? <Notice type="error">{apiError.message}</Notice> : null}
+        {apiError?.message && apiError.conflict ? (
+          // The dialog closes only after the fetch works, so what was typed stays when it fails.
+          <ReloadNotice
+            message={apiError.message}
+            onReload={async () => {
+              await reloadDataset();
+              onClose();
+            }}
+          />
+        ) : apiError?.message ? (
+          <Notice type="error">{apiError.message}</Notice>
+        ) : null}
       </form>
     </Dialog>
   );

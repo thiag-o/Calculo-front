@@ -6,12 +6,12 @@ import { CredentialDialog } from './CredentialDialog';
 import { DeleteConnectionDialog } from './DeleteConnectionDialog';
 import { dateTime, TYPE_LABELS } from './format';
 import { BackIcon, MoreActionsIcon } from './icons';
-import { isNotFoundError } from '../errors';
-import { NO_PERMISSION_MESSAGE, formError, isConnectionChanged, isCredentialUnreadable, queryErrorMessage } from './messages';
-import { ReloadNotice } from './ReloadNotice';
+import { ReloadNotice, conflictMessage, isCredentialUnreadable, isNotFoundError } from '../errors';
+import { NO_PERMISSION_MESSAGE, formError, isConnectionChanged, isTooManyTests, queryErrorMessage } from './messages';
 import { RenameConnectionDialog } from './RenameConnectionDialog';
 import { CONNECTIONS_MANAGE, CREDENTIALS_MANAGE, useConnection, useTestConnection, type Connection } from './queries';
 import { TestResult, TestStatus } from './TestStatus';
+import { useTestCooldown } from './useTestCooldown';
 import './connections.css';
 
 type OpenDialog = 'rename' | 'credential' | 'delete';
@@ -72,7 +72,11 @@ export function ConnectionDetail({ connectionId, onBack, focusTitle = false }: C
       onBack={onBack}
       focusTitle={focusTitle}
       refetchError={query.isError ? query.error : null}
-      onReload={() => query.refetch()}
+      onReload={async () => {
+        // A failed fetch rejects, so the dialogs stay open (with what was typed) and the notice offers to try again.
+        const result = await query.refetch();
+        if (result.isError) throw result.error;
+      }}
     />;
 }
 
@@ -103,6 +107,7 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError, onReload }
   const titleId = useId();
   const session = useSession();
   const test = useTestConnection(connection.id);
+  const cooldown = useTestCooldown(test.error);
   const title = useRef<HTMLHeadingElement>(null);
   const moreButton = useRef<HTMLButtonElement>(null);
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
@@ -146,7 +151,7 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError, onReload }
         {canManage || items.length > 0 ? (
           <div className="fc-connections-actions">
             {canManage ? (
-              <Button loading={test.isPending} onClick={() => test.mutate()}>
+              <Button loading={test.isPending} disabledReason={cooldown.reason} showReason="beside" onClick={() => test.mutate()}>
                 Testar
               </Button>
             ) : null}
@@ -167,13 +172,13 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError, onReload }
       <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
       {test.error && isConnectionChanged(test.error) ? (
         <ReloadNotice
-          message={formError(test.error).message ?? ''}
+          message={conflictMessage(test.error)}
           onReload={async () => {
             await onReload();
             test.reset();
           }}
         />
-      ) : test.error ? (
+      ) : test.error && !isTooManyTests(test.error) ? (
         <Notice
           type="error"
           actions={

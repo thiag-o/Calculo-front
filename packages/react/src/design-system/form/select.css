@@ -10,12 +10,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--fc-space-8);
   width: 100%;
   min-width: 0;
   height: 32px;
   margin: 0;
-  padding: 0 8px 0 12px;
+  padding: 0 var(--fc-space-8) 0 var(--fc-space-12);
   border: 0;
   border-radius: 6px;
   background-color: var(--fc-background-100);
@@ -103,7 +103,7 @@
 }
 
 .fc-select-list {
-  padding: 4px;
+  padding: var(--fc-space-4);
 }
 
 .fc-select-item {
@@ -111,9 +111,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--fc-space-8);
   height: 32px;
-  padding: 0 8px;
+  padding: 0 var(--fc-space-8);
   border-radius: 6px;
   cursor: pointer;
   outline: none;

@@ -1,5 +1,5 @@
 import { ApiError } from '../../api';
-import { queryErrorMessage as sharedQueryErrorMessage } from '../errors';
+import { conflictMessage, queryErrorMessage as sharedQueryErrorMessage } from '../errors';
 
 /** Fields of the new dataset form. */
 export type DatasetField = 'connection' | 'object' | 'sql' | 'name';
@@ -7,6 +7,8 @@ export type DatasetField = 'connection' | 'object' | 'sql' | 'name';
 /** What the screen shows for an error: a general note (optional) and the error of each field. */
 export interface ScreenError {
   message?: string;
+  /** A version conflict (`409 dataset_changed`): `message` is the API's, and the screen offers "Recarregar". */
+  conflict?: boolean;
   fields: Partial<Record<DatasetField, string>>;
 }
 
@@ -79,6 +81,11 @@ export function createError(error: unknown): ScreenError {
 export function renameError(error: unknown): ScreenError {
   if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE, fields: {} };
   switch (error.code) {
+    case 'dataset_changed':
+      return { message: conflictMessage(error), conflict: true, fields: {} };
+    case 'connection_credential_unreadable':
+      // Same text as the other dataset screens: the API's own message (the fix is in the connection).
+      return { message: error.message, fields: {} };
     case 'dataset_already_exists':
       return { fields: { name: DATASET_ALREADY_EXISTS_MESSAGE } };
     case 'not_found':
@@ -98,6 +105,8 @@ export function renameError(error: unknown): ScreenError {
 export function refreshErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
   switch (error.code) {
+    case 'dataset_changed':
+      return conflictMessage(error);
     case 'unknown_object':
       return REFRESH_UNKNOWN_OBJECT_MESSAGE;
     case 'invalid_sql':
@@ -130,6 +139,8 @@ export type VariableField = 'column' | 'name' | 'type' | 'scale';
 /** What the variable form shows for an error: a general note (optional) and the error of each field. */
 export interface VariableScreenError {
   message?: string;
+  /** A version conflict (`409 dataset_changed` or `variable_changed`): `message` is the API's, and the screen offers "Recarregar". */
+  conflict?: boolean;
   fields: Partial<Record<VariableField, string>>;
 }
 
@@ -156,6 +167,9 @@ const VARIABLE_FIELDS: Readonly<Record<string, VariableField>> = {
 export function variableError(error: unknown, editing: boolean): VariableScreenError {
   if (!(error instanceof ApiError)) return { message: UNKNOWN_MESSAGE, fields: {} };
   switch (error.code) {
+    case 'dataset_changed':
+    case 'variable_changed':
+      return { message: conflictMessage(error), conflict: true, fields: {} };
     case 'variable_already_exists':
       return { fields: { name: VARIABLE_ALREADY_EXISTS_MESSAGE } };
     case 'invalid_variable_name':
@@ -187,6 +201,8 @@ export function variableError(error: unknown, editing: boolean): VariableScreenE
 export function deleteVariableErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
   switch (error.code) {
+    case 'variable_changed':
+      return conflictMessage(error);
     case 'not_found':
       return VARIABLE_NOT_FOUND_MESSAGE;
     case 'no_permission':
@@ -194,9 +210,4 @@ export function deleteVariableErrorMessage(error: unknown): string {
     default:
       return error.message;
   }
-}
-
-/** `409 connection_credential_unreadable`: the stored credential of the connection cannot be read; it must be registered again. */
-export function isCredentialUnreadable(error: unknown): boolean {
-  return error instanceof ApiError && error.code === 'connection_credential_unreadable';
 }

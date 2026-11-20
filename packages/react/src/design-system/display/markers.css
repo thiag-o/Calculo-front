@@ -6,7 +6,7 @@
 .fc-status {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fc-space-8);
   min-width: 0;
   white-space: nowrap;
 }
@@ -73,7 +73,7 @@
   flex-shrink: 0;
   height: 20px;
   max-width: 100%;
-  padding: 0 6px;
+  padding: 0 var(--fc-space-6);
   border-radius: 9999px;
   font-family: var(--fc-font-sans);
   font-size: 11px;

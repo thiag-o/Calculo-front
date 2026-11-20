@@ -1,5 +1,6 @@
 import { Notice, Button, Dialog, DialogClose, type DialogProps } from '../../design-system';
-import { errorWithCode, useDeleteVariable, type Variable } from './queries';
+import { ReloadNotice } from '../errors';
+import { errorWithCode, useDeleteVariable, useReloadDataset, type Variable } from './queries';
 import { deleteVariableErrorMessage } from './messages';
 
 export const DELETE_VARIABLE_NOT_FOUND_REASON = 'A variável não existe mais';
@@ -15,6 +16,7 @@ export interface DeleteVariableDialogProps {
 /** Confirmation to delete a variable; the column stays in the dataset. The dangerous action is red (estilos.md §7.7). */
 export function DeleteVariableDialog({ variable, onClose, focusOnClose }: DeleteVariableDialogProps) {
   const deleteMutation = useDeleteVariable(variable.dataset_id);
+  const reloadDataset = useReloadDataset(variable.dataset_id);
   const error = deleteMutation.error;
   // After this error, trying again changes nothing: the button stays disabled, with the reason.
   const disabledReason = errorWithCode(error, ['not_found']) ? DELETE_VARIABLE_NOT_FOUND_REASON : undefined;
@@ -44,7 +46,17 @@ export function DeleteVariableDialog({ variable, onClose, focusOnClose }: Delete
         </>
       }
     >
-      {error ? <Notice type="error">{deleteVariableErrorMessage(error)}</Notice> : null}
+      {error && errorWithCode(error, ['variable_changed']) ? (
+        <ReloadNotice
+          message={deleteVariableErrorMessage(error)}
+          onReload={async () => {
+            await reloadDataset();
+            onClose();
+          }}
+        />
+      ) : error ? (
+        <Notice type="error">{deleteVariableErrorMessage(error)}</Notice>
+      ) : null}
     </Dialog>
   );
 }

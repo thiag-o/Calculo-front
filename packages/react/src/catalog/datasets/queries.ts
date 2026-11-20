@@ -186,6 +186,15 @@ export function useRenameDataset() {
   });
 }
 
+/**
+ * Fetches the dataset and, under it, its variables again: the "Recarregar" of a version conflict (`409 dataset_changed` or
+ * `variable_changed`). The returned function rejects when the fetch fails, so the dialog that asked keeps what was typed.
+ */
+export function useReloadDataset(datasetId: string) {
+  const queryClient = useQueryClient();
+  return () => queryClient.refetchQueries({ queryKey: datasetKey(datasetId) }, { throwOnError: true });
+}
+
 /** Reads the dataset columns again from the source (`POST /v1/datasets/{id}/column-refresh`). */
 export function useRefreshDatasetColumns() {
   const client = useApiClient();

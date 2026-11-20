@@ -60,7 +60,7 @@ export function useCreateRole() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: RoleData) => dataOrError(client.POST('/v1/roles', { body: body })),
+    mutationFn: (body: RoleData) => dataOrError(client.POST('/v1/roles', { body })),
     onSuccess: () => refreshAdmin(queryClient),
   });
 }
@@ -71,7 +71,7 @@ export function useUpdateRole() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: RoleData }) =>
-      dataOrError(client.PUT('/v1/roles/{id}', { params: { path: { id } }, body: body })),
+      dataOrError(client.PUT('/v1/roles/{id}', { params: { path: { id } }, body })),
     onSuccess: () => refreshAdmin(queryClient),
     onError: (error) => {
       // The list was stale (role deleted, or it is the Admin): fetch again.

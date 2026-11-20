@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react';
-import { Button, Notice, Text } from '../../design-system';
+import { Button, FieldMessage, Notice, Text } from '../../design-system';
 import { MAX_FILE_MB, XLSX_ACCEPT, fileSize } from './format';
 import { UploadIcon } from './icons';
 import { ONE_FILE_MESSAGE, clientUploadError, uploadError, type UploadError } from './messages';
@@ -97,6 +97,7 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
   const percent = percentOf(upload.progress);
   const reading = pending && percent >= 100;
   const name = chosen?.name ?? '';
+  const fileFieldError = error?.fileField;
 
   return (
     <div className="fc-files-upload-block">
@@ -151,6 +152,8 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
           hidden
           tabIndex={-1}
           aria-label="Arquivo Excel (.xlsx)"
+          aria-invalid={fileFieldError !== undefined ? true : undefined}
+          aria-describedby={fileFieldError !== undefined ? 'fc-files-upload-file-error' : undefined}
           onChange={(event) => {
             receive(event.target.files);
             // Choosing the same file again (after fixing it) must fire the change again.
@@ -203,7 +206,13 @@ export function UploadArea({ onUploaded }: UploadAreaProps) {
         </Notice>
       ) : null}
 
-      {error ? (
+      {fileFieldError !== undefined ? (
+        <FieldMessage id="fc-files-upload-file-error" type="error">
+          {fileFieldError}
+        </FieldMessage>
+      ) : null}
+
+      {error && fileFieldError === undefined ? (
         <Notice
           type="error"
           title={name ? `Não foi possível enviar ${name}` : 'Não foi possível enviar o arquivo'}

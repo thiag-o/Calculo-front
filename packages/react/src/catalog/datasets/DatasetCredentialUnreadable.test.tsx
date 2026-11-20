@@ -68,7 +68,28 @@ describe('Novo dataset: credencial ilegível', () => {
 
     expect(await within(dialog).findByText(UNREADABLE)).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Abrir conexão' }));
+    // An object is chosen: leaving discards the form, so it asks first.
+    await user.click(within(await screen.findByRole('dialog', { name: 'Descartar o novo dataset?' })).getByRole('button', { name: 'Descartar e abrir conexão' }));
     expect(onOpenConnection).toHaveBeenCalledWith(POSTGRES.id);
+  });
+
+  it('com algo preenchido: pede confirmação antes de abrir a conexão, e Continuar editando mantém o formulário', async () => {
+    api.respond(OBJECTS, json({ items: [object('itens_nf')], next_cursor: null }));
+    api.respond(OBJECT_COLUMNS, problem(409, 'connection_credential_unreadable'));
+    const onOpenConnection = vi.fn();
+    const { user } = renderScreen(<Datasets onOpenConnection={onOpenConnection} />);
+    const dialog = await openDialog(user);
+    await user.click(await within(dialog).findByRole('radio', { name: 'public.itens_nf Tabela' }));
+    await user.click(await within(dialog).findByRole('button', { name: 'Abrir conexão' }));
+
+    const confirm = await screen.findByRole('dialog', { name: 'Descartar o novo dataset?' });
+    expect(onOpenConnection).not.toHaveBeenCalled();
+    await user.click(within(confirm).getByRole('button', { name: 'Continuar editando' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Descartar o novo dataset?' })).not.toBeInTheDocument();
+    expect(onOpenConnection).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Novo dataset' })).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog', { name: 'Novo dataset' })).getByLabelText('Nome')).toHaveValue('itens_nf');
   });
 
   it('ao criar o dataset: mostra a mensagem e o link abre a conexão', async () => {
@@ -83,6 +104,7 @@ describe('Novo dataset: credencial ilegível', () => {
 
     expect(await within(dialog).findByText(UNREADABLE)).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Abrir conexão' }));
+    await user.click(within(await screen.findByRole('dialog', { name: 'Descartar o novo dataset?' })).getByRole('button', { name: 'Descartar e abrir conexão' }));
     expect(onOpenConnection).toHaveBeenCalledWith(POSTGRES.id);
   });
 

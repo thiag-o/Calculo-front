@@ -5,9 +5,10 @@ import { z } from 'zod';
 import { Notice, Button, Dialog, DialogClose, Select, TextField, type DialogProps } from '../../design-system';
 import { CredentialFields, FormErrorNotice, credentialSchema, fieldError, toCredential, useResetOnChange } from './CredentialFields';
 import { DEFAULT_PORTS, TYPE_LABELS } from './format';
-import { formError } from './messages';
+import { formError, isTooManyTests } from './messages';
 import { useCreateConnection, useTestCredential, type Connection, type ConnectionType } from './queries';
 import { TestResult } from './TestStatus';
+import { useTestCooldown } from './useTestCooldown';
 
 const TYPES = ['postgres', 'sqlserver'] as const satisfies readonly ConnectionType[];
 
@@ -59,6 +60,8 @@ export function NewConnectionDialog({ onClose, onCreated, focusOnClose }: NewCon
 
   const apiError = create.error ? formError(create.error) : undefined;
   const testError = test.error ? formError(test.error) : undefined;
+  // The limit is shared by the test and the save: a `429` from either one holds "Testar" until the wait ends.
+  const cooldown = useTestCooldown([test.error, create.error].find(isTooManyTests));
 
   const runTest = handleSubmit(() => {
     if (!test.isPending) test.mutate();
@@ -89,7 +92,7 @@ export function NewConnectionDialog({ onClose, onCreated, focusOnClose }: NewCon
           <DialogClose>
             <Button>Cancelar</Button>
           </DialogClose>
-          <Button loading={test.isPending} onClick={() => void runTest()}>
+          <Button loading={test.isPending} disabledReason={cooldown.reason} showReason="beside" onClick={() => void runTest()}>
             Testar
           </Button>
           <Button type="submit" form={formId} variant="primary" loading={create.isPending}>
@@ -134,7 +137,7 @@ export function NewConnectionDialog({ onClose, onCreated, focusOnClose }: NewCon
         <CredentialFields register={register} errors={errors} apiError={apiError} />
         <FormErrorNotice error={apiError} />
         <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
-        {testError?.message ? <Notice type="error">{testError.message}</Notice> : null}
+        {testError?.message && !isTooManyTests(test.error) ? <Notice type="error">{testError.message}</Notice> : null}
       </form>
     </Dialog>
   );

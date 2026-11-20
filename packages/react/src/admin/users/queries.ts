@@ -50,7 +50,7 @@ export function useCreateUser() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: NewUser) => dataOrError(client.POST('/v1/users', { body: body })),
+    mutationFn: (body: NewUser) => dataOrError(client.POST('/v1/users', { body })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: USER_LIST_KEY }),
     onError: (error) => {
       // A chosen role is gone: the role list is fetched again.
@@ -65,7 +65,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: UserUpdate }) =>
-      dataOrError(client.PUT('/v1/users/{id}', { params: { path: { id } }, body: body })),
+      dataOrError(client.PUT('/v1/users/{id}', { params: { path: { id } }, body })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: USER_LIST_KEY }),
     onError: (error) => {
       if (errorWithCode(error, ['unknown_role'])) void queryClient.invalidateQueries({ queryKey: AVAILABLE_ROLES_KEY });

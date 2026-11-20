@@ -8,14 +8,14 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--fc-space-2);
   min-width: 0;
 }
 
 .fc-checkbox-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fc-space-8);
 }
 
 .fc-checkbox-box {
@@ -86,7 +86,7 @@
 
 /* The label widens the click area to 28px of height (estilos.md §11). */
 .fc-checkbox-label {
-  padding: 4px 0;
+  padding: var(--fc-space-4) 0;
   color: var(--fc-text);
   cursor: pointer;
 }
@@ -98,7 +98,7 @@
 
 /* Messages aligned with the label text: 16px of the box + 8px of space. */
 .fc-checkbox .fc-field-message {
-  padding-left: 24px;
+  padding-left: var(--fc-space-24);
 }
 
 @media (prefers-reduced-motion: reduce) {

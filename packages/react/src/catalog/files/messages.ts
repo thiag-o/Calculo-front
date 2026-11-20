@@ -25,6 +25,8 @@ export interface UploadError {
   cells: readonly (readonly [cell: string, problem: string])[];
   /** Whether sending the same file again may work (network, server); a problem in the file itself does not. */
   retry: boolean;
+  /** The API's own message for the file field (`fields.file` of a validation error): shown at the file field, not in the notice. */
+  fileField?: string;
 }
 
 /** The file chosen in the browser, checked before going to the API: `undefined` when it can be sent. */
@@ -56,7 +58,10 @@ export function uploadError(error: unknown): UploadError {
     case 'invalid_header':
       return { message: INVALID_HEADER_MESSAGE, cells: Object.entries(error.fields), retry: false };
     case 'invalid_data':
-      return { message: error.fields.file !== undefined ? MISSING_FILE_MESSAGE : error.message, cells: [], retry: false };
+      if (error.fields.file !== undefined) {
+        return { message: MISSING_FILE_MESSAGE, cells: [], retry: false, fileField: error.fields.file };
+      }
+      return { message: error.message, cells: [], retry: false };
     case 'no_permission':
       return { message: NO_PERMISSION_MESSAGE, cells: [], retry: false };
     default:

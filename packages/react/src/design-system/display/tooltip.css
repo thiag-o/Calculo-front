@@ -8,7 +8,7 @@
 .fc-tooltip {
   box-sizing: border-box;
   max-width: 240px;
-  padding: 4px 8px;
+  padding: var(--fc-space-4) var(--fc-space-8);
   border-radius: 6px;
   background-color: var(--fc-gray-1000);
   color: var(--fc-background-100);

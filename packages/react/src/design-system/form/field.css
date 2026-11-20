@@ -8,7 +8,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--fc-space-6);
   min-width: 0;
 }
 
@@ -21,13 +21,13 @@
 .fc-field-message {
   display: flex;
   align-items: flex-start;
-  gap: 4px;
+  gap: var(--fc-space-4);
   margin: 0;
 }
 
 .fc-field-message svg {
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: var(--fc-space-2);
 }
 
 .fc-field-message-error {
@@ -42,7 +42,7 @@
   min-width: 0;
   height: 32px;
   margin: 0;
-  padding: 0 12px;
+  padding: 0 var(--fc-space-12);
   border: 0;
   border-radius: 6px;
   background-color: var(--fc-background-100);
@@ -105,14 +105,14 @@
 }
 
 .fc-password-field .fc-field-input {
-  padding-right: 32px;
+  padding-right: var(--fc-space-32);
 }
 
 .fc-password-field-toggle {
   box-sizing: border-box;
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: var(--fc-space-2);
+  right: var(--fc-space-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;

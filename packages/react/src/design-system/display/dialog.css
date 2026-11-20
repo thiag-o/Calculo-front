@@ -41,9 +41,9 @@
 .fc-dialog-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--fc-space-16);
   min-height: 0;
-  padding: 24px;
+  padding: var(--fc-space-24);
   overflow-y: auto;
 }
 
@@ -51,8 +51,8 @@
 .fc-dialog-header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-right: 32px;
+  gap: var(--fc-space-4);
+  padding-right: var(--fc-space-32);
 }
 
 .fc-dialog-title,
@@ -65,16 +65,16 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 24px;
+  gap: var(--fc-space-8);
+  padding: var(--fc-space-16) var(--fc-space-24);
   border-top: 1px solid var(--fc-border);
   background-color: var(--fc-background-200);
 }
 
 .fc-dialog-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: var(--fc-space-20);
+  right: var(--fc-space-20);
 }
 
 @keyframes fc-dialog-appear {

@@ -2,7 +2,8 @@ import { useEffect, useId, useState } from 'react';
 import { ApiError } from '../../api';
 import { Notice, Button, Badge, FieldMessage, Loading, TextField, Text, textClasses } from '../../design-system';
 import { useConnectionObjects, type DatabaseObject } from './queries';
-import { UNKNOWN_CONNECTION_MESSAGE, isCredentialUnreadable, queryErrorMessage } from './messages';
+import { isCredentialUnreadable } from '../errors';
+import { UNKNOWN_CONNECTION_MESSAGE, queryErrorMessage } from './messages';
 import { UnreadableCredentialNotice } from './UnreadableCredentialNotice';
 
 /** How long the filter waits after the last key before asking the API (ms). */
