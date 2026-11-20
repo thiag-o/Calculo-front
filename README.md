@@ -76,6 +76,8 @@ FLUXO_TEST_ISOLATION_ID=F62 pnpm e2e
 
 No PowerShell: `$env:FLUXO_TEST_ISOLATION_ID='F62'; pnpm e2e`.
 
+- Numa worktree (`worktrees/frontend/<T>`), o `../backend` não existe. Defina também `FLUXO_BACKEND_DIR=C:/dev/fluxo-calculo/backend`: o `pnpm generate:api` e o `e2e/support/contract-examples.spec.ts` leem o contrato de `$FLUXO_BACKEND_DIR/contracts/openapi.yaml`. Com a variável definida e o contrato ausente, os dois falham com mensagem clara. Sem a variável, vale o `../backend`; se ele não existir (o CI do front), o teste é pulado com o motivo na saída e o `generate:api` falha.
+
 - Com a variável, o casca e a página de incorporação sobem em portas próprias, derivadas do id de forma determinística (hash do id), numa faixa fixa de 6100 a 6999: o casca na porta par e a página de incorporação na ímpar seguinte. As portas 5000 e 5001 nunca entram (regra do dono). A conta está em `scripts/e2e-ports.mjs` e é conferida por `e2e/support/e2e-ports.spec.ts`.
 - Com a variável, também a pasta de artefatos do Playwright (`test-results/<id>`) e o build do casca para o e2e (`node_modules/.cache/e2e-shell-<id>`) levam o id, então duas execuções no mesmo checkout não dividem nem apagam os arquivos uma da outra.
 - Sem a variável, ficam as portas de sempre: 5173 (casca) e 5274 (página de incorporação).
