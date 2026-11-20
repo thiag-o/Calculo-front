@@ -258,6 +258,36 @@
   white-space: nowrap;
 }
 
+/* Workflow open: the tenant name (link to the Início) and the switch button side by side. */
+.fc-tenant-selector-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.fc-tenant-selector-home {
+  flex: 1 1 auto;
+  width: auto;
+  color: inherit;
+  text-decoration: none;
+}
+
+.fc-tenant-selector-switch-button {
+  flex: none;
+  width: 32px;
+  padding: 6px;
+  justify-content: center;
+}
+
+.fc-shell-compact .fc-tenant-selector-row {
+  flex-direction: column;
+}
+
+/* Compact: the switch button stays visible and usable; only the tenant name shrinks to the tooltip/screen reader. */
+.fc-shell-compact .fc-tenant-selector-switch-button .fc-tenant-selector-switch {
+  display: inline-flex;
+}
+
 /* "tenant › workflow" line (E4-25): the workflow below the tenant, indented under it. */
 .fc-workflow-context {
   margin-top: 2px;

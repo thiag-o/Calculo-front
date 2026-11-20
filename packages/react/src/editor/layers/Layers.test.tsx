@@ -149,6 +149,30 @@ describe('Layers', () => {
     await waitFor(() => expect(item('Entradas')).toHaveFocus());
   });
 
+  it('um anúncio igual ao anterior é lido de novo (termina com espaço sem quebra)', async () => {
+    const draft = exampleDraft();
+    const [first, second] = draft.definition.root.nodes.slice(1, 3);
+    if (!first || !second) throw new Error('The example draft needs two blocks.');
+    draft.definition = {
+      ...draft.definition,
+      root: { ...draft.definition.root, nodes: [{ ...first, name: 'Repetido' }, { ...second, name: 'Repetido' }] as typeof draft.definition.root.nodes },
+    };
+    const { user } = renderWithDraft(<Layers />, { draft });
+
+    screen.getAllByRole('treeitem', { name: 'Repetido, Cálculo' })[0]?.focus();
+    await user.keyboard('{Delete}');
+    await user.click(await screen.findByRole('button', { name: 'Remover bloco' }));
+    const status = screen.getByRole('status');
+    expect(status.textContent).toBe('Bloco Repetido removido');
+
+    await waitFor(() => expect(item('Repetido, Cálculo')).toHaveFocus());
+    await user.keyboard('{Delete}');
+    const remove = () => screen.getByRole('button', { name: 'Remover bloco' });
+    await waitFor(() => expect(remove()).not.toHaveAttribute('aria-disabled'), { timeout: 3000 });
+    await user.click(remove());
+    expect(screen.getByRole('status').textContent).toBe('Bloco Repetido removido ');
+  });
+
   it('Delete não faz nada nas Entradas, na Saída nem em só leitura', async () => {
     const { user } = renderWithDraft(<Layers />);
     item('Entradas').focus();

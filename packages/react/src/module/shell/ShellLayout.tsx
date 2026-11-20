@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
-import { NavLink, Outlet, useMatch } from 'react-router';
+import { Navigate, NavLink, Outlet, useMatch } from 'react-router';
 import { Notice, Button, Tooltip } from '../../design-system';
 import { useSessionGeneration, type Session } from '../../session';
 import { ExpandMenuIcon, CollapseMenuIcon, OverviewIcon } from '../icons';
@@ -34,7 +34,22 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
   const compact = narrow || collapsed;
   const { unsectioned, sections } = groupBySection(screens);
   // A workflow is open (its Overview): the selector gets the "tenant › workflow" line and the menu is the workflow's (E4-25).
-  const workflowId = useMatch('/workflows/:id')?.params.id;
+  const allowsWorkflows = screens.some((screen) => screen.id === 'workflows');
+  const matchedWorkflowId = useMatch('/workflows/:id/*')?.params.id;
+  // Switching tenant with a workflow open: the workflow belongs to the old tenant, so the bar stops showing it at once, the
+  // screen is not rendered again under the old URL (that would fetch the old workflow in the new tenant) and the module goes
+  // to the list of the new tenant, or to the Início without access to Workflows (E4-25). State adjusted while rendering.
+  const tenantId = session.current_tenant.id;
+  const [seenTenant, setSeenTenant] = useState(tenantId);
+  const [leaving, setLeaving] = useState(false);
+  if (seenTenant !== tenantId) {
+    setSeenTenant(tenantId);
+    setLeaving(matchedWorkflowId !== undefined);
+  } else if (leaving && matchedWorkflowId === undefined) {
+    setLeaving(false);
+  }
+  const redirecting = leaving && matchedWorkflowId !== undefined;
+  const workflowId = redirecting || !allowsWorkflows ? undefined : matchedWorkflowId;
   const classes = ['fc-shell', compact ? 'fc-shell-compact' : null, narrow ? 'fc-shell-narrow' : null]
     .filter(Boolean)
     .join(' ');
@@ -45,6 +60,7 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
         <div className="fc-sidebar-top">
           <TenantSelector
             session={session}
+            homeLink={workflowId !== undefined}
             onSwitch={() => setNotice(null)}
             onFailure={(error) => setNotice(switchErrorMessage(error))}
           />
@@ -106,7 +122,11 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
               {notice}
             </Notice>
           ) : null}
-          <Outlet key={generation} />
+          {redirecting ? (
+            <Navigate to={allowsWorkflows ? '/workflows' : '/home'} replace />
+          ) : (
+            <Outlet key={generation} />
+          )}
         </div>
       </main>
     </div>

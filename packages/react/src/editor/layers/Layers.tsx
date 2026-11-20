@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { textClasses } from '../../design-system';
 import { useBlockRemoval } from '../canvas';
+import { useAnnouncement } from '../canvas/announcement';
 import { WORKFLOW_ITEM, sameItem, useDraftEditor, type EditorItem, type WorkflowDefinition } from '../draft';
 import { useProblemCounts, type ProblemCounts } from '../problems';
 import { AlertIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
@@ -152,7 +153,7 @@ export function Layers() {
   // The row last focused here, with the selection it had then: once the selection changes in another panel, the Tab
   // stop follows the selection instead.
   const [focused, setFocused] = useState<{ key: string; item: EditorItem } | null>(null);
-  const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncement] = useAnnouncement();
   const tree = useRef<HTMLUListElement>(null);
   const rowElement = (key: string) => tree.current?.querySelector<HTMLElement>(`[data-key="${key}"]`) ?? null;
   const removal = useBlockRemoval({

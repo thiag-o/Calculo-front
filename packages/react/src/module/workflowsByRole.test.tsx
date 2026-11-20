@@ -11,6 +11,7 @@ import {
   CONFIGURATOR_PERMISSIONS,
   INTEGRATOR_PERMISSIONS,
   json,
+  BRANCH_TENANT,
   sessionWith,
   simulateApi,
   simulateWidth,
@@ -128,6 +129,85 @@ describe('Workflows no casca, por papel', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/workflows'));
     expect(await screen.findByRole('button', { name: 'Novo workflow' })).toBeInTheDocument();
     expect(menuLinks()).toContain('Workflows');
+  });
+
+  it('trocar de cliente com um workflow aberto leva à lista do cliente novo, sem mostrar o workflow do antigo', async () => {
+    window.history.replaceState(null, '', `/workflows/${SCORING.id}`);
+    document.cookie = 'fc_csrf=csrf-de-teste; path=/';
+    const branch = { ...sessionWith(CONFIGURATOR_PERMISSIONS), current_tenant: BRANCH_TENANT };
+    const api = simulateApi({
+      'GET /v1/session': json(sessionWith(CONFIGURATOR_PERMISSIONS)),
+      'PUT /v1/session/tenant': json(branch),
+      'GET /v1/workflows': json({ items: [BONUS], next_cursor: null }),
+      [`GET /v1/workflows/${SCORING.id}`]: json(WORKFLOW),
+    });
+    const { user } = renderScreen({ navigation: 'url' });
+    await screen.findByRole('button', { name: `Trocar workflow. Atual: ${SCORING.name}` });
+
+    await user.click(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
+    await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
+
+    await waitFor(() => expect(window.location.pathname).toBe('/workflows'));
+    expect(await screen.findByRole('button', { name: 'Novo workflow' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Trocar workflow/ })).not.toBeInTheDocument();
+    expect(menuLinks()).toContain('Workflows');
+    // The only request for the old workflow after the switch is the reset of the query that was on screen (session
+    // vertical); the screen is not mounted again under the old URL, which would ask for it a second time.
+    const calls = api.calls();
+    const afterSwitch = calls.slice(calls.indexOf('PUT /v1/session/tenant') + 1);
+    expect(afterSwitch.filter((call) => call === `GET /v1/workflows/${SCORING.id}`).length).toBeLessThanOrEqual(1);
+    document.cookie = 'fc_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  });
+
+  it('trocar de cliente sem workflows.view no cliente novo leva ao Início', async () => {
+    window.history.replaceState(null, '', `/workflows/${SCORING.id}`);
+    document.cookie = 'fc_csrf=csrf-de-teste; path=/';
+    const branch = { ...sessionWith(WITHOUT_WORKFLOWS), current_tenant: BRANCH_TENANT };
+    simulateApi({
+      'GET /v1/session': json(sessionWith(CONFIGURATOR_PERMISSIONS)),
+      'PUT /v1/session/tenant': json(branch),
+      'GET /v1/workflows': json({ items: [BONUS], next_cursor: null }),
+      [`GET /v1/workflows/${SCORING.id}`]: json(WORKFLOW),
+    });
+    const { user } = renderScreen({ navigation: 'url' });
+    await screen.findByRole('button', { name: `Trocar workflow. Atual: ${SCORING.name}` });
+
+    await user.click(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
+    await user.click(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name }));
+
+    await waitFor(() => expect(window.location.pathname).toBe('/home'));
+    await waitFor(() =>
+      expect(within(mainNavigation()).getByRole('link', { name: 'Início' })).toHaveAttribute('aria-current', 'page'),
+    );
+    document.cookie = 'fc_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  });
+
+  it('com o menu compacto e um workflow aberto, o botão Trocar cliente continua visível e abre o menu', async () => {
+    simulateWidth(1000);
+    window.history.replaceState(null, '', `/workflows/${SCORING.id}`);
+    simulateApiWith(CONFIGURATOR_PERMISSIONS);
+    const { user } = renderScreen({ navigation: 'url' });
+    await screen.findByRole('heading', { level: 1, name: SCORING.name });
+
+    await user.click(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
+    expect(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name })).toBeInTheDocument();
+  });
+
+  it('o menu do workflow substitui o do cliente, e o nome do cliente leva ao Início, também pelo teclado', async () => {
+    window.history.replaceState(null, '', `/workflows/${SCORING.id}`);
+    simulateApiWith(CONFIGURATOR_PERMISSIONS);
+    const { user } = renderScreen({ navigation: 'url' });
+    await screen.findByRole('heading', { level: 1, name: SCORING.name });
+    expect(menuLinks()).toEqual(['Visão geral']);
+
+    const home = screen.getByRole('link', { name: 'Início de Matriz' });
+    home.focus();
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => expect(window.location.pathname).toBe('/home'));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Início' })).toBeInTheDocument();
+    expect(menuLinks()).toContain('Workflows');
+    expect(screen.queryByRole('link', { name: 'Início de Matriz' })).not.toBeInTheDocument();
   });
 
   it('o Operador vê a lista, a Visão geral e o editor, sem criar workflows', async () => {
