@@ -948,9 +948,21 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - a seção "Testes em paralelo (worktrees)" no README.
 - Aceite: dois `pnpm e2e` simulados rodando ao mesmo tempo com ids diferentes passam sem disputar porta; sem a variável, o comportamento é o de antes; um teste das portas derivadas confere a faixa e a ausência de 5000 e 5001.
 
+**F72 · Manutenção: caminho do back por variável (modo worktree)**
+- dep: —
+- modelo: sonnet
+- revisão: não
+- arquivos: `scripts/generate-api.mjs`, `e2e/support/contract-examples.spec.ts`, `README.md`
+- Fazer (proposta da frente, decidida pela sessão global em 2026-11-20):
+  - o `generate:api` e o `contract-examples.spec.ts` leem o repositório do back de `FLUXO_BACKEND_DIR`, quando a variável está definida; sem ela, o caminho de hoje (`../backend`) continua;
+  - com a variável definida e o contrato ausente, o comando e o teste **falham** com a mensagem clara, nunca pulam em silêncio;
+  - sem a variável e sem o back (o CI do front), o teste continua pulado, com o motivo visível na saída;
+  - o README, em "Testes em paralelo (worktrees)", manda definir `FLUXO_BACKEND_DIR=C:/dev/fluxo-calculo/backend` na worktree.
+- Aceite: numa worktree em `worktrees/frontend/<T>` com a variável, o `pnpm generate:api` e o `contract-examples` rodam de verdade; com a variável apontando para uma pasta sem contrato, os dois falham com a mensagem; sem a variável, o comportamento é o de antes.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
