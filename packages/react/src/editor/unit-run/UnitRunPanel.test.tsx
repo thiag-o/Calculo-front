@@ -159,6 +159,64 @@ describe('aba Calcular: formulário', () => {
     expect(api.bodiesTo(RUN_ROUTE)).toEqual([]);
   });
 
+  it('data e hora incompletas dizem para completar e não vão como nulas', async () => {
+    const { user } = renderTab();
+    const moment = screen.getByLabelText('momento');
+    Object.defineProperty(moment, 'validity', { configurable: true, value: { badInput: true, valid: false } });
+    fireEvent.blur(moment);
+    expect(moment).toHaveAttribute('aria-invalid', 'true');
+    expect(moment).toHaveAccessibleDescription(expect.stringContaining('Digite a data e a hora completas.'));
+
+    await user.click(calculate());
+    expect(moment).toHaveFocus();
+    expect(api.bodiesTo(RUN_ROUTE)).toEqual([]);
+  });
+
+  it('data incompleta num item da lista múltipla diz para completar, no campo certo, e não vai como nula', async () => {
+    const draft: typeof DRAFT = {
+      ...DRAFT,
+      definition: {
+        ...DRAFT.definition,
+        root: {
+          ...DRAFT.definition.root,
+          inputs: [{ name: 'compras', cardinality: 'multiple', fields: [{ name: 'dia', type: 'date' }] }],
+        },
+      },
+    };
+    const { user } = renderTab({ draft });
+    await user.click(screen.getByRole('button', { name: 'Incluir item em compras' }));
+    const day = screen.getByLabelText('dia do item 1');
+    Object.defineProperty(day, 'validity', { configurable: true, value: { badInput: true, valid: false } });
+    fireEvent.blur(day);
+    expect(day).toHaveAttribute('aria-invalid', 'true');
+    expect(day).toHaveAccessibleDescription(expect.stringContaining('Digite a data completa.'));
+
+    await user.click(calculate());
+    expect(day).toHaveFocus();
+    expect(api.bodiesTo(RUN_ROUTE)).toEqual([]);
+  });
+
+  it('os nomes do resultado vêm da definição já salva, não de uma renderização atrás', async () => {
+    let release: (response: Response) => void = () => {};
+    let saves = 0;
+    // The first save waits; the one the rename asks for answers at once.
+    api.respond(SAVE_ROUTE, () => (saves++ === 0 ? new Promise<Response>((resolve) => (release = resolve)) : Promise.resolve(json({ ...DRAFT, revision: 5 }))));
+    api.respond(RUN_ROUTE, json(RUN_OK));
+    const { user } = renderTab();
+    await user.click(screen.getByRole('button', { name: 'Mudar a fórmula' }));
+    await user.click(calculate());
+    expect(await screen.findByText('Calculando')).toBeInTheDocument();
+    // The block is renamed in the same instant the save answers: the run must name it as it is now.
+    const rename = screen.getByRole('button', { name: 'Renomear Pontos' });
+    await act(async () => {
+      fireEvent.click(rename);
+      release(json({ ...DRAFT, revision: 4 }));
+    });
+
+    await screen.findByRole('heading', { name: 'Resultado' });
+    expect(screen.getByRole('button', { name: 'Pontos renomeado: selecionar no canvas' })).toBeInTheDocument();
+  });
+
   it('o erro de um item da lista aparece depois de Calcular, no campo certo', async () => {
     const { user } = renderTab();
     await user.click(screen.getByRole('button', { name: 'Incluir item em pontuacoes' }));

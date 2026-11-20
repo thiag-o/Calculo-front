@@ -263,12 +263,24 @@ describe('DecisionTableGrid', () => {
     const { user } = renderGrid({ problems: [problemAt('.rules[0].when[0]', message, 'operator_not_allowed')] });
     await waitFor(() => expect(cell(1, 1)).toHaveFocus());
     expect(cell(1, 1)).toHaveAccessibleDescription(message);
+    // The busy flag goes on the live region (role=status), not on the message that describes the cell.
+    const liveRegion = screen.getByRole('status');
     const messageBox = document.getElementById(cell(1, 1).getAttribute('aria-describedby') ?? '');
-    expect(messageBox).not.toHaveAttribute('aria-busy');
+    expect(liveRegion).not.toHaveAttribute('aria-busy');
 
     await user.keyboard('{Delete}');
-    expect(messageBox).toHaveAttribute('aria-busy', 'true');
-    await waitFor(() => expect(messageBox).not.toHaveAttribute('aria-busy'), { timeout: 4000 });
+    expect(liveRegion).toHaveAttribute('aria-busy', 'true');
+    expect(messageBox).not.toHaveAttribute('aria-busy');
+    await waitFor(() => expect(liveRegion).not.toHaveAttribute('aria-busy'), { timeout: 4000 });
+  });
+
+  it('a tecla que começa a digitar passa pela limpeza: caractere de controle não entra no rascunho', async () => {
+    const { probe } = renderGrid();
+    await waitFor(() => expect(cell(1, 1)).toHaveFocus());
+    const before = cellsOf(probe.table())[0]![0];
+    fireEvent.keyDown(cell(1, 1), { key: '\u0007' });
+    expect(cellsOf(probe.table())[0]![0]).toBe('');
+    expect(before).not.toBe('');
   });
 
   it('copia a célula ativa como texto', async () => {

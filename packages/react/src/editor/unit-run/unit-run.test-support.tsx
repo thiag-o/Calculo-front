@@ -290,6 +290,20 @@ function EditorProbe() {
       >
         Mudar a fórmula
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          change((current) => ({
+            ...current,
+            root: {
+              ...current.root,
+              nodes: current.root.nodes.map((node) => (node.id === 'calc_pontos' ? { ...node, name: 'Pontos renomeado' } : node)),
+            },
+          }))
+        }
+      >
+        Renomear Pontos
+      </button>
     </div>
   );
 }

@@ -181,6 +181,30 @@ export function UnitRunPanel() {
     // Only when the answer arrives, not on each keystroke.
   }, [run.error]);
 
+  // After the save (or at once when read-only): what is on screen NOW is read, in the render that has the save in it,
+  // never one render behind. The definition saved names the blocks and the values are the ones typed meanwhile.
+  const [saved, setSaved] = useState<{ revision: number | null; focused: HTMLElement | null } | null>(null);
+  useEffect(() => {
+    if (!saved) return;
+    setSaved(null);
+    busy.current = false;
+    setSaving(false);
+    if (saved.focused?.isConnected) setFocusAfterSave(saved.focused);
+    if (saved.revision === null) {
+      setSaveFailed(true);
+      return;
+    }
+    const after = readScreen();
+    if (!after.ok) {
+      refuse(after.errors);
+      return;
+    }
+    runs.current += 1;
+    setEdited(new Set());
+    setRequest({ id: runs.current, revision: saved.revision, inputs: after.inputs, definition: latest.current.definition });
+    // Only when the save comes back.
+  }, [saved]);
+
   let disabledReason: string | undefined;
   if (counts.total > 0) disabledReason = problemsReason(counts.total);
   else if (save.status === 'conflict' || conflict) disabledReason = CONFLICT_REASON;
@@ -195,34 +219,25 @@ export function UnitRunPanel() {
     }
     setSubmitted(false);
     setSaveFailed(false);
-    let saved: number | null = revision;
     // E4-23: the run is of the saved draft, so what is pending is saved first. Read-only has nothing to save. The values
     // are locked while it saves (the fieldset is disabled), and the focus goes back where it was.
-    if (!readOnly) {
-      const focused = form.current?.ownerDocument.activeElement;
-      busy.current = true;
-      setSaving(true);
-      try {
-        saved = await flush();
-      } finally {
-        busy.current = false;
-        setSaving(false);
-      }
-      if (focused instanceof HTMLElement && focused.isConnected) setFocusAfterSave(focused);
-    }
-    if (saved === null) {
-      setSaveFailed(true);
+    if (readOnly) {
+      setSaved({ revision, focused: null });
       return;
     }
-    // What is on screen after the save: the definition saved and the values as they are now.
-    const after = readScreen();
-    if (!after.ok) {
-      refuse(after.errors);
-      return;
+    const focused = form.current?.ownerDocument.activeElement;
+    busy.current = true;
+    setSaving(true);
+    let revisionSaved: number | null;
+    try {
+      revisionSaved = await flush();
+    } catch (error) {
+      busy.current = false;
+      setSaving(false);
+      throw error;
     }
-    runs.current += 1;
-    setEdited(new Set());
-    setRequest({ id: runs.current, revision: saved, inputs: after.inputs, definition: latest.current.definition });
+    // The rest waits for the render that has the save in it (see the effect above), not for this one.
+    setSaved({ revision: revisionSaved, focused: focused instanceof HTMLElement ? focused : null });
   }
 
   return (

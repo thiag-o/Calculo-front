@@ -207,7 +207,7 @@ function TableGrid({ node, onClose }: { node: DecisionTableNode; onClose: () => 
   function startEditing(mode: EditMode, typed?: string) {
     if (readOnly || activeRow < 0 || activeColumn < 0) return;
     const original = cellValue(node, node.rules[activeRow]!, activeColumn);
-    if (typed !== undefined) editTable((table) => setCell(table, activeRow, activeColumn, typed), cellMergeKey(activeRow, activeColumn));
+    if (typed !== undefined) editTable((table) => setCell(table, activeRow, activeColumn, cleanCell(typed)), cellMergeKey(activeRow, activeColumn));
     setEditing({ row: activeRow, column: activeColumn, mode, original });
     focusPending.current = true;
   }
@@ -702,7 +702,6 @@ function TableGrid({ node, onClose }: { node: DecisionTableNode; onClose: () => 
         <div
           id={messageId}
           className={['fc-dt-message', problemsOutdated ? 'fc-dt-outdated' : null].filter(Boolean).join(' ')}
-          aria-busy={problemsOutdated || undefined}
         >
           {activeProblems.map((problem, index) => (
             <p key={index} className="fc-dt-message-line">
@@ -711,7 +710,7 @@ function TableGrid({ node, onClose }: { node: DecisionTableNode; onClose: () => 
             </p>
           ))}
         </div>
-        <p className="fc-dt-status" role="status">
+        <p className="fc-dt-status" role="status" aria-busy={problemsOutdated || undefined}>
           {announcement}
         </p>
       </div>
