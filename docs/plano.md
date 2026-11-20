@@ -770,7 +770,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - os quatro estados da tela.
 
 **F51 · Editor: canvas e camadas**
-- dep: F50, F75
+- dep: F50, F74, F75
 - modelo: opus
 - arquivos: `packages/react/src/editor/canvas/`, `packages/react/src/editor/layers/`
 - Fazer (React Flow; estilos §8 e §11):
@@ -811,7 +811,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - a falha ao carregar mostra o campo simples.
 
 **F53 · Editor: propriedades do Cálculo, das entradas, da saída e do workflow**
-- dep: F50, F52, F75
+- dep: F50, F52, F74, F75
 - modelo: opus
 - arquivos: `packages/react/src/editor/properties/`, `packages/react/src/catalog/index.ts`
 - Fazer:
