@@ -11,3 +11,6 @@ export type { CatalogProps, CatalogLocation, CatalogTab } from './Catalog';
 export { Connections, ConnectionList, ConnectionDetail } from './connections';
 export { Datasets, DatasetDetail } from './datasets';
 export { ExcelFiles, ExcelFileList, ExcelFileDetail } from './files';
+
+// The pt-BR names of the data types (`DataType`), also used by the editor's properties (F53).
+export { DATA_TYPE_LABELS, dataTypeLabel } from './columns';

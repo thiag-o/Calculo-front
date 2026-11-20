@@ -1,0 +1,248 @@
+/*
+ * Editor › properties (estilos.md §2.4, §3, §4, §7.2, §7.7 and §9; reference screen "D · Editor"): the form of the selected
+ * item in the 340px (300px) panel. Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-properties {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  padding: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-properties-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fc-space-8);
+}
+
+.fc-properties-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-properties-title {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+  margin: 0;
+}
+
+/* The block category: an 8px square with a 2px radius, never a fill (estilos §2.4). */
+.fc-properties-square {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.fc-properties-square-calc {
+  background-color: var(--fc-cat-calc);
+}
+
+.fc-properties-square-decision {
+  background-color: var(--fc-cat-decision);
+}
+
+.fc-properties-square-source {
+  background-color: var(--fc-cat-source);
+}
+
+.fc-properties-square-output {
+  background-color: var(--fc-cat-output);
+}
+
+/* Ids and variable names: mono-13. */
+.fc-properties-id,
+.fc-properties-code {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.fc-properties-id {
+  color: var(--fc-text-tertiary);
+  overflow-wrap: anywhere;
+}
+
+/* Disabled with a reason (estilos §14): 12px tertiary text with the info icon. */
+.fc-properties-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fc-space-4);
+  margin: 0;
+}
+
+.fc-properties-reason svg {
+  flex: none;
+  margin-top: var(--fc-space-2);
+}
+
+.fc-properties-problems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-properties-mono .fc-field-input,
+.fc-properties-mono .fc-select-value {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+}
+
+.fc-properties-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* label-13, 500: the caption of a part of the panel. */
+.fc-properties-group-title {
+  margin: 0 0 var(--fc-space-12);
+  padding: 0;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* Type and places side by side. */
+.fc-properties-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--fc-space-8);
+  align-items: start;
+}
+
+/* The inputs and the output fields: one per row, with a 1px divider between them (one border only, estilos §4). */
+.fc-properties-list,
+.fc-properties-sublist {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-properties-item {
+  padding: var(--fc-space-16) 0;
+  border-top: 1px solid var(--fc-border);
+}
+
+/* The fields of one item, grouped and named for assistive technology ("Entrada valor_item"). */
+.fc-properties-item-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-properties-item:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* The fields of a Múltiplo, indented by 12px under a 1px line. */
+.fc-properties-sublist {
+  gap: var(--fc-space-12);
+  padding-left: var(--fc-space-12);
+  border-left: 1px solid var(--fc-border);
+}
+
+.fc-properties-subitem-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+.fc-properties-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--fc-space-4);
+}
+
+.fc-properties-add {
+  align-self: flex-start;
+}
+
+/*
+ * Segmented control (estilos §7.2): --fc-hover track with a border; the chosen option with background-100, a 1px outline
+ * and 500 text. 6px radius outside, 4px inside.
+ */
+.fc-segmented {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-self: flex-start;
+  gap: var(--fc-space-2);
+  padding: var(--fc-space-2);
+  border-radius: 6px;
+  background-color: var(--fc-hover);
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+.fc-segmented[aria-invalid='true'] {
+  box-shadow: 0 0 0 1px var(--fc-red-700);
+}
+
+.fc-segmented-option {
+  box-sizing: border-box;
+  height: 28px;
+  margin: 0;
+  padding: 0 var(--fc-space-12);
+  border: 0;
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 400;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.fc-segmented-option:hover {
+  color: var(--fc-text);
+}
+
+.fc-segmented-option[aria-checked='true'] {
+  background-color: var(--fc-background-100);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  color: var(--fc-text);
+  font-weight: 500;
+}
+
+.fc-segmented-option:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-segmented-option:disabled {
+  color: var(--fc-text-tertiary);
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-segmented-option {
+    transition: none;
+  }
+}
