@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { ApiError } from '../../api';
@@ -100,8 +100,14 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, onOpenConnectio
   // it asks first. Only the connection chosen is not worth asking about.
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
   const hasWork = object !== null || typedName.trim() !== '' || typedSql.trim() !== '';
+  // Where the person was when asking to leave: "Continuar editando" puts the focus back there.
+  const leftFrom = useRef<HTMLElement | null>(null);
   const openConnection = onOpenConnection
-    ? (id: string) => (hasWork ? setPendingConnection(id) : onOpenConnection(id))
+    ? (id: string) => {
+        if (!hasWork) return onOpenConnection(id);
+        leftFrom.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        setPendingConnection(id);
+      }
     : undefined;
   // A failed refetch in the background keeps the list already loaded: it still holds, with a discreet warning. Only a
   // list that never arrived blocks the picker and "Salvar".
@@ -274,6 +280,7 @@ export function NewDatasetDialog({ allowSql, onClose, onCreated, onOpenConnectio
       {pendingConnection !== null && onOpenConnection ? (
         <Dialog
           open
+          focusOnClose={leftFrom}
           onOpenChange={(open) => {
             if (!open) setPendingConnection(null);
           }}

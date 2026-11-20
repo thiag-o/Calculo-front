@@ -99,8 +99,3 @@ export function retryAfterSeconds(error: unknown): number | undefined {
 export function tooManyTestsMessage(seconds: number): string {
   return `Muitos testes de conexão seguidos. Tente de novo em ${seconds} s.`;
 }
-
-/** `409 connection_changed`: the connection changed (or was removed) after the screen read it; fetch it again. */
-export function isConnectionChanged(error: unknown): boolean {
-  return error instanceof ApiError && error.code === 'connection_changed';
-}

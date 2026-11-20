@@ -2,12 +2,13 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../api';
 import { Notice, Button, Card, Loading, Menu, Text, textClasses, type MenuItem } from '../../design-system';
 import { useSession } from '../../session';
+import { CooldownAnnouncer } from './CooldownNotice';
 import { CredentialDialog } from './CredentialDialog';
 import { DeleteConnectionDialog } from './DeleteConnectionDialog';
 import { dateTime, TYPE_LABELS } from './format';
 import { BackIcon, MoreActionsIcon } from './icons';
-import { ReloadNotice, conflictMessage, isCredentialUnreadable, isNotFoundError } from '../errors';
-import { NO_PERMISSION_MESSAGE, formError, isConnectionChanged, isTooManyTests, queryErrorMessage } from './messages';
+import { ReloadNotice, conflictMessage, isChangedConflict, isCredentialUnreadable, isNotFoundError } from '../errors';
+import { NO_PERMISSION_MESSAGE, formError, isTooManyTests, queryErrorMessage } from './messages';
 import { RenameConnectionDialog } from './RenameConnectionDialog';
 import { CONNECTIONS_MANAGE, CREDENTIALS_MANAGE, useConnection, useTestConnection, type Connection } from './queries';
 import { TestResult, TestStatus } from './TestStatus';
@@ -169,8 +170,9 @@ function LoadedDetail({ connection, onBack, focusTitle, refetchError, onReload }
 
       {refetchError ? <Notice type="error" title="Não foi possível atualizar a conexão">{queryErrorMessage(refetchError, NO_PERMISSION_MESSAGE, true)}</Notice> : null}
 
+      <CooldownAnnouncer announcement={cooldown.announcement} />
       <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
-      {test.error && isConnectionChanged(test.error) ? (
+      {test.error && isChangedConflict(test.error) ? (
         <ReloadNotice
           message={conflictMessage(test.error)}
           onReload={async () => {

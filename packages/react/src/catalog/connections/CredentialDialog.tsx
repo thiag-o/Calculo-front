@@ -3,9 +3,10 @@ import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { Notice, Button, Dialog, DialogClose, type DialogProps } from '../../design-system';
 import { CredentialFields, FormErrorNotice, credentialSchema, toCredential, useResetOnChange, type CredentialValues } from './CredentialFields';
+import { CooldownAnnouncer, CooldownNotice } from './CooldownNotice';
 import { DEFAULT_PORTS } from './format';
-import { ReloadNotice, conflictMessage } from '../errors';
-import { formError, isConnectionChanged, isTooManyTests } from './messages';
+import { ReloadNotice, conflictMessage, isChangedConflict } from '../errors';
+import { formError, isTooManyTests } from './messages';
 import { useTestCredential, useUpdateCredential, type Connection } from './queries';
 import { TestResult } from './TestStatus';
 import { useTestCooldown } from './useTestCooldown';
@@ -98,11 +99,14 @@ export function CredentialDialog({ connection, canTest, onClose, onReload, focus
     >
       <form id={formId} className="fc-connections-form" onSubmit={save} noValidate>
         <CredentialFields register={register} errors={errors} apiError={apiError} />
-        {apiError?.message && isConnectionChanged(update.error) ? (
+        {apiError?.message && isChangedConflict(update.error) ? (
           <ReloadNotice message={conflictMessage(update.error)} onReload={onReload} />
+        ) : isTooManyTests(update.error) ? (
+          <CooldownNotice reason={cooldown.reason} />
         ) : (
           <FormErrorNotice error={apiError} />
         )}
+        <CooldownAnnouncer announcement={cooldown.announcement} />
         <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
         {testError?.message && !isTooManyTests(test.error) ? <Notice type="error">{testError.message}</Notice> : null}
       </form>

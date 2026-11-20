@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Notice, Button, Dialog, DialogClose, TextField, type DialogProps } from '../../design-system';
 import { fieldError } from './CredentialFields';
-import { ReloadNotice, conflictMessage } from '../errors';
-import { formError, isConnectionChanged } from './messages';
+import { ReloadNotice, conflictMessage, isChangedConflict } from '../errors';
+import { formError } from './messages';
 import { useRenameConnection, type Connection } from './queries';
 
 const schema = z.object({ name: z.string().trim().min(1, 'Informe o nome da conexão') });
@@ -61,7 +61,7 @@ export function RenameConnectionDialog({ connection, onClose, onReload, focusOnC
       <form id={formId} className="fc-connections-form" onSubmit={save} noValidate>
         <TextField label="Nome" autoComplete="off" error={fieldError(errors, apiError, 'name')} {...register('name')} />
         {apiError?.message ? (
-          isConnectionChanged(rename.error) ? (
+          isChangedConflict(rename.error) ? (
             <ReloadNotice message={conflictMessage(rename.error)} onReload={onReload} />
           ) : (
             <Notice type="error">{apiError.message}</Notice>

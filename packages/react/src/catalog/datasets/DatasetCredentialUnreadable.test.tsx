@@ -90,6 +90,8 @@ describe('Novo dataset: credencial ilegível', () => {
     expect(onOpenConnection).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog', { name: 'Novo dataset' })).toBeInTheDocument();
     expect(within(screen.getByRole('dialog', { name: 'Novo dataset' })).getByLabelText('Nome')).toHaveValue('itens_nf');
+    // The focus goes back to where the person was, not to the top of the form.
+    expect(within(screen.getByRole('dialog', { name: 'Novo dataset' })).getByRole('button', { name: 'Abrir conexão' })).toHaveFocus();
   });
 
   it('ao criar o dataset: mostra a mensagem e o link abre a conexão', async () => {

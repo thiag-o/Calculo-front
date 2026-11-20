@@ -4,6 +4,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Notice, Button, Dialog, DialogClose, Select, TextField, type DialogProps } from '../../design-system';
 import { CredentialFields, FormErrorNotice, credentialSchema, fieldError, toCredential, useResetOnChange } from './CredentialFields';
+import { CooldownAnnouncer, CooldownNotice } from './CooldownNotice';
 import { DEFAULT_PORTS, TYPE_LABELS } from './format';
 import { formError, isTooManyTests } from './messages';
 import { useCreateConnection, useTestCredential, type Connection, type ConnectionType } from './queries';
@@ -135,7 +136,8 @@ export function NewConnectionDialog({ onClose, onCreated, focusOnClose }: NewCon
           {...register('name')}
         />
         <CredentialFields register={register} errors={errors} apiError={apiError} />
-        <FormErrorNotice error={apiError} />
+        {isTooManyTests(create.error) ? <CooldownNotice reason={cooldown.reason} /> : <FormErrorNotice error={apiError} />}
+        <CooldownAnnouncer announcement={cooldown.announcement} />
         <div aria-live="polite">{test.data ? <TestResult result={test.data} /> : null}</div>
         {testError?.message && !isTooManyTests(test.error) ? <Notice type="error">{testError.message}</Notice> : null}
       </form>
