@@ -1,0 +1,103 @@
+/*
+ * Workflows › Overview (estilos.md §3, §4, §7.4, §7.6, §9, §14 and §16; reference screen "D · Visão geral"). Only fc-
+ * classes and --fc-* variables; no global reset and no full-window measurement (ADR 0002).
+ */
+
+.fc-workflow-overview {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-32);
+  min-width: 0;
+}
+
+/* "Voltar para workflows" sits on the left, above the title, without stretching. */
+.fc-workflow-overview-back {
+  align-self: flex-start;
+  margin-bottom: calc(-1 * var(--fc-space-16));
+}
+
+.fc-workflow-overview-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-workflow-overview-title {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-workflow-overview-name,
+.fc-workflow-overview-objective,
+.fc-workflow-overview-section-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-workflow-overview-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+}
+
+.fc-workflow-overview-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+/* Draft row (estilos.md §7.6): two lines of text on the left, the badge on the right. */
+.fc-workflow-overview-draft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-workflow-overview-draft-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-workflow-overview-draft-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+}
+
+/* Loading: the title and the three boxes of the final screen. */
+.fc-workflow-overview-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-32);
+}
+
+.fc-workflow-overview-loading-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  padding: var(--fc-space-16);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+/* Dialog */
+
+.fc-workflow-overview-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  margin: 0;
+}
