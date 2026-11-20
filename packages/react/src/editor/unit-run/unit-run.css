@@ -1,0 +1,352 @@
+/*
+ * Editor › "Calcular" tab (estilos.md §3, §7.2, §7.5, §7.7, §8 and §14): the values form on the left and the result on
+ * the right, inside the bottom panel. Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-unit-run {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(280px, 2fr) minmax(0, 3fr);
+  min-height: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.fc-unit-run-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+  padding: var(--fc-space-12) var(--fc-space-16);
+  border-right: 1px solid var(--fc-border);
+}
+
+.fc-unit-run-output {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+  padding: var(--fc-space-12) var(--fc-space-16);
+}
+
+.fc-unit-run-head,
+.fc-unit-run-result-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-unit-run-head {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* heading-14 */
+.fc-unit-run-title {
+  margin: 0;
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: -0.28px;
+}
+
+/* label-12, tertiary: the section names of the result */
+.fc-unit-run-subtitle {
+  margin: 0 0 var(--fc-space-4);
+  color: var(--fc-text-tertiary);
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.fc-unit-run-none {
+  margin: 0;
+}
+
+/* A fieldset (locked while the draft saves), without the browser's own border and spacing. */
+.fc-unit-run-inputs {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--fc-space-12) var(--fc-space-16);
+  align-items: start;
+}
+
+/* Variable names in mono-13 (estilos.md §3). */
+.fc-unit-run-name {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.fc-unit-run-field .fc-field-input {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A multiple input takes the whole row of the form. */
+.fc-unit-run-multiple {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-unit-run-multiple-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fc-space-8);
+  color: var(--fc-text-secondary);
+}
+
+.fc-unit-run-items-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+}
+
+.fc-unit-run-items {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--fc-font-sans);
+}
+
+.fc-unit-run-items th,
+.fc-unit-run-items td {
+  padding: var(--fc-space-4) var(--fc-space-8);
+  text-align: left;
+  vertical-align: top;
+}
+
+.fc-unit-run-items thead th {
+  height: 32px;
+  border-bottom: 1px solid var(--fc-border);
+  color: var(--fc-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.fc-unit-run-items tbody tr + tr > td,
+.fc-unit-run-items tbody tr + tr > th {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-unit-run-items-field {
+  display: block;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-mono);
+}
+
+.fc-unit-run-items-type {
+  display: block;
+}
+
+.fc-unit-run-items-number {
+  width: 24px;
+  color: var(--fc-text-tertiary);
+  font-size: 12px;
+  line-height: 32px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-unit-run-items-actions {
+  width: 28px;
+}
+
+.fc-unit-run-field-compact {
+  min-width: 120px;
+}
+
+/* Result */
+
+.fc-unit-run-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-unit-run-section {
+  min-width: 0;
+}
+
+.fc-unit-run-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-4) var(--fc-space-16);
+  margin: 0;
+}
+
+.fc-unit-run-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+.fc-unit-run-value dt {
+  color: var(--fc-text-secondary);
+}
+
+.fc-unit-run-value dd {
+  margin: 0;
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-unit-run-nodes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-unit-run-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  padding: var(--fc-space-8) 0;
+}
+
+.fc-unit-run-node + .fc-unit-run-node {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-unit-run-node-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-12);
+  min-width: 0;
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--fc-text);
+}
+
+.fc-unit-run-node-status {
+  flex: none;
+  min-width: 96px;
+}
+
+/* The block name selects it in the canvas: mono-13/500, a link-like ghost button with a 28px target. */
+.fc-unit-run-node-name {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 var(--fc-space-6);
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  outline: 2px solid transparent;
+  transition: background-color 150ms ease-out;
+}
+
+button.fc-unit-run-node-name {
+  cursor: pointer;
+}
+
+button.fc-unit-run-node-name:hover {
+  background-color: var(--fc-hover);
+}
+
+button.fc-unit-run-node-name:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-unit-run-node-gone {
+  display: inline-flex;
+  align-items: center;
+}
+
+.fc-unit-run-node-values {
+  padding-left: var(--fc-space-4);
+}
+
+/* A block that did not run: gray, as the "Debug" of estilos.md §8 (45% opacity). */
+.fc-unit-run-node-not-run .fc-unit-run-node-name,
+.fc-unit-run-node-not-run .fc-unit-run-values {
+  opacity: 0.45;
+}
+
+.fc-unit-run-node-not-run .fc-unit-run-node-status {
+  color: var(--fc-text-secondary);
+}
+
+.fc-unit-run-messages {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-unit-run-message {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fc-space-8);
+  margin: 0;
+  padding-left: var(--fc-space-4);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.fc-unit-run-warning {
+  color: var(--fc-amber-900);
+}
+
+.fc-unit-run-error {
+  color: var(--fc-red-900);
+}
+
+/* Failure codes in mono-12, as in the Problems tab. */
+.fc-unit-run-code {
+  flex: none;
+  font-family: var(--fc-font-mono);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-unit-run-unmatched {
+  margin: var(--fc-space-4) 0 0;
+  padding-left: var(--fc-space-16);
+}
+
+.fc-unit-run-loading .fc-loading-shape {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+.fc-unit-run-empty {
+  margin: auto 0;
+}
+
+/* The result is of values that changed afterwards. */
+.fc-unit-run-stale {
+  margin: 0;
+}
