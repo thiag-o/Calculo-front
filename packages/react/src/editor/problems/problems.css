@@ -1,0 +1,194 @@
+/*
+ * Editor › problems (estilos.md §3, §7.4, §7.7, §8 and §14; reference screen "D · Editor"): the bar's "● N problemas" and
+ * the Problems tab. Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+/* "● 1 problema": red dot and red-900 text, ghost button; red-100 background on hover. */
+.fc-problem-counter {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  height: 28px;
+  margin: 0;
+  padding: 0 var(--fc-space-6);
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-red-900);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-problem-counter:hover {
+  background-color: var(--fc-red-100);
+}
+
+.fc-problem-counter:focus-visible,
+.fc-problems-item:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-problem-counter-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--fc-red-700);
+}
+
+/* The Problems tab */
+
+.fc-problems,
+.fc-problems-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-problems {
+  display: flex;
+  flex-direction: column;
+}
+
+.fc-problems-group + .fc-problems-group {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-problems-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  margin: 0;
+  padding: var(--fc-space-8) var(--fc-space-16) var(--fc-space-4);
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+/* Category square: 8px, 2px radius (estilos.md §2.4). */
+.fc-problems-square {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--fc-gray-500);
+}
+
+.fc-problems-square-calculation {
+  background-color: var(--fc-cat-calc);
+}
+
+.fc-problems-square-decision_table {
+  background-color: var(--fc-cat-decision);
+}
+
+.fc-problems-square-inputs {
+  background-color: var(--fc-cat-source);
+}
+
+.fc-problems-square-output {
+  background-color: var(--fc-cat-output);
+}
+
+.fc-problems-group-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Block names in mono-13/500 (estilos.md §3 and §8). */
+.fc-problems-group-block {
+  font-family: var(--fc-font-mono);
+}
+
+.fc-problems-group-kind {
+  flex: none;
+  color: var(--fc-text-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.fc-problems-group-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-problems-items {
+  padding: 0 var(--fc-space-8) var(--fc-space-8);
+}
+
+/* One problem: code (mono-12, tertiary) and message, a 32px row; hover --fc-hover. */
+.fc-problems-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: var(--fc-space-12);
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: var(--fc-space-6) var(--fc-space-8);
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: start;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-problems-item:hover {
+  background-color: var(--fc-hover);
+}
+
+.fc-problems-code {
+  flex: none;
+  min-width: 160px;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-mono);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-problems-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-problems-empty {
+  padding: var(--fc-space-16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-problem-counter,
+  .fc-problems-item {
+    transition: none;
+  }
+}
+
+/* The analysis of the latest change failed: a quiet line above the list (it is a status, not an alert). */
+.fc-problems-outdated {
+  margin: 0;
+  padding: var(--fc-space-8) var(--fc-space-16) 0;
+}
+
+.fc-problems-outdated:empty {
+  padding: 0;
+}

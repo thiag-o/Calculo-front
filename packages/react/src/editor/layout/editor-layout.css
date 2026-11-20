@@ -1,0 +1,284 @@
+/*
+ * Editor › layout (estilos.md §2, §4, §7.7, §9 and §15; reference screen "D · Editor"): 48px bar; Camadas 260px, canvas
+ * and Propriedades 340px (220px and 300px from 1280px of module width down, data-widths); bottom panel 220px, collapsible
+ * to its 40px tab bar. It fills the height of its container. Only fc- classes and --fc-* variables; no global reset and no
+ * full-window measurement (ADR 0002 and 0018).
+ */
+
+.fc-editor {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+}
+
+/* The editor takes the focus only by script or click (tabIndex -1, outside the Tab order): no ring around the screen. */
+.fc-editor:focus {
+  outline: none;
+}
+
+.fc-editor-frame {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-rows: 48px auto minmax(0, 1fr) 220px;
+  grid-template-areas: 'bar' 'notices' 'middle' 'bottom';
+  min-height: 0;
+  min-width: 0;
+}
+
+.fc-editor-frame[data-bottom='collapsed'] {
+  grid-template-rows: 48px auto minmax(0, 1fr) 40px;
+}
+
+/* Bar: 48px, padding 0 12px, gap 8px, divider below. */
+.fc-editor-bar {
+  grid-area: bar;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  padding: 0 var(--fc-space-12);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-editor-notices {
+  grid-area: notices;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  padding: var(--fc-space-8) var(--fc-space-12);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-editor-middle {
+  grid-area: middle;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 340px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.fc-editor-frame[data-widths='narrow'] .fc-editor-middle {
+  grid-template-columns: 220px minmax(0, 1fr) 300px;
+}
+
+.fc-editor-layers,
+.fc-editor-properties {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+.fc-editor-layers {
+  border-right: 1px solid var(--fc-border);
+}
+
+.fc-editor-properties {
+  border-left: 1px solid var(--fc-border);
+}
+
+/* Canvas: background-200 (the canvas itself draws its dot grid). */
+.fc-editor-canvas {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--fc-background-200);
+}
+
+/* Bottom panel: 40px tab bar (13px tabs, 2px gray-1000 underline on the open one) over the panel. */
+.fc-editor-bottom {
+  grid-area: bottom;
+  display: grid;
+  grid-template-rows: 40px minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-editor-bottom-bar {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  padding: 0 var(--fc-space-8);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-editor-frame[data-bottom='collapsed'] .fc-editor-bottom-bar {
+  border-bottom: 0;
+}
+
+.fc-editor-bottom-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  align-self: stretch;
+  gap: var(--fc-space-2);
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.fc-editor-bottom-tab {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  flex: none;
+  margin: 0 0 -1px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background-color: transparent;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  transition:
+    color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.fc-editor-bottom-tab:hover {
+  color: var(--fc-text);
+}
+
+.fc-editor-bottom-tab[data-state='active'] {
+  border-bottom-color: var(--fc-gray-1000);
+  color: var(--fc-text);
+  font-weight: 500;
+}
+
+.fc-editor-frame[data-bottom='collapsed'] .fc-editor-bottom-tab[data-state='active'] {
+  border-bottom-color: transparent;
+}
+
+.fc-editor-bottom-tab:focus-visible,
+.fc-editor-bottom-panel:focus-visible,
+.fc-editor-back:focus-visible,
+.fc-editor-crumb-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-editor-bottom-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-editor-bottom-panel {
+  min-height: 0;
+  overflow: auto;
+  outline: 2px solid transparent;
+}
+
+/* Bar content */
+
+.fc-editor-back {
+  flex: none;
+}
+
+.fc-editor-crumb {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.fc-editor-crumb li {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-editor-crumb-separator {
+  color: var(--fc-text-tertiary);
+}
+
+.fc-editor-crumb-text {
+  color: var(--fc-text-secondary);
+}
+
+.fc-editor-crumb-link {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-text-secondary);
+  font: inherit;
+  cursor: pointer;
+  outline: 2px solid transparent;
+}
+
+.fc-editor-crumb-link:hover {
+  color: var(--fc-text);
+}
+
+.fc-editor-crumb-current {
+  overflow: hidden;
+  color: var(--fc-text);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-editor-save {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-editor-save-failed {
+  color: var(--fc-red-900);
+}
+
+/* Loading: the skeleton has the shape of the bar, the three panels and the bottom panel. */
+.fc-editor-loading,
+.fc-editor-loading .fc-loading-shape {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+}
+
+.fc-editor-skeleton-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  padding: var(--fc-space-16);
+}
+
+.fc-editor-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fc-space-16);
+  padding: var(--fc-space-24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-editor-bottom-tab {
+    transition: none;
+  }
+}
