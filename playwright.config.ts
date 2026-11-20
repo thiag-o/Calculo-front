@@ -6,17 +6,28 @@
 // shell built instead of through the dev server). The API alone
 // serves 6 parallel sign-ins in under 1.5 s. `pnpm e2e` (simulated) keeps the default parallelism.
 import { defineConfig, devices } from '@playwright/test';
+import { e2ePorts } from './scripts/e2e-ports.mjs';
 
-const shellUrl = process.env.E2E_SHELL_URL ?? 'http://localhost:5173';
+// With FLUXO_TEST_ISOLATION_ID, the shell and the embed page use their own ports (scripts/e2e-ports.mjs), so that
+// several worktrees can run `pnpm e2e` at the same time. Real mode (`e2e:real`) is unchanged.
+const ports = e2ePorts();
+
+const shellUrl = process.env.E2E_SHELL_URL ?? `http://localhost:${ports.shellPort}`;
 const shellPort = new URL(shellUrl).port || '80';
 
 // Where the e2e build of the shell goes, relative to apps/shell (inside node_modules/, ignored by git and by the linters).
-const SHELL_E2E_DIR = '../../node_modules/.cache/e2e-shell';
+// With FLUXO_TEST_ISOLATION_ID, the build dir and Playwright's outputDir also carry the id, so that parallel runs in the
+// same checkout do not share (nor empty) each other's build or artifacts. The id is sanitized to be a safe path segment.
+const isolationId = process.env.FLUXO_TEST_ISOLATION_ID?.trim().replace(/[^A-Za-z0-9._-]/g, '_');
+const SHELL_E2E_DIR = isolationId
+  ? `../../node_modules/.cache/e2e-shell-${isolationId}`
+  : '../../node_modules/.cache/e2e-shell';
+const outputDir = isolationId ? `test-results/${isolationId}` : 'test-results';
 
 // The "host app" of the embedding tests: the shell's embed test page (apps/shell/vite.embed.config.ts), on an
 // origin different from the shell's. It is the origin the backend's `prepare-local` registers as an authorized domain; the backend treats
 // the shell origin (FLUXO_CORS_ORIGINS) with the shell CORS policy, which does not accept `Authorization`.
-const hostAppUrl = 'http://localhost:5274';
+const hostAppUrl = `http://localhost:${ports.hostAppPort}`;
 
 // In real mode, the shell and the test page Playwright starts talk to the same API as the tests: E2E_API_URL becomes their
 // VITE_API_URL. Without E2E_API_URL, both follow their own VITE_API_URL (or the default http://localhost:8000).
@@ -25,6 +36,7 @@ const viteEnv: Record<string, string> = apiUrl ? { VITE_API_URL: apiUrl } : {};
 
 export default defineConfig({
   testDir: './e2e',
+  outputDir,
   // Opens the shell once, out of the tests' timeout, without calling the API (e2e/support/global-setup.ts).
   globalSetup: './e2e/support/global-setup.ts',
   fullyParallel: true,

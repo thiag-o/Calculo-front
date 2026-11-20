@@ -66,6 +66,22 @@ pnpm dev
 | `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** |
 | `pnpm e2e:real` | Os mesmos testes contra o back de verdade (veja abaixo) |
 
+## Testes em paralelo (worktrees)
+
+Várias worktrees podem rodar o `pnpm e2e` (simulado) ao mesmo tempo. Defina `FLUXO_TEST_ISOLATION_ID` com um id próprio da worktree (por exemplo, o da tarefa):
+
+```bash
+FLUXO_TEST_ISOLATION_ID=F62 pnpm e2e
+```
+
+No PowerShell: `$env:FLUXO_TEST_ISOLATION_ID='F62'; pnpm e2e`.
+
+- Com a variável, o casca e a página de incorporação sobem em portas próprias, derivadas do id de forma determinística (hash do id), numa faixa fixa de 6100 a 6999: o casca na porta par e a página de incorporação na ímpar seguinte. As portas 5000 e 5001 nunca entram (regra do dono). A conta está em `scripts/e2e-ports.mjs` e é conferida por `e2e/support/e2e-ports.spec.ts`.
+- Com a variável, também a pasta de artefatos do Playwright (`test-results/<id>`) e o build do casca para o e2e (`node_modules/.cache/e2e-shell-<id>`) levam o id, então duas execuções no mesmo checkout não dividem nem apagam os arquivos uma da outra.
+- Sem a variável, ficam as portas de sempre: 5173 (casca) e 5274 (página de incorporação).
+- Dois ids diferentes podem, raramente, cair no mesmo par (são 450 pares); se isso acontecer, o Vite recusa subir (`strictPort`) e basta trocar o id.
+- O `pnpm e2e:real` não muda: usa as portas de sempre e roda só na integração do checkpoint, não em paralelo.
+
 ## Testes ponta a ponta no modo real
 
 O `pnpm e2e:real` roda os testes de `e2e/` no casca contra o back de verdade, com **2 workers**, fixados no próprio script do `package.json`. Nesta máquina, 6 navegadores em paralelo, o Vite dev e a API juntos saturavam CPU e memória, e os logins estouravam o tempo limite (medido na F39, quando o casca ainda subia pelo Vite dev). Rode o comando como está, sem mudar os workers na mão. No modo real, cada teste e cada `expect` têm 60 s de tempo limite, porque o fluxo da auditoria chegou a 33 s sozinho, com a máquina carregada. O `pnpm e2e` (simulado) segue com o paralelismo padrão e os tempos limite padrão.
