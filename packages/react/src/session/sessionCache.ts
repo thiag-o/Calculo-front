@@ -76,6 +76,14 @@ export function sameSessionData(queryClient: QueryClient, mark: number): boolean
   return sessionDataMark(queryClient) === mark;
 }
 
+/**
+ * The only check of the session data before writing to, invalidating or removing from the cache after a request: a missing
+ * mark (a mutation that did not run `onMutate`) counts as not the same.
+ */
+export function isSameSessionData(queryClient: QueryClient, mark: number | undefined): mark is number {
+  return mark !== undefined && sameSessionData(queryClient, mark);
+}
+
 function tellCleared(queryClient: QueryClient, next: Session | undefined) {
   const data = dataOf(queryClient);
   data.clears += 1;

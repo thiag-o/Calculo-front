@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { dataOrError, ApiError, useApiClient, type Schemas } from '../api';
-import { SESSION_KEY, replaceSessionInCache, sameSessionData, sessionDataMark, type Session } from './sessionCache';
+import { SESSION_KEY, isSameSessionData, replaceSessionInCache, sessionDataMark, type Session } from './sessionCache';
 
 /** Sign-in e-mail and password (generated from the contract). */
 export type LoginCredentials = Schemas['LoginCredentials'];
@@ -49,9 +49,10 @@ export function useSwitchTenant(): UseMutationResult<Session, Error, string> {
     mutationFn: (tenantId: string) => dataOrError(client.PUT('/v1/session/tenant', { body: { tenant_id: tenantId } })),
     onMutate: () => sessionDataMark(queryClient),
     onSuccess: async (session, _tenantId, mark) => {
-      if (mark !== undefined && sameSessionData(queryClient, mark)) await replaceSessionInCache(queryClient, session);
+      if (isSameSessionData(queryClient, mark)) await replaceSessionInCache(queryClient, session);
     },
-    onError: (error) => {
+    onError: (error, _tenantId, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (error instanceof ApiError && error.code === NO_TENANT_ACCESS) {
         void queryClient.invalidateQueries({ queryKey: SESSION_KEY });
       }

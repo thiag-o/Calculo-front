@@ -1,6 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, dataOrError, useApiClient, type Schemas } from '../api';
-import { sameSessionData, sessionDataMark } from '../session';
+import { isSameSessionData, sessionDataMark } from '../session';
 
 /** A workflow in the list, with the draft summary (generated from the contract). */
 export type WorkflowSummary = Schemas['WorkflowSummary'];
@@ -81,7 +81,7 @@ export function useCreateWorkflow() {
     onMutate: () => sessionDataMark(queryClient),
     onSuccess: (workflow, _vars, mark) => {
       // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) writes nothing (ADR 0015).
-      if (mark === undefined || !sameSessionData(queryClient, mark)) return undefined;
+      if (!isSameSessionData(queryClient, mark)) return undefined;
       queryClient.setQueryData(workflowKey(workflow.id), workflow);
       return queryClient.invalidateQueries({ queryKey: WORKFLOW_LISTS_KEY });
     },
@@ -101,11 +101,12 @@ export function useUpdateWorkflow() {
     onMutate: () => sessionDataMark(queryClient),
     onSuccess: (workflow, _vars, mark) => {
       // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) writes nothing (ADR 0015).
-      if (mark === undefined || !sameSessionData(queryClient, mark)) return undefined;
+      if (!isSameSessionData(queryClient, mark)) return undefined;
       queryClient.setQueryData(workflowKey(workflow.id), workflow);
       return queryClient.invalidateQueries({ queryKey: WORKFLOW_LISTS_KEY });
     },
-    onError: (error) => {
+    onError: (error, _vars, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (error instanceof ApiError && error.code === 'not_found') void queryClient.invalidateQueries({ queryKey: WORKFLOW_LISTS_KEY });
     },
   });
@@ -121,11 +122,14 @@ export function useDeleteWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => dataOrError(client.DELETE('/v1/workflows/{id}', { params: { path: { id } } })),
-    onSuccess: (_, id) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_, id, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return undefined;
       queryClient.removeQueries({ queryKey: workflowKey(id) });
       return queryClient.invalidateQueries({ queryKey: WORKFLOW_LISTS_KEY });
     },
-    onError: (error) => {
+    onError: (error, _id, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (error instanceof ApiError && error.code === 'not_found') void queryClient.invalidateQueries({ queryKey: WORKFLOW_LISTS_KEY });
     },
   });

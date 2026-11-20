@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dataOrError, ApiError, useApiClient, type Schemas } from '../../api';
-import { sameSessionData, sessionDataMark } from '../../session';
+import { isSameSessionData, sessionDataMark } from '../../session';
 
 /** The five tenant session and password parameters, each with value, default and bounds (generated from the contract). */
 export type SecuritySettings = Schemas['SecuritySettings'];
@@ -37,9 +37,10 @@ export function useUpdateSecuritySettings() {
     onMutate: () => sessionDataMark(queryClient),
     // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) writes nothing.
     onSuccess: (data, _body, mark) => {
-      if (mark !== undefined && sameSessionData(queryClient, mark)) queryClient.setQueryData(SECURITY_KEY, data);
+      if (isSameSessionData(queryClient, mark)) queryClient.setQueryData(SECURITY_KEY, data);
     },
-    onError: (error) => {
+    onError: (error, _body, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (error instanceof ApiError && error.code === 'value_out_of_range') {
         void queryClient.invalidateQueries({ queryKey: SECURITY_KEY });
       }

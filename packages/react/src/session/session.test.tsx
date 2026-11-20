@@ -19,6 +19,7 @@ import {
 import {
   clearSessionData,
   hasPermission,
+  isSameSessionData,
   onSessionDataCleared,
   sameSessionData,
   sessionDataMark,
@@ -288,6 +289,24 @@ describe('useSwitchTenant', () => {
     expect(result.current.session.data?.current_tenant).toEqual(headquartersSession.current_tenant);
   });
 
+  it('403 no_tenant_access que chega depois da limpeza da sessão não busca a sessão de novo', async () => {
+    let answer: (response: Response) => void = () => {};
+    simulatedFetch.mockImplementation((req) => new Promise<Response>((resolver) => (answer = req.method === 'PUT' ? resolver : () => {})));
+    const { Providers, queryClient } = createProviders();
+    const invalidated = vi.spyOn(queryClient, 'invalidateQueries');
+    const { result } = renderHook(() => useSwitchTenant(), { wrapper: Providers });
+
+    act(() => result.current.mutate(BRANCH_TENANT.id));
+    await waitFor(() => expect(calledRoutes(simulatedFetch)).toEqual(['PUT /v1/session/tenant']));
+    await act(() => clearSessionData(queryClient));
+
+    await act(async () => answer(problem(403, 'no_tenant_access')));
+    await waitFor(() => expect(result.current.isError).toBe(true));
+
+    expect(invalidated).not.toHaveBeenCalled();
+    expect(calledRoutes(simulatedFetch)).toEqual(['PUT /v1/session/tenant']);
+  });
+
   it('em outro erro (invalid_csrf), não busca a sessão de novo', async () => {
     simulatedFetch.mockImplementation(async (req) => (req.method === 'PUT' ? problem(403, 'invalid_csrf') : json(headquartersSession)));
     const { Providers } = createProviders();
@@ -371,6 +390,18 @@ describe('o que sai com a sessão', () => {
     clearSessionData(queryClient);
 
     expect(sameSessionData(queryClient, before)).toBe(false);
+  });
+
+  it('isSameSessionData confere a marca e recusa a marca que faltou', () => {
+    const queryClient = createProviders().queryClient;
+    const before = sessionDataMark(queryClient);
+    expect(isSameSessionData(queryClient, before)).toBe(true);
+    expect(isSameSessionData(queryClient, undefined)).toBe(false);
+
+    clearSessionData(queryClient);
+
+    expect(isSameSessionData(queryClient, before)).toBe(false);
+    expect(isSameSessionData(queryClient, sessionDataMark(queryClient))).toBe(true);
   });
 
   it('uma troca de tenant que responde depois do logout não devolve a sessão ao cache já limpo', async () => {

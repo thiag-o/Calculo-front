@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, dataOrError, useApiClient, type Schemas } from '../../api';
-import { sameSessionData, sessionDataMark } from '../../session';
+import { isSameSessionData, sessionDataMark } from '../../session';
 
 /** A connection to a client database, without the credential (generated from the contract). */
 export type Connection = Schemas['Connection'];
@@ -14,11 +14,6 @@ export type Credential = Schemas['Credential'];
 export type NewConnection = Schemas['NewConnection'];
 /** Body of the credential test without saving (generated from the contract). */
 export type CredentialTest = Schemas['CredentialTest'];
-
-/** Whether the session data is still the one of `mark`: an answer that arrives after it was cleared writes nothing (ADR 0015). */
-function isCurrent(queryClient: QueryClient, mark: number | undefined): mark is number {
-  return mark !== undefined && sameSessionData(queryClient, mark);
-}
 
 /** Permissions the screen checks (contract: the scope of each route). */
 export const CONNECTIONS_VIEW = 'connections.view';
@@ -86,11 +81,12 @@ export function useCreateConnection(readBody: () => NewConnection) {
     gcTime: 0,
     onMutate: () => sessionDataMark(queryClient),
     onSuccess: (connection, _vars, mark) => {
-      if (!isCurrent(queryClient, mark)) return;
+      if (!isSameSessionData(queryClient, mark)) return;
       queryClient.setQueryData(connectionKey(connection.id), connection);
       void queryClient.invalidateQueries({ queryKey: CONNECTION_LIST_KEY });
     },
-    onError: (error) => {
+    onError: (error, _vars, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       // The name is taken (maybe by someone else just now): the list is fetched again to show it.
       if (errorWithCode(error, ['connection_already_exists'])) void queryClient.invalidateQueries({ queryKey: CONNECTION_LIST_KEY });
     },
@@ -106,11 +102,12 @@ export function useUpdateCredential(id: string, readBody: () => Credential) {
     gcTime: 0,
     onMutate: () => sessionDataMark(queryClient),
     onSuccess: (connection, _vars, mark) => {
-      if (!isCurrent(queryClient, mark)) return;
+      if (!isSameSessionData(queryClient, mark)) return;
       queryClient.setQueryData(connectionKey(id), connection);
       void queryClient.invalidateQueries({ queryKey: CONNECTION_LIST_KEY });
     },
-    onError: (error) => {
+    onError: (error, _vars, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: CONNECTIONS_KEY });
     },
   });
@@ -127,11 +124,12 @@ export function useRenameConnection(id: string) {
     mutationFn: (name: string) => dataOrError(client.PUT('/v1/connections/{id}', { params: { path: { id } }, body: { name } })),
     onMutate: () => sessionDataMark(queryClient),
     onSuccess: (connection, _name, mark) => {
-      if (!isCurrent(queryClient, mark)) return;
+      if (!isSameSessionData(queryClient, mark)) return;
       queryClient.setQueryData(connectionKey(id), connection);
       void queryClient.invalidateQueries({ queryKey: CATALOG_KEY, predicate: exceptDetailOf(id) });
     },
-    onError: (error) => {
+    onError: (error, _name, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (errorWithCode(error, ['not_found', 'connection_already_exists'])) {
         void queryClient.invalidateQueries({ queryKey: CONNECTIONS_KEY });
       }
@@ -150,13 +148,14 @@ export function useTestConnection(id: string) {
     mutationFn: () => dataOrError(client.POST('/v1/connections/{id}/test', { params: { path: { id } } })),
     onMutate: () => sessionDataMark(queryClient),
     onSuccess: (result, _vars, mark) => {
-      if (!isCurrent(queryClient, mark)) return;
+      if (!isSameSessionData(queryClient, mark)) return;
       queryClient.setQueryData<Connection>(connectionKey(id), (connection) =>
         connection ? { ...connection, last_test: result } : connection,
       );
       void queryClient.invalidateQueries({ queryKey: CONNECTION_LIST_KEY });
     },
-    onError: (error) => {
+    onError: (error, _vars, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: CONNECTIONS_KEY });
     },
   });
@@ -172,8 +171,11 @@ export function useDeleteConnection(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => dataOrError(client.DELETE('/v1/connections/{id}', { params: { path: { id } } })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CATALOG_KEY, predicate: exceptDetailOf(id) }),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _vars, mark) =>
+      isSameSessionData(queryClient, mark) ? queryClient.invalidateQueries({ queryKey: CATALOG_KEY, predicate: exceptDetailOf(id) }) : undefined,
+    onError: (error, _vars, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: CONNECTION_LIST_KEY });
     },
   });
