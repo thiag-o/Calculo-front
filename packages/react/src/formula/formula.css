@@ -1,0 +1,182 @@
+/*
+ * Formula editor (estilos.md §8, "Editor de fórmula"): mono-13, background-200 background, 6px radius, the border drawn
+ * with box-shadow (§4) and the focus ring of the fields (§11). The problem note is red (-100 background, -900 text, §7.7).
+ * Only fc- classes and --fc-* variables; Monaco's own classes are reached only under an fc- class (ADR 0002 and 0037).
+ */
+
+.fc-formula {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fc-formula-monaco {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--fc-background-200);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  transition: box-shadow 150ms ease-out;
+}
+
+.fc-formula-monaco:hover {
+  box-shadow: 0 0 0 1px var(--fc-border-hover);
+}
+
+.fc-formula-monaco:focus-within {
+  box-shadow:
+    0 0 0 1px var(--fc-border-hover),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-formula-invalid .fc-formula-monaco,
+.fc-formula-invalid .fc-formula-plain {
+  box-shadow: 0 0 0 1px var(--fc-red-700);
+}
+
+/* Monaco paints its own outline on the focused input; the ring of the container is the focus. */
+.fc-formula-monaco .monaco-editor .inputarea,
+.fc-formula-monaco .monaco-editor .focused {
+  outline: none;
+}
+
+/* Plain field when Monaco does not load (E4-21): the same look, as a monospaced textarea. */
+.fc-formula-plain-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fc-formula-plain {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 60px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--fc-background-200);
+  color: var(--fc-text);
+  box-shadow: 0 0 0 1px var(--fc-border);
+  /* mono-13 */
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  resize: vertical;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: box-shadow 150ms ease-out;
+}
+
+.fc-formula-plain:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--fc-border-hover),
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Skeleton with the shape of the field: 3 lines of the editor. */
+.fc-formula-skeleton {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  height: 60px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background-color: var(--fc-background-200);
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+/* Problem note: red-100 background, red-900 text, 6px radius, 14px icon, no side border (estilos.md §7.7). */
+.fc-formula-note {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: var(--fc-danger-bg);
+  color: var(--fc-danger-text);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.fc-formula-note-icon {
+  flex: none;
+  margin-top: 2px;
+}
+
+.fc-formula-note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-formula-note-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/*
+ * Autocomplete: the symbols show the 8px square of their block category (estilos.md §2.4) in place of Monaco's icon. Each
+ * category is a completion kind (language.ts): Variable = linear input, Field = multiple input, Constant = Calculation,
+ * EnumMember = Decision Table.
+ */
+.fc-formula-widgets .suggest-widget .codicon-symbol-variable::before,
+.fc-formula-widgets .suggest-widget .codicon-symbol-field::before,
+.fc-formula-widgets .suggest-widget .codicon-symbol-constant::before,
+.fc-formula-widgets .suggest-widget .codicon-symbol-enum-member::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.fc-formula-widgets .suggest-widget .codicon-symbol-variable::before {
+  background-color: var(--fc-cat-source);
+}
+
+.fc-formula-widgets .suggest-widget .codicon-symbol-field::before {
+  background-color: var(--fc-cat-multi);
+}
+
+.fc-formula-widgets .suggest-widget .codicon-symbol-constant::before {
+  background-color: var(--fc-cat-calc);
+}
+
+.fc-formula-widgets .suggest-widget .codicon-symbol-enum-member::before {
+  background-color: var(--fc-cat-decision);
+}
+
+/* The floating widgets use the module fonts: Geist in the hover and the quick fix, Geist Mono in the autocomplete. */
+.fc-formula-widgets .monaco-hover {
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+}
+
+.fc-formula-widgets .suggest-widget {
+  font-family: var(--fc-font-mono);
+}
