@@ -960,9 +960,22 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - o README, em "Testes em paralelo (worktrees)", manda definir `FLUXO_BACKEND_DIR=C:/dev/fluxo-calculo/backend` na worktree.
 - Aceite: numa worktree em `worktrees/frontend/<T>` com a variável, o `pnpm generate:api` e o `contract-examples` rodam de verdade; com a variável apontando para uma pasta sem contrato, os dois falham com a mensagem; sem a variável, o comportamento é o de antes.
 
+**F73 · Manutenção: achados médios da revisão da F56**
+- dep: F56
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/catalog/connections/`, `packages/react/src/catalog/datasets/`, `packages/react/src/catalog/errors/`
+- Fazer (cinco MÉDIOS da revisão da F56, decididos pela sessão global em 2026-11-20):
+  - o `useTestCooldown` deriva o estado sem `setState` dentro do efeito, e o **Testar** nunca fica habilitado nem por um quadro depois do 429;
+  - o 429 do salvar nos diálogos de conexão mostra a contagem regressiva, como o Testar;
+  - a contagem ao lado do botão não é anunciada a cada segundo por leitor de tela: anuncia uma vez ao começar e uma vez ao liberar;
+  - fica uma função só para a regra do conflito (`isChangedConflict` ou `isConnectionChanged`), no `catalog/errors/`, sem a duplicata sem uso;
+  - "Continuar editando" no `NewDatasetDialog` devolve o foco ao campo de onde a pessoa saiu.
+- Aceite: um teste para cada item (inclusive o botão nunca habilitado entre o 429 e a contagem, e o `aria-live` anunciando só no começo e no fim); `pnpm lint`, `typecheck` e `test` verdes.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
