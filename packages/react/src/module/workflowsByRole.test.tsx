@@ -150,6 +150,8 @@ describe('Workflows no casca, por papel', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/workflows'));
     expect(await screen.findByRole('button', { name: 'Novo workflow' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Trocar workflow/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText(/workflow não encontrado|não foi possível/i)).not.toBeInTheDocument();
     expect(menuLinks()).toContain('Workflows');
     // The only request for the old workflow after the switch is the reset of the query that was on screen (session
     // vertical); the screen is not mounted again under the old URL, which would ask for it a second time.
@@ -189,8 +191,31 @@ describe('Workflows no casca, por papel', () => {
     const { user } = renderScreen({ navigation: 'url' });
     await screen.findByRole('heading', { level: 1, name: SCORING.name });
 
-    await user.click(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' }));
+    // jsdom does not apply display:none, so the class and the keyboard focus stand for "visible and usable".
+    const sidebar = screen.getByRole('complementary', { name: 'Menu lateral' });
+    expect(sidebar.closest('.fc-shell-compact')).not.toBeNull();
+    const home = within(sidebar).getByRole('link', { name: 'Início de Matriz' });
+    const switchButton = within(sidebar).getByRole('button', { name: 'Trocar cliente. Atual: Matriz' });
+    await user.tab();
+    while (document.activeElement !== home && document.activeElement !== document.body) await user.tab();
+    expect(home).toHaveFocus();
+    await user.tab();
+    expect(switchButton).toHaveFocus();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Matriz');
+
+    await user.click(switchButton);
     expect(await screen.findByRole('menuitem', { name: BRANCH_TENANT.name })).toBeInTheDocument();
+  });
+
+  it('com o menu compacto, o link Início de Matriz mostra o nome do cliente na dica', async () => {
+    simulateWidth(1000);
+    window.history.replaceState(null, '', `/workflows/${SCORING.id}`);
+    simulateApiWith(CONFIGURATOR_PERMISSIONS);
+    const { user } = renderScreen({ navigation: 'url' });
+    await screen.findByRole('heading', { level: 1, name: SCORING.name });
+
+    await user.hover(screen.getByRole('link', { name: 'Início de Matriz' }));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Matriz');
   });
 
   it('o menu do workflow substitui o do cliente, e o nome do cliente leva ao Início, também pelo teclado', async () => {

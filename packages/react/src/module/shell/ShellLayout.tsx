@@ -61,6 +61,7 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
           <TenantSelector
             session={session}
             homeLink={workflowId !== undefined}
+            compact={compact}
             onSwitch={() => setNotice(null)}
             onFailure={(error) => setNotice(switchErrorMessage(error))}
           />
