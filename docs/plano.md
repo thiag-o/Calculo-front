@@ -1127,9 +1127,19 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - no menu compacto, o link "Início de {tenant}" e o botão "Trocar cliente" ganham `Tooltip` com o nome do tenant, como o comentário do `shell.css` promete.
 - Aceite: os três itens com teste; os testes da F57 e da F83 seguem verdes.
 
+**F87 · Manutenção: marca da sessão antes do cancelamento (revisão da F85)**
+- dep: F85
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/session/useSession.ts`, `packages/react/src/session/session.test.tsx`
+- Fazer (MÉDIOS da revisão da F85, decididos pela sessão global em 2026-11-20):
+  - no `useSession.ts`, a marca é pega **antes** do `getQueryData` e conferida de novo depois do `await cancelQueries`, e uma limpeza nesse intervalo nunca passa;
+  - os testes que provam a ausência de gravação esperam de forma determinística (a promise da requisição resolvida e o `queryClient` sem tarefas pendentes), sem `setTimeout` com tempo fixo.
+- Aceite: um teste que limpa a sessão durante o `cancelQueries` e confere que nada é gravado; nenhum `setTimeout` com tempo fixo no `session.test.tsx`.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84, F85, F86
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84, F85, F86, F87
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
