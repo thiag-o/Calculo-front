@@ -908,6 +908,8 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/workflows/index.ts`, `packages/react/src/workflows/Workflows.tsx`, `packages/react/src/module/`, `packages/react/src/home/`, `packages/react/src/index.ts`, `apps/shell/src/`, `docs/incorporacao.md`, `docs/glossario.md`, `README.md`, `.changeset/`
 - Fazer:
   - **editor:** `<Editor>` monta o layout da F50 com o canvas e as camadas (F51), as propriedades por tipo de item (F53 e as da Tabela, da F54), a grade da F54 no lugar do canvas e as abas Problemas e Calcular (F50, F55);
+    - peças prontas: `<WorkflowCanvas onOpenProperties>` e `<Layers>` (F51), o painel de Propriedades (F53), a grade (F54, aberta pelo `isGridPath`), a aba Calcular (F55) e o `<UnsavedChangesNotice>` (F74), este nas telas seguintes ao editor;
+    - o selo "React Flow" do canto do canvas **fica** (decisão da global, 2026-11-20: o pacote é MIT, e os autores pedem a atribuição a quem não assina o plano Pro);
   - **rotas e menu:**
     - `<Workflows>` com as rotas `/workflows`, `/workflows/:id` e `/workflows/:id/editor`;
     - item "Workflows" no menu, com `workflows.view`;
