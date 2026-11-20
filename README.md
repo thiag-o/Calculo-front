@@ -58,7 +58,7 @@ pnpm dev
 |---|---|
 | `pnpm dev` | Roda o app casca em `http://localhost:5173` |
 | `pnpm build` | Compila o pacote e o casca |
-| `pnpm lint` | ESLint, incluindo as fronteiras entre verticais |
+| `pnpm lint` | Busca de caractere NUL e de controle nos arquivos versionados (`scripts/check-control-chars.mjs`), depois ESLint com as fronteiras entre verticais |
 | `pnpm typecheck` | Checagem de tipos |
 | `pnpm test` | Testes (Vitest) |
 | `pnpm changeset` | Registra uma mudança do pacote para a próxima versão |
