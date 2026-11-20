@@ -1,5 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, dataOrError, useApiClient, type Schemas } from '../api';
+import { sameSessionData, sessionDataMark } from '../session';
 
 /** A workflow in the list, with the draft summary (generated from the contract). */
 export type WorkflowSummary = Schemas['WorkflowSummary'];
@@ -77,7 +78,10 @@ export function useCreateWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: NewWorkflow) => dataOrError(client.POST('/v1/workflows', { body })),
-    onSuccess: (workflow) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (workflow, _vars, mark) => {
+      // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) writes nothing (ADR 0015).
+      if (mark === undefined || !sameSessionData(queryClient, mark)) return undefined;
       queryClient.setQueryData(workflowKey(workflow.id), workflow);
       return queryClient.invalidateQueries({ queryKey: WORKFLOW_LISTS_KEY });
     },
@@ -94,7 +98,10 @@ export function useUpdateWorkflow() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: WorkflowUpdate }) =>
       dataOrError(client.PUT('/v1/workflows/{id}', { params: { path: { id } }, body })),
-    onSuccess: (workflow) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (workflow, _vars, mark) => {
+      // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) writes nothing (ADR 0015).
+      if (mark === undefined || !sameSessionData(queryClient, mark)) return undefined;
       queryClient.setQueryData(workflowKey(workflow.id), workflow);
       return queryClient.invalidateQueries({ queryKey: WORKFLOW_LISTS_KEY });
     },

@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { dataOrError, ApiError, useApiClient, type Schemas } from '../../api';
+import { sameSessionData, sessionDataMark } from '../../session';
 
 /** A dataset, with the columns already read (generated from the contract). */
 export type Dataset = Schemas['Dataset'];
@@ -157,7 +158,9 @@ export function useCreateDataset() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: NewDataset) => dataOrError(client.POST('/v1/datasets', { body })),
-    onSuccess: (dataset) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (dataset, _vars, mark) => {
+      if (!isCurrent(queryClient, mark)) return undefined;
       queryClient.setQueryData(datasetKey(dataset.id), dataset);
       return refreshCatalog(queryClient, datasetKey(dataset.id));
     },
@@ -179,7 +182,9 @@ export function useRenameDataset() {
   return useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) =>
       dataOrError(client.PUT('/v1/datasets/{id}', { params: { path: { id } }, body: { name } })),
-    onSuccess: (dataset) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (dataset, _vars, mark) => {
+      if (!isCurrent(queryClient, mark)) return undefined;
       queryClient.setQueryData(datasetKey(dataset.id), dataset);
       return refreshCatalog(queryClient, datasetKey(dataset.id));
     },
@@ -201,7 +206,9 @@ export function useRefreshDatasetColumns() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => dataOrError(client.POST('/v1/datasets/{id}/column-refresh', { params: { path: { id } } })),
-    onSuccess: (dataset) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (dataset, _vars, mark) => {
+      if (!isCurrent(queryClient, mark)) return undefined;
       queryClient.setQueryData(datasetKey(dataset.id), dataset);
       return refreshCatalog(queryClient, datasetKey(dataset.id));
     },
@@ -216,7 +223,8 @@ export function useDeleteDataset() {
     mutationFn: (id: string) => dataOrError(client.DELETE('/v1/datasets/{id}', { params: { path: { id } } })),
     // The detail is gone: fetching it again would only give 404 (the screen shows the removal by itself). A later visit
     // fetches it again on mount and shows "não existe mais".
-    onSuccess: (_data, id) => refreshCatalog(queryClient, datasetKey(id)),
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, id, mark) => (isCurrent(queryClient, mark) ? refreshCatalog(queryClient, datasetKey(id)) : undefined),
   });
 }
 
@@ -229,6 +237,11 @@ export function useDatasetVariables(datasetId: string) {
       dataOrError(client.GET('/v1/datasets/{id}/variables', { params: { path: { id: datasetId } }, signal })),
     select: (data) => data.items,
   });
+}
+
+/** Whether the session data is still the one of `mark`: an answer that arrives after it was cleared writes nothing (ADR 0015). */
+function isCurrent(queryClient: QueryClient, mark: number | undefined): mark is number {
+  return mark !== undefined && sameSessionData(queryClient, mark);
 }
 
 type VariableList = Schemas['VariableList'];
@@ -260,7 +273,10 @@ export function useCreateVariable(datasetId: string) {
   return useMutation({
     mutationFn: (body: NewVariable) =>
       dataOrError(client.POST('/v1/datasets/{id}/variables', { params: { path: { id: datasetId } }, body })),
-    onSuccess: (variable) => afterVariableChange(queryClient, datasetId, (items) => [...items, variable]),
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (variable, _body, mark) => {
+      if (isCurrent(queryClient, mark)) afterVariableChange(queryClient, datasetId, (items) => [...items, variable]);
+    },
     onError: (error) => refreshDatasetOnColumnError(queryClient, datasetId, error),
   });
 }
@@ -272,8 +288,12 @@ export function useUpdateVariable(datasetId: string) {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: VariableUpdate }) =>
       dataOrError(client.PUT('/v1/variables/{id}', { params: { path: { id } }, body })),
-    onSuccess: (variable) =>
-      afterVariableChange(queryClient, datasetId, (items) => items.map((item) => (item.id === variable.id ? variable : item))),
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (variable, _vars, mark) => {
+      if (isCurrent(queryClient, mark)) {
+        afterVariableChange(queryClient, datasetId, (items) => items.map((item) => (item.id === variable.id ? variable : item)));
+      }
+    },
     onError: (error) => {
       refreshDatasetOnColumnError(queryClient, datasetId, error);
       // The variable is gone (someone deleted it): the list is fetched again.
@@ -288,7 +308,10 @@ export function useDeleteVariable(datasetId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => dataOrError(client.DELETE('/v1/variables/{id}', { params: { path: { id } } })),
-    onSuccess: (_data, id) => afterVariableChange(queryClient, datasetId, (items) => items.filter((item) => item.id !== id)),
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, id, mark) => {
+      if (isCurrent(queryClient, mark)) afterVariableChange(queryClient, datasetId, (items) => items.filter((item) => item.id !== id));
+    },
     onError: (error) => {
       if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: variablesKey(datasetId) });
     },

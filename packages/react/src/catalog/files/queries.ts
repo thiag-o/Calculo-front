@@ -1,6 +1,7 @@
 import { useIsMutating, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, dataOrError, isCancellation, useApiClient, type Schemas } from '../../api';
+import { sameSessionData, sessionDataMark } from '../../session';
 
 /** An uploaded Excel file, with the sheets and the columns read (generated from the contract). */
 export type ExcelFile = Schemas['ExcelFile'];
@@ -123,14 +124,18 @@ export function useUploadExcelFile() {
       controller.current = new AbortController();
       return client.upload('/v1/excel-files', body, { onProgress: setProgress, signal: controller.current.signal });
     },
-    onSuccess: (excelFile) => {
+    onMutate: () => sessionDataMark(queryClient),
+    // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) writes nothing (ADR 0015).
+    onSuccess: (excelFile, _file, mark) => {
+      if (mark === undefined || !sameSessionData(queryClient, mark)) return undefined;
       queryClient.setQueryData(fileKey(excelFile.id), excelFile);
       if (!mounted.current) queryClient.setQueryData(UPLOAD_OUTCOME_KEY, { status: 'success', file: excelFile } satisfies UploadOutcome);
       return refreshCatalog(queryClient, fileKey(excelFile.id));
     },
     // A cancelled upload may have reached the server before the cancel: the list is fetched again, so it shows the truth
     // (a file only appears in it after the API stored it whole).
-    onError: (error, file) => {
+    onError: (error, file, mark) => {
+      if (mark === undefined || !sameSessionData(queryClient, mark)) return undefined;
       if (isCancellation(error)) return refreshCatalog(queryClient);
       if (!mounted.current) queryClient.setQueryData(UPLOAD_OUTCOME_KEY, { status: 'error', fileName: file.name, error } satisfies UploadOutcome);
       return undefined;
