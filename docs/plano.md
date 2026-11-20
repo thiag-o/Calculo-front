@@ -1079,7 +1079,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - modelo: sonnet
 - revisão: não
 - arquivos: `scripts/check-control-chars.mjs`, `package.json`, `README.md`
-- Fazer (decidido pela sessão global em 2026-11-20; o NUL apareceu no código da F52 e da F57): um script que procura NUL (` `) e outros caracteres de controle (exceto tab, LF e CR) nos arquivos versionados de texto (`git ls-files`, ignorando binários) e falha apontando arquivo e linha. Ele entra no `pnpm lint`.
+- Fazer (decidido pela sessão global em 2026-11-20; o NUL apareceu no código da F52 e da F57): um script que procura NUL (`\u0000`) e outros caracteres de controle (exceto tab, LF e CR) nos arquivos versionados de texto (`git ls-files`, ignorando binários) e falha apontando arquivo e linha. Ele entra no `pnpm lint`.
 - Aceite: um arquivo de teste temporário com NUL faz o `pnpm lint` falhar com o caminho e a linha; sem ele, o lint passa; a busca roda em menos de 5 s no repositório.
 
 **F83 · Manutenção: troca de tenant dentro do workflow e anúncios das camadas (revisão da F57)**
@@ -1109,10 +1109,11 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - dep: F84
 - modelo: sonnet
 - revisão: sim
-- arquivos: `packages/react/src/editor/draft/queries.ts`, `packages/react/src/editor/draft/queries.test.ts`, `packages/react/src/session/`, `packages/react/src/admin/users/`, `packages/react/src/admin/roles/`, `packages/react/src/admin/integration/`
+- arquivos: `packages/react/src/editor/draft/queries.ts`, `packages/react/src/editor/draft/queries.test.ts`, `packages/react/src/session/`, `packages/react/src/admin/users/`, `packages/react/src/admin/roles/`, `packages/react/src/admin/integration/`, `docs/adr/0049-*.md`
 - Fazer (decidido pela sessão global em 2026-11-20):
   - `editor/draft/queries.ts` usa o `isSameSessionData`, e o `sameSessionData` deixa de ser exportado pelo `session`;
   - as mutações de `admin/users`, `admin/roles` e `admin/integration` que gravam ou invalidam o cache usam a marca, inclusive nos `onError`, como as outras (ADR 0049 complementada).
+  - a ADR 0049 passa a citar o `isSameSessionData` como o contrato (marca ausente conta como diferente, e vale para o `onError`), no lugar do `sameSessionData`.
 - Aceite: um teste de resposta atrasada depois da limpeza por hook tocado; a busca no relatório mostra que nenhum `setQueryData`, `invalidateQueries` ou `removeQueries` depois de requisição fica sem a marca, em todo `packages/react/src/`.
 
 **F86 · Manutenção: médios da revisão da F83 (menu compacto e troca de tenant)**
