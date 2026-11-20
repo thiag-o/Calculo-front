@@ -1046,9 +1046,17 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - a ADR 0037 passa a citar o `base.css` do React Flow.
 - Aceite: um teste que edita um bloco e confere que os outros nós mantêm a mesma referência (sem novo render); um teste para cada item de teclado e de leitor de tela; os testes da F51 e da F54 seguem verdes.
 
+**F80 · Manutenção: marca da sessão nas mutações que gravam no cache (pendência da F76)**
+- dep: F76
+- modelo: sonnet
+- revisão: sim
+- arquivos: `packages/react/src/admin/security/queries.ts`, `packages/react/src/catalog/connections/queries.ts`, `packages/react/src/catalog/datasets/queries.ts`, `packages/react/src/catalog/files/queries.ts`, `packages/react/src/workflows/queries.ts`, e os testes ao lado de cada um (`*.test.ts`)
+- Fazer (decidido pela sessão global em 2026-11-20): cada mutação que grava no cache no `onSuccess` guarda a marca no `onMutate` (`sessionDataMark`) e só grava se `sameSessionData` ainda for verdadeiro, como o `useSwitchTenant` e o salvamento do rascunho da F76. A lista do relatório da F76 é o ponto de partida; uma busca por `setQueryData` e `setQueriesData` fora dos testes confirma que não falta nenhuma.
+- Aceite: para cada arquivo, um teste em que a resposta chega depois da limpeza e nada é gravado; a busca no relatório mostra que todos os `setQueryData` depois de requisição usam a marca.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
