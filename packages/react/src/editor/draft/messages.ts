@@ -3,7 +3,7 @@ import { ApiError } from '../../api';
 export const CONFLICT_TITLE = 'Este rascunho mudou em outra aba ou por outra pessoa';
 export const CONFLICT_MESSAGE = 'Recarregue o rascunho para continuar. O que você mudou aqui depois do último salvamento não é mantido.';
 export const READ_ONLY_REASON = 'Você não tem permissão para editar este workflow';
-const NO_PERMISSION_MESSAGE = 'Você não tem permissão para editar este workflow. Peça acesso a um Admin.';
+export const NO_PERMISSION_MESSAGE = 'Você não tem permissão para editar este workflow. Peça acesso a um Admin.';
 const NOT_FOUND_MESSAGE = 'Este workflow não existe mais. Ele pode ter sido removido por outra pessoa.';
 const UNKNOWN_MESSAGE = 'Não foi possível concluir agora. Tente de novo em instantes.';
 

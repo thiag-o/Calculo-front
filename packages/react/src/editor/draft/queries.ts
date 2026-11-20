@@ -10,6 +10,8 @@ export type WorkflowDefinition = Schemas['WorkflowDefinition'];
 export type WorkflowProblem = Schemas['WorkflowProblem'];
 /** A variable the definition offers (generated from the contract). */
 export type DraftSymbol = Schemas['Symbol'];
+/** What a node reads in all its formulas (generated from the contract). */
+export type Dependency = Schemas['Dependency'];
 /** The problems and the symbols of a definition (generated from the contract). */
 export type Analysis = Schemas['Analysis'];
 
@@ -19,9 +21,18 @@ export type Analysis = Schemas['Analysis'];
  * `409 draft_conflict` against its own save.
  */
 const savesInFlight = new WeakMap<QueryClient, Map<string, Set<Promise<unknown>>>>();
+/** How many saves of each workflow have started, per QueryClient: a read that saw this number change reads again. */
+const savesStarted = new WeakMap<QueryClient, Map<string, number>>();
+
+function startedSaves(queryClient: QueryClient, workflowId: string): number {
+  return savesStarted.get(queryClient)?.get(workflowId) ?? 0;
+}
 
 /** Registers a save of the editor (the whole run, retries included) until it settles. */
 export function trackDraftSave(queryClient: QueryClient, workflowId: string, saving: Promise<unknown>): void {
+  const started = savesStarted.get(queryClient) ?? new Map<string, number>();
+  savesStarted.set(queryClient, started);
+  started.set(workflowId, (started.get(workflowId) ?? 0) + 1);
   const byWorkflow = savesInFlight.get(queryClient) ?? new Map<string, Set<Promise<unknown>>>();
   savesInFlight.set(queryClient, byWorkflow);
   const saves = byWorkflow.get(workflowId) ?? new Set<Promise<unknown>>();
@@ -43,9 +54,21 @@ export async function draftSavesSettled(queryClient: QueryClient, workflowId: st
   }
 }
 
+/**
+ * Reads the draft after the saves of the workflow still running. A read never ends older than what the editor already
+ * knows: if a save started while the `GET` was on the way (a prefetch, or the editor opened while another one closed),
+ * the draft is read again after it; and an answer with a lower revision than the cached draft (written by a save that
+ * finished meanwhile) gives way to the cached one.
+ */
 async function readDraft(queryClient: QueryClient, client: ApiClient, workflowId: string, signal: AbortSignal): Promise<Draft> {
-  await draftSavesSettled(queryClient, workflowId);
-  return dataOrError(client.GET('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, signal }));
+  for (;;) {
+    await draftSavesSettled(queryClient, workflowId);
+    const started = startedSaves(queryClient, workflowId);
+    const read = await dataOrError(client.GET('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, signal }));
+    if (startedSaves(queryClient, workflowId) !== started) continue;
+    const cached = queryClient.getQueryData<Draft>(workflowDraftKey(workflowId));
+    return cached && cached.workflow_id === read.workflow_id && cached.revision > read.revision ? cached : read;
+  }
 }
 
 /**
@@ -74,6 +97,17 @@ export function fetchDraftAgain(queryClient: QueryClient, client: ApiClient, wor
     queryKey: workflowDraftKey(workflowId),
     queryFn: ({ signal }) => readDraft(queryClient, client, workflowId, signal),
     staleTime: 0,
+  });
+}
+
+/**
+ * Starts reading the draft before the editor opens (e.g. while the person points at "Abrir editor"). The editor that opens
+ * meanwhile takes this read, which never brings a revision older than the cached one (see `readDraft`).
+ */
+export function prefetchDraft(queryClient: QueryClient, client: ApiClient, workflowId: string): Promise<void> {
+  return queryClient.prefetchQuery({
+    queryKey: workflowDraftKey(workflowId),
+    queryFn: ({ signal }) => readDraft(queryClient, client, workflowId, signal),
   });
 }
 

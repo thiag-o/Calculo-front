@@ -8,12 +8,14 @@ import {
   useDraftAnalysis,
   useDraftClients,
   type AnalysisTarget,
+  type Dependency,
   type Draft,
   type DraftSymbol,
   type WorkflowDefinition,
   type WorkflowProblem,
 } from './queries';
 import { WORKFLOW_ITEM, type EditorItem, type EditorSelection } from './selection';
+import { dropUnsavedChange, keepUnsavedChange, type UnsavedDraftChange } from './unsavedChanges';
 
 /** The draft is saved by itself this long after the last change (E4-23). */
 export const SAVE_DELAY_MS = 2000;
@@ -64,6 +66,14 @@ export interface DraftEditorValue {
   /** The problems and the symbols of the latest analysis or save. */
   problems: readonly WorkflowProblem[];
   symbols: readonly DraftSymbol[];
+  /**
+   * What each node reads (`reads`), from the same analysis or save as `problems`: the canvas ports and links and the
+   * Delete count come from here. Like the problems, they refer to `analyzedDefinition`: a node added after it (not
+   * analyzed yet) has no entry until the next analysis (`problemsOutdated` says one is on the way).
+   */
+  dependencies: readonly Dependency[];
+  /** The node ids in run order (topological), from the same analysis or save; empty with a cycle. */
+  order: readonly string[];
   /**
    * The definition those problems were found in. Their `path` (`root.nodes[1]…`) and positions refer to it, not to
    * `definition`, while the analysis of the latest change has not come back.
@@ -119,6 +129,10 @@ interface Live {
   failed: boolean;
   conflict: boolean;
   readOnly: boolean;
+  /** Why the last save failed (kept with the change when the editor closes in conflict). */
+  lastError: unknown;
+  /** The editor closed: a save that fails from now on keeps the change in memory (`keepUnsavedChange`). */
+  closed: boolean;
 }
 
 interface AnalysisResult {
@@ -126,6 +140,8 @@ interface AnalysisResult {
   definition: WorkflowDefinition;
   problems: readonly WorkflowProblem[];
   symbols: readonly DraftSymbol[];
+  dependencies: readonly Dependency[];
+  order: readonly string[];
 }
 
 function itemExists(definition: WorkflowDefinition, item: EditorItem): boolean {
@@ -136,6 +152,16 @@ export interface DraftEditorProviderProps {
   /** The draft as the server sent it (`GET …/draft`). Read once: later changes come from the editor itself. */
   draft: Draft;
   readOnly: boolean;
+  /**
+   * Who is editing (`draftOwner`: user and tenant). If the save on close fails, the change is kept in memory under this
+   * owner, for the next screen to offer "Voltar ao editor".
+   */
+  owner?: string;
+  /**
+   * A change the previous editor of this workflow could not save on close (`findUnsavedChange`). The editor starts from
+   * it (one undo step over the server's draft) and saves it again right away, over the revision it was made on.
+   */
+  unsaved?: UnsavedDraftChange | null;
   children?: ReactNode;
 }
 
@@ -144,11 +170,16 @@ export interface DraftEditorProviderProps {
  * the analysis 400 ms after the last change (problems and symbols, nothing saved), the save 2 s after the last change and
  * when the editor closes, and the `409 draft_conflict`, which stops the saving until "Recarregar rascunho".
  */
-export function DraftEditorProvider({ draft, readOnly, children }: DraftEditorProviderProps) {
+export function DraftEditorProvider({ draft, readOnly, owner = '', unsaved = null, children }: DraftEditorProviderProps) {
   const { client, queryClient } = useDraftClients();
   const workflowId = draft.workflow_id;
+  // The change left unsaved by the previous editor, taken once (read-only cannot save it: it stays for later).
+  const [restored] = useState(() => (unsaved && !readOnly && unsaved.workflowId === workflowId ? unsaved : null));
+  const restoredVersion = restored ? 1 : 0;
 
-  const [history, setHistoryState] = useState<History<WorkflowDefinition>>(() => startHistory(draft.definition));
+  const [history, setHistoryState] = useState<History<WorkflowDefinition>>(() =>
+    restored ? pushHistory(startHistory(draft.definition), restored.definition, Date.now()) : startHistory(draft.definition),
+  );
   const historyRef = useRef(history);
   const [selection, setSelection] = useState<EditorSelection>({ item: WORKFLOW_ITEM, field: null });
   const [result, setResult] = useState<AnalysisResult>(() => ({
@@ -156,25 +187,50 @@ export function DraftEditorProvider({ draft, readOnly, children }: DraftEditorPr
     definition: draft.definition,
     problems: draft.problems,
     symbols: draft.symbols,
+    dependencies: draft.dependencies,
+    order: draft.order,
   }));
   /** The local version on screen (the `live.version` of the last render). */
-  const [version, setVersion] = useState(0);
-  const [save, setSave] = useState<SaveState>({ status: 'saved', savedAt: draft.updated_at, error: null });
+  const [version, setVersion] = useState(restoredVersion);
+  const [save, setSave] = useState<SaveState>({ status: restored ? 'pending' : 'saved', savedAt: draft.updated_at, error: null });
   const [reloadState, setReloadState] = useState<ReloadState>({ reloading: false, error: null });
-  const [analysisTarget, setAnalysisTarget] = useState<AnalysisTarget | null>(null);
-  const [revision, setRevision] = useState(draft.revision);
+  const [analysisTarget, setAnalysisTarget] = useState<AnalysisTarget | null>(() =>
+    restored ? { version: restoredVersion, definition: restored.definition } : null,
+  );
+  const [revision, setRevision] = useState(restored ? restored.revision : draft.revision);
 
   const live = useRef<Live>({
-    version: 0,
+    version: restoredVersion,
     savedVersion: 0,
-    revision: draft.revision,
+    revision: restored ? restored.revision : draft.revision,
     saving: null,
     again: false,
     failed: false,
     conflict: false,
     readOnly,
+    lastError: null,
+    closed: false,
   });
   live.current.readOnly = readOnly;
+  const ownerRef = useRef(owner);
+  ownerRef.current = owner;
+  // The restored change stays in memory until a save of it works (or "Recarregar rascunho" drops it on purpose): leaving
+  // before that, or a save that fails, must not lose it.
+  const restoredRef = useRef(restored);
+
+  /** Keeps the change on screen in memory, for the next screen and the reopened editor (the editor is gone). */
+  const keepOnScreenChange = useCallback(
+    (error: unknown) => {
+      keepUnsavedChange(queryClient, {
+        workflowId,
+        owner: ownerRef.current,
+        definition: historyRef.current.present,
+        revision: live.current.revision,
+        error,
+      });
+    },
+    [queryClient, workflowId],
+  );
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analysisTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -210,13 +266,29 @@ export function DraftEditorProvider({ draft, readOnly, children }: DraftEditorPr
         const saved = await saveDraft(queryClient, client, workflowId, { revision: state.revision, definition });
         state.revision = saved.revision;
         state.savedVersion = version;
+        // The change brought back from memory is on the server now (every version here starts from it).
+        if (restoredRef.current) {
+          dropUnsavedChange(queryClient, restoredRef.current);
+          restoredRef.current = null;
+        }
         setRevision(saved.revision);
-        applyResult({ version, definition, problems: saved.problems, symbols: saved.symbols });
+        applyResult({
+          version,
+          definition,
+          problems: saved.problems,
+          symbols: saved.symbols,
+          dependencies: saved.dependencies,
+          order: saved.order,
+        });
         // "Salvo há…" counts from this browser's clock: a server clock a little ahead would show "há 2 min" right away.
         setSave({ status: state.version === version ? 'saved' : 'pending', savedAt: new Date().toISOString(), error: null });
       } catch (error) {
         state.failed = true;
         state.again = false;
+        state.lastError = error;
+        // The editor is gone: nobody sees the note. The change stays in memory for the next screen and the reopened
+        // editor, before this save settles (the reopened editor reads the draft only after it, and finds the change).
+        if (state.closed) keepOnScreenChange(error);
         if (error instanceof ApiError && error.code === 'draft_conflict') {
           state.conflict = true;
           setSave((current) => ({ ...current, status: 'conflict', error }));
@@ -235,7 +307,7 @@ export function DraftEditorProvider({ draft, readOnly, children }: DraftEditorPr
     // Reading the draft again (the editor reopened, "Recarregar rascunho") waits for this save.
     trackDraftSave(queryClient, workflowId, saving);
     return saving;
-  }, [applyResult, client, queryClient, workflowId]);
+  }, [applyResult, client, keepOnScreenChange, queryClient, workflowId]);
   const runSaveRef = useRef(runSave);
   runSaveRef.current = runSave;
 
@@ -318,13 +390,26 @@ export function DraftEditorProvider({ draft, readOnly, children }: DraftEditorPr
       state.conflict = false;
       state.failed = false;
       state.again = false;
+      state.lastError = null;
+      // The local changes are dropped on purpose ("O que você mudou aqui… não é mantido"), the restored one too.
+      if (restoredRef.current) {
+        dropUnsavedChange(queryClient, restoredRef.current);
+        restoredRef.current = null;
+      }
       const next = startHistory(fresh.definition);
       historyRef.current = next;
       setHistoryState(next);
       setRevision(fresh.revision);
       setAnalysisTarget(null);
       setVersion(state.version);
-      setResult({ version: state.version, definition: fresh.definition, problems: fresh.problems, symbols: fresh.symbols });
+      setResult({
+        version: state.version,
+        definition: fresh.definition,
+        problems: fresh.problems,
+        symbols: fresh.symbols,
+        dependencies: fresh.dependencies,
+        order: fresh.order,
+      });
       setSave({ status: 'saved', savedAt: fresh.updated_at, error: null });
       setSelection((current) => (itemExists(fresh.definition, current.item) ? current : { item: WORKFLOW_ITEM, field: null }));
       setReloadState({ reloading: false, error: null });
@@ -342,21 +427,36 @@ export function DraftEditorProvider({ draft, readOnly, children }: DraftEditorPr
         definition: analysisTarget.definition,
         problems: analysis.data.problems,
         symbols: analysis.data.symbols,
+        dependencies: analysis.data.dependencies,
+        order: analysis.data.order,
       });
     }
   }, [analysis.data, analysisTarget, applyResult]);
 
-  const analysisFailed = analysis.isError && analysisTarget !== null && result.version < analysisTarget.version;
+  // Only about the version on screen: once the definition changed again, the failure is of a version already replaced.
+  const analysisFailed =
+    analysis.isError && analysisTarget !== null && analysisTarget.version === version && result.version < analysisTarget.version;
 
-  // Leaving the editor saves what is pending (E4-23). The save goes on after the screen is gone.
-  useEffect(
-    () => () => {
+  // The change the previous editor could not save is back on screen and is saved again now. It leaves the memory only
+  // when that save works (see `runSave`).
+  useEffect(() => {
+    if (restored) void runSaveRef.current();
+  }, [restored]);
+
+  // Leaving the editor saves what is pending (E4-23). The save goes on after the screen is gone; if it fails, the change
+  // is kept in memory (see `runSave`), and so is a save already running that fails after the editor closed. In conflict
+  // nothing can be saved: the change is kept right away, with the conflict, for "Voltar ao editor" to show it again.
+  useEffect(() => {
+    const state = live.current;
+    state.closed = false;
+    return () => {
       clearTimers();
-      const state = live.current;
-      if (!state.readOnly && !state.conflict && state.version !== state.savedVersion) void runSaveRef.current();
-    },
-    [clearTimers],
-  );
+      state.closed = true;
+      if (state.readOnly || state.version === state.savedVersion) return;
+      if (state.conflict) keepOnScreenChange(state.lastError);
+      else void runSaveRef.current();
+    };
+  }, [clearTimers, keepOnScreenChange]);
 
   const value = useMemo<DraftEditorValue>(
     () => ({
@@ -365,6 +465,8 @@ export function DraftEditorProvider({ draft, readOnly, children }: DraftEditorPr
       revision,
       problems: result.problems,
       symbols: result.symbols,
+      dependencies: result.dependencies,
+      order: result.order,
       analyzedDefinition: result.definition,
       problemsOutdated: result.version !== version,
       analysisFailed,

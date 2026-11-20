@@ -1,0 +1,11 @@
+/*
+ * Editor › draft: the notes about changes the editor could not save on close (estilos.md §7.7 and §14). One note per
+ * workflow, stacked 8px apart. Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-unsaved-changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}

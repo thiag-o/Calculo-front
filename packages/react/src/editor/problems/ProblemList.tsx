@@ -58,6 +58,8 @@ export function ProblemList({ onSelectProblem }: ProblemListProps = {}) {
 
   return (
     <>
+      {/* The section title, for the block titles (h3) to come after an h2 (the tab already shows the word). */}
+      <h2 className="fc-visually-hidden">Problemas</h2>
       {failed}
       <ul className="fc-problems" aria-label="Problemas por bloco">
         {groups.map((group) => (

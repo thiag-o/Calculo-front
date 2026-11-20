@@ -10,8 +10,8 @@ export type {
   ChangeOptions,
   DefinitionUpdate,
 } from './DraftEditor';
-export { useDraft, useDraftAnalysis, saveDraft, fetchDraftAgain } from './queries';
-export type { Draft, WorkflowDefinition, WorkflowProblem, DraftSymbol, Analysis, AnalysisTarget } from './queries';
+export { useDraft, useDraftAnalysis, saveDraft, fetchDraftAgain, prefetchDraft } from './queries';
+export type { Draft, WorkflowDefinition, WorkflowProblem, DraftSymbol, Dependency, Analysis, AnalysisTarget } from './queries';
 export { WORKFLOW_ITEM, sameItem } from './selection';
 export type { EditorItem, EditorSelection } from './selection';
 export { HISTORY_LIMIT } from './history';
@@ -19,3 +19,9 @@ export { useUndoShortcuts } from './useUndoShortcuts';
 export { SaveIndicator, SaveNotices } from './SaveIndicator';
 export { savedAgo } from './savedAgo';
 export { READ_ONLY_REASON, loadErrorMessage, canRetryLoad } from './messages';
+// A change the save on close could not save: kept in the module's memory (never in localStorage), told by the next
+// screen with "Voltar ao editor" and taken back by the reopened editor.
+export { UnsavedChangesNotice } from './UnsavedChangesNotice';
+export type { UnsavedChangesNoticeProps } from './UnsavedChangesNotice';
+export { draftOwner, findUnsavedChange, useUnsavedDraftChanges } from './unsavedChanges';
+export type { UnsavedDraftChange } from './unsavedChanges';

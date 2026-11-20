@@ -68,8 +68,15 @@ export const EditorLayout = forwardRef<HTMLElement, EditorLayoutProps>(function 
 
   return (
     // tabIndex -1: the editor itself can take the focus (after a note goes away, or a click on an empty area), so Ctrl Z
-    // and Ctrl Shift Z keep working there.
-    <section ref={ref} className="fc-editor" aria-label={label} tabIndex={-1} onKeyDown={onKeyDown}>
+    // and Ctrl Shift Z keep working there. It declares the shortcuts too, since it is the element that gets the focus.
+    <section
+      ref={ref}
+      className="fc-editor"
+      aria-label={label}
+      tabIndex={-1}
+      aria-keyshortcuts="Control+Z Control+Shift+Z"
+      onKeyDown={onKeyDown}
+    >
       <div ref={measured} className="fc-editor-frame" data-widths={widths} data-bottom={bottomCollapsed ? 'collapsed' : 'open'}>
         <header className="fc-editor-bar">{bar}</header>
         {notices ? <div className="fc-editor-notices">{notices}</div> : null}
@@ -77,7 +84,8 @@ export const EditorLayout = forwardRef<HTMLElement, EditorLayoutProps>(function 
           <aside className="fc-editor-layers" aria-label="Camadas">
             {layers}
           </aside>
-          <div className="fc-editor-canvas" role="region" aria-label="Canvas">
+          {/* Ctrl Z and Ctrl Shift Z undo and redo the draft (useUndoShortcuts); there are no visible buttons in this epic. */}
+          <div className="fc-editor-canvas" role="region" aria-label="Canvas" aria-keyshortcuts="Control+Z Control+Shift+Z">
             {canvas}
           </div>
           <aside className="fc-editor-properties" aria-label="Propriedades">
@@ -112,7 +120,9 @@ export const EditorLayout = forwardRef<HTMLElement, EditorLayoutProps>(function 
                 size="small"
                 iconOnly
                 icon={bottomCollapsed ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}
-                label={bottomCollapsed ? 'Expandir o painel inferior' : 'Recolher o painel inferior'}
+                // A fixed name: only aria-expanded says whether the panel is open (a name that flips would be read as
+                // another button).
+                label="Painel inferior"
                 aria-expanded={!bottomCollapsed}
                 onClick={() => onBottomCollapsedChange(!bottomCollapsed)}
               />

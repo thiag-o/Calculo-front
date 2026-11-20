@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, Loading, Notice, Skeleton } from '../../design-system';
 import { useSession } from '../../session';
@@ -6,12 +7,15 @@ import {
   DraftEditorProvider,
   SaveNotices,
   canRetryLoad,
+  draftOwner,
+  findUnsavedChange,
   loadErrorMessage,
   useDraft,
   useDraftEditor,
   useUndoShortcuts,
   type Draft,
   type EditorItem,
+  type UnsavedDraftChange,
   type WorkflowProblem,
 } from '../draft';
 import { ProblemList, useProblemCounts } from '../problems';
@@ -52,14 +56,25 @@ export function EditorScreen(props: EditorScreenProps) {
   return <WorkflowEditor key={props.workflowId} {...props} />;
 }
 
+interface Opened {
+  draft: Draft;
+  /** The change the previous editor of this workflow could not save on close, if any: the editor starts from it. */
+  unsaved: UnsavedDraftChange | null;
+}
+
 function WorkflowEditor({ workflowId, onBack, ...panels }: EditorScreenProps) {
+  const queryClient = useQueryClient();
   const session = useSession();
   const draft = useDraft(workflowId);
+  const owner = draftOwner(session.data);
   // The draft the editor starts from: the one read after the screen opened (never the cache alone, which may be older
   // than a save that just finished), kept from then on. Later query states do not matter: a failed "Recarregar rascunho"
-  // keeps the editor.
-  const [opened, setOpened] = useState<Draft | null>(null);
-  if (opened === null && draft.isFetchedAfterMount && draft.isSuccess && !draft.isFetching) setOpened(draft.data);
+  // keeps the editor. The draft is read after the save on close of the previous editor settled, so a change it could
+  // not save is already kept by then.
+  const [opened, setOpened] = useState<Opened | null>(null);
+  if (opened === null && draft.isFetchedAfterMount && draft.isSuccess && !draft.isFetching && !session.isPending) {
+    setOpened({ draft: draft.data, unsaved: findUnsavedChange(queryClient, workflowId, owner) });
+  }
 
   if (opened === null && draft.isFetchedAfterMount && draft.isError) {
     const retry = canRetryLoad(draft.error);
@@ -87,7 +102,7 @@ function WorkflowEditor({ workflowId, onBack, ...panels }: EditorScreenProps) {
     );
   }
 
-  if (opened === null || session.isPending) {
+  if (opened === null) {
     return (
       <section className="fc-editor" aria-label="Editor">
         <Loading label="Carregando o editor" className="fc-editor-loading">
@@ -117,8 +132,8 @@ function WorkflowEditor({ workflowId, onBack, ...panels }: EditorScreenProps) {
 
   const readOnly = !session.hasPermission(WORKFLOWS_EDIT_PERMISSION);
   return (
-    <DraftEditorProvider key={opened.workflow_id} draft={opened} readOnly={readOnly}>
-      <LoadedEditor draft={opened} onBack={onBack} {...panels} />
+    <DraftEditorProvider key={opened.draft.workflow_id} draft={opened.draft} readOnly={readOnly} owner={owner} unsaved={opened.unsaved}>
+      <LoadedEditor draft={opened.draft} onBack={onBack} {...panels} />
     </DraftEditorProvider>
   );
 }

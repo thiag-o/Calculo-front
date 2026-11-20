@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import { useDraftEditor } from '../draft';
 import { problemCountText, useProblemCounts } from './problemGroups';
 import './problems.css';
 
@@ -9,15 +10,19 @@ export interface ProblemCounterProps {
 
 /**
  * The bar's "● N problemas" (estilos.md §14 and §16; E4-20): red dot and the count, clickable, opening the Problems tab.
- * Without problems, nothing is shown.
+ * When the analysis of the latest change failed, "● N problemas · desatualizado": the count may be old. Without
+ * problems, nothing is shown.
  */
 export const ProblemCounter = forwardRef<HTMLButtonElement, ProblemCounterProps>(function ProblemCounter({ onOpen }, ref) {
   const { total } = useProblemCounts();
+  const { analysisFailed } = useDraftEditor();
   if (total === 0) return null;
   return (
     <button ref={ref} type="button" className="fc-problem-counter" onClick={onOpen}>
       <span className="fc-problem-counter-dot" aria-hidden="true" />
       {problemCountText(total)}
+      {analysisFailed ? ' ' : null}
+      {analysisFailed ? <span className="fc-problem-counter-outdated">· desatualizado</span> : null}
     </button>
   );
 });

@@ -45,6 +45,11 @@
   background-color: var(--fc-red-700);
 }
 
+/* "· desatualizado": the analysis of the latest change failed, so the count may be old. Lighter than the count. */
+.fc-problem-counter-outdated {
+  font-weight: 400;
+}
+
 /* The Problems tab */
 
 .fc-problems,
