@@ -1,0 +1,274 @@
+/*
+ * Editor › canvas (estilos.md §4, §8, §11 and §15; reference screen "D · Editor"): the blocks, the Entradas and Saída
+ * bars, the links, the floating toolbar, the zoom and the minimap. React Flow brings only its structural CSS (base.css,
+ * react-flow* classes, ADR 0037); everything visible here uses fc- classes and --fc-* variables over the module root.
+ * No global selector (ADR 0002).
+ */
+
+.fc-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  outline: none;
+}
+
+/* React Flow declares `color-scheme: light dark`; the module theme (data-theme on .fc-root) decides instead. */
+.fc-canvas .react-flow {
+  color-scheme: inherit;
+  --xy-background-color: var(--fc-background-200);
+  --xy-edge-stroke: var(--fc-gray-500);
+  --xy-edge-stroke-width: 1.25;
+  --xy-minimap-background-color: var(--fc-background-100);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--fc-gray-500) 30%, transparent);
+  --xy-minimap-node-background-color: var(--fc-gray-400);
+  font-family: var(--fc-font-sans);
+  color: var(--fc-text);
+}
+
+/* Nodes: no frame of React Flow's own; the block draws it. The focus ring is the product's (estilos §7.1). */
+.fc-canvas .react-flow__node {
+  border-radius: 6px;
+  outline: none;
+  cursor: default;
+}
+
+.fc-canvas .react-flow__node.draggable {
+  cursor: grab;
+}
+
+.fc-canvas .react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+.fc-canvas .react-flow__node:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Block: background-100, 1px border, 6px radius, 150 to 200px wide, the canvas shadow (§4 and §8). */
+.fc-canvas-block,
+.fc-canvas-bar {
+  box-sizing: border-box;
+  min-width: 150px;
+  max-width: 200px;
+  width: 200px;
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+  box-shadow:
+    0 0 0 1px var(--fc-border),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 150ms ease-out;
+}
+
+/* Selection: border and 1px outline in gray-1000 (§8). */
+.fc-canvas-block[data-selected='true'],
+.fc-canvas-bar[data-selected='true'] {
+  box-shadow:
+    0 0 0 1px var(--fc-gray-1000),
+    0 0 0 2px var(--fc-gray-1000);
+}
+
+.fc-canvas-block-head,
+.fc-canvas-bar-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  min-width: 0;
+  padding: var(--fc-space-6) var(--fc-space-8);
+}
+
+/* Category square: 8px, 2px radius (§2.4), only here and in the toolbar. */
+.fc-canvas-category {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--fc-gray-500);
+}
+
+.fc-canvas-category[data-kind='calculation'] {
+  background-color: var(--fc-cat-calc);
+}
+
+.fc-canvas-category[data-kind='decision_table'] {
+  background-color: var(--fc-cat-decision);
+}
+
+.fc-canvas-category[data-kind='inputs'] {
+  background-color: var(--fc-cat-source);
+}
+
+.fc-canvas-category[data-kind='output'] {
+  background-color: var(--fc-cat-output);
+}
+
+.fc-canvas-block-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Type in 11px tertiary (§8). */
+.fc-canvas-block-kind,
+.fc-canvas-bar-title {
+  flex: none;
+  color: var(--fc-text-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.fc-canvas-bar-title {
+  flex: 1 1 auto;
+  color: var(--fc-text-secondary);
+  font-weight: 500;
+}
+
+/* Validation error: red-700 icon and the number in the header (§8). */
+.fc-canvas-problems {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-2);
+  color: var(--fc-red-700);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.fc-canvas-problems > span {
+  color: var(--fc-red-900);
+}
+
+/* Ports in mono-12: inputs on the left, outputs on the right, 7px circle with a gray-600 border (§8). */
+.fc-canvas-ports {
+  margin: 0;
+  padding: var(--fc-space-4) 0;
+  list-style: none;
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-canvas-port {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--fc-space-6);
+  min-width: 0;
+  padding: var(--fc-space-2) var(--fc-space-12);
+}
+
+.fc-canvas-port[data-side='out'] {
+  justify-content: flex-end;
+}
+
+.fc-canvas-port[data-row='field'] {
+  padding-left: var(--fc-space-24);
+}
+
+.fc-canvas-port-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-canvas-port-type {
+  flex: none;
+  white-space: nowrap;
+}
+
+.fc-canvas .fc-canvas-port-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--fc-gray-600);
+  border-radius: 50%;
+  background-color: var(--fc-background-100);
+  cursor: default;
+}
+
+.fc-canvas-bar-empty {
+  margin: 0;
+  padding: var(--fc-space-6) var(--fc-space-12) var(--fc-space-8);
+  border-top: 1px solid var(--fc-border);
+}
+
+/* Links: gray-500, 1.25px; those of the selected block in gray-1000 (§8). */
+.fc-canvas .fc-canvas-link .react-flow__edge-path {
+  stroke: var(--fc-gray-500);
+  stroke-width: 1.25;
+}
+
+.fc-canvas .fc-canvas-link-active .react-flow__edge-path {
+  stroke: var(--fc-gray-1000);
+}
+
+/* Zoom and minimap: top right corner, the minimap 148×90px under the zoom (§8). */
+.fc-canvas .react-flow__panel {
+  margin: var(--fc-space-12);
+}
+
+.fc-canvas-zoom {
+  display: flex;
+  gap: var(--fc-space-2);
+  padding: var(--fc-space-2);
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+  box-shadow: var(--fc-shadow-menu);
+}
+
+.fc-canvas .fc-canvas-minimap {
+  top: 40px;
+  width: 148px;
+  height: 90px;
+  overflow: hidden;
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+.fc-canvas .fc-canvas-minimap svg {
+  display: block;
+  width: 148px;
+  height: 90px;
+}
+
+/* Floating toolbar: bottom center, 12px radius, the menu shadow (§4 and §8). */
+.fc-canvas-toolbar {
+  display: flex;
+  gap: var(--fc-space-4);
+  padding: var(--fc-space-4);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  box-shadow: var(--fc-shadow-menu);
+}
+
+/* Empty canvas: the empty state in the middle, without blocking the pane. */
+.fc-canvas .fc-canvas-empty {
+  top: 30%;
+  pointer-events: none;
+}
+
+.fc-canvas-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-canvas-block,
+  .fc-canvas-bar {
+    transition: none;
+  }
+}

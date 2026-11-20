@@ -1,0 +1,121 @@
+/*
+ * Editor › layers (estilos.md §8, §9 and §14): the tree of the Camadas panel, 28px items in mono-13, sub-levels 20px in,
+ * the selected item with the gray-200 background and the red-700 problem icon. Only fc- classes and --fc-* variables; no
+ * global reset (ADR 0002).
+ */
+
+.fc-layers {
+  padding: var(--fc-space-8) 0;
+}
+
+.fc-layers-tree {
+  margin: 0;
+  padding: 0 var(--fc-space-8);
+  list-style: none;
+}
+
+.fc-layers-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  min-width: 0;
+  height: 28px;
+  padding-right: var(--fc-space-8);
+  border-radius: 6px;
+  color: var(--fc-text-secondary);
+  cursor: pointer;
+  outline: 2px solid transparent;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-layers-item[data-own='true'] {
+  color: var(--fc-text);
+}
+
+.fc-layers-item:hover {
+  background-color: var(--fc-hover);
+  color: var(--fc-text);
+}
+
+.fc-layers-item[data-selected='true'] {
+  background-color: var(--fc-active);
+  color: var(--fc-text);
+}
+
+.fc-layers-item[data-selected='true'] .fc-layers-label {
+  font-weight: 500;
+}
+
+.fc-layers-item:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-layers-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--fc-text-tertiary);
+}
+
+/* Category square: 8px, 2px radius (estilos §2.4). */
+.fc-layers-category {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--fc-gray-500);
+}
+
+.fc-layers-category[data-kind='calculation'] {
+  background-color: var(--fc-cat-calc);
+}
+
+.fc-layers-category[data-kind='decision_table'] {
+  background-color: var(--fc-cat-decision);
+}
+
+.fc-layers-category[data-kind='inputs'] {
+  background-color: var(--fc-cat-source);
+}
+
+.fc-layers-category[data-kind='output'] {
+  background-color: var(--fc-cat-output);
+}
+
+.fc-layers-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-layers-problem {
+  flex: none;
+  display: inline-flex;
+  color: var(--fc-red-700);
+}
+
+.fc-layers-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-layers-item {
+    transition: none;
+  }
+}
