@@ -114,6 +114,8 @@ uv run python -m fluxo.bootstrap api
 
    O `docker compose up -d` do back já sobe o `postgres-sample` (o "banco do cliente" dos testes do Catálogo, na porta `5434`) e o Moto.
 
+   Desde o épico 4, o `migrate` aplica a migration dos workflows e o `prepare-local` cria no tenant **Demonstração** o workflow "Pontuação de exemplo", com o rascunho do exemplo de Contratos do back. Os testes de `e2e/epic-4/` o usam. Rode-os num banco recém-preparado, como nos épicos anteriores.
+
 2. Exporte o endereço da API (sem o `/v1`) e as contas que o `prepare-local` imprime (também em `../backend/docs/ambientes.md`):
 
 ```bash
@@ -122,6 +124,8 @@ export E2E_ADMIN_EMAIL=admin@demo.local
 export E2E_ADMIN_PASSWORD=demo-admin-local
 export E2E_TWO_TENANTS_EMAIL=dois.tenants@demo.local
 export E2E_TWO_TENANTS_PASSWORD=demo-dois-tenants-local
+export E2E_AUDITOR_EMAIL=auditor@demo.local
+export E2E_AUDITOR_PASSWORD=demo-auditor-local
 export E2E_SAMPLE_READ_PASSWORD=exemplo_leitura_local
 export E2E_SAMPLE_WRITE_PASSWORD=exemplo_escrita_local
 ```
@@ -134,6 +138,8 @@ No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
 | `E2E_ADMIN_EMAIL` | não (padrão `admin@demo.local`) | E-mail do Admin de demonstração. |
 | `E2E_ADMIN_PASSWORD` | sim | Senha do Admin de demonstração. |
 | `E2E_TWO_TENANTS_EMAIL`, `E2E_TWO_TENANTS_PASSWORD` | sim | Conta com acesso aos dois tenants de demonstração (troca de tenant). |
+| `E2E_AUDITOR_EMAIL` | não (padrão `auditor@demo.local`) | E-mail do Auditor de demonstração (o editor só para leitura, épico 4). |
+| `E2E_AUDITOR_PASSWORD` | sim | Senha do Auditor de demonstração (`demo-auditor-local` no ambiente local). |
 | `E2E_SHELL_URL` | não (padrão `http://localhost:5173`) | Endereço do casca que o Playwright abre. |
 | `E2E_SAMPLE_HOST` | não (padrão `127.0.0.1`) | Host do banco de exemplo (`postgres-sample`), visto pela **API** (é ela que conecta, não o navegador). |
 | `E2E_SAMPLE_PORT` | não (padrão `5434`) | Porta do banco de exemplo (`FLUXO_SAMPLE_POSTGRES_PORT` do back). |
@@ -156,6 +162,9 @@ pnpm e2e:real
 - **Limite de logins por IP.** A suíte faz cerca de 27 logins por minuto do mesmo IP, e o back aceita 20 por padrão. Suba a `api` com `FLUXO_LOGIN_IP_LIMIT_PER_MIN=1000`: nenhum fluxo testa esse limite. Com o limite padrão, parte dos logins recebe `429 too_many_attempts`. As tentativas ficam gravadas no banco, então reiniciar a API não zera a contagem.
 - **O teste de bloqueio não atinge as contas acima.** Ele erra a senha de um e-mail novo a cada rodada.
 - **Os testes do Catálogo deixam dados no tenant de demonstração.** Cada rodada cria conexões, datasets, variáveis e arquivos Excel com um sufixo novo no nome (`Exemplo e2e 1a2b3c4d`), sem apagar os das rodadas anteriores. A planilha enviada é escrita pelo próprio teste (`e2e/epic-3/support/workbook.ts`), com os tipos que o back deve inferir em cada coluna.
+- **Os testes dos workflows (`e2e/epic-4/`) usam a "Pontuação de exemplo" do `prepare-local` só para ler.** "Calcular" com `valor_item` 1.500,00, categoria A e meta verdadeira tem de mostrar `pontos` 225,00 e "Regra 2" (o motor do back). O Auditor abre o mesmo workflow só para leitura. Os fluxos que mudam o rascunho (erro de tipo, política "Única", duas abas, recarregar) criam, pela API, uma cópia com sufixo novo no nome (`Pontuação única e2e 1a2b3c4d`), sem apagar as das rodadas anteriores.
 - **A senha da conexão nunca volta.** O teste `e2e/epic-3/credential-never-returned.spec.ts` lê o corpo de todas as respostas da API depois do login (salvar, abrir a conexão de novo, testar, recarregar a página) e reprova se alguma trouxer a senha; confere também que a tela, os campos e o armazenamento do navegador não a guardam.
 
 No modo simulado (`pnpm e2e`), o Catálogo é simulado por `e2e/epic-3/support/simulation.ts`, com as mesmas tabelas, view e colunas do `postgres-sample` (o `docker/postgres-sample/init.sql` do back). A planilha não é lida de verdade: a simulação devolve os tipos que o teste declarou para aquele arquivo. Quem prova a inferência é o modo real.
+
+Os workflows são simulados por `e2e/epic-4/support/simulation.ts`, que começa com a "Pontuação de exemplo" do `prepare-local` (o rascunho do exemplo do contrato) e guarda a revisão do rascunho como o back (`409 draft_conflict` na aba atrasada). A análise e o "Calcular" passam por uma leitura pequena da linguagem de fórmula, só para os testes (`e2e/epic-4/support/formula.ts` e `engine.ts`): cobre o que os fluxos do épico 4 usam (contas exatas, `ARRED`, `MÍN`, `SOMA`, `EXISTE`, as células da Tabela de Decisão e o erro de tipo de texto em conta). Quem prova o motor de verdade é o modo real.
