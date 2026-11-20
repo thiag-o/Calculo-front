@@ -795,6 +795,9 @@ export interface paths {
          *     vazia ou com tipos misturados vira `text`).
          *     - Arquivo acima do limite: `413 file_too_large`.
          *     - Arquivo que não é um `.xlsx` legível: `422 invalid_file`.
+         *     - Corpo sem o campo `file`, ou nome do arquivo vazio, com mais de 255
+         *       caracteres ou com caractere de controle: `422 invalid_data`, sempre
+         *       apontando o campo do multipart, `fields.file`.
          *     - Cabeçalho com nome vazio ou repetido: `422 invalid_header`, com um item
          *       em `fields` por célula do cabeçalho, na referência do Excel
          *       (`<sheet>!<cell>`, ex.: `Vendas!C1`).
@@ -900,7 +903,9 @@ export interface paths {
          *     bloqueado: `422 connection_target_not_allowed`; falha da conexão:
          *     `422 connection_failed`; credencial guardada da conexão ilegível:
          *     `409 connection_credential_unreadable`. Nome repetido no tenant:
-         *     `409 dataset_already_exists`. Auditado como `dataset_updated`.
+         *     `409 dataset_already_exists`. Dataset renomeado, com outro SQL ou removido por
+         *     outra ação depois de lido: `409 dataset_changed`, sem gravar nada. Auditado
+         *     como `dataset_updated`.
          */
         put: operations["update_dataset"];
         post?: never;
@@ -931,7 +936,9 @@ export interface paths {
          *     Destino da conexão bloqueado: `422 connection_target_not_allowed`. A
          *     conexão com o banco do cliente falhou: `422 connection_failed`. Credencial
          *     guardada da conexão ilegível: `409 connection_credential_unreadable`.
-         *     Auditado como `dataset_updated`.
+         *     Origem do dataset mudada (ou dataset removido) por outra ação depois de
+         *     lida, como um segundo refresh ao mesmo tempo: `409 dataset_changed`, sem
+         *     gravar nada. Auditado como `dataset_updated`.
          */
         post: operations["refresh_dataset_columns"];
         delete?: never;
@@ -964,6 +971,9 @@ export interface paths {
          *       coluna sem tipo correspondente (`type` nulo): `422 incompatible_type`
          *       (`fields.type`).
          *     - `name` repetido no dataset: `409 variable_already_exists`.
+         *     - Dataset que não existe (ou removido): `404 not_found`.
+         *     - Origem do dataset mudada por outra ação depois de lida, como um refresh
+         *       das colunas ao mesmo tempo: `409 dataset_changed`.
          *
          *     A `scale` (casas decimais) acompanha o tipo `decimal`. Auditado como
          *     `variable_created`.
@@ -987,7 +997,10 @@ export interface paths {
          * Altera o nome e o tipo de uma variável
          * @description Substitui o nome, o tipo e a `scale`; a coluna não muda. Valem as regras
          *     da criação: `422 invalid_variable_name`, `422 incompatible_type` e
-         *     `409 variable_already_exists`. Auditado como `variable_updated`.
+         *     `409 variable_already_exists`. Variável alterada ou removida por outra ação
+         *     depois de lida (inclusive removida junto com o dataset): `409 variable_changed`.
+         *     Origem do dataset mudada depois de lida: `409 dataset_changed`. Auditado
+         *     como `variable_updated`.
          */
         put: operations["update_variable"];
         post?: never;
@@ -996,6 +1009,194 @@ export interface paths {
          * @description Auditado como `variable_deleted`.
          */
         delete: operations["delete_variable"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/formula-language": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descreve a linguagem de fórmula
+         * @description As funções (com os sinônimos, o nome interno, a assinatura, o tipo e os
+         *     contextos em que valem), as palavras reservadas e os operadores da
+         *     linguagem de fórmula, lidos da mesma tabela que o motor usa (E4-17). O
+         *     autocomplete e o realce do editor vêm daqui; funções novas (épico 8)
+         *     aparecem sem mudar o front.
+         */
+        get: operations["get_formula_language"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os workflows do tenant
+         * @description Os workflows do tenant atual, paginados, do mais recente para o mais
+         *     antigo: por `updated_at` decrescente e, no empate, por `id` decrescente.
+         *     `name` filtra por um trecho do nome, sem diferenciar maiúsculas.
+         */
+        get: operations["list_workflows"];
+        put?: never;
+        /**
+         * Cria um workflow
+         * @description Cria o workflow (`kind` `batch`) já com o rascunho vazio da E4-12, na
+         *     revisão 1 (o "Workflow novo" de `WorkflowDefinition`). O nome é guardado
+         *     sem os espaços das pontas; só com espaços: `422 invalid_data` com
+         *     `fields.name`. Nome repetido no tenant, comparado sem os espaços das
+         *     pontas e sem diferenciar maiúsculas (como na D12): `409 workflow_exists`.
+         *     Auditado como `workflow_created`.
+         */
+        post: operations["create_workflow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve um workflow
+         * @description O workflow, com o resumo do rascunho.
+         */
+        get: operations["get_workflow"];
+        /**
+         * Altera o nome e o objetivo de um workflow
+         * @description Substitui o nome e o objetivo (`objective: null` tira o objetivo). O
+         *     rascunho não muda. Nome repetido no tenant: `409 workflow_exists`.
+         *     Auditado como `workflow_updated`, com o nome e o objetivo antes e depois.
+         */
+        put: operations["update_workflow"];
+        post?: never;
+        /**
+         * Remove um workflow
+         * @description Remove o workflow e o rascunho dele. Auditado como `workflow_deleted`.
+         */
+        delete: operations["delete_workflow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve o rascunho do workflow
+         * @description O rascunho (um por workflow, E4-11), com a definição, a `revision` e os
+         *     problemas e símbolos calculados pelo motor.
+         */
+        get: operations["get_draft"];
+        /**
+         * Salva o rascunho do workflow
+         * @description Grava a definição sobre a `revision` informada (concorrência otimista,
+         *     E4-11) e devolve o rascunho na revisão seguinte, com os problemas e os
+         *     símbolos recalculados. O rascunho é salvo mesmo com problemas de sentido
+         *     (tipos, nomes, referências, ciclos): eles voltam em `problems`.
+         *     - `revision` diferente da atual: `409 draft_conflict`, com a revisão atual
+         *       em `current_revision`; nada é gravado.
+         *     - Definição fora da forma de `WorkflowDefinition`: `422 invalid_data`. A
+         *       chave de `fields` é o caminho dentro da definição, como o `path` dos
+         *       problemas (`root.nodes[2].output.scale`), e a mensagem é fixa, sem o
+         *       valor enviado. Os outros campos do corpo usam o próprio nome
+         *       (`revision`, `definition`).
+         *     - Corpo acima de 1 MB: `413 definition_too_large`, sem ler o corpo inteiro.
+         *
+         *     Auditado como `workflow_draft_saved`, só com a revisão e as contagens (sem
+         *     a definição).
+         */
+        put: operations["save_draft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/draft/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Analisa uma definição sem salvar
+         * @description Devolve os problemas e os símbolos da definição enviada e não salva nada
+         *     (nem o rascunho, nem a auditoria). O editor chama enquanto a pessoa
+         *     digita. O workflow precisa existir (`404 not_found`).
+         *     - Definição fora da forma: `422 invalid_data`, com `fields` como no
+         *       `PUT /v1/workflows/{id}/draft`.
+         *     - Corpo acima de 1 MB: `413 definition_too_large`, sem ler o corpo inteiro.
+         */
+        post: operations["analyze_draft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/draft/unit-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Executa o rascunho salvo para um registro
+         * @description Aceita `workflows.edit` **ou** `simulations.run` (requisitos
+         *     alternativos, ADR 0046): o Configurador e o Aprovador calculam um
+         *     registro (E4-14).
+         *
+         *     Roda o rascunho **salvo** na `revision` informada, com os valores
+         *     digitados em `inputs` (por nome de entrada declarada), e nada é guardado.
+         *     Os números chegam como texto e nunca são arredondados na entrada; entrada
+         *     omitida vale nulo (múltipla omitida, lista vazia).
+         *     - `revision` diferente da atual: `409 draft_conflict`, com
+         *       `current_revision`.
+         *     - Rascunho com problemas: `422 draft_has_problems`, com a lista em
+         *       `problems`.
+         *     - Entrada recusada (valor de outro tipo, mais casas que a entrada
+         *       declarada, nome que não foi declarado, campo que a lista não tem,
+         *       lista grande demais): `422 invalid_inputs`, com `fields` por entrada,
+         *       como `valor_item` ou `pontuacoes[1].taxa`.
+         *
+         *     A resposta traz o status do registro, as saídas e, por nó, os valores, a
+         *     regra que casou, os avisos e o erro. Uma falha de dado (`FailureCode`)
+         *     não é erro HTTP: vem no `UnitRun`.
+         */
+        post: operations["run_unit"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1597,6 +1798,509 @@ export interface components {
             type: components["schemas"]["DataType"];
             scale?: number | null;
         };
+        /**
+         * @description O `Problem` do `429 too_many_connection_tests` (E4-16), com os segundos
+         *     que faltam para o teste mais antigo sair da janela de 60 s.
+         */
+        TooManyConnectionTestsProblem: {
+            /** @default about:blank */
+            type: string;
+            title: string;
+            status: number;
+            /** @description Mensagem em pt-BR para o usuário final. */
+            detail: string;
+            /** @description Identificador estável do erro (slug). */
+            code: string;
+            /** @description Erro por campo do corpo, quando houver (`{"<field>": "<error>"}`). */
+            fields?: {
+                [key: string]: string;
+            };
+            /** @description Em quantos segundos um teste volta a ser aceito (arredondado para cima). */
+            retry_after_seconds: number;
+        };
+        /**
+         * @description Tipo do workflow. No épico 4 só existe `batch` (o `function` entra no épico 12).
+         * @enum {string}
+         */
+        WorkflowKind: "batch";
+        /**
+         * @description Política de erro (E4-6): o que fazer quando um nó falha.
+         *     - `error`: o registro dá erro;
+         *     - `null_with_warning`: o resultado do nó fica nulo, com aviso;
+         *     - `default_value`: usa o `default_value` do nó (ou de cada coluna de
+         *       resultado), com aviso.
+         * @enum {string}
+         */
+        ErrorPolicy: "error" | "null_with_warning" | "default_value";
+        /**
+         * @description Modo de arredondamento da saída de um bloco (E4-5): `half_up` (o meio vai
+         *     para longe do zero), `half_even` (o meio vai para o par) e `down` (corta
+         *     em direção ao zero).
+         * @enum {string}
+         */
+        RoundingMode: "half_up" | "half_even" | "down";
+        /**
+         * @description Política de acerto da Tabela de Decisão (E4-8): `first` (na tela,
+         *     "Primeira") vale a primeira regra que casa; `unique` (na tela, "Única")
+         *     recusa o registro em que mais de uma regra casa (`multiple_rules_matched`).
+         * @enum {string}
+         */
+        HitPolicy: "first" | "unique";
+        /**
+         * @description `linear` (um valor por registro) ou `multiple` (uma lista de itens).
+         * @enum {string}
+         */
+        Cardinality: "linear" | "multiple";
+        /**
+         * @description De onde vem a variável.
+         * @enum {string}
+         */
+        SymbolOrigin: "input" | "calculation" | "decision_table";
+        /**
+         * @description `scalar` (um valor por registro) ou `aggregation` (sobre um múltiplo).
+         * @enum {string}
+         */
+        FormulaFunctionKind: "scalar" | "aggregation";
+        /**
+         * @description Onde a fórmula está: expressão de um Cálculo (`calculation`), condição
+         *     (`decision_condition`) ou célula de resultado (`decision_result`) da
+         *     Tabela de Decisão.
+         * @enum {string}
+         */
+        FormulaContext: "calculation" | "decision_condition" | "decision_result";
+        /**
+         * @description Lista fechada dos problemas de uma definição (Contratos, "Validação do
+         *     workflow"). O texto em pt-BR é fixo por código, com os nomes do caso.
+         * @enum {string}
+         */
+        ProblemCode: "syntax_error" | "formula_empty" | "formula_too_long" | "formula_too_complex" | "unknown_variable" | "unknown_function" | "wrong_argument_count" | "type_mismatch" | "invalid_constant" | "operator_not_allowed" | "function_not_allowed_here" | "multiple_outside_aggregation" | "multiple_without_brackets" | "linear_with_brackets" | "more_than_one_list" | "nested_aggregation" | "aggregation_without_multiple" | "cycle" | "duplicate_name" | "duplicate_node_id" | "reserved_name" | "output_type_mismatch" | "multiple_in_output" | "missing_default_value" | "empty_decision_table" | "rule_width";
+        /**
+         * @description Falhas de dado de um registro (Contratos, "Execução unitária"). O aviso de
+         *     uma política tem o mesmo código da falha. `multiple_rules_matched` é
+         *     sempre erro do registro.
+         * @enum {string}
+         */
+        FailureCode: "division_by_zero" | "numeric_overflow" | "null_result" | "no_rule_matched" | "multiple_rules_matched";
+        /**
+         * @description Status do registro.
+         * @enum {string}
+         */
+        UnitRunStatus: "ok" | "ok_with_warnings" | "error";
+        /**
+         * @description Status de um nó: `not_run` quando um nó anterior, na ordem topológica,
+         *     falhou com a política `error`.
+         * @enum {string}
+         */
+        NodeRunStatus: "ok" | "warning" | "error" | "not_run";
+        /** @description Uma função da linguagem de fórmula. */
+        FormulaFunction: {
+            /** @description O nome canônico mostrado na tela, em maiúsculas e com acento (ex.: `MÍN`). */
+            name: string;
+            /** @description Os outros nomes aceitos (sem acento); a fórmula não diferencia maiúsculas. */
+            aliases: string[];
+            /** @description O nome interno, em inglês (ex.: `min`). */
+            internal_name: string;
+            /** @description A assinatura mostrada no editor (ex.: `ABS(x)`). */
+            signature: string;
+            /** @description A regra da função, em pt-BR. */
+            description: string;
+            kind: components["schemas"]["FormulaFunctionKind"];
+            /** @description Onde a função vale. */
+            contexts: components["schemas"]["FormulaContext"][];
+        };
+        /** @description A linguagem de fórmula, da mesma tabela que o motor usa (E4-17). */
+        FormulaLanguage: {
+            functions: components["schemas"]["FormulaFunction"][];
+            /** @description Palavras reservadas, sem diferenciar maiúsculas; nenhuma pode ser nome de variável. */
+            keywords: string[];
+            operators: string[];
+        };
+        /** @description Quem fez a ação. */
+        UserRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description O resumo do rascunho do workflow. */
+        DraftSummary: {
+            revision: number;
+            /** Format: date-time */
+            updated_at: string;
+            updated_by: components["schemas"]["UserRef"];
+            node_count: number;
+            problem_count: number;
+        };
+        /** @description Um workflow na lista. */
+        WorkflowSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            objective: string | null;
+            kind: components["schemas"]["WorkflowKind"];
+            /**
+             * Format: date-time
+             * @description A última alteração do workflow ou do rascunho.
+             */
+            updated_at: string;
+            updated_by: components["schemas"]["UserRef"];
+            draft: components["schemas"]["DraftSummary"];
+        };
+        /** @description Um workflow, com o resumo do rascunho. */
+        Workflow: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            objective: string | null;
+            kind: components["schemas"]["WorkflowKind"];
+            /**
+             * Format: date-time
+             * @description A última alteração do workflow ou do rascunho.
+             */
+            updated_at: string;
+            updated_by: components["schemas"]["UserRef"];
+            draft: components["schemas"]["DraftSummary"];
+            /** Format: date-time */
+            created_at: string;
+            created_by: components["schemas"]["UserRef"];
+        };
+        WorkflowList: {
+            items: components["schemas"]["WorkflowSummary"][];
+            next_cursor: string | null;
+        };
+        /** @description Corpo da criação de workflow. */
+        NewWorkflow: {
+            name: string;
+            objective?: string | null;
+        };
+        /** @description Corpo da alteração de workflow (substitui o nome e o objetivo). */
+        WorkflowUpdate: {
+            name: string;
+            objective: string | null;
+        };
+        /**
+         * @description A definição do workflow (E4-12), guardada no rascunho como JSON. Campo a
+         *     mais, valor fora do enum ou dos limites: `422 invalid_data` (erro de
+         *     forma). Tipos, nomes repetidos, referências e ciclos não são erro de
+         *     forma: voltam em `problems`, e o rascunho é salvo mesmo assim. O corpo
+         *     que a leva tem até 1 MB (`413 definition_too_large`).
+         *
+         *     O workflow novo é `{"schema_version": 1, "kind": "batch", "settings":
+         *     {"error_policy": "error", "rounding": {"scale": 2, "mode": "half_up"}},
+         *     "root": {"inputs": [], "nodes": [], "output": {"fields": []}}}`.
+         */
+        WorkflowDefinition: {
+            /** @constant */
+            schema_version: 1;
+            kind: components["schemas"]["WorkflowKind"];
+            settings: components["schemas"]["WorkflowSettings"];
+            root: components["schemas"]["WorkflowRoot"];
+        };
+        WorkflowSettings: {
+            /** @default error */
+            error_policy: components["schemas"]["ErrorPolicy"];
+            rounding: components["schemas"]["RoundingSettings"];
+        };
+        RoundingSettings: {
+            /** @description Casas oferecidas ao declarar uma saída `decimal` nova (só o padrão da tela). */
+            scale: number;
+            /** @default half_up */
+            mode: components["schemas"]["RoundingMode"];
+        };
+        /** @description O grupo raiz do workflow. */
+        WorkflowRoot: {
+            /** @description As entradas declaradas (E4-1), até 100. */
+            inputs: (components["schemas"]["LinearInput"] | components["schemas"]["MultipleInput"])[];
+            /** @description Os nós, até 200. A ordem desfaz o empate da ordem topológica. */
+            nodes: (components["schemas"]["CalculationNode"] | components["schemas"]["DecisionTableNode"])[];
+            output: components["schemas"]["WorkflowOutput"];
+        };
+        /** @description Entrada declarada linear (um valor por registro). */
+        LinearInput: {
+            name: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            cardinality: "linear";
+            type: components["schemas"]["DataType"];
+            /** @description Casas decimais; obrigatória no `decimal` e só nele. */
+            scale?: number | null;
+        };
+        /**
+         * @description Entrada declarada múltipla: uma lista de itens com campos tipados. Na
+         *     fórmula, `pontuacoes[]` é a lista e `valor_compra[]` o campo item a item.
+         */
+        MultipleInput: {
+            name: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            cardinality: "multiple";
+            fields: components["schemas"]["InputField"][];
+        };
+        /** @description Um campo de uma entrada múltipla. */
+        InputField: {
+            name: string;
+            type: components["schemas"]["DataType"];
+            /** @description Casas decimais; obrigatória no `decimal` e só nele. */
+            scale?: number | null;
+        };
+        /** @description A posição do nó no canvas. */
+        NodePosition: {
+            x: number;
+            y: number;
+        };
+        /** @description A saída de um Cálculo. */
+        NodeOutput: {
+            name: string;
+            type: components["schemas"]["DataType"];
+            /** @description Casas decimais; obrigatória no `decimal` e só nele. */
+            scale?: number | null;
+        };
+        /**
+         * @description Um Cálculo: uma fórmula que dá um número, guardada como a pessoa digitou.
+         *     `rounding_mode` e `error_policy` nulos valem os do workflow.
+         */
+        CalculationNode: {
+            id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "calculation";
+            name: string;
+            description: string | null;
+            position: components["schemas"]["NodePosition"];
+            /** @description Fórmula da linguagem. Vazia não é erro de forma (é o problema `formula_empty`). */
+            expression: string;
+            output: components["schemas"]["NodeOutput"];
+            rounding_mode: components["schemas"]["RoundingMode"] | null;
+            error_policy: components["schemas"]["ErrorPolicy"] | null;
+            /** @description Fórmula do valor usado pela política `default_value`. */
+            default_value: string | null;
+        };
+        /** @description Uma coluna de condição da Tabela de Decisão (fórmula de valor linear). */
+        DecisionCondition: {
+            expression: string;
+        };
+        /** @description Uma coluna de resultado da Tabela de Decisão. */
+        DecisionResult: {
+            name: string;
+            type: components["schemas"]["DataType"];
+            /** @description Casas decimais; obrigatória no `decimal` e só nele. */
+            scale?: number | null;
+            /** @description Fórmula do valor usado pela política `default_value`. */
+            default_value: string | null;
+        };
+        /**
+         * @description Uma regra da Tabela de Decisão, numerada a partir de 1 na ordem da lista:
+         *     uma célula por coluna de condição (`when`) e uma por coluna de resultado
+         *     (`then`). Número de células diferente do de colunas é o problema
+         *     `rule_width`, não erro de forma. Célula de condição vazia ou `-` casa
+         *     com qualquer valor; célula de resultado vazia é um nulo de propósito.
+         */
+        DecisionRule: {
+            when: string[];
+            then: string[];
+        };
+        /**
+         * @description Uma Tabela de Decisão. `rounding_mode` e `error_policy` nulos valem os do
+         *     workflow.
+         */
+        DecisionTableNode: {
+            id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "decision_table";
+            name: string;
+            description: string | null;
+            position: components["schemas"]["NodePosition"];
+            /** @default first */
+            hit_policy: components["schemas"]["HitPolicy"];
+            rounding_mode: components["schemas"]["RoundingMode"] | null;
+            error_policy: components["schemas"]["ErrorPolicy"] | null;
+            conditions: components["schemas"]["DecisionCondition"][];
+            results: components["schemas"]["DecisionResult"][];
+            rules: components["schemas"]["DecisionRule"][];
+        };
+        /** @description Os campos de saída do workflow. */
+        WorkflowOutput: {
+            fields: components["schemas"]["OutputField"][];
+        };
+        /** @description Um campo de saída, com a variável linear que ele mostra. */
+        OutputField: {
+            name: string;
+            variable: string;
+        };
+        /**
+         * @description Um problema de sentido de uma definição (tipos, nomes, referências,
+         *     ciclos). Não é erro HTTP: volta em `problems`. A lista vem ordenada pelo
+         *     `path`, na ordem do documento, e depois pelo `start`.
+         */
+        WorkflowProblem: {
+            code: components["schemas"]["ProblemCode"];
+            /** @description Mensagem fixa por código, em pt-BR, com os nomes do caso. */
+            message: string;
+            /**
+             * @description O campo no documento, como `root.nodes[2].expression` ou
+             *     `root.nodes[0].rules[1].when[2]`.
+             */
+            path: string | null;
+            node_id: string | null;
+            /** @description Início do trecho na fórmula, em code points a partir de 0. */
+            start: number | null;
+            /** @description Fim do trecho na fórmula, em code points, exclusivo. */
+            end: number | null;
+            /**
+             * @description Em `unknown_variable` e `unknown_function`, o nome conhecido mais
+             *     perto (distância de edição até 2, sem diferenciar maiúsculas).
+             */
+            suggestion: string | null;
+        };
+        /** @description Uma variável que a definição oferece (entrada, campo de lista ou saída de nó). */
+        Symbol: {
+            name: string;
+            type: components["schemas"]["DataType"] | null;
+            scale: number | null;
+            cardinality: components["schemas"]["Cardinality"];
+            /**
+             * @description O nome da lista de um campo múltiplo. Numa entrada múltipla, o próprio
+             *     `name` é a lista, com `type: null` e `list` nulo.
+             */
+            list: string | null;
+            origin: components["schemas"]["SymbolOrigin"];
+            /** @description O nó que produz a variável; nulo nas entradas. */
+            node_id: string | null;
+        };
+        /** @description O rascunho do workflow, com os problemas e os símbolos. */
+        Draft: {
+            /** Format: uuid */
+            workflow_id: string;
+            /**
+             * @description Revisão do rascunho (concorrência otimista), a partir de 1. Não é a
+             *     revisão do resultado do épico 11.
+             */
+            revision: number;
+            definition: components["schemas"]["WorkflowDefinition"];
+            problems: components["schemas"]["WorkflowProblem"][];
+            symbols: components["schemas"]["Symbol"][];
+            /** Format: date-time */
+            updated_at: string;
+            updated_by: components["schemas"]["UserRef"];
+        };
+        /** @description Corpo da gravação do rascunho. */
+        DraftUpdate: {
+            /** @description A revisão sobre a qual a definição foi editada. */
+            revision: number;
+            definition: components["schemas"]["WorkflowDefinition"];
+        };
+        /** @description Corpo da análise (nada é salvo). */
+        NewAnalysis: {
+            definition: components["schemas"]["WorkflowDefinition"];
+        };
+        /** @description Os problemas e os símbolos de uma definição. */
+        Analysis: {
+            problems: components["schemas"]["WorkflowProblem"][];
+            symbols: components["schemas"]["Symbol"][];
+        };
+        /**
+         * @description Um valor na API (E4-14): `integer` e `decimal` vão como texto (`"1500.00"`,
+         *     `"-3"`), nunca como número JSON; `boolean` como booleano; `date` como
+         *     `AAAA-MM-DD`; `datetime` em ISO 8601 com fuso (UTC); `text` como texto;
+         *     nulo como `null`. Um múltiplo é uma lista de objetos, um por item, com o
+         *     valor de cada campo pelo nome do campo. Na
+         *     saída, o decimal sai com exatamente as casas do tipo declarado.
+         */
+        Value: string | boolean | null | {
+            [key: string]: string | boolean | null;
+        }[];
+        /** @description Corpo da execução unitária. */
+        NewUnitRun: {
+            /** @description A revisão do rascunho salvo que deve rodar. */
+            revision: number;
+            /** @description O valor de cada entrada declarada, por nome; a omitida vale nulo. */
+            inputs: {
+                [key: string]: components["schemas"]["Value"];
+            };
+        };
+        /** @description Um valor com o nome da variável ou do campo de saída. */
+        NamedValue: {
+            name: string;
+            value: components["schemas"]["Value"];
+        };
+        /** @description Uma falha ou um aviso de um nó. */
+        Message: {
+            code: components["schemas"]["FailureCode"];
+            /** @description Em pt-BR; o aviso diz o que foi feito. */
+            message: string;
+        };
+        /** @description A falha que encerrou o registro. */
+        UnitRunError: {
+            node_id: string;
+            code: components["schemas"]["FailureCode"];
+            message: string;
+        };
+        /** @description O resultado de um nó, na ordem de execução. */
+        UnitRunNode: {
+            node_id: string;
+            status: components["schemas"]["NodeRunStatus"];
+            /** @description As saídas do nó, com as casas do tipo declarado. */
+            values: components["schemas"]["NamedValue"][];
+            /** @description Na Tabela de Decisão, a regra que casou (a partir de 1). */
+            matched_rule: number | null;
+            warnings: components["schemas"]["Message"][];
+            error: components["schemas"]["Message"] | null;
+        };
+        /** @description O resultado da execução unitária (nada é guardado). */
+        UnitRun: {
+            status: components["schemas"]["UnitRunStatus"];
+            /** @description Os campos de saída do workflow. Com `status` `error`, vem vazia. */
+            outputs: components["schemas"]["NamedValue"][];
+            nodes: components["schemas"]["UnitRunNode"][];
+            error: components["schemas"]["UnitRunError"] | null;
+        };
+        /** @description O `Problem` do `409 draft_conflict`, com a revisão atual do rascunho. */
+        DraftConflictProblem: {
+            /** @default about:blank */
+            type: string;
+            title: string;
+            status: number;
+            /** @description Mensagem em pt-BR para o usuário final. */
+            detail: string;
+            /** @description Identificador estável do erro (slug). */
+            code: string;
+            /** @description Erro por campo do corpo, quando houver (`{"<field>": "<error>"}`). */
+            fields?: {
+                [key: string]: string;
+            };
+            /** @description A revisão atual do rascunho. */
+            current_revision: number;
+        };
+        /**
+         * @description O `Problem` do `422` da execução unitária. `problems` só vem no
+         *     `draft_has_problems`; `fields`, no `invalid_data` e no `invalid_inputs`
+         *     (a chave do `invalid_inputs` é a entrada, como `valor_item` ou
+         *     `pontuacoes[1].taxa`).
+         */
+        UnitRunRejectedProblem: {
+            /** @default about:blank */
+            type: string;
+            title: string;
+            status: number;
+            /** @description Mensagem em pt-BR para o usuário final. */
+            detail: string;
+            /** @description Identificador estável do erro (slug). */
+            code: string;
+            /** @description Erro por campo do corpo ou por entrada (`{"<field>": "<error>"}`). */
+            fields?: {
+                [key: string]: string;
+            };
+            /** @description Os problemas do rascunho salvo. */
+            problems?: components["schemas"]["WorkflowProblem"][];
+        };
     };
     responses: {
         /**
@@ -1991,6 +2695,65 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /**
+         * @description - `dataset_already_exists`: já há um dataset com esse nome no tenant;
+         *     - `dataset_changed`: o dataset foi alterado (renomeado, com outro SQL ou
+         *       removido) por outra ação depois de lido; nada é gravado, confira e tente de novo;
+         *     - `connection_credential_unreadable`: a credencial guardada da conexão não
+         *       pôde ser lida; cadastre-a de novo. Sai antes de abrir a rede.
+         */
+        DatasetNameTakenChangedOrUnreadable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `dataset_changed`: o dataset (ou a origem dele) mudou, ou foi removido,
+         *       depois de lido, por exemplo por outra leitura das colunas ao mesmo tempo;
+         *       nada é gravado, confira e tente de novo;
+         *     - `connection_credential_unreadable`: a credencial guardada da conexão não
+         *       pôde ser lida; cadastre-a de novo. Sai antes de abrir a rede.
+         */
+        DatasetChangedOrCredentialUnreadable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `variable_already_exists`: já há uma variável com esse nome no dataset;
+         *     - `dataset_changed`: a origem do dataset mudou depois de lida; nada é
+         *       gravado, confira e tente de novo.
+         */
+        VariableNameTakenOrDatasetChanged: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `variable_already_exists`: já há uma variável com esse nome no dataset;
+         *     - `variable_changed`: a variável foi alterada ou removida (inclusive junto
+         *       com o dataset) por outra ação depois de lida;
+         *     - `dataset_changed`: a origem do dataset mudou depois de lida.
+         *
+         *     Em todos, nada é gravado; confira e tente de novo.
+         */
+        VariableNameTakenOrChanged: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
         /** @description `variable_already_exists`: já há uma variável com esse nome no dataset. */
         VariableAlreadyExists: {
             headers: {
@@ -1998,6 +2761,69 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description `too_many_connection_tests`: o usuário passou de
+         *     `FLUXO_CONNECTION_TEST_LIMIT_PER_MIN` testes de conexão por minuto neste
+         *     tenant (janela deslizante de 60 s). `retry_after_seconds` diz quando um
+         *     teste volta a ser aceito. Sai antes de resolver o host ou abrir a conexão.
+         */
+        TooManyConnectionTests: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["TooManyConnectionTestsProblem"];
+            };
+        };
+        /**
+         * @description `workflow_exists`: já há um workflow com esse nome no tenant (sem os
+         *     espaços das pontas e sem diferenciar maiúsculas, como na D12).
+         */
+        WorkflowExists: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description `draft_conflict`: a `revision` enviada não é a atual do rascunho (outra
+         *     aba ou outra pessoa salvou antes). `current_revision` traz a atual; nada
+         *     é gravado nem executado.
+         */
+        DraftConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["DraftConflictProblem"];
+            };
+        };
+        /** @description `definition_too_large`: o corpo passa de 1 MB; ele não é lido inteiro. */
+        DefinitionTooLarge: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description `invalid_data`: o `{id}` do caminho não é um UUID (`fields.id`), o corpo
+         *     não segue o esquema (`fields` com o nome do campo, ou `body`) ou a
+         *     definição está fora da forma de `WorkflowDefinition` (a chave é o caminho
+         *     dentro da definição, como `root.nodes[2].output.scale`, e a mensagem é
+         *     fixa, sem o valor enviado).
+         */
+        InvalidDefinition: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["InvalidDataProblem"];
             };
         };
     };
@@ -2923,6 +3749,7 @@ export interface operations {
             403: components["responses"]["ForbiddenMutation"];
             409: components["responses"]["ConnectionAlreadyExists"];
             422: components["responses"]["ConnectionRejected"];
+            429: components["responses"]["TooManyConnectionTests"];
         };
     };
     get_connection: {
@@ -3040,6 +3867,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["ConnectionChanged"];
             422: components["responses"]["ConnectionRejected"];
+            429: components["responses"]["TooManyConnectionTests"];
         };
     };
     test_credential: {
@@ -3078,6 +3906,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            429: components["responses"]["TooManyConnectionTests"];
         };
     };
     test_connection: {
@@ -3106,6 +3935,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["ConnectionChangedOrUnreadable"];
             422: components["responses"]["InvalidId"];
+            429: components["responses"]["TooManyConnectionTests"];
         };
     };
     list_objects: {
@@ -3251,7 +4081,8 @@ export interface operations {
             403: components["responses"]["ForbiddenMutation"];
             413: components["responses"]["FileTooLarge"];
             /**
-             * @description - `invalid_data`: o corpo não traz o campo `file` (`fields.file`);
+             * @description - `invalid_data`: o corpo não traz o campo `file`, ou o nome do arquivo
+             *       é inválido (`fields.file`, o campo do multipart);
              *     - `invalid_file`: o arquivo não é um `.xlsx` legível;
              *     - `invalid_header`: nome vazio ou repetido no cabeçalho de alguma aba
              *       (`fields` com cada célula, ex.: `Vendas!C1`).
@@ -3456,7 +4287,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["DatasetNameTakenOrCredentialUnreadable"];
+            409: components["responses"]["DatasetNameTakenChangedOrUnreadable"];
             /**
              * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema,
              *       ou `sql` num dataset que não é do tipo `sql`;
@@ -3525,7 +4356,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["ConnectionCredentialUnreadable"];
+            409: components["responses"]["DatasetChangedOrCredentialUnreadable"];
             /**
              * @description - `invalid_data`: o `{id}` do caminho não é um UUID (`fields.id`);
              *     - `invalid_sql`: o banco recusou o SQL do dataset (`fields.sql` com a
@@ -3599,7 +4430,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["VariableAlreadyExists"];
+            409: components["responses"]["VariableNameTakenOrDatasetChanged"];
             /**
              * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
              *     - `unknown_column`: a coluna não está no dataset (`fields.column`);
@@ -3645,7 +4476,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["VariableAlreadyExists"];
+            409: components["responses"]["VariableNameTakenOrChanged"];
             /**
              * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
              *     - `incompatible_type`: a coluna não pode virar esse tipo (`fields.type`);
@@ -3685,6 +4516,318 @@ export interface operations {
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["InvalidId"];
+        };
+    };
+    get_formula_language: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A linguagem de fórmula. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormulaLanguage"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+        };
+    };
+    list_workflows: {
+        parameters: {
+            query?: {
+                /** @description Trecho do nome do workflow (sem diferenciar maiúsculas). */
+                name?: string | null;
+                /** @description Quantos itens por página (1 a 200). */
+                limit?: components["parameters"]["Limit"];
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de workflows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `invalid_data`: `limit` fora de 1..200 ou `name` com mais de 200
+             *       caracteres (`fields.<parameter>`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_workflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewWorkflow"];
+            };
+        };
+        responses: {
+            /** @description Workflow criado, com o rascunho vazio. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            409: components["responses"]["WorkflowExists"];
+            422: components["responses"]["InvalidData"];
+        };
+    };
+    get_workflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O workflow. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    update_workflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkflowUpdate"];
+            };
+        };
+        responses: {
+            /** @description Workflow alterado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["WorkflowExists"];
+            422: components["responses"]["InvalidDataWithId"];
+        };
+    };
+    delete_workflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Workflow removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    get_draft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O rascunho. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Draft"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    save_draft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftUpdate"];
+            };
+        };
+        responses: {
+            /** @description O rascunho salvo, na revisão seguinte. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Draft"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["DraftConflict"];
+            413: components["responses"]["DefinitionTooLarge"];
+            422: components["responses"]["InvalidDefinition"];
+        };
+    };
+    analyze_draft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewAnalysis"];
+            };
+        };
+        responses: {
+            /** @description Os problemas e os símbolos da definição. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Analysis"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            413: components["responses"]["DefinitionTooLarge"];
+            422: components["responses"]["InvalidDefinition"];
+        };
+    };
+    run_unit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewUnitRun"];
+            };
+        };
+        responses: {
+            /** @description O resultado da execução do registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitRun"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["DraftConflict"];
+            /**
+             * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
+             *     - `invalid_inputs`: alguma entrada foi recusada (`fields` por entrada).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["UnitRunRejectedProblem"];
+                };
+            };
         };
     };
 }
