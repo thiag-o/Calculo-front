@@ -56,6 +56,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0034](0034-dados-filhos-do-dataset-sob-a-chave-do-detalhe.md) | Dados filhos do dataset (variáveis) sob a chave do detalhe, gravados com `setQueryData` (complementa 0033) | aceita, revisar no checkpoint | 2026-11-17 |
 | [0035](0035-envio-com-progresso-por-xhr-no-cliente-da-api.md) | Envio de arquivo com progresso por `client.upload` (XMLHttpRequest) no cliente da API (complementa 0008) | aceita, revisar no checkpoint | 2026-11-17 |
 | [0036](0036-e2e-serve-o-shell-compilado-com-aquecimento.md) | Testes e2e servem o shell compilado (`vite preview`) e aquecem a página antes dos testes (complementa 0030) | aceita, revisar no checkpoint | 2026-11-18 |
+| [0037](0037-monaco-e-react-flow-no-pacote.md) | Monaco e React Flow no pacote, com o Monaco carregado sob demanda | aceita, revisar no checkpoint | 2026-11-19 |
 
 ## Pendentes (sem ADR ainda)
 

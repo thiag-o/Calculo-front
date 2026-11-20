@@ -1,10 +1,23 @@
 // Vite in library mode (ADR 0004) and Vitest.
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type Plugin } from 'vitest/config';
+
+// ADR 0037: Monaco's sash.css declares its variables on `:root`, a global selector (ADR 0002). Scope them to the module root.
+function scopeMonacoRoot(): Plugin {
+  return {
+    name: 'fc-scope-monaco-root',
+    enforce: 'pre',
+    transform(code, id) {
+      const file = id.split('?')[0].replaceAll('\\', '/');
+      if (!file.endsWith('.css') || !file.includes('/monaco-editor/')) return null;
+      return { code: code.replace(/:root(?![\w-])/g, '.fc-root'), map: null };
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react(), dts({ tsconfigPath: './tsconfig.json', include: ['src'], exclude: ['src/**/*.test.*', 'src/**/*.spec.*'] })],
+  plugins: [scopeMonacoRoot(), react(),dts({ tsconfigPath: './tsconfig.json', include: ['src'], exclude: ['src/**/*.test.*', 'src/**/*.spec.*'] })],
   build: {
     lib: {
       entry: 'src/index.ts',
@@ -15,9 +28,19 @@ export default defineConfig({
     rollupOptions: {
       // Runtime dependencies and peers never go inside the package.
       external: [/^react($|\/)/, /^react-dom($|\/)/, /^react-router/, /^@tanstack\//, /^@radix-ui\//, /^react-hook-form/, /^@hookform\//, /^zod/, /^openapi-fetch/, /^@fontsource/],
+      output: {
+        // ADR 0037: Monaco is bundled (not external) and goes into its own chunk, reached only through a dynamic import(),
+        // so dist/index.js never contains it and the browser downloads it when the editor opens (E4-21).
+        codeSplitting: {
+          groups: [{ name: 'monaco', test: /node_modules[\\/]monaco-editor[\\/]/, priority: 10 }],
+        },
+      },
     },
     sourcemap: true,
   },
+  // The editor worker is imported with `?worker` (monaco-editor/editor/editor.worker?worker) and emitted as a local file in dist/:
+  // no CDN. Without that worker, Monaco runs on the page thread (slower, still works).
+  worker: { format: 'es' },
   test: {
     environment: 'jsdom',
     globals: false,
