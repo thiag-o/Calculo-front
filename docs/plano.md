@@ -770,7 +770,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - os quatro estados da tela.
 
 **F51 · Editor: canvas e camadas**
-- dep: F50
+- dep: F50, F75
 - modelo: opus
 - arquivos: `packages/react/src/editor/canvas/`, `packages/react/src/editor/layers/`
 - Fazer (React Flow; estilos §8 e §11):
@@ -778,7 +778,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
     - portas de entrada à esquerda (as variáveis que o bloco lê) e de saída à direita (as que ele produz), com o tipo em `mono-12`;
     - ícone vermelho e número de problemas no cabeçalho;
   - **entradas e saída:** uma barra **Entradas** à esquerda (as entradas declaradas, com a múltipla mostrando os campos) e uma barra **Saída** à direita (os campos de saída), como as barras de Input e Output do grupo;
-  - **ligações:** vêm dos `symbols` e das referências da análise (E4-9), nunca são desenhadas à mão. As do bloco selecionado em `gray-1000`; as outras em `gray-500`;
+  - **ligações:** vêm dos `symbols` e das `dependencies` da análise (E4-9, D15: B106 e F75), nunca são desenhadas à mão. As portas de entrada são os `reads` de cada nó, e a contagem do Delete é o número de nós que leem a saída do bloco. As do bloco selecionado em `gray-1000`; as outras em `gray-500`;
   - **barra de ferramentas** flutuante, embaixo e no centro, com Cálculo e Tabela de Decisão. Um bloco novo nasce com id e nome de saída livres (`calc_1`, `resultado_1`…), perto do centro da tela;
   - mover o bloco grava a `position`; Delete remove o bloco selecionado, com a confirmação que diz quantos blocos usam a saída dele;
   - **minimapa e zoom** no canto superior direito (o minimapa some abaixo de 1280px);
@@ -988,9 +988,17 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - **Desfazer e Refazer:** sem botões visíveis neste épico (decisão da global: o estilos.md não os desenha, e a barra fica mínima). A região do canvas declara `aria-keyshortcuts="Control+Z Control+Shift+Z"`.
 - Aceite: um teste para cada item, inclusive a falha do salvamento ao sair com a volta ao editor e a mudança intacta, e nada em `localStorage` nem `sessionStorage`.
 
+**F75 · Tipos da API: dependências e ordem na análise**
+- tipo: contrato
+- dep: B106
+- modelo: sonnet
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`
+- Fazer (D15, decidida pela sessão global em 2026-11-20): regenerar os tipos do contrato da B106 (`Dependency`, `dependencies` e `order` em `Draft` e `Analysis`) e pôr os campos nos exemplos do contrato simulado.
+- Aceite: `pnpm typecheck` e o `contract-examples` verdes, com os tipos novos no gerado.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
