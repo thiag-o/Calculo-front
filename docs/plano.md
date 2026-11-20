@@ -1003,8 +1003,9 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - dep: F74
 - modelo: opus
 - revisão: sim
-- arquivos: `packages/react/src/session/`, `packages/react/src/module/`, `packages/react/src/editor/draft/unsavedChanges.ts`, `packages/react/src/editor/draft/unsavedChanges.test.ts`
+- arquivos: `packages/react/src/session/`, `packages/react/src/module/`, `packages/react/src/editor/draft/unsavedChanges.ts`, `packages/react/src/editor/draft/unsavedChanges.test.ts`, `packages/react/src/editor/draft/queries.ts`, `packages/react/src/editor/draft/queries.test.ts`, `packages/react/src/editor/unit-run/memory.ts`, `packages/react/src/editor/unit-run/memory.test.ts`
 - Fazer (proposta da frente, decidida pela sessão global em 2026-11-20): no logout, na troca de tenant e quando a sessão expira (401), o módulo limpa o cache inteiro do React Query (`queryClient.clear()`) e a memória de mudanças não salvas da F74, antes de mostrar a tela seguinte. Nada de um usuário ou de um tenant fica visível ao próximo, no mesmo navegador. Confira no relatório o que o back já invalida (cookie e CSRF), sem depender disso.
+- Também (achados da tentativa 1, decididos pela sessão global em 2026-11-20): uma resposta de salvamento ou de consulta que chega depois da limpeza, de outra pessoa ou de outro tenant, nunca grava no cache novo (confere a sessão antes de gravar); o logout limpa uma vez só, depois de a tela sair; a memória do Calcular também é limpa.
 - Também (três MÉDIOS da revisão da tentativa 2 da F74, decididos pela sessão global em 2026-11-20):
   - um teste prova que a mudança é guardada na memória **antes** de a promise do salvamento assentar;
   - quem perde a permissão de editar não perde a mudança: ela fica na memória até o logout ou a troca de tenant, e o aviso diz "Você não tem mais permissão para editar este workflow. A mudança fica guardada até você sair.";
