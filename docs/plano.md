@@ -1105,9 +1105,19 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - testes mais fortes: o caso do `useDeleteDataset`, a asserção de `invalidated` nos casos negativos, um controle positivo por hook, a chave específica conferida (em vez de `getAll().toHaveLength(0)`) e fixtures tipadas (sem `as never`).
 - Aceite: os itens acima com teste; nenhuma condição de sessão escrita à mão fora do helper (busca no relatório).
 
+**F85 · Manutenção: marca da sessão no rascunho e na administração (revisão da F84)**
+- dep: F84
+- modelo: sonnet
+- revisão: sim
+- arquivos: `packages/react/src/editor/draft/queries.ts`, `packages/react/src/editor/draft/queries.test.ts`, `packages/react/src/session/`, `packages/react/src/admin/users/`, `packages/react/src/admin/roles/`, `packages/react/src/admin/integration/`
+- Fazer (decidido pela sessão global em 2026-11-20):
+  - `editor/draft/queries.ts` usa o `isSameSessionData`, e o `sameSessionData` deixa de ser exportado pelo `session`;
+  - as mutações de `admin/users`, `admin/roles` e `admin/integration` que gravam ou invalidam o cache usam a marca, inclusive nos `onError`, como as outras (ADR 0049 complementada).
+- Aceite: um teste de resposta atrasada depois da limpeza por hook tocado; a busca no relatório mostra que nenhum `setQueryData`, `invalidateQueries` ou `removeQueries` depois de requisição fica sem a marca, em todo `packages/react/src/`.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84, F85
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
