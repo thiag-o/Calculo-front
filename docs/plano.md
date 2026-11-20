@@ -985,6 +985,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - o prefetch em voo nunca abre uma revisão mais velha que a do cache;
   - na lista de problemas, os títulos seguem a ordem (h2 antes de h3);
   - o botão de recolher tem um rótulo fixo, e só o `aria-expanded` muda;
+  - **D17:** o `DraftEditorProvider` guarda e o `useDraftEditor()` expõe também as `dependencies` e a `order` da análise, do salvamento e do Recarregar (complemento da ADR 0042), e o `editor/draft/` exporta o tipo `Dependency`. A F51 e a F53 leem daí, sem um segundo POST de análise;
   - **Desfazer e Refazer:** sem botões visíveis neste épico (decisão da global: o estilos.md não os desenha, e a barra fica mínima). A região do canvas declara `aria-keyshortcuts="Control+Z Control+Shift+Z"`.
 - Aceite: um teste para cada item, inclusive a falha do salvamento ao sair com a volta ao editor e a mudança intacta, e nada em `localStorage` nem `sessionStorage`.
 
