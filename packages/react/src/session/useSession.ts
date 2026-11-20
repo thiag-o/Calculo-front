@@ -34,6 +34,8 @@ function checkClientSession(queryClient: QueryClient, client: ApiClient): Promis
   const existing = checks.get(client);
   if (existing) return existing;
   const check = (async () => {
+    // The mark before reading the cache: a clear from here on (even while the cancel runs) writes nothing (ADR 0049).
+    const mark = sessionDataMark(queryClient);
     const previous = queryClient.getQueryData<Session>(SESSION_KEY);
     if (previous === undefined) {
       // Without a session in the cache, nothing to compare: the query (maybe running with the previous token) restarts with the new one.
@@ -41,8 +43,7 @@ function checkClientSession(queryClient: QueryClient, client: ApiClient): Promis
       return;
     }
     await queryClient.cancelQueries({ queryKey: SESSION_KEY });
-    // The mark before the request: an answer that arrives after a sign-out or a switch writes nothing (ADR 0049).
-    const mark = sessionDataMark(queryClient);
+    if (!isSameSessionData(queryClient, mark)) return;
     const fresh = await dataOrError(client.GET('/v1/session'));
     if (currentClient.get(queryClient) !== client || !isSameSessionData(queryClient, mark)) return;
     if (sameIdentity(previous, fresh)) queryClient.setQueryData(SESSION_KEY, fresh);

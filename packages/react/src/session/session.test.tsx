@@ -434,9 +434,14 @@ describe('useSession: sessão do token novo que responde atrasada', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
+    let markResponded: () => void = () => {};
+    const responded = new Promise<void>((resolve) => {
+      markResponded = resolve;
+    });
     simulatedFetch.mockImplementation(async (req) => {
       if (req.headers.get('Authorization') === 'Bearer token-b') {
         await gate;
+        markResponded();
         return json(FRESH);
       }
       return json(headquartersSession);
@@ -452,7 +457,17 @@ describe('useSession: sessão do token novo que responde atrasada', () => {
     token = 'token-b';
     view.rerender();
     await vi.waitFor(() => expect(simulatedFetch.mock.calls.some(([req]) => req.headers.get('Authorization') === 'Bearer token-b')).toBe(true));
-    return { queryClient, release };
+    return { queryClient, release, responded };
+  }
+
+  /** Waits for the request to answer and for the client to have no pending work, with no fixed time. */
+  async function settle(queryClient: ReturnType<typeof createProviders>['queryClient'], responded: Promise<void>) {
+    await act(async () => {
+      await responded;
+      // One macrotask drains every pending microtask (the simulated fetch has no real I/O).
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    });
+    await vi.waitFor(() => expect(queryClient.isFetching() + queryClient.isMutating()).toBe(0));
   }
 
   it('sem limpeza, a sessão do token novo (mesma pessoa e tenant) vai para o cache', async () => {
@@ -462,24 +477,57 @@ describe('useSession: sessão do token novo que responde atrasada', () => {
   });
 
   it('depois do logout, a resposta atrasada não grava a sessão no cache limpo', async () => {
-    const { queryClient, release } = await checkInFlight();
+    const { queryClient, release, responded } = await checkInFlight();
     act(() => clearSessionData(queryClient));
     release();
-    await act(async () => {
-      await Promise.resolve();
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    });
+    await settle(queryClient, responded);
     expect(queryClient.getQueryData(['session'])).toBeUndefined();
   });
 
+  it('um logout durante o cancelQueries da checagem não grava nada e nem busca a sessão do token novo', async () => {
+    const { queryClient } = createProviders();
+    simulatedFetch.mockImplementation(async () => json(headquartersSession));
+    let token = 'token-a';
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <ApiProvider apiUrl="https://api.teste" token={token}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </ApiProvider>
+    );
+    const view = renderHook(() => useSession(), { wrapper });
+    await waitFor(() => expect(view.result.current.isSuccess).toBe(true));
+    const callsBefore = simulatedFetch.mock.calls.length;
+
+    let releaseCancel: () => void = () => {};
+    const cancelGate = new Promise<void>((resolve) => {
+      releaseCancel = resolve;
+    });
+    let cancelStarted: () => void = () => {};
+    const started = new Promise<void>((resolve) => {
+      cancelStarted = resolve;
+    });
+    const realCancel = queryClient.cancelQueries.bind(queryClient);
+    vi.spyOn(queryClient, 'cancelQueries').mockImplementation(async (...args) => {
+      cancelStarted();
+      await cancelGate;
+      return realCancel(...args);
+    });
+
+    token = 'token-b';
+    view.rerender();
+    await started;
+    vi.mocked(queryClient.cancelQueries).mockImplementation(realCancel);
+    act(() => clearSessionData(queryClient));
+    releaseCancel();
+    await settle(queryClient, Promise.resolve());
+    expect(queryClient.getQueryData(['session'])).toBeUndefined();
+    expect(simulatedFetch.mock.calls.length).toBe(callsBefore);
+  });
+
   it('depois da troca de tenant, a resposta atrasada não sobrescreve a sessão nova', async () => {
-    const { queryClient, release } = await checkInFlight();
+    const { queryClient, release, responded } = await checkInFlight();
     await act(() => replaceSessionInCache(queryClient, branchSession));
     release();
-    await act(async () => {
-      await Promise.resolve();
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    });
+    await settle(queryClient, responded);
     expect(queryClient.getQueryData(['session'])).toEqual(branchSession);
   });
 });
