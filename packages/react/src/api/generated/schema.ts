@@ -2175,7 +2175,21 @@ export interface components {
             /** @description O nó que produz a variável; nulo nas entradas. */
             node_id: string | null;
         };
-        /** @description O rascunho do workflow, com os problemas e os símbolos. */
+        /**
+         * @description Os nomes que um nó lê em todas as suas fórmulas (expressão, condições,
+         *     resultados e valor padrão). É daqui que o canvas tira as portas, as
+         *     ligações e a contagem do Delete.
+         */
+        Dependency: {
+            node_id: string;
+            /**
+             * @description Sem repetição e em ordem alfabética. Um campo de lista entra pelo
+             *     nome do campo, e a lista dele vem do `Symbol`. Nomes desconhecidos
+             *     ficam de fora (já são problema).
+             */
+            reads: string[];
+        };
+        /** @description O rascunho do workflow, com os problemas, os símbolos, as dependências e a ordem. */
         Draft: {
             /** Format: uuid */
             workflow_id: string;
@@ -2187,6 +2201,12 @@ export interface components {
             definition: components["schemas"]["WorkflowDefinition"];
             problems: components["schemas"]["WorkflowProblem"][];
             symbols: components["schemas"]["Symbol"][];
+            dependencies: components["schemas"]["Dependency"][];
+            /**
+             * @description Os ids dos nós na ordem de execução (topológica, com o empate pela
+             *     posição). Com ciclo, vem vazia.
+             */
+            order: string[];
             /** Format: date-time */
             updated_at: string;
             updated_by: components["schemas"]["UserRef"];
@@ -2201,10 +2221,16 @@ export interface components {
         NewAnalysis: {
             definition: components["schemas"]["WorkflowDefinition"];
         };
-        /** @description Os problemas e os símbolos de uma definição. */
+        /** @description Os problemas, os símbolos, as dependências e a ordem de uma definição. */
         Analysis: {
             problems: components["schemas"]["WorkflowProblem"][];
             symbols: components["schemas"]["Symbol"][];
+            dependencies: components["schemas"]["Dependency"][];
+            /**
+             * @description Os ids dos nós na ordem de execução (topológica, com o empate pela
+             *     posição). Com ciclo, vem vazia.
+             */
+            order: string[];
         };
         /**
          * @description Um valor na API (E4-14): `integer` e `decimal` vão como texto (`"1500.00"`,

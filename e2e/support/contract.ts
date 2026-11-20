@@ -1094,6 +1094,36 @@ export const EXAMPLES = {
         node_id: 'calc_pontos',
       },
     ],
+    dependencies: [
+      {
+        node_id: 'td_elegibilidade',
+        reads: [
+          'categoria',
+          'meta_atingida',
+          'pontuacoes',
+        ]
+      },
+      {
+        node_id: 'calc_historico',
+        reads: [
+          'taxa',
+          'valor_compra',
+        ]
+      },
+      {
+        node_id: 'calc_pontos',
+        reads: [
+          'fator',
+          'pontos_historico',
+          'valor_item',
+        ]
+      },
+    ],
+    order: [
+      'td_elegibilidade',
+      'calc_historico',
+      'calc_pontos',
+    ],
     updated_at: '2026-11-18T14:05:00Z',
     updated_by: {
       id: '8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
@@ -1123,6 +1153,8 @@ export const EXAMPLES = {
     },
     problems: [],
     symbols: [],
+    dependencies: [],
+    order: [],
     updated_at: '2026-11-18T13:40:00Z',
     updated_by: {
       id: '5f0c2a8e-4b1d-4c3e-9a77-1d2e3f4a5b6c',
@@ -1397,6 +1429,36 @@ export const EXAMPLES = {
         node_id: 'calc_pontos',
       },
     ],
+    dependencies: [
+      {
+        node_id: 'td_elegibilidade',
+        reads: [
+          'categoria',
+          'meta_atingida',
+          'pontuacoes',
+        ]
+      },
+      {
+        node_id: 'calc_historico',
+        reads: [
+          'taxa',
+          'valor_compra',
+        ]
+      },
+      {
+        node_id: 'calc_pontos',
+        reads: [
+          'fator',
+          'pontos_historico',
+          'valor_item',
+        ]
+      },
+    ],
+    order: [
+      'td_elegibilidade',
+      'calc_historico',
+      'calc_pontos',
+    ],
   },
   AnalysisTypeMismatch: {
     problems: [
@@ -1502,6 +1564,36 @@ export const EXAMPLES = {
         node_id: 'calc_pontos',
       },
     ],
+    dependencies: [
+      {
+        node_id: 'td_elegibilidade',
+        reads: [
+          'categoria',
+          'meta_atingida',
+          'pontuacoes',
+        ]
+      },
+      {
+        node_id: 'calc_historico',
+        reads: [
+          'taxa',
+          'valor_compra',
+        ]
+      },
+      {
+        node_id: 'calc_pontos',
+        reads: [
+          'fator',
+          'pontos_historico',
+          'valor_item',
+        ]
+      },
+    ],
+    order: [
+      'td_elegibilidade',
+      'calc_historico',
+      'calc_pontos',
+    ],
   },
   AnalysisUnknownVariable: {
     problems: [
@@ -1606,6 +1698,36 @@ export const EXAMPLES = {
         origin: 'calculation',
         node_id: 'calc_pontos',
       },
+    ],
+    dependencies: [
+      {
+        node_id: 'td_elegibilidade',
+        reads: [
+          'categoria',
+          'meta_atingida',
+          'pontuacoes',
+        ]
+      },
+      {
+        node_id: 'calc_historico',
+        reads: [
+          'taxa',
+          'valor_compra',
+        ]
+      },
+      {
+        node_id: 'calc_pontos',
+        reads: [
+          'fator',
+          'pontos_historico',
+          'valor_item',
+        ]
+      },
+    ],
+    order: [
+      'td_elegibilidade',
+      'calc_historico',
+      'calc_pontos',
     ],
   },
   NewUnitRun: {

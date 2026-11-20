@@ -119,6 +119,11 @@ export const DRAFT: Schemas['Draft'] = {
     { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade' },
     { name: 'pontos', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_pontos' },
   ],
+  dependencies: [
+    { node_id: 'td_elegibilidade', reads: ['categoria'] },
+    { node_id: 'calc_pontos', reads: ['fator', 'valor_item'] },
+  ],
+  order: ['td_elegibilidade', 'calc_pontos'],
   updated_at: '2026-11-18T14:05:00Z',
   updated_by: BRUNO,
 };
