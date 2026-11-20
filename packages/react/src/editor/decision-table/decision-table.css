@@ -1,0 +1,389 @@
+/*
+ * Editor › Decision Table (estilos.md §2, §3, §4, §7, §8, §9, §11 and §14; E4-22): the grid that opens in place of the
+ * canvas and the table properties. Monospaced cells of 32px, conditions and results split by a divider, a red-700 border
+ * on a cell with a problem and the blue focus ring inside the focused cell. Only fc- classes and --fc-* variables; no
+ * global reset and no full-window measurement (ADR 0002).
+ */
+
+.fc-dt {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+}
+
+/* Bar: back, the block (category square, name in mono-13, type in 11px) and the summary. */
+.fc-dt-bar {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-12);
+  min-height: 48px;
+  padding: var(--fc-space-8) var(--fc-space-12);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-dt-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-dt-category {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--fc-cat-decision);
+}
+
+.fc-dt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-dt-kind {
+  color: var(--fc-text-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.fc-dt-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-6);
+  padding: var(--fc-space-8) var(--fc-space-12);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-dt-tools-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--fc-space-6);
+  background-color: var(--fc-border);
+}
+
+.fc-dt-read-only {
+  margin: 0;
+  padding: var(--fc-space-8) var(--fc-space-12);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+/* The scrolling area: the header stays on top and the rule numbers on the left; the focused cell clears both. */
+.fc-dt-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  scroll-padding: 64px 0 0 48px;
+  background-color: var(--fc-background-200);
+}
+
+.fc-dt-grid {
+  width: 100%;
+  background-color: var(--fc-background-100);
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-dt-row {
+  display: grid;
+}
+
+/* Rows out of view are not laid out: 500 rules stay light to scroll and type in. */
+.fc-dt-rule {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 32px;
+}
+
+.fc-dt-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--fc-background-100);
+}
+
+.fc-dt-corner,
+.fc-dt-group,
+.fc-dt-header,
+.fc-dt-number,
+.fc-dt-cell {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--fc-space-8);
+  border-right: 1px solid var(--fc-border);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+/* Header of 32px in label-12 tertiary (§9); the formulas and names of the columns in mono-12. */
+.fc-dt-corner,
+.fc-dt-group {
+  color: var(--fc-text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-dt-corner,
+.fc-dt-number {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  justify-content: flex-end;
+  background-color: var(--fc-background-100);
+}
+
+.fc-dt-header {
+  gap: var(--fc-space-6);
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-mono);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-dt-header-formula,
+.fc-dt-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-dt-header-type {
+  flex: none;
+  color: var(--fc-text-tertiary);
+}
+
+/* The divider between the conditions and the results. */
+.fc-dt-divider {
+  border-left: 1px solid var(--fc-gray-600);
+}
+
+.fc-dt-number {
+  color: var(--fc-gray-600);
+  font-family: var(--fc-font-mono);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Cells in mono-13. */
+.fc-dt-cell {
+  position: relative;
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: cell;
+  outline: none;
+  transition: box-shadow 150ms ease-out;
+}
+
+/* An empty cell shows "-" in tertiary. */
+.fc-dt-empty {
+  color: var(--fc-text-tertiary);
+}
+
+/* A cell, a rule number or a column with a problem: red-700 border. */
+.fc-dt-invalid {
+  box-shadow: inset 0 0 0 1px var(--fc-red-700);
+}
+
+/* The focused cell: the blue ring (§11) inside it, so the neighbours do not cover it. */
+.fc-dt-cell:focus-visible,
+.fc-dt-cell:focus {
+  box-shadow: inset 0 0 0 2px var(--fc-focus);
+}
+
+.fc-dt-cell.fc-dt-invalid:focus-visible,
+.fc-dt-cell.fc-dt-invalid:focus {
+  box-shadow:
+    inset 0 0 0 2px var(--fc-focus),
+    inset 0 0 0 3px var(--fc-red-700);
+}
+
+.fc-dt-cell.fc-dt-editing {
+  padding: 0;
+  box-shadow: inset 0 0 0 2px var(--fc-focus);
+}
+
+.fc-dt-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0 var(--fc-space-8);
+  border: 0;
+  border-radius: 0;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  box-shadow: inset 0 0 0 2px var(--fc-focus);
+  outline: none;
+}
+
+.fc-dt-empty-state {
+  padding: var(--fc-space-32) var(--fc-space-24);
+}
+
+/* Footer: the message of the focused cell's problems (red-900 with the icon) and what the last action did. */
+.fc-dt-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fc-space-8);
+  min-height: 32px;
+  padding: var(--fc-space-6) var(--fc-space-12);
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-dt-message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-dt-message-line {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-4);
+  margin: 0;
+  color: var(--fc-red-900);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-dt-message-line svg {
+  flex: none;
+}
+
+/* The messages of an older analysis, while the one of the latest change is on the way. */
+.fc-dt-message.fc-dt-outdated {
+  opacity: 0.6;
+  transition: opacity 150ms ease-out;
+}
+
+.fc-dt-status {
+  margin: 0;
+  color: var(--fc-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-dt-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Properties of the table (the Propriedades panel). */
+
+.fc-dt-properties {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  padding: var(--fc-space-16);
+}
+
+.fc-dt-properties-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+.fc-dt-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  margin: 0;
+  padding: var(--fc-space-16) 0 0;
+  border: 0;
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-dt-section-title {
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.fc-dt-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  margin: 0;
+  padding: var(--fc-space-12);
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+}
+
+.fc-dt-column {
+  position: relative;
+}
+
+.fc-dt-legend {
+  float: left;
+  width: 100%;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.fc-dt-column-remove {
+  position: absolute;
+  top: var(--fc-space-8);
+  right: var(--fc-space-8);
+}
+
+/* A condition: the formula field and, beside it, the button that removes it. */
+.fc-dt-condition {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--fc-space-8);
+}
+
+.fc-dt-grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fc-dt-mono .fc-field-input {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+}
+
+.fc-dt-problems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-dt-cell,
+  .fc-dt-message.fc-dt-outdated {
+    transition: none;
+  }
+}
