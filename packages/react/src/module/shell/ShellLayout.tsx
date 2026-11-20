@@ -1,12 +1,13 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
-import { NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useMatch } from 'react-router';
 import { Notice, Button, Tooltip } from '../../design-system';
 import { useSessionGeneration, type Session } from '../../session';
-import { ExpandMenuIcon, CollapseMenuIcon } from '../icons';
+import { ExpandMenuIcon, CollapseMenuIcon, OverviewIcon } from '../icons';
 import { groupBySection, type ScreenDefinition } from '../screens';
 import { signOutErrorMessage, switchErrorMessage } from './messages';
 import { UserMenu } from './UserMenu';
 import { TenantSelector } from './TenantSelector';
+import { WorkflowContext } from './WorkflowContext';
 import { useNarrowWidth } from './useNarrowWidth';
 import './shell.css';
 
@@ -32,7 +33,8 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
   const generation = useSessionGeneration();
   const compact = narrow || collapsed;
   const { unsectioned, sections } = groupBySection(screens);
-
+  // A workflow is open (its Overview): the selector gets the "tenant › workflow" line and the menu is the workflow's (E4-25).
+  const workflowId = useMatch('/workflows/:id')?.params.id;
   const classes = ['fc-shell', compact ? 'fc-shell-compact' : null, narrow ? 'fc-shell-narrow' : null]
     .filter(Boolean)
     .join(' ');
@@ -46,19 +48,29 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
             onSwitch={() => setNotice(null)}
             onFailure={(error) => setNotice(switchErrorMessage(error))}
           />
+          {workflowId ? <WorkflowContext workflowId={workflowId} /> : null}
         </div>
 
         <nav id={navigationId} className="fc-sidebar-nav" aria-label="Navegação principal">
-          {unsectioned.map((screen) => (
-            <SidebarItem key={screen.id} item={screen} compact={compact} />
-          ))}
-          {sections.length > 0 ? (
-            <div className="fc-sidebar-sections">
-              {sections.map((group) => (
-                <SidebarItem key={group.section} item={group} compact={compact} />
+          {workflowId ? (
+            <SidebarItem
+              item={{ label: 'Visão geral', path: `workflows/${encodeURIComponent(workflowId)}`, icon: <OverviewIcon /> }}
+              compact={compact}
+            />
+          ) : (
+            <>
+              {unsectioned.map((screen) => (
+                <SidebarItem key={screen.id} item={screen} compact={compact} />
               ))}
-            </div>
-          ) : null}
+              {sections.length > 0 ? (
+                <div className="fc-sidebar-sections">
+                  {sections.map((group) => (
+                    <SidebarItem key={group.section} item={group} compact={compact} />
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
         </nav>
 
         <div className="fc-sidebar-footer">

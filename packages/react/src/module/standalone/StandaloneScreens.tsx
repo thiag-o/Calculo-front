@@ -4,6 +4,7 @@ import { Audit as AuditScreen } from '../../audit';
 import { Catalog as CatalogScreen, CATALOG_PERMISSION } from '../../catalog';
 import { Home as HomeScreen } from '../../home';
 import { useSession, useSessionGeneration } from '../../session';
+import { RoutedWorkflows, WORKFLOWS_VIEW_PERMISSION } from '../screens';
 import { ModuleLoading, ModuleError, NoAccess } from '../ModuleStates';
 import type { FluxoCalculoProps } from '../FluxoCalculo';
 import { ModuleProvider } from '../ModuleProvider';
@@ -19,6 +20,7 @@ export type HomeProps = StandaloneScreenProps;
 export type AdminProps = StandaloneScreenProps;
 export type AuditProps = StandaloneScreenProps;
 export type CatalogProps = StandaloneScreenProps;
+export type WorkflowsProps = StandaloneScreenProps;
 
 interface StandaloneDefinition {
   /** Screen name: label of the region that wraps it. */
@@ -105,6 +107,16 @@ const CATALOG_SCREEN: StandaloneDefinition = {
   content: <CatalogScreen />,
 };
 
+const WORKFLOWS_SCREEN: StandaloneDefinition = {
+  name: 'Workflows',
+  target: 'os Workflows',
+  access: {
+    allowed: (hasPermission) => hasPermission(WORKFLOWS_VIEW_PERMISSION),
+    noAccess: 'Você não tem acesso a Workflows',
+  },
+  content: <RoutedWorkflows />,
+};
+
 const ADMIN_SCREEN: StandaloneDefinition = {
   name: 'Administração',
   target: 'a Administração',
@@ -140,4 +152,12 @@ export function Audit(props: AuditProps) {
  */
 export function Catalog(props: CatalogProps) {
   return <StandaloneScreen {...props} definition={CATALOG_SCREEN} />;
+}
+
+/**
+ * The Workflows, on its own, outside `<FluxoCalculo>`: the list, the Overview and the editor, switched without touching the
+ * URL. Requires `workflows.view`; without it, shows the "no access" state.
+ */
+export function Workflows(props: WorkflowsProps) {
+  return <StandaloneScreen {...props} definition={WORKFLOWS_SCREEN} />;
 }

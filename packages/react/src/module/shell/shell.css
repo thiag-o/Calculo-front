@@ -258,6 +258,24 @@
   white-space: nowrap;
 }
 
+/* "tenant › workflow" line (E4-25): the workflow below the tenant, indented under it. */
+.fc-workflow-context {
+  margin-top: 2px;
+}
+
+.fc-workflow-context-separator {
+  flex: none;
+  color: var(--fc-text-tertiary);
+}
+
+.fc-workflow-context .fc-module-icon {
+  color: var(--fc-text-secondary);
+}
+
+.fc-shell-compact .fc-workflow-context-separator {
+  display: none;
+}
+
 /* Icons only (collapsed or module narrower than 1180px): names in the tooltip, labels only for the screen reader. */
 .fc-shell-compact .fc-sidebar-top,
 .fc-shell-compact .fc-sidebar-footer {

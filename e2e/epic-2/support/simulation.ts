@@ -342,6 +342,9 @@ export class Epic2Simulation {
         return this.signOut(who, context);
       case 'PUT /v1/session/tenant':
         return this.switchTenant(who, request, context);
+      case 'GET /v1/workflows':
+        // The Início lists the recent workflows (F57); the epic 2 tests do not create any.
+        return require(who, ['workflows.view']) ?? json(200, { items: [], next_cursor: null } satisfies Schemas['WorkflowList']);
       case 'GET /v1/permissions':
         return require(who, ['roles.manage']) ?? json(200, { items: PERMISSION_CATALOG });
       case 'GET /v1/roles':
@@ -1025,6 +1028,7 @@ export class Epic2Simulation {
 
 const AUTHENTICATED_ROUTES = new Set([
   'GET /v1/session',
+  'GET /v1/workflows',
   'DELETE /v1/session',
   'PUT /v1/session/tenant',
   'GET /v1/permissions',

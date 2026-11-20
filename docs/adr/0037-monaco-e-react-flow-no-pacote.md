@@ -1,6 +1,6 @@
 # 0037. Monaco e React Flow no pacote, com o Monaco carregado sob demanda
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0040](0040-monaco-environment-do-hospedeiro-tem-prioridade.md): `MonacoEnvironment` do hospedeiro tem prioridade)
+- **Status:** aceita, revisar no checkpoint (complementada por [0040](0040-monaco-environment-do-hospedeiro-tem-prioridade.md): `MonacoEnvironment` do hospedeiro tem prioridade; e por [0051](0051-plugin-troca-react-compiler-runtime-por-esm.md): `react-compiler-runtime` do React Flow trocado por ESM)
 - **Data:** 2026-11-19
 - **Quem decidiu:** orquestração (tarefa F47)
 - **Relacionadas:** ADR 0002 (sem iframe, CSS próprio), ADR 0004 (build em modo biblioteca), E4-21

@@ -16,8 +16,35 @@ function scopeMonacoRoot(): Plugin {
   };
 }
 
+// React Flow (@xyflow/react) imports `react-compiler-runtime`, a CommonJS file that calls `require('react')`. Bundled into an ES
+// module with `react` external, that `require` has nowhere to run and the host app page fails on load. Only the memo cache `c` is
+// used; this is its logic (from react-compiler-runtime 1.0.0) as ES module code, so `react` stays an ordinary import.
+function reactCompilerRuntime(): Plugin {
+  const id = '\0fc-react-compiler-runtime';
+  return {
+    name: 'fc-react-compiler-runtime',
+    enforce: 'pre',
+    resolveId: (source) => (source === 'react-compiler-runtime' ? id : null),
+    load: (file) =>
+      file === id
+        ? `import * as React from 'react';
+const empty = Symbol.for('react.memo_cache_sentinel');
+export const c = typeof React.__COMPILER_RUNTIME?.c === 'function'
+  ? React.__COMPILER_RUNTIME.c
+  : function memoCache(size) {
+      return React.useMemo(() => {
+        const cache = new Array(size);
+        for (let index = 0; index < size; index++) cache[index] = empty;
+        cache[empty] = true;
+        return cache;
+      }, []);
+    };`
+        : null,
+  };
+}
+
 export default defineConfig({
-  plugins: [scopeMonacoRoot(), react(),dts({ tsconfigPath: './tsconfig.json', include: ['src'], exclude: ['src/**/*.test.*', 'src/**/*.spec.*'] })],
+  plugins: [scopeMonacoRoot(), reactCompilerRuntime(), react(), dts({ tsconfigPath: './tsconfig.json', include: ['src'], exclude: ['src/**/*.test.*', 'src/**/*.spec.*'] })],
   build: {
     lib: {
       entry: 'src/index.ts',

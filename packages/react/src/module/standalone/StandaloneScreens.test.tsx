@@ -61,7 +61,8 @@ describe('<Home> avulso', () => {
     expect(screen.getByRole('region', { name: 'Início' })).toContainElement(title);
     withoutModuleNavigation();
 
-    expect(api.calls()).toEqual(['GET /v1/session']);
+    // Without `workflows.view` the Início asks for no workflows; the session is read again as the screen mounts.
+    expect(new Set(api.calls())).toEqual(new Set(['GET /v1/session']));
     expect(api.request(0).credentials).toBe('include');
     expect(api.request(0).headers.get('Authorization')).toBeNull();
     expect(pageUrl()).toBe(HOST_APP_URL);

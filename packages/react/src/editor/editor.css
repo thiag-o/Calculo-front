@@ -1,0 +1,17 @@
+/*
+ * Editor (estilos.md §9; E4-20 and E4-22): the area of the canvas, where the grid of a Decision Table takes its place. The
+ * panels, the bar and the bottom panel are in layout/. Only fc- classes and --fc-* variables; no global reset and no
+ * full-window measurement (ADR 0002).
+ */
+
+.fc-editor-canvas-host {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* The host takes the focus only by script, after the grid closes: no ring around the whole area. */
+.fc-editor-canvas-host:focus {
+  outline: none;
+}

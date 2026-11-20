@@ -170,6 +170,22 @@ Nomes nascidos já em inglês no épico 3 (F29 a F34), pelo vocabulário do back
 | pastas | `catalog/connections`, `catalog/datasets`, `catalog/files`, `catalog/columns` |
 | ícone do menu | `CatalogIcon` (`module/icons.tsx`) |
 
+## Workflows e editor (épico 4, F57)
+
+Nomes nascidos já em inglês no épico 4, pelo vocabulário do back. A coluna da esquerda é o conceito.
+
+| Conceito | Nome no código |
+|---|---|
+| tela de Workflows (lista, Visão geral e editor) | `<Workflows>`, `WorkflowsProps`, `WorkflowsLocation` (`view`: `list`, `overview` ou `editor`; `id`); `<Workflows>` avulso do pacote com `WorkflowsProps` de `StandaloneScreenProps` |
+| editor do workflow | `<Editor>`, `EditorProps` (`workflowId`, `onBack`, `onOpenWorkflows`), vertical `editor` |
+| o módulo entrega o editor e o aviso ao `<Workflows>` | `renderEditor` (`WorkflowsEditorProps`), `renderUnsavedNotice` (`WorkflowsUnsavedNoticeProps`) |
+| Início com os workflows recentes | `HomeScreenProps` (`onOpenWorkflow`, `onOpenWorkflows`), `RECENT_WORKFLOWS` |
+| rotas da URL | `/workflows`, `/workflows/:id`, `/workflows/:id/editor` |
+| valor de `screen` | `workflows` |
+| rota em tela cheia (irmã do layout) | `ScreenDefinition.fullScreenPath`, `FullScreen` (`module/FullScreen.tsx`) |
+| seletor "cliente › workflow" do menu lateral | `WorkflowContext` (`module/shell/WorkflowContext.tsx`) |
+| ícones do menu | `WorkflowsIcon`, `OverviewIcon` (`module/icons.tsx`) |
+
 ## Chaves de cache (TanStack Query)
 
 | Português | Inglês |

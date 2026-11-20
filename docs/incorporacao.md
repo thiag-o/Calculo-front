@@ -45,7 +45,7 @@ export function FluxoScreenOnHost({ token, onExpire }: { token: string; onExpire
 |---|---|---|
 | `apiUrl` | `string` (obrigatória) | Endereço da API, **sem** o `/v1`. |
 | `token` | `string` | Token de incorporação (seção 3). Com ele, o módulo usa `Authorization: Bearer` e o layout incorporado (abas, sem menu lateral). Sem ele, usa o cookie de sessão (modo do app casca). |
-| `screen` | `FluxoScreen` | Tela em que o módulo abre: `'home'`, `'catalog'`, `'audit'`, `'admin'`, `'users'`, `'roles'`, `'integration'` ou `'security'`. Sem a permissão da tela, abre na primeira tela permitida. |
+| `screen` | `FluxoScreen` | Tela em que o módulo abre: `'home'`, `'catalog'`, `'workflows'`, `'audit'`, `'admin'`, `'users'`, `'roles'`, `'integration'` ou `'security'`. Sem a permissão da tela, abre na primeira tela permitida. |
 | `theme` | `'light' \| 'dark' \| 'system'` | Padrão `'system'`. Veja a seção 5. |
 | `navigation` | `'url' \| 'memory'` | Padrão `'memory'` com `token`, `'url'` sem. Veja a seção 7. |
 | `onEvent` | `(event: FluxoEvent) => void` | Avisos ao hospedeiro. Nenhum evento é emitido hoje (`FluxoEvent` é `never`); cada épico acrescenta os seus. |
@@ -61,16 +61,19 @@ No modo incorporado, as abas são as telas a que o usuário tem permissão; as s
 |---|---|---|
 | Início | nenhuma | `home` |
 | Catálogo | `connections.view` | `catalog` |
+| Workflows | `workflows.view` | `workflows` |
 | Auditoria | `audit.view` | `audit` |
 | Administração | a de cada área | `admin` (primeira área permitida), `users`, `roles`, `integration`, `security` |
 
 A aba Catálogo tem as sub-abas Conexões, Datasets e Arquivos (cada uma com a sua permissão; hoje as três pedem `connections.view`) e o detalhe de uma conexão, de um dataset ou de um arquivo abre dentro dela. Quem só tem `connections.view` (Configurador, Auditor) vê o catálogo para leitura, sem destino nem credenciais das conexões; os botões de escrita pedem `connections.manage`, `credentials.manage`, `datasets.manage` e `variables.manage`, cada um na sua ação.
 
+A aba Workflows tem a lista, a Visão geral de cada workflow e o editor. No modo `url`, as rotas são `/workflows`, `/workflows/:id` e `/workflows/:id/editor`. O **editor ocupa a área inteira do módulo**: no app casca, sem o menu lateral; incorporado, sem as abas (a seta ← volta à Visão geral). Quem só tem `workflows.view` (Operador, Auditor) vê a lista, a Visão geral e o editor para leitura, sem a aba Calcular; "Novo workflow", a edição do rascunho e o "Calcular" pedem `workflows.edit` (o Calcular também aceita `simulations.run`, caso do Aprovador, que não edita). No app casca, com um workflow aberto, o seletor de contexto mostra "cliente › workflow" e o menu do workflow tem só "Visão geral".
+
 A aba Administração tem sub-abas, cada uma com a sua permissão, e some se o usuário não tem nenhuma. Quais permissões o usuário tem vem dos papéis que o hospedeiro informa ao pedir o token.
 
 ### Componentes por tela
 
-Para mostrar só uma parte do produto, sem as abas do módulo, o pacote exporta `<Home>`, `<Catalog>`, `<Audit>` e `<Admin>`. Cada um funciona sozinho, fora do `<FluxoCalculo>`: monta a própria raiz (tokens, tema e portais), o cliente da API e o cache.
+Para mostrar só uma parte do produto, sem as abas do módulo, o pacote exporta `<Home>`, `<Catalog>`, `<Workflows>`, `<Audit>` e `<Admin>`. Cada um funciona sozinho, fora do `<FluxoCalculo>`: monta a própria raiz (tokens, tema e portais), o cliente da API e o cache.
 
 ```tsx
 import { Admin } from '@fluxo/react';
@@ -81,7 +84,7 @@ export function FluxoSettings({ token, onExpire }: { token: string; onExpire: ()
 }
 ```
 
-Props, iguais às do `<FluxoCalculo>` (tipos `HomeProps`, `CatalogProps`, `AuditProps`, `AdminProps` e `StandaloneScreenProps`):
+Props, iguais às do `<FluxoCalculo>` (tipos `HomeProps`, `CatalogProps`, `WorkflowsProps`, `AuditProps`, `AdminProps` e `StandaloneScreenProps`):
 
 | Prop | Tipo | O que faz |
 |---|---|---|
@@ -93,13 +96,14 @@ Props, iguais às do `<FluxoCalculo>` (tipos `HomeProps`, `CatalogProps`, `Audit
 
 Não há `screen` nem `navigation`:
 
-- **A navegação é sempre em memória.** As sub-abas da Administração e do Catálogo trocam sem mexer na URL nem no histórico do hospedeiro. Se o hospedeiro usa `react-router`, o componente pode ficar dentro de uma rota dele sem interferir no roteador.
-- **Sem permissão para a tela**, aparece o aviso "Você não tem acesso à Auditoria" ("ao Catálogo" ou "à Administração"), com o pedido para falar com o administrador do cliente, e nada da tela é buscado na API.
+- **A navegação é sempre em memória.** As sub-abas da Administração e do Catálogo, e a lista, a Visão geral e o editor dos Workflows, trocam sem mexer na URL nem no histórico do hospedeiro. Se o hospedeiro usa `react-router`, o componente pode ficar dentro de uma rota dele sem interferir no roteador.
+- **Sem permissão para a tela**, aparece o aviso "Você não tem acesso à Auditoria" ("ao Catálogo", "a Workflows" ou "à Administração"), com o pedido para falar com o administrador do cliente, e nada da tela é buscado na API.
 
 | Componente | Permissão |
 |---|---|
 | `<Home>` | nenhuma |
 | `<Catalog>` | `connections.view` |
+| `<Workflows>` | `workflows.view` |
 | `<Audit>` | `audit.view` |
 | `<Admin>` | pelo menos uma de `users.manage`, `roles.manage`, `integration.manage` e `security.manage`; só as sub-abas permitidas aparecem |
 

@@ -43,7 +43,10 @@ const tabs = () => screen.queryByRole('tablist', { name: 'Telas do Fluxo de Cál
 
 describe('<FluxoCalculo>', () => {
   it('no casca (sem token), monta a raiz com o tema, chama a API com o cookie e abre o Início com o menu lateral', async () => {
-    const api = simulateApi({ 'GET /v1/session': json(headquartersSession) });
+    const api = simulateApi({
+      'GET /v1/session': json(headquartersSession),
+      'GET /v1/workflows': json({ items: [], next_cursor: null }),
+    });
     const { container } = render(<FluxoCalculo apiUrl={API} theme="dark" navigation="memory" />);
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Início' })).toBeInTheDocument();
@@ -52,7 +55,9 @@ describe('<FluxoCalculo>', () => {
     expect(within(mainNavigation()).getByRole('link', { name: 'Início' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' })).toBeInTheDocument();
 
-    expect(api.calls()).toEqual(['GET /v1/session']);
+    // The Início also lists the recent workflows (the session has `workflows.view`).
+    await waitFor(() => expect(api.calls()).toContain('GET /v1/workflows'));
+    expect(new Set(api.calls())).toEqual(new Set(['GET /v1/session', 'GET /v1/workflows']));
     expect(api.request(0).credentials).toBe('include');
     expect(api.request(0).headers.get('Authorization')).toBeNull();
   });

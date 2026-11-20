@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from 'react-router';
 import { Admin, ADMIN_TAB_PERMISSIONS, type AdminTab } from '../admin';
 import { Audit } from '../audit';
 import { Catalog, CATALOG_PERMISSION, type CatalogLocation, type CatalogTab } from '../catalog';
+import { Editor, UnsavedChangesNotice } from '../editor';
 import { Home } from '../home';
-import { AdminIcon, AuditIcon, CatalogIcon, HomeIcon } from './icons';
+import { Workflows, type WorkflowsLocation } from '../workflows';
+import { AdminIcon, AuditIcon, CatalogIcon, HomeIcon, WorkflowsIcon } from './icons';
 
 /** Sidebar sections (estilos.md §9). Screens without a section stay at the top of the menu. */
 export type MenuSection = 'admin';
@@ -25,12 +27,13 @@ export const SECTIONS: Record<MenuSection, { label: string; path: string; icon: 
  * The screens `<FluxoCalculo>` can open through the `screen` prop. Each epic adds its own.
  * - `home`: Início, open to everyone;
  * - `catalog`: Catálogo (`connections.view`);
+ * - `workflows`: Workflows, with the list, the Overview and the editor (`workflows.view`);
  * - `audit`: Auditoria (`audit.view`);
  * - `admin`: Administração, on the first allowed area;
  * - `users`, `roles`, `integration` and `security`: Administração already on one area, each with its own permission.
  * Without the permission, the module opens on the first allowed screen.
  */
-export type FluxoScreen = 'home' | 'catalog' | 'audit' | MenuSection | AdminTab;
+export type FluxoScreen = 'home' | 'catalog' | 'workflows' | 'audit' | MenuSection | AdminTab;
 
 /** A module screen: internal route and sidebar item (shell) or tab (embedded). */
 export interface ScreenDefinition {
@@ -50,6 +53,11 @@ export interface ScreenDefinition {
   section?: MenuSection;
   /** The screen owns the routes below its path (`path/*`, e.g. the Catalog details); without it, only `path` itself opens. */
   nested?: boolean;
+  /**
+   * Route (without the leading slash) that shows the same `content` full screen, as a sibling of the layout (shell
+   * sidebar or embedded tabs), e.g. the workflow editor (E4-20).
+   */
+  fullScreenPath?: string;
   content: ReactNode;
 }
 
@@ -100,6 +108,59 @@ function RoutedCatalog() {
   return <Catalog location={catalogLocation(pathname)} onLocationChange={(next) => void navigate(catalogPath(next))} />;
 }
 
+const WORKFLOWS_PATH = 'workflows';
+const EDITOR_SEGMENT = 'editor';
+export const WORKFLOWS_VIEW_PERMISSION = 'workflows.view';
+
+/** Route path of the workflow editor. */
+export const WORKFLOW_EDITOR_PATH = `${WORKFLOWS_PATH}/:id/${EDITOR_SEGMENT}`;
+
+/** Reads the Workflows location from the address: `/workflows`, `/workflows/:id` and `/workflows/:id/editor`. */
+function workflowsLocation(pathname: string): WorkflowsLocation {
+  const [, , id, segment] = pathname.split('/');
+  if (!id) return { view: 'list' };
+  return segment === EDITOR_SEGMENT ? { view: 'editor', id: safeDecode(id) } : { view: 'overview', id: safeDecode(id) };
+}
+
+/** Route path of a Workflows location. */
+function workflowsPath(location: WorkflowsLocation): string {
+  if (location.view === 'list') return `/${WORKFLOWS_PATH}`;
+  const base = `/${WORKFLOWS_PATH}/${encodeURIComponent(location.id)}`;
+  return location.view === 'editor' ? `${base}/${EDITOR_SEGMENT}` : base;
+}
+
+/**
+ * The `<Workflows>` inside the module: the list, the Overview and the editor are the route. The editor fills the module
+ * (the router mounts it outside the sidebar and the tabs) and the module hands it over, so `workflows` does not depend on `editor`.
+ */
+export function RoutedWorkflows() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  return (
+    <Workflows
+      location={workflowsLocation(pathname)}
+      onLocationChange={(next) => void navigate(workflowsPath(next))}
+      renderEditor={(props) => (
+        <div className="fc-module-fill">
+          <Editor {...props} />
+        </div>
+      )}
+      renderUnsavedNotice={(props) => <UnsavedChangesNotice {...props} />}
+    />
+  );
+}
+
+/** The Home inside the module: the recent workflows open their Overview and "Ver todos" opens the list. */
+function RoutedHome() {
+  const navigate = useNavigate();
+  return (
+    <Home
+      onOpenWorkflow={(id) => void navigate(workflowsPath({ view: 'overview', id }))}
+      onOpenWorkflows={() => void navigate(workflowsPath({ view: 'list' }))}
+    />
+  );
+}
+
 /** An Admin area: route with its permission, inside the Administração section (internal tab of `<Admin>`). */
 function adminArea(id: AdminTab, label: string): ScreenDefinition & { id: FluxoScreen } {
   return {
@@ -113,12 +174,12 @@ function adminArea(id: AdminTab, label: string): ScreenDefinition & { id: FluxoS
 }
 
 /**
- * The module screens, in menu order (design.md §15): Início, Catálogo and Auditoria; then the Administração section, with
+ * The module screens, in menu order (design.md §15): Início, Catálogo, Workflows and Auditoria; then the Administração section, with
  * Usuários, Papéis, Integração and Segurança, each with its area's permission. The sidebar items and the embedded mode
- * tabs are the same: Início, Catálogo, Auditoria and Administração.
+ * tabs are the same: Início, Catálogo, Workflows, Auditoria and Administração.
  */
 export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
-  { id: 'home', label: 'Início', path: 'home', icon: <HomeIcon />, content: <Home /> },
+  { id: 'home', label: 'Início', path: 'home', icon: <HomeIcon />, content: <RoutedHome /> },
   {
     id: 'catalog',
     label: 'Catálogo',
@@ -127,6 +188,16 @@ export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
     permission: CATALOG_PERMISSION,
     nested: true,
     content: <RoutedCatalog />,
+  },
+  {
+    id: 'workflows',
+    label: 'Workflows',
+    path: WORKFLOWS_PATH,
+    icon: <WorkflowsIcon />,
+    permission: WORKFLOWS_VIEW_PERMISSION,
+    nested: true,
+    fullScreenPath: WORKFLOW_EDITOR_PATH,
+    content: <RoutedWorkflows />,
   },
   {
     id: 'audit',

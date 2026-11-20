@@ -4,6 +4,7 @@ import { useSession, type Session } from '../session';
 import { ShellLayout } from './shell/ShellLayout';
 import { ModuleLoading, ModuleError, NoScreens } from './ModuleStates';
 import { EmbeddedLayout } from './embedded/EmbeddedLayout';
+import { FullScreen } from './FullScreen';
 import { ModuleProvider } from './ModuleProvider';
 import { ModuleRouter, type FluxoNavigation } from './router/ModuleRouter';
 import { groupBySection, initialScreen, SCREENS, allowedScreens, type ScreenDefinition, type FluxoScreen } from './screens';
@@ -130,6 +131,16 @@ function ModuleRoutes({ embedded, session, screens, initial }: ModuleRoutesProps
         ))}
         <Route path="*" element={toInitial} />
       </Route>
+      {/* Full-screen routes (the editor): siblings of the layout, so they have neither the sidebar nor the tabs. */}
+      {screens.map((definition) =>
+        definition.fullScreenPath ? (
+          <Route
+            key={`full-${definition.id}`}
+            path={definition.fullScreenPath}
+            element={<FullScreen embedded={embedded}>{definition.content}</FullScreen>}
+          />
+        ) : null,
+      )}
     </Routes>
   );
 }

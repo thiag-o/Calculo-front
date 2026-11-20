@@ -264,6 +264,9 @@ export class CatalogSimulation {
 
   private handle(route: string, id: string, url: URL, request: Request): RouteResponse {
     switch (route) {
+      case 'GET /v1/workflows':
+        // The Início lists the recent workflows (F57); the epic 3 tests do not create any.
+        return json(200, { items: [], next_cursor: null } satisfies Schemas['WorkflowList']);
       case 'GET /v1/connections':
         return json(200, { items: this.connections.map((c) => this.connectionBody(c)) } satisfies Schemas['ConnectionList']);
       case 'POST /v1/connections':

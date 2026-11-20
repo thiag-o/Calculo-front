@@ -24,6 +24,30 @@
   padding: 32px 24px;
 }
 
+/* Full-screen screen (the workflow editor): fills the module, with no max width and no padding. */
+.fc-module-full {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+}
+
+.fc-module-fill {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 480px;
+}
+
+/* On its own (standalone) the editor sits inside the page: the page gives up its padding and the section takes the height. */
+.fc-module-page:has(> .fc-module-fill) {
+  height: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.fc-module-content:has(.fc-module-fill) {
+  height: 100%;
+}
+
 .fc-module-icon {
   flex: none;
 }
