@@ -816,7 +816,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - arquivos: `packages/react/src/editor/properties/`
 - Fazer:
   - **Cálculo:**
-    - nome do bloco, descrição curta e a fórmula no `<FormulaEditor>`;
+    - nome do bloco, descrição curta e a fórmula no `<FormulaEditor>`, passando em `analyzedValue` o texto que foi enviado à análise (sem isso, uma análise que devolve os mesmos problemas não repõe os marcadores; achado da F52);
     - a saída: nome da variável, tipo `integer` ou `decimal` e casas (padrão: as casas do workflow);
     - modo de arredondamento e política de erro, cada um com "Herdar do workflow"; o valor padrão aparece só com "Usar valor padrão";
   - **Entradas:**
