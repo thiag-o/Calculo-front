@@ -1,0 +1,162 @@
+/*
+ * Workflows › list (estilos.md §4, §6, §7.6, §14 and §15; reference screen "D · Início"). Only fc- classes and --fc-*
+ * variables; no global reset and no full-window measurement (ADR 0002): the columns come from the module width.
+ */
+
+.fc-workflows {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-workflows-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-workflows-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-workflows-title h1,
+.fc-workflows-title p,
+.fc-workflows-none {
+  margin: 0;
+}
+
+.fc-workflows-filter {
+  max-width: 320px;
+}
+
+/* 3 columns; 2 below 1180px of module width (data-columns, useCardColumns). */
+.fc-workflows-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--fc-space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-workflows-cards[data-columns='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Card of workflow (estilos.md §7.6): padding 16px (from .fc-card), gap 12px. */
+.fc-workflows-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  transition: border-color 150ms ease-out;
+}
+
+.fc-workflows-card-clickable:hover {
+  border-color: var(--fc-border-hover);
+}
+
+.fc-workflows-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+/* Outline icon: 32px circle with a 1px border, no color (estilos.md §6). */
+.fc-workflows-card-icon {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--fc-border);
+  color: var(--fc-text-secondary);
+}
+
+.fc-workflows-card-title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-workflows-card-name {
+  margin: 0;
+  overflow: hidden;
+  color: var(--fc-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The name is the button; its ::after covers the whole card, so a click anywhere opens the Overview. */
+.fc-workflows-card-open {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: start;
+}
+
+.fc-workflows-card-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+}
+
+.fc-workflows-card-open:focus-visible {
+  outline: none;
+}
+
+.fc-workflows-card-open:focus-visible::after {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-workflows-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+.fc-workflows-card-edited {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-workflows-more {
+  display: flex;
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-workflows-card {
+    transition: none;
+  }
+}
+
+/* Dialog */
+
+.fc-workflows-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  margin: 0;
+}
