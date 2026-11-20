@@ -997,9 +997,36 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - Fazer (D15, decidida pela sessão global em 2026-11-20): regenerar os tipos do contrato da B106 (`Dependency`, `dependencies` e `order` em `Draft` e `Analysis`) e pôr os campos nos exemplos do contrato simulado.
 - Aceite: `pnpm typecheck` e o `contract-examples` verdes, com os tipos novos no gerado.
 
+**F76 · Manutenção: limpar os dados da sessão no logout e na troca de tenant**
+- dep: F74
+- modelo: opus
+- revisão: sim
+- arquivos: `packages/react/src/session/`, `packages/react/src/module/`, `packages/react/src/editor/draft/unsaved.ts`
+- Fazer (proposta da frente, decidida pela sessão global em 2026-11-20): no logout, na troca de tenant e quando a sessão expira (401), o módulo limpa o cache inteiro do React Query (`queryClient.clear()`) e a memória de mudanças não salvas da F74, antes de mostrar a tela seguinte. Nada de um usuário ou de um tenant fica visível ao próximo, no mesmo navegador. Confira no relatório o que o back já invalida (cookie e CSRF), sem depender disso.
+- Aceite: testes do logout, da troca de tenant e do 401: depois de cada um, nenhuma consulta antiga está no cache, a memória de mudanças está vazia e a tela seguinte busca de novo; um teste com dois usuários seguidos no mesmo módulo não mostra dado do primeiro.
+
+**F77 · Manutenção: regras de hooks do React no lint**
+- dep: F57
+- modelo: sonnet
+- revisão: não
+- arquivos: `package.json`, `pnpm-lock.yaml`, `eslint.config.js`, `packages/react/src/`, `apps/shell/src/`
+- Fazer (proposta da frente, decidida pela sessão global em 2026-11-20): acrescentar o `eslint-plugin-react-hooks` e ligar `rules-of-hooks` (erro) e `exhaustive-deps` (erro), e corrigir o que aparecer. Uma dependência deixada de fora de propósito leva o comentário do motivo, nunca um desligamento em massa. Ela roda depois da integração do épico (F57), porque mexe em muitos arquivos.
+- Aceite: `pnpm lint` verde com as duas regras ligadas; o relatório lista cada correção e cada exceção comentada; `pnpm typecheck`, `test` e `build` verdes.
+
+**F78 · Manutenção: médios da revisão da F54 e da F55**
+- dep: F54, F55
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/editor/decision-table/`, `packages/react/src/editor/unit-run/`
+- Fazer (decidido pela sessão global em 2026-11-20):
+  - na grade, o `aria-busy` vai na região viva certa, e a tecla digitada no modo de substituir passa pelo `cleanCell`;
+  - no Calcular, os nomes do resultado vêm do estado já atualizado depois do `flush`, nunca de um render atrás;
+  - testes do `badInput` em data, em data e hora e num item da lista múltipla.
+- Aceite: um teste para cada item; os testes da F54 e da F55 seguem verdes.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
