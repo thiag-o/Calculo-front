@@ -15,7 +15,6 @@ export {
   isSameSessionData,
   onSessionDataCleared,
   replaceSessionInCache,
-  sameSessionData,
   sessionDataMark,
   useSessionGeneration,
 } from './sessionCache';

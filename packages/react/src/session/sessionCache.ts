@@ -65,14 +65,14 @@ export function onSessionDataCleared(queryClient: QueryClient, listener: Session
  * A mark of the session data in the module: it changes each time the data of the previous identity or tenant leaves it
  * (sign-out, `401 no_session`, tenant switch, another person). Whoever writes to the cache after a request (a save, a
  * mutation's `onSuccess`) takes the mark before the request and writes only if it is still the same
- * (`sameSessionData`): an answer of the previous person or tenant never fills the cache of the next one.
+ * (`isSameSessionData`): an answer of the previous person or tenant never fills the cache of the next one.
  */
 export function sessionDataMark(queryClient: QueryClient): number {
   return dataOf(queryClient).clears;
 }
 
 /** Whether the session data is still the one of `mark` (taken with `sessionDataMark` before the request). */
-export function sameSessionData(queryClient: QueryClient, mark: number): boolean {
+function sameSessionData(queryClient: QueryClient, mark: number): boolean {
   return sessionDataMark(queryClient) === mark;
 }
 
@@ -80,7 +80,7 @@ export function sameSessionData(queryClient: QueryClient, mark: number): boolean
  * The only check of the session data before writing to, invalidating or removing from the cache after a request: a missing
  * mark (a mutation that did not run `onMutate`) counts as not the same.
  */
-export function isSameSessionData(queryClient: QueryClient, mark: number | undefined): mark is number {
+export function isSameSessionData(queryClient: QueryClient, mark: number | undefined): boolean {
   return mark !== undefined && sameSessionData(queryClient, mark);
 }
 
@@ -107,7 +107,7 @@ export function clearSessionData(queryClient: QueryClient): void {
   // The mark moves first: an answer that arrives from here on is not written.
   tellCleared(queryClient, undefined);
   void queryClient.cancelQueries();
-  // A running mutation still settles and calls its callbacks after leaving the cache (they check `sameSessionData`).
+  // A running mutation still settles and calls its callbacks after leaving the cache (they check `isSameSessionData`).
   queryClient.clear();
 }
 

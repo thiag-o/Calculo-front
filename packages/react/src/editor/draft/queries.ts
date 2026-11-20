@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { dataOrError, useApiClient, type ApiClient, type Schemas } from '../../api';
-import { sameSessionData, sessionDataMark } from '../../session';
+import { isSameSessionData, sessionDataMark } from '../../session';
 import { WORKFLOW_LISTS_KEY, workflowDraftKey, workflowKey } from '../../workflows';
 
 /** The draft of a workflow, with the problems and the symbols (generated from the contract). */
@@ -68,7 +68,7 @@ async function readDraft(queryClient: QueryClient, client: ApiClient, workflowId
     const started = startedSaves(queryClient, workflowId);
     const mark = sessionDataMark(queryClient);
     const read = await dataOrError(client.GET('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, signal }));
-    if (startedSaves(queryClient, workflowId) !== started || !sameSessionData(queryClient, mark)) continue;
+    if (startedSaves(queryClient, workflowId) !== started || !isSameSessionData(queryClient, mark)) continue;
     const cached = queryClient.getQueryData<Draft>(workflowDraftKey(workflowId));
     return cached && cached.workflow_id === read.workflow_id && cached.revision > read.revision ? cached : read;
   }
@@ -130,7 +130,7 @@ export async function saveDraft(
 ): Promise<Draft> {
   const mark = sessionDataMark(queryClient);
   const draft = await dataOrError(client.PUT('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, body }));
-  if (!sameSessionData(queryClient, mark)) return draft;
+  if (!isSameSessionData(queryClient, mark)) return draft;
   queryClient.setQueryData(workflowDraftKey(workflowId), draft);
   // `exact`: only the workflow itself, not the draft just written under it.
   void queryClient.invalidateQueries({ queryKey: workflowKey(workflowId), exact: true });

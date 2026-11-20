@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient, type QueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { dataOrError, useApiClient, type ApiClient } from '../api';
-import { SESSION_KEY, sameIdentity, replaceSessionInCache, type Session } from './sessionCache';
+import { SESSION_KEY, isSameSessionData, sameIdentity, replaceSessionInCache, sessionDataMark, type Session } from './sessionCache';
 
 export { SESSION_KEY } from './sessionCache';
 export type { Session } from './sessionCache';
@@ -41,8 +41,10 @@ function checkClientSession(queryClient: QueryClient, client: ApiClient): Promis
       return;
     }
     await queryClient.cancelQueries({ queryKey: SESSION_KEY });
+    // The mark before the request: an answer that arrives after a sign-out or a switch writes nothing (ADR 0049).
+    const mark = sessionDataMark(queryClient);
     const fresh = await dataOrError(client.GET('/v1/session'));
-    if (currentClient.get(queryClient) !== client) return;
+    if (currentClient.get(queryClient) !== client || !isSameSessionData(queryClient, mark)) return;
     if (sameIdentity(previous, fresh)) queryClient.setQueryData(SESSION_KEY, fresh);
     else await replaceSessionInCache(queryClient, fresh);
   })().catch(() => undefined);

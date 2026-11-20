@@ -1,4 +1,4 @@
-# 0049. Resposta que grava no cache confere a marca da sessão (`sessionDataMark` e `sameSessionData`)
+# 0049. Resposta que grava no cache confere a marca da sessão (`sessionDataMark` e `isSameSessionData`)
 
 - **Status:** aceita, revisar no checkpoint
 - **Data:** 2026-11-20
@@ -12,10 +12,11 @@ A 0015 cancela as consultas na troca, mas o `signal` só cobre consultas. Uma mu
 ## Decisão
 
 - Cada `SessionData` tem um contador. `clearSessionData` e `replaceSessionInCache` o sobem de forma síncrona, antes de cancelar e limpar.
-- **Padrão:** quem grava no cache depois de uma requisição guarda `sessionDataMark(queryClient)` antes de pedir e só grava se `sameSessionData(queryClient, mark)` ainda for verdadeiro. Em mutação, a marca vem do `onMutate`.
+- **Padrão:** quem grava no cache depois de uma requisição guarda `sessionDataMark(queryClient)` antes de pedir e só grava se `isSameSessionData(queryClient, mark)` ainda for verdadeiro. Em mutação, a marca vem do `onMutate`.
+- **`isSameSessionData` é o contrato.** É a única conferência exportada (`sameSessionData` não sai do `session`). Marca ausente (mutação que não passou pelo `onMutate`) conta como diferente. Vale para `onSuccess` e para `onError`, e para gravação (`setQueryData`), invalidação (`invalidateQueries`) e remoção (`removeQueries`).
 - Se a marca mudou, não grava nem invalida. A resposta ainda volta a quem chamou. Leituras (`readDraft`) que veem a marca mudar durante o GET leem de novo, na sessão nova.
 - Aplicado em `saveDraft`, `readDraft` e `useSwitchTenant`, sem mudar assinaturas (ADR 0042 intacta). `unsavedChanges` usa `sessionDataMark > 0` para recusar mudança depois de uma limpeza.
-- **Obrigação das verticais:** mutação nova que grava no cache no `onSuccess` segue este padrão.
+- **Obrigação das verticais:** tudo que grava, invalida ou remove no cache depois de uma requisição segue este padrão, seja mutação ou não (por exemplo, `checkClientSession` em `session/useSession.ts`: pega a marca antes do `GET /v1/session` e só grava se ela não mudou, além da conferência do client).
 
 ## Alternativas consideradas
 
@@ -26,5 +27,4 @@ A 0015 cancela as consultas na troca, mas o `signal` só cobre consultas. Uma mu
 ## Consequências
 
 - **Bom:** resposta atrasada não traz dado da sessão anterior de volta, testado (sem a conferência, os 2 testes de salvamento em voo falham).
-- **Ruim:** é um padrão a lembrar, sem lint. Hoje não o seguem: `admin/security/queries.ts`, `catalog/connections`, `catalog/datasets`, `catalog/files` e `workflows/queries.ts` (gravam no `onSuccess` sem a marca).
-- **A fazer:** tarefa de manutenção para aplicar o padrão nessas verticais (`onMutate: () => sessionDataMark(queryClient)` e `sameSessionData` antes do `setQueryData`).
+- **Ruim:** é um padrão a lembrar, sem lint. A tarefa F85 conferiu por busca todo `setQueryData`, `invalidateQueries` e `removeQueries` de `packages/react/src/` que vem depois de uma requisição: todos usam a marca.

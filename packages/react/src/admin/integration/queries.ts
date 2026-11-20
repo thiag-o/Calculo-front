@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dataOrError, ApiError, useApiClient, type Schemas } from '../../api';
+import { isSameSessionData, sessionDataMark } from '../../session';
 
 /** A tenant API key, without the full key (generated from the contract). */
 export type ApiKey = Schemas['ApiKey'];
@@ -48,9 +49,10 @@ export function useCreateApiKey() {
   return useMutation({
     mutationFn: (body: NewApiKey) => dataOrError(client.POST('/v1/api-keys', { body })),
     gcTime: 0,
+    onMutate: () => sessionDataMark(queryClient),
     // Without waiting for the list: the key shows as soon as the API answers.
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY });
+    onSuccess: (_data, _body, mark) => {
+      if (isSameSessionData(queryClient, mark)) void queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY });
     },
   });
 }
@@ -61,8 +63,10 @@ export function useRevokeApiKey() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => dataOrError(client.DELETE('/v1/api-keys/{id}', { params: { path: { id } } })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY }),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _id, mark) => (isSameSessionData(queryClient, mark) ? queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY }) : undefined),
+    onError: (error, _id, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       // The list was stale (the key no longer exists): fetch again.
       if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: API_KEY_LIST_KEY });
     },
@@ -85,8 +89,11 @@ export function useCreateAuthorizedDomain() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: NewAuthorizedDomain) => dataOrError(client.POST('/v1/authorized-domains', { body })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY }),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _body, mark) =>
+      isSameSessionData(queryClient, mark) ? queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY }) : undefined,
+    onError: (error, _body, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       // The origin was already registered (maybe by someone else): the list is fetched again to show it.
       if (errorWithCode(error, ['authorized_domain_already_exists'])) void queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY });
     },
@@ -99,8 +106,11 @@ export function useDeleteAuthorizedDomain() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => dataOrError(client.DELETE('/v1/authorized-domains/{id}', { params: { path: { id } } })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY }),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _id, mark) =>
+      isSameSessionData(queryClient, mark) ? queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY }) : undefined,
+    onError: (error, _id, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: AUTHORIZED_DOMAIN_LIST_KEY });
     },
   });

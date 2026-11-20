@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { dataOrError, ApiError, useApiClient, type Schemas } from '../../api';
+import { isSameSessionData, sessionDataMark } from '../../session';
 
 /** A tenant role (generated from the contract). */
 export type Role = Schemas['Role'];
@@ -61,7 +62,8 @@ export function useCreateRole() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: RoleData) => dataOrError(client.POST('/v1/roles', { body })),
-    onSuccess: () => refreshAdmin(queryClient),
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _body, mark) => (isSameSessionData(queryClient, mark) ? refreshAdmin(queryClient) : undefined),
   });
 }
 
@@ -72,8 +74,10 @@ export function useUpdateRole() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: RoleData }) =>
       dataOrError(client.PUT('/v1/roles/{id}', { params: { path: { id } }, body })),
-    onSuccess: () => refreshAdmin(queryClient),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _vars, mark) => (isSameSessionData(queryClient, mark) ? refreshAdmin(queryClient) : undefined),
+    onError: (error, _vars, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       // The list was stale (role deleted, or it is the Admin): fetch again.
       if (errorWithCode(error, ['not_found', 'fixed_role'])) void queryClient.invalidateQueries({ queryKey: ROLE_LIST_KEY });
     },
@@ -86,8 +90,10 @@ export function useDeleteRole() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => dataOrError(client.DELETE('/v1/roles/{id}', { params: { path: { id } } })),
-    onSuccess: () => refreshAdmin(queryClient),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _id, mark) => (isSameSessionData(queryClient, mark) ? refreshAdmin(queryClient) : undefined),
+    onError: (error, _id, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       // The list was stale (the role got users, was already deleted, or it is the Admin): fetch again.
       if (errorWithCode(error, ['role_in_use', 'not_found', 'fixed_role'])) {
         void queryClient.invalidateQueries({ queryKey: ROLE_LIST_KEY });

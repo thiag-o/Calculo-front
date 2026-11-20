@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dataOrError, ApiError, useApiClient, type Schemas } from '../../api';
+import { isSameSessionData, sessionDataMark } from '../../session';
 
 /** A user as a member of the current tenant (generated from the contract). */
 export type User = Schemas['User'];
@@ -51,8 +52,10 @@ export function useCreateUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: NewUser) => dataOrError(client.POST('/v1/users', { body })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: USER_LIST_KEY }),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _body, mark) => (isSameSessionData(queryClient, mark) ? queryClient.invalidateQueries({ queryKey: USER_LIST_KEY }) : undefined),
+    onError: (error, _body, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       // A chosen role is gone: the role list is fetched again.
       if (errorWithCode(error, ['unknown_role'])) void queryClient.invalidateQueries({ queryKey: AVAILABLE_ROLES_KEY });
     },
@@ -66,8 +69,10 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: UserUpdate }) =>
       dataOrError(client.PUT('/v1/users/{id}', { params: { path: { id } }, body })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: USER_LIST_KEY }),
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onSuccess: (_data, _vars, mark) => (isSameSessionData(queryClient, mark) ? queryClient.invalidateQueries({ queryKey: USER_LIST_KEY }) : undefined),
+    onError: (error, _vars, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       if (errorWithCode(error, ['unknown_role'])) void queryClient.invalidateQueries({ queryKey: AVAILABLE_ROLES_KEY });
       if (errorWithCode(error, ['not_found'])) void queryClient.invalidateQueries({ queryKey: USER_LIST_KEY });
     },
@@ -85,7 +90,9 @@ export function useGenerateResetLink() {
     mutationFn: (id: string) => dataOrError(client.POST('/v1/users/{id}/password-reset', { params: { path: { id } } })),
     // Without an observer (after `reset()` or on unmount), the mutation leaves the cache right away, taking the link with it.
     gcTime: 0,
-    onError: (error) => {
+    onMutate: () => sessionDataMark(queryClient),
+    onError: (error, _id, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
       // The list was stale (user deactivated, deleted or external): fetch again.
       if (errorWithCode(error, STALE_LIST_CODES)) void queryClient.invalidateQueries({ queryKey: USER_LIST_KEY });
     },

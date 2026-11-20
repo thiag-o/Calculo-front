@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '../api';
+import { QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+import { ApiError, ApiProvider } from '../api';
 import {
   deleteCsrfCookie,
   createProviders,
@@ -21,7 +23,7 @@ import {
   hasPermission,
   isSameSessionData,
   onSessionDataCleared,
-  sameSessionData,
+  replaceSessionInCache,
   sessionDataMark,
   useSessionGeneration,
   useSignIn,
@@ -382,25 +384,19 @@ describe('o que sai com a sessão', () => {
     expect(queryClient.getMutationCache().getAll().length).toBeLessThanOrEqual(1);
   });
 
-  it('cada limpeza muda a marca da sessão: quem a guardou antes da requisição não grava depois', () => {
-    const queryClient = createProviders().queryClient;
-    const before = sessionDataMark(queryClient);
-    expect(sameSessionData(queryClient, before)).toBe(true);
-
-    clearSessionData(queryClient);
-
-    expect(sameSessionData(queryClient, before)).toBe(false);
-  });
-
-  it('isSameSessionData confere a marca e recusa a marca que faltou', () => {
+  it('isSameSessionData confere a marca, recusa a marca que faltou e muda a cada limpeza', async () => {
     const queryClient = createProviders().queryClient;
     const before = sessionDataMark(queryClient);
     expect(isSameSessionData(queryClient, before)).toBe(true);
     expect(isSameSessionData(queryClient, undefined)).toBe(false);
 
     clearSessionData(queryClient);
-
     expect(isSameSessionData(queryClient, before)).toBe(false);
+    const afterClear = sessionDataMark(queryClient);
+    expect(isSameSessionData(queryClient, afterClear)).toBe(true);
+
+    await replaceSessionInCache(queryClient, branchSession);
+    expect(isSameSessionData(queryClient, afterClear)).toBe(false);
     expect(isSameSessionData(queryClient, sessionDataMark(queryClient))).toBe(true);
   });
 
@@ -425,5 +421,65 @@ describe('o que sai com a sessão', () => {
     expect(queryClient.getQueryData(['session'])).toBeUndefined();
     expect(queryClient.getQueryCache().getAll()).toEqual([]);
     expect(told).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useSession: sessão do token novo que responde atrasada', () => {
+  const FRESH = { ...headquartersSession, permissions: ['workflows.view', 'audit.view'] };
+
+  /** Token a is loaded; the host passes token b and the check of b is in flight until `release`. */
+  async function checkInFlight() {
+    const { queryClient } = createProviders();
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    simulatedFetch.mockImplementation(async (req) => {
+      if (req.headers.get('Authorization') === 'Bearer token-b') {
+        await gate;
+        return json(FRESH);
+      }
+      return json(headquartersSession);
+    });
+    let token = 'token-a';
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <ApiProvider apiUrl="https://api.teste" token={token}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </ApiProvider>
+    );
+    const view = renderHook(() => useSession(), { wrapper });
+    await waitFor(() => expect(view.result.current.isSuccess).toBe(true));
+    token = 'token-b';
+    view.rerender();
+    await vi.waitFor(() => expect(simulatedFetch.mock.calls.some(([req]) => req.headers.get('Authorization') === 'Bearer token-b')).toBe(true));
+    return { queryClient, release };
+  }
+
+  it('sem limpeza, a sessão do token novo (mesma pessoa e tenant) vai para o cache', async () => {
+    const { queryClient, release } = await checkInFlight();
+    release();
+    await waitFor(() => expect(queryClient.getQueryData(['session'])).toEqual(FRESH));
+  });
+
+  it('depois do logout, a resposta atrasada não grava a sessão no cache limpo', async () => {
+    const { queryClient, release } = await checkInFlight();
+    act(() => clearSessionData(queryClient));
+    release();
+    await act(async () => {
+      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(queryClient.getQueryData(['session'])).toBeUndefined();
+  });
+
+  it('depois da troca de tenant, a resposta atrasada não sobrescreve a sessão nova', async () => {
+    const { queryClient, release } = await checkInFlight();
+    await act(() => replaceSessionInCache(queryClient, branchSession));
+    release();
+    await act(async () => {
+      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(queryClient.getQueryData(['session'])).toEqual(branchSession);
   });
 });
