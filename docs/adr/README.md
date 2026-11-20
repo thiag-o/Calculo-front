@@ -67,6 +67,8 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0045](0045-memoria-da-tela-em-weakmap-por-query-client.md) | Lembrar na tela sem persistir: `WeakMap` por `QueryClient`, com chave de pessoa, tenant e item (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0046](0046-texto-invalido-fica-no-campo-e-nao-vai-ao-rascunho.md) | Texto que daria erro de forma fica no campo, com o erro, e não vai ao rascunho (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md) | Outras sub-verticais do editor podem importar peças de `properties/index.ts` (complementa 0042) | aceita, revisar no checkpoint | 2026-11-20 |
+| [0048](0048-limpeza-unica-da-sessao-e-telas-remontadas.md) | Limpar a sessão num lugar só (`clearSessionData`, `replaceSessionInCache`, `onSessionDataCleared`) e remontar as telas por geração (complementa 0015 e 0019, corrige 0045) | aceita, revisar no checkpoint | 2026-11-20 |
+| [0049](0049-marca-da-sessao-antes-de-gravar-no-cache.md) | Resposta que grava no cache confere a marca da sessão (`sessionDataMark`/`sameSessionData`) (complementa 0015 e 0019) | aceita, revisar no checkpoint | 2026-11-20 |
 
 ## Pendentes (sem ADR ainda)
 

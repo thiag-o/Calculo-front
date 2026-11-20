@@ -1,6 +1,6 @@
 # 0015. Trocar de identidade ou tenant: cancelar, gravar a sessão e reiniciar o cache, com `signal` em toda consulta
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0019](0019-encerramento-de-sessao-no-modulo.md))
+- **Status:** aceita, revisar no checkpoint (complementada por [0019](0019-encerramento-de-sessao-no-modulo.md), [0048](0048-limpeza-unica-da-sessao-e-telas-remontadas.md) e [0049](0049-marca-da-sessao-antes-de-gravar-no-cache.md); a 0048 troca o `resetQueries` e o "sair" por `replaceSessionInCache` e `clearSessionData`)
 - **Data:** 2026-11-15
 - **Quem decidiu:** orquestração (tarefa F7)
 - **Relacionadas:** [0008](0008-consumo-da-api-pelas-verticais.md) (complementa), [0003](0003-codigo-por-verticais.md)

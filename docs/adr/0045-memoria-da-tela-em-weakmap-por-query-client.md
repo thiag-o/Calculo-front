@@ -1,6 +1,6 @@
 # 0045. Lembrar na tela sem persistir: `WeakMap` por `QueryClient`, com chave de pessoa, tenant e item
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (corrigida por [0048](0048-limpeza-unica-da-sessao-e-telas-remontadas.md): a memória não some com o cache, ela se registra em `onSessionDataCleared`)
 - **Data:** 2026-11-20
 - **Quem decidiu:** orquestração (tarefa F55)
 - **Relacionadas:** design.md §1 (princípio 3), ADRs 0015, 0019, 0043

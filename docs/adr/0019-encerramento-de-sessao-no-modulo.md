@@ -1,6 +1,6 @@
 # 0019. Encerramento de sessão: avisar o hospedeiro uma vez por token e limpar o cache depois que o layout sai
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0024](0024-troca-de-token-confere-a-sessao.md))
+- **Status:** aceita, revisar no checkpoint (complementada por [0024](0024-troca-de-token-confere-a-sessao.md), [0048](0048-limpeza-unica-da-sessao-e-telas-remontadas.md) e [0049](0049-marca-da-sessao-antes-de-gravar-no-cache.md))
 - **Data:** 2026-11-15
 - **Quem decidiu:** orquestração (tarefa F8)
 - **Relacionadas:** [0015](0015-cache-na-troca-de-identidade-e-tenant.md) (complementa), [0008](0008-consumo-da-api-pelas-verticais.md)
