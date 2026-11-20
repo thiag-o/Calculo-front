@@ -1054,9 +1054,29 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - Fazer (decidido pela sessão global em 2026-11-20): cada mutação que grava no cache no `onSuccess` guarda a marca no `onMutate` (`sessionDataMark`) e só grava se `sameSessionData` ainda for verdadeiro, como o `useSwitchTenant` e o salvamento do rascunho da F76. A lista do relatório da F76 é o ponto de partida; uma busca por `setQueryData` e `setQueriesData` fora dos testes confirma que não falta nenhuma.
 - Aceite: para cada arquivo, um teste em que a resposta chega depois da limpeza e nada é gravado; a busca no relatório mostra que todos os `setQueryData` depois de requisição usam a marca.
 
+**F81 · Manutenção: médios das revisões da F79, da F76 e da F53**
+- dep: F53, F76, F79
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/editor/canvas/`, `packages/react/src/editor/properties/`, `packages/react/src/session/`
+- Fazer (decidido pela sessão global em 2026-11-20):
+  - **canvas (F79):**
+    - o diálogo de remover não reabre sozinho quando o bloco some com Ctrl Z e volta com o mesmo id;
+    - o anúncio "removido" não sai com o editor só para leitura;
+    - a troca de "Conferindo…" para o número é anunciada;
+    - um anúncio igual ao anterior é lido de novo;
+    - a poda do cache sai de dentro do `useMemo`;
+  - **sessão (F76):** um teste da troca de tenant que responde depois de um logout, sem gravar nada. O caso das telas avulsas em modo cookie fica documentado na ADR 0048, sem código;
+  - **propriedades (F53):**
+    - o `mergeKey` do Cálculo é pelo id do bloco, não pela posição;
+    - o desfazer devolve o texto inválido digitado;
+    - os testes de foco esperam o evento, sem tempo fixo;
+    - campos de mesmo nome têm `aria-label` distinto (com o nome do bloco ou da entrada).
+- Aceite: um teste para cada item; os testes da F51, da F53, da F76 e da F79 seguem verdes.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
