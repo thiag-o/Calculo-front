@@ -953,3 +953,170 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
+
+### Épico 5 — Fontes, grupos e execução unitária com trace
+
+As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no plano do back (`../backend/docs/plano.md`, épico 5, e Contratos, "Fontes, grupos e execução unitária com trace"). O contrato é o da B90. Decisões do front, tomadas pela sessão global em 2026-11-20:
+- **E5-16, onde fica cada coisa:** tudo dentro da vertical `editor/`, numa pasta por funcionalidade:
+  - `editor/sources/`: propriedades da fonte do lote e do bloco Fonte;
+  - `editor/groups/`: grupo no canvas e nas camadas;
+  - `editor/preview/`: aba Prévia;
+  - `editor/unit-run/`: Calcular com registro real e trace;
+  - `editor/canvas/`: valores nos nós.
+  - O catálogo (datasets e variáveis) é lido pelo `catalog/index.ts`.
+  - Motivo: ADR 0003; o que muda junto fica junto.
+- **E5-17, fonte do lote no canvas:** a barra **Entradas** da esquerda vira **Fonte do lote** quando ela existe, com o dataset, a chave (ícone de chave) e as variáveis.
+  - O workflow escolhe uma vez, no painel do workflow: **Entradas declaradas** (valores digitados) ou **Fonte do lote**.
+  - Trocar de uma para a outra pede confirmação, que diz o que se perde.
+  - Motivo: E5-2; uma só barra de Input, como no design §6.
+- **E5-18, bloco Fonte:** quadrado `--fc-cat-source` no canvas.
+  - **Modo:** controle segmentado Linear | Filtro (o Múltiplo entra no épico 8).
+  - **Ligações:** uma lista "variável visível → variável do dataset", com o tipo das duas e o aviso de tipo.
+  - **Filtros:** linhas com variável, operador e valor.
+  - **Ordenação:** obrigatória no Linear, com variável e direção, reordenável.
+  - **Sem correspondência e mais de uma linha:** seleções com o texto do design. Trocar para "Aceitar a primeira linha" abre a confirmação "Você assume que vale a primeira linha pela ordenação. Isso fica registrado na auditoria.".
+  - **Saída:** caixas por variável, com o nome no workflow editável.
+- **E5-19, grupos:**
+  - o grupo é um contêiner no canvas, com uma barra de Input (derivado, só leitura) à esquerda e uma de Output à direita;
+  - **recolher e expandir:** pelo cabeçalho, gravados em `collapsed`;
+  - **criar:** "Agrupar" na barra de ferramentas e no menu do bloco, com a seleção de vários blocos; "Desagrupar" devolve os blocos ao pai;
+  - **camadas:** árvore aninhada;
+  - **sem arrastar para dentro:** mover um bloco para dentro de um grupo é pelo menu "Mover para o grupo…". Isso evita que um arrasto distraído mude a visibilidade.
+  - Motivo: a visibilidade muda o sentido das fórmulas, então a mudança tem de ser deliberada.
+- **E5-20, prévia e Calcular:** o painel inferior ganha a aba **Prévia**, entre Problemas e Calcular. Com fonte do lote, o Calcular troca o formulário por "Escolher registro".
+  - **Escolher registro:** pela amostra da prévia ou digitando a chave.
+  - **Resultado:** o trace, com Entradas (valor e origem), Blocos (aninhados por grupo) e Saída.
+  - Motivo: design §6 (prévia por bloco e por grupo) e §10 (unitário com trace).
+- **E5-21, valores no canvas:** depois de um Calcular, cada nó mostra o valor da saída em `mono-12` embaixo do nome.
+  - **Cores:** verde (`--fc-green-700`) para executado, vermelho para o que falhou, cinza para o que não rodou; na Tabela de Decisão, "Regra N" em destaque.
+  - **Grupos:** recolhidos mostram o Output; expandidos mostram os nós de dentro.
+  - **Limpeza:** os valores somem ao editar qualquer coisa ("Os valores são do último cálculo" + **Limpar**).
+  - Motivo: design §12 (tela de debug), antecipado para a execução unitária.
+
+**F62 · Tipos da API do épico 5**
+- tipo: contrato
+- dep: B90
+- modelo: sonnet
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`
+- Fazer: gerar os tipos do contrato da B90 (`pnpm api:types`) e acrescentar os exemplos do épico 5 ao contrato simulado do e2e.
+- Aceite: `pnpm typecheck` e o `contract-examples` verdes; os tipos do rascunho na versão 2, da prévia e do trace aparecem no gerado.
+
+**F63 · Editor: fonte do lote e entradas declaradas**
+- dep: F62
+- modelo: opus
+- arquivos: `packages/react/src/editor/sources/batch-source/`, `packages/react/src/editor/properties/workflow/`
+- Fazer (E5-17):
+  - no painel do workflow, a escolha Entradas declaradas | Fonte do lote, com a confirmação;
+  - **propriedades da fonte do lote:**
+    - o dataset, numa busca nos datasets do catálogo, com o tipo (tabela, SQL, Excel);
+    - as variáveis de saída (caixas, com o nome no workflow editável, cujo padrão é o nome no catálogo);
+    - a chave (uma ou mais variáveis da saída);
+    - os filtros (componente da F64);
+    - a ordenação (variável e direção, com setas para reordenar, e a nota "A chave entra como último critério");
+  - na barra **Fonte do lote** do canvas, o dataset, a chave e as variáveis;
+  - os problemas de cada campo aparecem pelo `path`;
+  - só leitura: tudo desabilitado, com o motivo.
+- Aceite: testes de escolher o dataset, marcar as variáveis e a chave, trocar o nome, reordenar a ordenação, a confirmação ao trocar de modo, o problema `missing_batch_source_key` no campo e o modo só leitura.
+
+**F64 · Editor: bloco Fonte**
+- dep: F62
+- modelo: opus
+- arquivos: `packages/react/src/editor/sources/source-block/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/sources/index.ts`
+- Fazer (E5-18):
+  - **propriedades do bloco Fonte:** dataset, modo, ligações, filtros, ordenação, sem correspondência, mais de uma linha (com a confirmação do aceite) e saída;
+  - o componente de filtros, também usado pela F63: operador pelo tipo da variável (texto só `=`, `<>`, `em` e nulo); valor no padrão brasileiro para número (E4-24); `entre` com dois campos; `em` com uma lista; `@` mostra o aviso "Parâmetros chegam no épico 6";
+  - no modo Filtro, só dataset, ligações, filtros e EXISTE / NÃO EXISTE;
+  - "Tabela de parâmetros" quando não há ligação, com a nota "O dataset precisa ter exatamente uma linha depois dos filtros".
+- Aceite: testes de cada campo, do aceite com confirmação, do modo Filtro (campos escondidos), do operador pelo tipo, do `entre`, do `em`, dos problemas `link_to_calculated`, `link_type_mismatch` e `not_visible` no campo certo, e do modo só leitura.
+
+**F65 · Editor: grupos no canvas e nas camadas**
+- dep: F62
+- modelo: opus
+- arquivos: `packages/react/src/editor/groups/`, `packages/react/src/editor/canvas/`, `packages/react/src/editor/layers/`
+- Fazer (E5-19):
+  - **o nó de grupo no React Flow:**
+    - contêiner com borda `gray-400` e cabeçalho com nome e contagem de blocos;
+    - barras de Input (derivado da análise, com o ícone de "derivado") e de Output;
+    - recolher e expandir;
+  - **o bloco Fonte no canvas:** quadrado `--fc-cat-source`, portas de ligação e de saída;
+  - **ações:** Agrupar (com a seleção múltipla por Shift + clique e por laço), Desagrupar, "Mover para o grupo…" e "Tirar do grupo";
+  - **Output do grupo:** nas propriedades do grupo, escolhido entre as variáveis lineares produzidas dentro dele;
+  - **camadas:** a árvore aninhada, com expandir e recolher pelo teclado (setas);
+  - as ligações entram e saem do grupo pelas barras.
+- Aceite: testes de agrupar e desagrupar (as posições se mantêm), mover para dentro e para fora pelo menu, recolher e expandir (gravado no rascunho), o Input derivado vindo da análise, a árvore das camadas pelo teclado e um rascunho com grupo dentro de grupo desenhado certo.
+
+**F66 · Editor: aba Prévia**
+- dep: F62
+- modelo: opus
+- arquivos: `packages/react/src/editor/preview/`
+- Fazer (E5-11, E5-20):
+  - **a aba Prévia:** **Rodar prévia** salva o rascunho pendente e chama a rota. Fica desabilitado com o motivo enquanto houver problema ou faltar a fonte do lote;
+  - **por bloco Fonte:**
+    - as contagens com ponto e palavra ("480 encontrados", "12 sem correspondência", "8 com mais de uma linha (máx. 3)");
+    - as chaves de exemplo;
+    - a amostra das linhas, numa tabela `mono-13` com rolagem horizontal;
+  - **por grupo:** os registros de exemplo com Input e Output lado a lado;
+  - a nota "Contagens sobre os primeiros 500 registros.";
+  - o nome do bloco seleciona-o no canvas;
+  - **erros:** `schema_drift`, `source_read_denied` e `parameter_table_rows`, com a mensagem da API e o nome do bloco.
+- Aceite: testes de cada estado (vazio, carregando com esqueleto, erro, resultado), do botão desabilitado com motivo, da seleção ligada ao canvas e de cada erro de leitura.
+
+**F67 · Editor: Calcular com registro real e trace**
+- dep: F62
+- modelo: opus
+- arquivos: `packages/react/src/editor/unit-run/`
+- Fazer (E5-12, E5-20):
+  - **com fonte do lote**, o Calcular mostra "Escolher registro": a lista da amostra da última prévia (se houver) ou os campos da chave para digitar;
+  - **o resultado é o trace:**
+    - status com ponto e palavra (os cinco status, `ignored` como "ignorado" e `filtered` como "filtrado");
+    - Entradas, com valor e origem (conexão › dataset › coluna, chave da linha), copiáveis;
+    - Blocos, aninhados por grupo, com valores, "Regra N", linhas encontradas, avisos e erro;
+    - Saída e os hashes (encurtados, com cópia);
+  - **sem fonte do lote**, o formulário do épico 4 continua igual;
+  - `record_not_found` mostra "Nenhum registro com essa chave." no campo.
+- Aceite: testes de escolher pela amostra e pela chave digitada, de cada status, do trace aninhado, de `record_not_found` e do formulário do épico 4 intacto (os testes da F55 seguem verdes).
+
+**F68 · Editor: valores no canvas**
+- dep: F65, F67
+- modelo: opus
+- arquivos: `packages/react/src/editor/canvas/run-values/`, `packages/react/src/editor/canvas/nodes/`
+- Fazer (E5-21): depois de um Calcular, os valores do trace no canvas:
+  - as cores por status;
+  - a "Regra N" na Tabela;
+  - o Output no grupo recolhido;
+  - a faixa "Os valores são do último cálculo", com **Limpar**;
+  - qualquer edição limpa os valores.
+  - Acessibilidade: o status de cada nó vai também em texto (`aria-label`), não só na cor.
+- Aceite: testes das cores por status, do grupo recolhido e expandido, da limpeza ao editar e do texto acessível.
+
+**F69 · Integração do épico 5: editor e interface pública**
+- dep: F63, F64, F65, F66, F67, F68
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/editor/properties/`, `packages/react/src/editor/layout/`, `docs/glossario.md`, `README.md`, `.changeset/`
+- Fazer:
+  - o `<Editor>` mostra as propriedades da fonte do lote, do bloco Fonte e do grupo;
+  - a barra de ferramentas ganha Fonte e Agrupar;
+  - o painel inferior ganha a aba Prévia;
+  - o Calcular troca de modo pela fonte do lote;
+  - os valores aparecem no canvas;
+  - os nomes novos vão para o glossário, com um changeset `minor`.
+- Aceite: testes por papel (o Configurador monta fontes e grupos; o Aprovador roda a prévia e o Calcular e não edita; o Auditor vê tudo só para leitura, sem Prévia e sem Calcular); `pnpm build` verde.
+
+**F70 · Testes ponta a ponta do épico 5**
+- dep: F69
+- modelo: opus
+- arquivos: `e2e/epic-5/`, `e2e/support/`, `README.md`
+- Fazer:
+  - os fluxos do épico 5 do plano global, no modo simulado:
+    - montar o workflow da campanha de referência com fonte do lote, fontes lineares, filtro e grupo;
+    - rodar a prévia e conferir as contagens;
+    - calcular um registro e conferir o trace e o valor esperado;
+    - ver os valores no canvas;
+  - **no modo real**, usar o workflow "Campanha de referência" do `prepare-local` e os registros e valores esperados do `backend/tests/reference_campaign/`.
+- Aceite: `pnpm e2e` passa. O modo real é exercitado no teste de integração do CK5.
+
+**F71 · Portão do épico 5**
+- tipo: portao
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70
+- modelo: sonnet
+- Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15).
