@@ -61,10 +61,12 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0039](0039-recarga-de-conflito-rejeita-e-dialogo-espera.md) | Recarga depois de conflito rejeita quando falha (`throwOnError`), e o diálogo só fecha depois de recarregar | aceita, revisar no checkpoint | 2026-11-20 |
 | [0040](0040-monaco-environment-do-hospedeiro-tem-prioridade.md) | `MonacoEnvironment` do hospedeiro tem prioridade; o pacote só define o dele se faltar (complementa 0037) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0041](0041-formula-editor-recebe-o-texto-analisado.md) | `<FormulaEditor>` recebe `analyzedValue`, o texto em que os problemas foram calculados | aceita, revisar no checkpoint | 2026-11-20 |
-| [0042](0042-contrato-do-editor-entre-sub-verticais.md) | Sub-verticais do editor falam com o rascunho só por `useDraftEditor()` e `useProblemCounts()` | aceita, revisar no checkpoint | 2026-11-20 |
+| [0042](0042-contrato-do-editor-entre-sub-verticais.md) | Sub-verticais do editor falam com o rascunho só por `useDraftEditor()` e `useProblemCounts()` | aceita, revisar no checkpoint (complementada por 0047) | 2026-11-20 |
 | [0043](0043-salvamento-do-rascunho-fora-do-use-mutation.md) | Salvar o rascunho com função controlada por refs, e ler o rascunho só depois dos salvamentos em voo (complementa 0025) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0044](0044-edicoes-mantem-a-identidade-do-que-nao-mudou.md) | Edições da definição mantêm os mesmos objetos do que não mudou, para a marca de problema acompanhar a regra (segue a 0042) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0045](0045-memoria-da-tela-em-weakmap-por-query-client.md) | Lembrar na tela sem persistir: `WeakMap` por `QueryClient`, com chave de pessoa, tenant e item (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
+| [0046](0046-texto-invalido-fica-no-campo-e-nao-vai-ao-rascunho.md) | Texto que daria erro de forma fica no campo, com o erro, e não vai ao rascunho (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
+| [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md) | Outras sub-verticais do editor podem importar peças de `properties/index.ts` (complementa 0042) | aceita, revisar no checkpoint | 2026-11-20 |
 
 ## Pendentes (sem ADR ainda)
 
