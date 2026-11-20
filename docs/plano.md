@@ -1115,9 +1115,20 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - as mutações de `admin/users`, `admin/roles` e `admin/integration` que gravam ou invalidam o cache usam a marca, inclusive nos `onError`, como as outras (ADR 0049 complementada).
 - Aceite: um teste de resposta atrasada depois da limpeza por hook tocado; a busca no relatório mostra que nenhum `setQueryData`, `invalidateQueries` ou `removeQueries` depois de requisição fica sem a marca, em todo `packages/react/src/`.
 
+**F86 · Manutenção: médios da revisão da F83 (menu compacto e troca de tenant)**
+- dep: F83
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/module/`
+- Fazer (decidido pela sessão global em 2026-11-20):
+  - o teste do menu compacto afirma a classe dentro de `.fc-shell-compact` e o foco pelo Tab no link e no botão de troca (o jsdom não aplica `display:none`);
+  - o teste da troca de tenant afirma que nenhum `alert` nem erro do workflow aparece;
+  - no menu compacto, o link "Início de {tenant}" e o botão "Trocar cliente" ganham `Tooltip` com o nome do tenant, como o comentário do `shell.css` promete.
+- Aceite: os três itens com teste; os testes da F57 e da F83 seguem verdes.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84, F85
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84, F85, F86
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
