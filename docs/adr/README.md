@@ -64,6 +64,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0042](0042-contrato-do-editor-entre-sub-verticais.md) | Sub-verticais do editor falam com o rascunho só por `useDraftEditor()` e `useProblemCounts()` | aceita, revisar no checkpoint | 2026-11-20 |
 | [0043](0043-salvamento-do-rascunho-fora-do-use-mutation.md) | Salvar o rascunho com função controlada por refs, e ler o rascunho só depois dos salvamentos em voo (complementa 0025) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0044](0044-edicoes-mantem-a-identidade-do-que-nao-mudou.md) | Edições da definição mantêm os mesmos objetos do que não mudou, para a marca de problema acompanhar a regra (segue a 0042) | aceita, revisar no checkpoint | 2026-11-20 |
+| [0045](0045-memoria-da-tela-em-weakmap-por-query-client.md) | Lembrar na tela sem persistir: `WeakMap` por `QueryClient`, com chave de pessoa, tenant e item (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
 
 ## Pendentes (sem ADR ainda)
 
