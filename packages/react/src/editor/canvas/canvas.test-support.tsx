@@ -193,16 +193,24 @@ export interface Rendered {
   unmount: () => void;
 }
 
+export interface RenderOptions {
+  draft?: Schemas['Draft'];
+  readOnly?: boolean;
+  /** Every analysis of a change fails (500), as when the API is down. */
+  failAnalysis?: boolean;
+}
+
 /**
  * Renders the panels inside the draft context and an editor-like frame (`.fc-editor` with the Propriedades panel, which
  * has one field). The analysis answers with the draft's problems, symbols and dependencies; the save with the draft.
  */
-export function renderWithDraft(panels: ReactNode, { draft = exampleDraft(), readOnly = false }: { draft?: Schemas['Draft']; readOnly?: boolean } = {}): Rendered {
+export function renderWithDraft(panels: ReactNode, { draft = exampleDraft(), readOnly = false, failAnalysis = false }: RenderOptions = {}): Rendered {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (request: Request) => {
       const { pathname } = new URL(request.url);
       if (request.method === 'POST' && pathname.endsWith('/draft/analysis')) {
+        if (failAnalysis) return json({ type: 'about:blank', title: 'Erro interno', status: 500, code: 'internal_error' }, 500);
         return json({ problems: draft.problems, symbols: draft.symbols, dependencies: draft.dependencies, order: draft.order });
       }
       if (request.method === 'PUT' && pathname.endsWith('/draft')) return json({ ...draft, revision: draft.revision + 1 });

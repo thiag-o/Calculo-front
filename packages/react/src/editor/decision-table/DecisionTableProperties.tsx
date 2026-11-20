@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Schemas } from '../../api';
 import { Button, Select, Text, TextField, type SelectOption } from '../../design-system';
-import { READ_ONLY_REASON, useDraftEditor, type WorkflowProblem } from '../draft';
+import { READ_ONLY_REASON, freeResultName, useDraftEditor, type WorkflowProblem } from '../draft';
 import { PlusIcon, TableIcon, TrashIcon } from './icons';
 import {
   DATA_TYPE_LABELS,
@@ -27,7 +27,6 @@ import {
   addCondition,
   addResult,
   findTable,
-  freeResultName,
   removeColumn,
   setCondition,
   setResult,

@@ -211,26 +211,3 @@ export function withType(result: DecisionResult, type: DataType, defaultScale: n
   if (type !== 'decimal') return { ...rest, type };
   return { ...rest, type, scale: typeof scale === 'number' ? scale : defaultScale };
 }
-
-/** Every variable name the workflow already uses: inputs, list fields, block outputs and result columns (E4-10). */
-export function usedNames(definition: WorkflowDefinition): Set<string> {
-  const names = new Set<string>();
-  for (const input of definition.root.inputs) {
-    names.add(input.name);
-    if (input.cardinality === 'multiple') for (const field of input.fields) names.add(field.name);
-  }
-  for (const node of definition.root.nodes) {
-    if (node.type === 'calculation') names.add(node.output.name);
-    else for (const result of node.results) names.add(result.name);
-  }
-  return names;
-}
-
-/** The first free `resultado_N` of the workflow (E4-10: one name, one variable). */
-export function freeResultName(definition: WorkflowDefinition): string {
-  const names = usedNames(definition);
-  for (let number = 1; ; number++) {
-    const name = `resultado_${number}`;
-    if (!names.has(name)) return name;
-  }
-}

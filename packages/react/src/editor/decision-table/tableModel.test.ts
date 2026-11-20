@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { definitionWith, table } from './decision-table.test-support';
+import { freeResultName } from '../draft';
 import {
   MAX_RULES,
   addCondition,
   addResult,
-  freeResultName,
   insertRule,
   moveRule,
   removeColumn,

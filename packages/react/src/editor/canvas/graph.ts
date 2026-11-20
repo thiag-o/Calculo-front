@@ -154,6 +154,28 @@ function barPositions(blocks: readonly Block[]): Pick<CanvasGraph, 'inputsPositi
   };
 }
 
+function samePort(a: Port, b: Port): boolean {
+  return a.handle === b.handle && a.label === b.label && a.type === b.type;
+}
+
+function sameInputRow(a: InputRow, b: InputRow): boolean {
+  return a.kind === b.kind && samePort(a, b);
+}
+
+function sameLink(a: Link, b: Link): boolean {
+  return a.id === b.id && a.name === b.name;
+}
+
+/** `previous` when it holds the same items as `next` (by `same`), so an unchanged list keeps its identity. */
+function keepList<T>(previous: readonly T[] | undefined, next: T[], same: (a: T, b: T) => boolean): T[] {
+  if (!previous || previous.length !== next.length) return next;
+  return next.every((item, index) => same(previous[index]!, item)) ? (previous as T[]) : next;
+}
+
+function keepPoint(previous: { x: number; y: number } | undefined, next: { x: number; y: number }): { x: number; y: number } {
+  return previous && previous.x === next.x && previous.y === next.y ? previous : next;
+}
+
 /**
  * The canvas of a definition: the blocks in the order of `root.nodes`, the bars and the links.
  *
@@ -162,33 +184,51 @@ function barPositions(blocks: readonly Block[]): Pick<CanvasGraph, 'inputsPositi
  *   variable of each output field to the output bar.
  * - `symbols` and `dependencies` refer to the analyzed definition: a link whose ends are no longer in the current one
  *   (a block removed, an output renamed) is left out until the next analysis.
+ * - With the `previous` graph, everything that shows the same keeps the same object (a block view, its ports, the rows
+ *   of the bars, a link, and each list when nothing in it changed). Moving one block then gives a new view only for it,
+ *   and the canvas draws again only that block (ADR 0044).
  */
 export function canvasGraph(
   definition: WorkflowDefinition,
   symbols: readonly DraftSymbol[],
   dependencies: readonly Dependency[],
+  previous?: CanvasGraph | null,
 ): CanvasGraph {
   const blocks = definition.root.nodes;
   const byName = symbolsByName(symbols);
   const readsByNode = new Map<string, readonly string[]>();
   for (const dependency of dependencies) if (!readsByNode.has(dependency.node_id)) readsByNode.set(dependency.node_id, dependency.reads);
+  const previousViews = new Map<string, BlockView>();
+  for (const view of previous?.blocks ?? []) previousViews.set(view.block.id, view);
 
-  const views: BlockView[] = blocks.map((block) => ({
-    block,
-    reads: (readsByNode.get(block.id) ?? []).map((name) => readPort(name, byName.get(name))),
-    outputs: blockOutputs(block),
-  }));
-  const inputs = inputRows(definition.root.inputs);
-  const output: OutputRow[] = definition.root.output.fields.map((field, index) => {
-    const symbol = byName.get(field.variable);
-    return { handle: outputFieldHandle(index), label: field.name, type: symbol?.type ? typeCode(symbol.type, symbol.scale) : null };
-  });
+  const views = keepList(
+    previous?.blocks,
+    blocks.map((block) => {
+      const before = previousViews.get(block.id);
+      const reads = keepList(before?.reads, (readsByNode.get(block.id) ?? []).map((name) => readPort(name, byName.get(name))), samePort);
+      const outputs = keepList(before?.outputs, blockOutputs(block), samePort);
+      if (before && before.block === block && before.reads === reads && before.outputs === outputs) return before;
+      return { block, reads, outputs };
+    }),
+    Object.is,
+  );
+  const inputs = keepList(previous?.inputs, inputRows(definition.root.inputs), sameInputRow);
+  const output = keepList(
+    previous?.output,
+    definition.root.output.fields.map((field, index) => {
+      const symbol = byName.get(field.variable);
+      return { handle: outputFieldHandle(index), label: field.name, type: symbol?.type ? typeCode(symbol.type, symbol.scale) : null };
+    }),
+    samePort,
+  );
 
   // The handles that exist on screen now: a link only goes between two of them.
   const sources = new Set<string>(inputs.map((row) => `${INPUTS_ID}|${row.handle}`));
   for (const view of views) for (const port of view.outputs) sources.add(`${view.block.id}|${port.handle}`);
 
-  const links: Link[] = [];
+  const previousLinks = new Map<string, Link>();
+  for (const link of previous?.links ?? []) previousLinks.set(link.id, link);
+  const found: Link[] = [];
   const seen = new Set<string>();
   const link = (name: string, target: string, targetHandle: string) => {
     const symbol = byName.get(name);
@@ -197,12 +237,23 @@ export function canvasGraph(
     const id = `${producer.node}|${producer.handle}->${target}|${targetHandle}`;
     if (seen.has(id)) return;
     seen.add(id);
-    links.push({ id, source: producer.node, sourceHandle: producer.handle, target, targetHandle, name });
+    const next: Link = { id, source: producer.node, sourceHandle: producer.handle, target, targetHandle, name };
+    const before = previousLinks.get(id);
+    found.push(before && sameLink(before, next) ? before : next);
   };
   for (const view of views) for (const name of readsByNode.get(view.block.id) ?? []) link(name, view.block.id, readHandle(name));
   definition.root.output.fields.forEach((field, index) => link(field.variable, OUTPUT_ID, outputFieldHandle(index)));
+  const links = keepList(previous?.links, found, Object.is);
 
-  return { blocks: views, inputs, output, links, ...barPositions(blocks) };
+  const bars = barPositions(blocks);
+  return {
+    blocks: views,
+    inputs,
+    output,
+    links,
+    inputsPosition: keepPoint(previous?.inputsPosition, bars.inputsPosition),
+    outputPosition: keepPoint(previous?.outputPosition, bars.outputPosition),
+  };
 }
 
 /**

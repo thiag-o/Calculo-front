@@ -1,7 +1,7 @@
 // The canvas edits of the definition: include, move and remove a block. Pure functions that keep the same objects for
 // everything that did not change (ADR 0044): the problem marks of the other blocks stay on them while the analysis of
 // the edit is on the way.
-import type { WorkflowDefinition } from '../draft';
+import { freeBlockId, freeResultName, type WorkflowDefinition } from '../draft';
 import { BLOCK_WIDTH, type Block, type BlockKind } from './graph';
 
 export interface Position {
@@ -22,27 +22,6 @@ const CASCADE = 24;
 /** Approximate height of a new block, to center it on the visible area. */
 const NEW_BLOCK_HEIGHT = 80;
 
-/** Every variable name the definition already declares: inputs, list fields, block outputs and result columns (E4-10). */
-function usedNames(definition: WorkflowDefinition): Set<string> {
-  const names = new Set<string>();
-  for (const input of definition.root.inputs) {
-    names.add(input.name);
-    if (input.cardinality === 'multiple') for (const field of input.fields) names.add(field.name);
-  }
-  for (const node of definition.root.nodes) {
-    if (node.type === 'calculation') names.add(node.output.name);
-    else for (const result of node.results) names.add(result.name);
-  }
-  return names;
-}
-
-function firstFree(prefix: string, used: ReadonlySet<string>): { name: string; number: number } {
-  for (let number = 1; ; number++) {
-    const name = `${prefix}_${number}`;
-    if (!used.has(name)) return { name, number };
-  }
-}
-
 /** Where a new block goes: centered on `center`, on the grid, and moved aside while it would cover another block. */
 export function freePosition(definition: WorkflowDefinition, center: Position): Position {
   const snap = (value: number) => Math.round(value / GRID) * GRID;
@@ -54,13 +33,14 @@ export function freePosition(definition: WorkflowDefinition, center: Position): 
 }
 
 /**
- * A new block at `position`, with a free id (`calc_1`, `td_1`…) and a free output name (`resultado_1`…). A Calculation
+ * A new block at `position`, with a free id (`calc_1`, `td_1`…) and a free output name (`resultado_1`…), by the
+ * editor's one rule of free names (`editor/draft/names.ts`, the same as the Decision Table grid). A Calculation
  * starts with an empty formula and a `decimal` output with the workflow's scale; a Decision Table starts with one result
  * column of that type and no condition nor rule (the grid includes them).
  */
 export function newBlock(definition: WorkflowDefinition, kind: BlockKind, position: Position): Block {
-  const id = firstFree(NEW_BLOCK[kind].prefix, new Set(definition.root.nodes.map((node) => node.id)));
-  const output = firstFree('resultado', usedNames(definition)).name;
+  const id = freeBlockId(definition, NEW_BLOCK[kind].prefix);
+  const output = freeResultName(definition);
   const scale = definition.settings.rounding.scale;
   const common = {
     id: id.name,

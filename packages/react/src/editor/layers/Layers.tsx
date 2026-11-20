@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { textClasses } from '../../design-system';
-import { sameItem, useDraftEditor, type EditorItem, type WorkflowDefinition } from '../draft';
+import { useBlockRemoval } from '../canvas';
+import { WORKFLOW_ITEM, sameItem, useDraftEditor, type EditorItem, type WorkflowDefinition } from '../draft';
 import { useProblemCounts, type ProblemCounts } from '../problems';
 import { AlertIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
 import './layers.css';
@@ -141,14 +142,24 @@ function treeRows(definition: WorkflowDefinition, counts: ProblemCounts): Row[] 
  * mono-13, with the red problem icon on the items that have problems. The selection is the editor's (`useDraftEditor`),
  * the same as the canvas and the properties: a click, Enter or Space selects the item (a part of Entradas or Saída
  * selects the bar). Keyboard of a WAI-ARIA tree: up and down arrows, right and left open, close and go in and out,
- * Home and End.
+ * Home and End. As on the canvas, Esc clears the selection and Delete removes a block (with the same confirmation, the
+ * announcement and the focus on the neighbour block afterwards).
  */
 export function Layers() {
-  const { definition, selection, select } = useDraftEditor();
+  const { definition, selection, select, readOnly } = useDraftEditor();
   const counts = useProblemCounts();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
-  const [focused, setFocused] = useState<string | null>(null);
+  // The row last focused here, with the selection it had then: once the selection changes in another panel, the Tab
+  // stop follows the selection instead.
+  const [focused, setFocused] = useState<{ key: string; item: EditorItem } | null>(null);
+  const [announcement, setAnnouncement] = useState('');
   const tree = useRef<HTMLUListElement>(null);
+  const rowElement = (key: string) => tree.current?.querySelector<HTMLElement>(`[data-key="${key}"]`) ?? null;
+  const removal = useBlockRemoval({
+    announce: setAnnouncement,
+    focusAfterRemoval: (neighbour) => (neighbour === null ? null : rowElement(`node:${neighbour}`)) ?? rowElement('inputs'),
+    focusOnCancel: (id) => rowElement(`node:${id}`),
+  });
 
   const rows = useMemo(() => treeRows(definition, counts), [definition, counts]);
   const visible = useMemo(() => {
@@ -163,12 +174,13 @@ export function Layers() {
   }, [rows, collapsed]);
 
   const isSelected = (row: Row) => row.own && sameItem(row.item, selection.item);
-  // One Tab stop: the row last focused, or the selected one, or the first.
-  const current = visible.find((row) => row.key === focused) ?? visible.find(isSelected) ?? visible[0];
+  // One Tab stop: the row last focused (while the selection is still the one it had), or the selected one, or the first.
+  const lastFocused = focused && sameItem(focused.item, selection.item) ? visible.find((row) => row.key === focused.key) : undefined;
+  const current = lastFocused ?? visible.find(isSelected) ?? visible[0];
 
   const focusRow = (key: string) => {
-    setFocused(key);
-    tree.current?.querySelector<HTMLElement>(`[data-key="${key}"]`)?.focus();
+    setFocused({ key, item: selection.item });
+    rowElement(key)?.focus();
   };
 
   const toggle = (key: string, open: boolean) =>
@@ -180,7 +192,7 @@ export function Layers() {
     });
 
   const choose = (row: Row) => {
-    setFocused(row.key);
+    setFocused({ key: row.key, item: row.item });
     if (!sameItem(row.item, selection.item)) select(row.item);
   };
 
@@ -213,6 +225,17 @@ export function Layers() {
       case ' ':
         choose(row);
         break;
+      case 'Escape':
+        // Nothing selected: Esc goes on to whoever closes the panel or the menu.
+        if (sameItem(selection.item, WORKFLOW_ITEM)) return;
+        setFocused({ key: row.key, item: WORKFLOW_ITEM });
+        select(WORKFLOW_ITEM);
+        break;
+      case 'Delete':
+        if (!row.own || row.item.type !== 'node' || readOnly) return;
+        choose(row);
+        removal.ask(row.item.id);
+        break;
       default:
         return;
     }
@@ -242,7 +265,7 @@ export function Layers() {
               tabIndex={row === current ? 0 : -1}
               style={{ paddingLeft: `calc(var(--fc-space-8) + ${row.level - 1} * 20px)` }}
               onClick={() => choose(row)}
-              onFocus={() => setFocused(row.key)}
+              onFocus={() => setFocused({ key: row.key, item: selection.item })}
               onKeyDown={(event) => onKeyDown(event, row)}
             >
               {row.hasChildren ? (
@@ -251,7 +274,7 @@ export function Layers() {
                   aria-hidden="true"
                   onClick={(event) => {
                     event.stopPropagation();
-                    setFocused(row.key);
+                    setFocused({ key: row.key, item: selection.item });
                     toggle(row.key, collapsed.has(row.key));
                   }}
                 >
@@ -272,6 +295,10 @@ export function Layers() {
           );
         })}
       </ul>
+      <div className="fc-layers-visually-hidden" role="status" aria-live="polite">
+        {announcement}
+      </div>
+      {removal.dialog}
     </div>
   );
 }

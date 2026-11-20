@@ -11,7 +11,7 @@ import {
   type MouseEvent,
 } from 'react';
 import { Button, EmptyState, Text } from '../../design-system';
-import { READ_ONLY_REASON, useDraftEditor } from '../draft';
+import { READ_ONLY_REASON, freeResultName, useDraftEditor } from '../draft';
 import { MAX_PASTE_LENGTH, cleanCell, isBlock, parseClipboard } from './clipboard';
 import { GridRow, columnHeaderId, type EditMode } from './GridRow';
 import { AlertIcon, ArrowDownIcon, ArrowLeftIcon, ArrowUpIcon, PlusIcon, TableIcon, TrashIcon } from './icons';
@@ -35,7 +35,6 @@ import {
   cellValue,
   columnCount,
   findTable,
-  freeResultName,
   insertRule,
   moveRule,
   removeColumn,

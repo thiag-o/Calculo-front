@@ -17,11 +17,29 @@ export function blockLabel(name: string, kind: BlockKind, problems: number): str
   return [name, BLOCK_KIND_LABELS[kind], problems > 0 ? problemsText(problems) : null].filter(Boolean).join(', ');
 }
 
-/** The Delete confirmation: who still reads the block's output (from the `dependencies` of the analysis). */
-export function readersText(readers: number): string {
+/**
+ * The Delete confirmation: who still reads the block's output (from the `dependencies` of the analysis), or that it is
+ * still being checked (the analysis of the latest change is on the way), or that the check failed.
+ */
+export function readersText(readers: number | 'checking' | 'unknown'): string {
+  if (readers === 'checking') return 'Conferindo quem usa este bloco…';
+  if (readers === 'unknown') return 'Não foi possível conferir quem usa este bloco.';
   if (readers === 0) return 'Nenhum bloco usa a saída dele.';
   if (readers === 1) return '1 bloco usa a saída dele e passa a mostrar problema.';
   return `${readers.toLocaleString('pt-BR')} blocos usam a saída dele e passam a mostrar problema.`;
+}
+
+/** Why "Remover bloco" waits: the count of who uses the block is being checked. */
+export const CHECKING_READERS_REASON = 'Espere a conferência de quem usa este bloco';
+
+/** The announcement after a block was included (toolbar). */
+export function blockAddedText(name: string): string {
+  return `Bloco ${name} incluído`;
+}
+
+/** The announcement after a block was removed (Delete, from the canvas or the layers). */
+export function blockRemovedText(name: string): string {
+  return `Bloco ${name} removido`;
 }
 
 /** What the keyboard does on a block (its `aria-describedby`). */

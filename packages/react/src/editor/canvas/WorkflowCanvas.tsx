@@ -11,18 +11,19 @@ import {
   type OnNodeDrag,
 } from '@xyflow/react';
 import '@xyflow/react/dist/base.css';
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { Button, EmptyState } from '../../design-system';
 import { WORKFLOW_ITEM, sameItem, useDraftEditor, type EditorItem } from '../draft';
 import { usePanelWidths } from '../layout';
 import { useProblemCounts } from '../problems';
-import { addBlock, freePosition, moveBlocks, newBlock, removeBlock, type Position } from './blocks';
-import { INPUTS_ID, OUTPUT_ID, canvasGraph, readersOf, type BlockKind } from './graph';
+import { addBlock, freePosition, moveBlocks, newBlock, type Position } from './blocks';
+import { useBlockRemoval } from './BlockRemoval';
+import { keep, settle, type KeptObjects } from './keptObjects';
+import { INPUTS_ID, OUTPUT_ID, canvasGraph, type Block, type BlockKind, type CanvasGraph } from './graph';
 import { BlocksIcon, FitIcon, ZoomInIcon, ZoomOutIcon } from './icons';
-import { BLOCK_KEYS_HELP, BLOCK_KEYS_HELP_READ_ONLY, blockLabel, linkLabel, movedText } from './messages';
+import { BLOCK_KEYS_HELP, BLOCK_KEYS_HELP_READ_ONLY, blockAddedText, blockLabel, linkLabel, movedText } from './messages';
 import { NODE_TYPES, type CanvasNode } from './nodes';
 import { CanvasToolbar } from './CanvasToolbar';
-import { RemoveBlockDialog } from './RemoveBlockDialog';
 import './canvas.css';
 
 /** One arrow press moves the block this far; with Shift, four times as far. */
@@ -34,6 +35,9 @@ const ARROWS: Readonly<Record<string, Position>> = {
   ArrowLeft: { x: -1, y: 0 },
   ArrowRight: { x: 1, y: 0 },
 };
+
+/** How "Ajustar à tela" (and the first view) fits the blocks. */
+const FIT_VIEW = { padding: 0.2, maxZoom: 1 };
 
 interface Size {
   width: number;
@@ -87,16 +91,19 @@ function focusProperties(from: HTMLElement | null) {
   target?.focus();
 }
 
-/** Keeps the same node object while nothing it shows changed, so React Flow redraws only what moved. */
-function useNodeCache() {
-  const cache = useRef(new Map<string, { parts: readonly unknown[]; node: CanvasNode }>());
-  return useCallback((id: string, parts: readonly unknown[], make: () => CanvasNode): CanvasNode => {
-    const hit = cache.current.get(id);
-    if (hit && hit.parts.length === parts.length && hit.parts.every((part, index) => Object.is(part, parts[index]))) return hit.node;
-    const node = make();
-    cache.current.set(id, { parts, node });
-    return node;
-  }, []);
+type CanvasGraphInput = Parameters<typeof canvasGraph>;
+
+/**
+ * The canvas graph, keeping the same objects for what did not change since the previous one (see `canvasGraph`), so
+ * the node of an untouched block keeps its identity and `memo` skips drawing it again.
+ */
+function useStableGraph(definition: CanvasGraphInput[0], symbols: CanvasGraphInput[1], dependencies: CanvasGraphInput[2]): CanvasGraph {
+  const previous = useRef<CanvasGraph | null>(null);
+  return useMemo(() => {
+    const graph = canvasGraph(definition, symbols, dependencies, previous.current);
+    previous.current = graph;
+    return graph;
+  }, [definition, symbols, dependencies]);
 }
 
 function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
@@ -107,17 +114,21 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
   const compact = usePanelWidths(frame) === 'narrow';
   const [measured, setMeasured] = useState<ReadonlyMap<string, Size>>(() => new Map());
   const [dragged, setDragged] = useState<ReadonlyMap<string, Position>>(() => new Map());
-  const [removing, setRemoving] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const [openProperties, setOpenProperties] = useState(0);
   // The selection came from the canvas itself (no need to bring the block into view).
   const selectedHere = useRef(false);
-  const cached = useNodeCache();
+  const nodeCache = useRef<KeptObjects<CanvasNode>>(new Map());
+  const edgeCache = useRef<KeptObjects<Edge>>(new Map());
+  const previousNodes = useRef<CanvasNode[] | null>(null);
+  const previousEdges = useRef<Edge[] | null>(null);
 
-  const graph = useMemo(() => canvasGraph(definition, symbols, dependencies), [definition, symbols, dependencies]);
+  const graph = useStableGraph(definition, symbols, dependencies);
   const selectedId = flowId(selection.item);
 
   const nodes = useMemo<CanvasNode[]>(() => {
+    const cache = nodeCache.current;
+    const cached = (id: string, parts: readonly unknown[], make: () => CanvasNode) => keep(cache, id, parts, make);
     const draggable = !readOnly;
     const inputsProblems = counts.inputs;
     const outputProblems = counts.output;
@@ -140,7 +151,7 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       const problems = counts.byNode.get(block.id) ?? 0;
       const selected = selectedId === block.id;
       const position = dragged.get(block.id) ?? block.position;
-      return cached(block.id, [view.block, view.reads, problems, selected, measured.get(block.id), position, draggable], () => ({
+      return cached(block.id, [view, problems, selected, measured.get(block.id), position, draggable], () => ({
         id: block.id,
         type: 'block',
         position,
@@ -166,8 +177,10 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       domAttributes: { 'aria-current': selectedId === OUTPUT_ID ? 'true' : undefined },
     }));
     // The DOM order is the Tab order: Entradas, the blocks in the order of root.nodes, Saída.
-    return [inputs, ...blocks, output];
-  }, [graph, counts, selectedId, measured, dragged, readOnly, cached]);
+    const next = settle(cache, previousNodes.current, [inputs, ...blocks, output]);
+    previousNodes.current = next;
+    return next;
+  }, [graph, counts, selectedId, measured, dragged, readOnly]);
 
   const edges = useMemo<Edge[]>(() => {
     const names = new Map<string, string>([
@@ -175,9 +188,12 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       [OUTPUT_ID, 'Saída'],
     ]);
     for (const view of graph.blocks) names.set(view.block.id, view.block.name || view.block.id);
-    return graph.links.map((link) => {
+    const cache = edgeCache.current;
+    const next = graph.links.map((link) => {
       const active = selectedId !== null && (link.source === selectedId || link.target === selectedId);
-      return {
+      const source = names.get(link.source) ?? link.source;
+      const target = names.get(link.target) ?? link.target;
+      return keep(cache, link.id, [link, active, source, target], () => ({
         id: link.id,
         source: link.source,
         sourceHandle: link.sourceHandle,
@@ -189,18 +205,45 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
         deletable: false,
         interactionWidth: 0,
         zIndex: active ? 1 : 0,
-        ariaLabel: linkLabel(link.name, names.get(link.source) ?? link.source, names.get(link.target) ?? link.target),
-      } satisfies Edge;
+        ariaLabel: linkLabel(link.name, source, target),
+      }));
     });
+    const settled = settle(cache, previousEdges.current, next);
+    previousEdges.current = settled;
+    return settled;
   }, [graph.blocks, graph.links, selectedId]);
 
+  // The selection read by the handlers, so they keep their identity while it changes (React Flow gets them as props).
+  const selected = useRef(selection.item);
+  selected.current = selection.item;
   const choose = useCallback(
     (item: EditorItem) => {
-      if (sameItem(item, selection.item)) return;
+      if (sameItem(item, selected.current)) return;
       selectedHere.current = true;
       select(item);
     },
-    [select, selection.item],
+    [select],
+  );
+  const onNodeClick = useCallback((_: MouseEvent, node: CanvasNode) => choose(itemOf(node.id)), [choose]);
+  const onPaneClick = useCallback(() => choose(WORKFLOW_ITEM), [choose]);
+
+  const nodeElement = (id: string) => frame.current?.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`) ?? null;
+  const removal = useBlockRemoval({
+    announce: setAnnouncement,
+    focusAfterRemoval: (neighbour) => (neighbour === null ? null : nodeElement(neighbour)) ?? frame.current,
+    focusOnCancel: (id) => nodeElement(id) ?? frame.current,
+  });
+  const keysHelp = readOnly ? BLOCK_KEYS_HELP_READ_ONLY : BLOCK_KEYS_HELP;
+  const ariaLabelConfig = useMemo(
+    () => ({
+      'node.a11yDescription.default': keysHelp,
+      'node.a11yDescription.keyboardDisabled': keysHelp,
+      'node.a11yDescription.ariaLiveMessage': () => '',
+      'edge.a11yDescription.default': 'As ligações vêm da análise do rascunho: mostram o que cada bloco lê.',
+      'minimap.ariaLabel': 'Minimapa',
+      'handle.ariaLabel': 'Porta',
+    }),
+    [keysHelp],
   );
 
   // Selected somewhere else (the layers, the Problems tab): bring the block into view when it is out of it.
@@ -319,7 +362,7 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       }
       if (event.key === 'Delete' && isBlock && !readOnly) {
         choose(itemOf(id));
-        setRemoving(id);
+        removal.ask(id);
         return true;
       }
       return false;
@@ -333,13 +376,19 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
   const addAtCenter = (kind: BlockKind) => {
     const box = frame.current?.getBoundingClientRect();
     const center = flow.screenToFlowPosition({ x: (box?.left ?? 0) + (box?.width ?? 0) / 2, y: (box?.top ?? 0) + (box?.height ?? 0) / 2 });
-    const block = newBlock(definition, kind, freePosition(definition, center));
-    change((current) => addBlock(current, block));
+    let added: Block | null = null;
+    // The id, the output name and the place come from the latest definition (two includes faster than the screen
+    // still get different names and places).
+    change((current) => {
+      const block = newBlock(current, kind, freePosition(current, center));
+      added = block;
+      return addBlock(current, block);
+    });
+    const block = added as Block | null;
+    if (!block) return;
     choose({ type: 'node', id: block.id });
+    setAnnouncement(blockAddedText(block.name));
   };
-
-  const removingBlock = removing === null ? undefined : definition.root.nodes.find((node) => node.id === removing);
-  const nodeElement = (id: string) => frame.current?.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`) ?? null;
 
   return (
     <div ref={frame} className="fc-canvas" tabIndex={-1} onKeyDownCapture={onKeyDownCapture}>
@@ -348,10 +397,10 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
         edges={edges}
         nodeTypes={NODE_TYPES}
         onNodesChange={onNodesChange}
-        onNodeClick={(_, node) => choose(itemOf(node.id))}
+        onNodeClick={onNodeClick}
         onNodeDragStart={onNodeDragStart}
         onNodeDragStop={onNodeDragStop}
-        onPaneClick={() => choose(WORKFLOW_ITEM)}
+        onPaneClick={onPaneClick}
         nodesDraggable={!readOnly}
         nodesConnectable={false}
         nodesFocusable
@@ -366,17 +415,10 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
         panActivationKeyCode={null}
         zoomOnDoubleClick={false}
         fitView
-        fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+        fitViewOptions={FIT_VIEW}
         minZoom={0.25}
         maxZoom={2}
-        ariaLabelConfig={{
-          'node.a11yDescription.default': readOnly ? BLOCK_KEYS_HELP_READ_ONLY : BLOCK_KEYS_HELP,
-          'node.a11yDescription.keyboardDisabled': readOnly ? BLOCK_KEYS_HELP_READ_ONLY : BLOCK_KEYS_HELP,
-          'node.a11yDescription.ariaLiveMessage': () => '',
-          'edge.a11yDescription.default': 'As ligações vêm da análise do rascunho: mostram o que cada bloco lê.',
-          'minimap.ariaLabel': 'Minimapa',
-          'handle.ariaLabel': 'Porta',
-        }}
+        ariaLabelConfig={ariaLabelConfig}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="var(--fc-gray-500)" />
         <Panel position="top-right" className="fc-canvas-view">
@@ -389,7 +431,7 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
               iconOnly
               label="Ajustar à tela"
               icon={<FitIcon size={14} />}
-              onClick={() => void flow.fitView({ padding: 0.2, maxZoom: 1 })}
+              onClick={() => void flow.fitView(FIT_VIEW)}
             />
           </div>
         </Panel>
@@ -421,20 +463,7 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       <div className="fc-canvas-visually-hidden" role="status" aria-live="polite">
         {announcement}
       </div>
-      {removingBlock ? (
-        <RemoveBlockDialog
-          name={removingBlock.name}
-          readers={readersOf(removingBlock.id, definition, symbols, dependencies)}
-          onClose={() => setRemoving(null)}
-          onRemove={() => {
-            const id = removingBlock.id;
-            setRemoving(null);
-            change((current) => removeBlock(current, id));
-            choose(WORKFLOW_ITEM);
-          }}
-          focusOnClose={() => (removing !== null ? nodeElement(removing) : null) ?? frame.current}
-        />
-      ) : null}
+      {removal.dialog}
     </div>
   );
 }

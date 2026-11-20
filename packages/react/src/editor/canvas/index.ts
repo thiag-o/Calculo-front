@@ -5,3 +5,6 @@ export { WorkflowCanvas, ARROW_STEP } from './WorkflowCanvas';
 export type { WorkflowCanvasProps } from './WorkflowCanvas';
 export { canvasGraph, readersOf } from './graph';
 export type { CanvasGraph, BlockView, Link, Port } from './graph';
+// Delete on a block (confirmation, announcement and focus afterwards), shared with the layers.
+export { useBlockRemoval } from './BlockRemoval';
+export type { BlockRemoval, BlockRemovalOptions } from './BlockRemoval';

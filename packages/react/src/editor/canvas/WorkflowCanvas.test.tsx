@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import type { UserEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Layers } from '../layers';
 import { WorkflowCanvas } from './WorkflowCanvas';
@@ -25,6 +26,14 @@ function clickOnCanvas(element: Element) {
 
 function links(): Element[] {
   return [...document.querySelectorAll('.react-flow__edge')];
+}
+
+/** "Remover bloco", once the count of who uses the block is known (the analysis of the latest change is back). */
+async function confirmRemoval(user: UserEvent) {
+  // The button is drawn again when it stops waiting: found again on each try.
+  const remove = () => screen.getByRole('button', { name: 'Remover bloco' });
+  await waitFor(() => expect(remove()).not.toHaveAttribute('aria-disabled'), { timeout: 3000 });
+  await user.click(remove());
 }
 
 async function renderCanvas(options: Parameters<typeof renderWithDraft>[1] = {}, onOpenProperties?: () => void) {
@@ -183,6 +192,80 @@ describe('WorkflowCanvas', () => {
     expect(await screen.findByRole('dialog', { name: 'Remover bloco' })).toHaveAccessibleDescription(
       'Pontos sai do rascunho. Nenhum bloco usa a saída dele. Ctrl Z desfaz.',
     );
+  });
+
+  it('com a análise atrasada, a confirmação diz "Conferindo quem usa este bloco…" e espera a análise para dar a contagem', async () => {
+    const { user, probe } = await renderCanvas();
+    const table = node('Elegibilidade, Tabela de Decisão');
+    table.focus();
+    // A move changes the definition: its analysis comes 400 ms later.
+    await user.keyboard('{ArrowRight}{Delete}');
+    const dialog = await screen.findByRole('dialog', { name: 'Remover bloco' });
+    expect(dialog).toHaveAccessibleDescription('Elegibilidade sai do rascunho. Conferindo quem usa este bloco… Ctrl Z desfaz.');
+    const remove = within(dialog).getByRole('button', { name: 'Remover bloco' });
+    expect(remove).toHaveAttribute('aria-disabled', 'true');
+    expect(remove).toHaveAccessibleDescription('Espere a conferência de quem usa este bloco');
+    await user.click(remove);
+    expect(blockOf(probe.definition, 'td_elegibilidade')).toBeDefined();
+
+    await waitFor(
+      () => expect(dialog).toHaveAccessibleDescription('Elegibilidade sai do rascunho. 1 bloco usa a saída dele e passa a mostrar problema. Ctrl Z desfaz.'),
+      { timeout: 3000 },
+    );
+    await confirmRemoval(user);
+    expect(blockOf(probe.definition, 'td_elegibilidade')).toBeUndefined();
+  });
+
+  it('se a análise falhou, a confirmação diz que não deu para conferir e deixa remover', async () => {
+    const { user, probe } = await renderCanvas({ failAnalysis: true });
+    node('Elegibilidade, Tabela de Decisão').focus();
+    await user.keyboard('{ArrowRight}{Delete}');
+    const dialog = await screen.findByRole('dialog', { name: 'Remover bloco' });
+    expect(dialog).toHaveAccessibleDescription('Elegibilidade sai do rascunho. Conferindo quem usa este bloco… Ctrl Z desfaz.');
+    await waitFor(
+      () => expect(dialog).toHaveAccessibleDescription('Elegibilidade sai do rascunho. Não foi possível conferir quem usa este bloco. Ctrl Z desfaz.'),
+      { timeout: 3000 },
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Remover bloco' }));
+    expect(blockOf(probe.definition, 'td_elegibilidade')).toBeUndefined();
+  });
+
+  it('incluir um bloco é anunciado ao leitor de tela', async () => {
+    const { user } = await renderCanvas();
+    await user.click(within(screen.getByRole('toolbar', { name: 'Incluir bloco' })).getByRole('button', { name: 'Tabela de Decisão' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Bloco Tabela de Decisão 1 incluído');
+  });
+
+  it('duas inclusões antes de a tela atualizar ganham ids, saídas e lugares diferentes', async () => {
+    const { probe } = await renderCanvas();
+    const calculation = within(screen.getByRole('toolbar', { name: 'Incluir bloco' })).getByRole('button', { name: 'Cálculo' });
+    act(() => {
+      calculation.click();
+      calculation.click();
+    });
+    const added = probe.definition.root.nodes.slice(3);
+    expect(added.map((block) => block.id)).toEqual(['calc_1', 'calc_2']);
+    expect(added.map((block) => (block.type === 'calculation' ? block.output.name : null))).toEqual(['resultado_1', 'resultado_2']);
+    expect(added[1]!.position).not.toEqual(added[0]!.position);
+  });
+
+  it('remover é anunciado e o foco vai para o bloco seguinte; sem seguinte, para o anterior; sem nenhum, para o canvas', async () => {
+    const { user } = await renderCanvas();
+    node('Elegibilidade, Tabela de Decisão').focus();
+    await user.keyboard('{Delete}');
+    await confirmRemoval(user);
+    expect(screen.getByRole('status')).toHaveTextContent('Bloco Elegibilidade removido');
+    await waitFor(() => expect(node('Pontos, Cálculo')).toHaveFocus());
+
+    node('Total de compras, Cálculo').focus();
+    await user.keyboard('{Delete}');
+    await confirmRemoval(user);
+    await waitFor(() => expect(node('Pontos, Cálculo')).toHaveFocus());
+
+    await user.keyboard('{Delete}');
+    await confirmRemoval(user);
+    expect(screen.getByRole('status')).toHaveTextContent('Bloco Pontos removido');
+    await waitFor(() => expect(document.querySelector('.fc-canvas')).toHaveFocus());
   });
 
   it('Tab passa pelos blocos na ordem, Enter abre as propriedades e Esc tira a seleção', async () => {

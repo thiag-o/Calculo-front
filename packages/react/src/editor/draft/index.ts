@@ -14,6 +14,8 @@ export { useDraft, useDraftAnalysis, saveDraft, fetchDraftAgain, prefetchDraft }
 export type { Draft, WorkflowDefinition, WorkflowProblem, DraftSymbol, Dependency, Analysis, AnalysisTarget } from './queries';
 export { WORKFLOW_ITEM, sameItem } from './selection';
 export type { EditorItem, EditorSelection } from './selection';
+// The free names of a new block and of a new output or result column (`calc_N`, `td_N`, `resultado_N`).
+export { usedNames, freeResultName, freeBlockId } from './names';
 export { HISTORY_LIMIT } from './history';
 export { useUndoShortcuts } from './useUndoShortcuts';
 export { SaveIndicator, SaveNotices } from './SaveIndicator';

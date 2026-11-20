@@ -1,6 +1,7 @@
-import { act, cleanup, screen, within } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Schemas } from '../../api';
+import { WorkflowCanvas } from '../canvas';
 import { TYPE_MISMATCH, exampleDraft, renderWithDraft } from '../canvas/canvas.test-support';
 import { Layers } from './Layers';
 
@@ -100,6 +101,89 @@ describe('Layers', () => {
     expect(item('Entradas')).toHaveFocus();
     await user.keyboard(' ');
     expect(probe.selection.item).toEqual({ type: 'inputs' });
+  });
+
+  it('Esc numa linha tira a seleção, e a linha continua sendo a parada do Tab', async () => {
+    const { user, probe } = renderWithDraft(<Layers />);
+    await user.click(item('Pontos, Cálculo'));
+    await user.keyboard('{Escape}');
+    expect(probe.selection.item).toEqual({ type: 'workflow' });
+    expect(item('Pontos, Cálculo')).toHaveAttribute('aria-selected', 'false');
+    expect(item('Pontos, Cálculo')).toHaveFocus();
+    expect(item('Pontos, Cálculo')).toHaveAttribute('tabindex', '0');
+  });
+
+  it('Delete num bloco pede a mesma confirmação do canvas; Cancelar devolve o foco à linha', async () => {
+    const { user, probe } = renderWithDraft(<Layers />);
+    item('Elegibilidade, Tabela de Decisão').focus();
+    await user.keyboard('{Delete}');
+    const dialog = await screen.findByRole('dialog', { name: 'Remover bloco' });
+    expect(dialog).toHaveAccessibleDescription('Elegibilidade sai do rascunho. 1 bloco usa a saída dele e passa a mostrar problema. Ctrl Z desfaz.');
+    expect(probe.selection.item).toEqual({ type: 'node', id: 'td_elegibilidade' });
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    await waitFor(() => expect(item('Elegibilidade, Tabela de Decisão')).toHaveFocus());
+    expect(probe.definition.root.nodes).toHaveLength(3);
+  });
+
+  it('remover pelas camadas é anunciado e o foco vai para o bloco vizinho; sem blocos, para as Entradas', async () => {
+    const draft = exampleDraft();
+    draft.definition = { ...draft.definition, root: { ...draft.definition.root, nodes: draft.definition.root.nodes.slice(1, 3) } };
+    const { user, probe } = renderWithDraft(<Layers />, { draft });
+
+    item('Total de compras, Cálculo').focus();
+    await user.keyboard('{Delete}');
+    await user.click(await screen.findByRole('button', { name: 'Remover bloco' }));
+    expect(probe.definition.root.nodes.map((node) => node.id)).toEqual(['calc_pontos']);
+    expect(probe.selection.item).toEqual({ type: 'workflow' });
+    expect(screen.getByRole('status')).toHaveTextContent('Bloco Total de compras removido');
+    // The last block had no next one: the focus goes to the previous one.
+    await waitFor(() => expect(item('Pontos, Cálculo')).toHaveFocus());
+    expect(item('Pontos, Cálculo')).toHaveAttribute('tabindex', '0');
+
+    await user.keyboard('{Delete}');
+    const remove = () => screen.getByRole('button', { name: 'Remover bloco' });
+    // The count waits for the analysis of the previous removal.
+    await waitFor(() => expect(remove()).not.toHaveAttribute('aria-disabled'), { timeout: 3000 });
+    await user.click(remove());
+    expect(screen.getByRole('status')).toHaveTextContent('Bloco Pontos removido');
+    await waitFor(() => expect(item('Entradas')).toHaveFocus());
+  });
+
+  it('Delete não faz nada nas Entradas, na Saída nem em só leitura', async () => {
+    const { user } = renderWithDraft(<Layers />);
+    item('Entradas').focus();
+    await user.keyboard('{Delete}');
+    item('Saída').focus();
+    await user.keyboard('{Delete}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    cleanup();
+
+    const readOnly = renderWithDraft(<Layers />, { readOnly: true });
+    item('Pontos, Cálculo').focus();
+    await readOnly.user.keyboard('{Delete}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(readOnly.probe.definition.root.nodes).toHaveLength(3);
+  });
+
+  it('a parada do Tab das camadas segue a seleção feita no canvas', async () => {
+    const { user } = renderWithDraft(
+      <>
+        <Layers />
+        <WorkflowCanvas />
+      </>,
+    );
+    const pontos = await screen.findByRole('group', { name: /^Pontos/ });
+    // The last row focused in the tree was Elegibilidade.
+    act(() => item('Elegibilidade, Tabela de Decisão').focus());
+    expect(item('Elegibilidade, Tabela de Decisão')).toHaveAttribute('tabindex', '0');
+
+    pontos.focus();
+    await user.keyboard(' ');
+    expect(item('Pontos, Cálculo')).toHaveAttribute('tabindex', '0');
+    expect(item('Elegibilidade, Tabela de Decisão')).toHaveAttribute('tabindex', '-1');
+    // Shift+Tab from the canvas lands on the tree's stop: the block selected on the canvas.
+    item('Pontos, Cálculo').focus();
+    expect(item('Pontos, Cálculo')).toHaveAttribute('aria-selected', 'true');
   });
 
   it('sem entradas, blocos nem campos de saída, ficam só Entradas e Saída', () => {

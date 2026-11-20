@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkflowDefinition } from '../draft';
 import { EXAMPLE_DEPENDENCIES, EXAMPLE_SYMBOLS, exampleDefinition } from './canvas.test-support';
+import { moveBlocks } from './blocks';
 import { INPUTS_ID, OUTPUT_ID, canvasGraph, readersOf } from './graph';
 
 function linksOf(definition: WorkflowDefinition, symbols = EXAMPLE_SYMBOLS, dependencies = EXAMPLE_DEPENDENCIES) {
@@ -75,6 +76,42 @@ describe('canvasGraph', () => {
       },
     };
     expect(linksOf(renamed)).not.toContain(`calc_pontos.pontos -> ${OUTPUT_ID}`);
+  });
+
+  it('com o grafo anterior, mover um bloco recria só a vista dele: os outros blocos, as barras e as ligações são os mesmos objetos', () => {
+    const definition = exampleDefinition();
+    const before = canvasGraph(definition, EXAMPLE_SYMBOLS, EXAMPLE_DEPENDENCIES);
+    const moved = moveBlocks(definition, new Map([['calc_total', { x: 240, y: 320 }]]));
+    const after = canvasGraph(moved, EXAMPLE_SYMBOLS, EXAMPLE_DEPENDENCIES, before);
+
+    expect(after.blocks).not.toBe(before.blocks);
+    expect(after.blocks[0]).toBe(before.blocks[0]);
+    expect(after.blocks[1]).toBe(before.blocks[1]);
+    expect(after.blocks[2]).not.toBe(before.blocks[2]);
+    // The moved block keeps its ports: only its view is new.
+    expect(after.blocks[2]!.reads).toBe(before.blocks[2]!.reads);
+    expect(after.blocks[2]!.outputs).toBe(before.blocks[2]!.outputs);
+    expect(after.inputs).toBe(before.inputs);
+    expect(after.output).toBe(before.output);
+    expect(after.links).toBe(before.links);
+    expect(after.inputsPosition).toBe(before.inputsPosition);
+    expect(after.outputPosition).toBe(before.outputPosition);
+  });
+
+  it('com o grafo anterior e nada mudado, devolve as mesmas listas; uma ligação nova não recria as outras', () => {
+    const definition = exampleDefinition();
+    const before = canvasGraph(definition, EXAMPLE_SYMBOLS, EXAMPLE_DEPENDENCIES);
+    const same = canvasGraph(definition, [...EXAMPLE_SYMBOLS], EXAMPLE_DEPENDENCIES.map((dependency) => ({ ...dependency })), before);
+    expect(same.blocks).toBe(before.blocks);
+    expect(same.links).toBe(before.links);
+
+    const dependencies = [...EXAMPLE_DEPENDENCIES.slice(0, 2), { node_id: 'calc_total', reads: ['valor_compra', 'fator'] }];
+    const more = canvasGraph(definition, EXAMPLE_SYMBOLS, dependencies, before);
+    expect(more.links).toHaveLength(before.links.length + 1);
+    for (const link of before.links) expect(more.links).toContain(link);
+    expect(more.blocks[0]).toBe(before.blocks[0]);
+    expect(more.blocks[1]).toBe(before.blocks[1]);
+    expect(more.blocks[2]!.reads.map((port) => port.label)).toEqual(['valor_compra[]', 'fator']);
   });
 
   it('um bloco novo, ainda sem análise, não tem portas de entrada', () => {
