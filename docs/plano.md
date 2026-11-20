@@ -973,9 +973,24 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - "Continuar editando" no `NewDatasetDialog` devolve o foco ao campo de onde a pessoa saiu.
 - Aceite: um teste para cada item (inclusive o botão nunca habilitado entre o 429 e a contagem, e o `aria-live` anunciando só no começo e no fim); `pnpm lint`, `typecheck` e `test` verdes.
 
+**F74 · Manutenção: achados médios da revisão da F50**
+- dep: F50
+- modelo: opus
+- revisão: não
+- arquivos: `packages/react/src/editor/draft/`, `packages/react/src/editor/layout/`, `packages/react/src/editor/problems/`
+- Fazer (MÉDIOS da revisão da tentativa 2 da F50, decididos pela sessão global em 2026-11-20):
+  - **salvamento ao sair (o mais sério):** se o salvamento feito ao sair do editor falhar, a mudança fica guardada na memória da tela, por workflow, e a tela seguinte mostra "Não deu para salvar a última mudança de {workflow}.", com **Voltar ao editor**. Ao voltar, o editor abre com a mudança e tenta salvar de novo. Nada é perdido em silêncio, e nada vai para o `localStorage`;
+  - o aviso "a análise falhou" nunca aparece sobre uma versão já trocada;
+  - com a análise falhando, o contador da barra mostra que pode estar desatualizado ("● N problemas · desatualizado");
+  - o prefetch em voo nunca abre uma revisão mais velha que a do cache;
+  - na lista de problemas, os títulos seguem a ordem (h2 antes de h3);
+  - o botão de recolher tem um rótulo fixo, e só o `aria-expanded` muda;
+  - **Desfazer e Refazer:** sem botões visíveis neste épico (decisão da global: o estilos.md não os desenha, e a barra fica mínima). A região do canvas declara `aria-keyshortcuts="Control+Z Control+Shift+Z"`.
+- Aceite: um teste para cada item, inclusive a falha do salvamento ao sair com a volta ao editor e a mudança intacta, e nada em `localStorage` nem `sessionStorage`.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
