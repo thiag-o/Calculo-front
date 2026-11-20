@@ -1187,7 +1187,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - dep: B90
 - modelo: sonnet
 - arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`
-- Fazer: gerar os tipos do contrato da B90 (`pnpm api:types`) e acrescentar os exemplos do épico 5 ao contrato simulado do e2e.
+- Fazer: gerar os tipos do contrato da B90 (`pnpm generate:api`) e acrescentar os exemplos do épico 5 ao contrato simulado do e2e. A regeneração também traz o cabeçalho `Retry-After` do 429 (B108), que ficou fora dos tipos no portão F59.
 - Aceite: `pnpm typecheck` e o `contract-examples` verdes; os tipos do rascunho na versão 2, da prévia e do trace aparecem no gerado.
 
 **F63 · Editor: fonte do lote e entradas declaradas**
@@ -1304,8 +1304,20 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
   - **no modo real**, usar o workflow "Campanha de referência" do `prepare-local` e os registros e valores esperados do `backend/tests/reference_campaign/`.
 - Aceite: `pnpm e2e` passa. O modo real é exercitado no teste de integração do CK5.
 
+**F88 · Prova visual das telas nos dois temas e nas três larguras**
+- dep: —
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/visual/`, `playwright.config.ts`, `README.md`
+- Fazer (ressalva do portão F59, decidida pela sessão global em 2026-11-20): um projeto do Playwright, `visual`, que abre as telas dos épicos 1 a 4 (login, Início, Administração, Catálogo, lista de workflows, Visão geral e editor com canvas, propriedades, grade e Calcular) no modo simulado, nos temas claro e escuro (`colorScheme`) e nas larguras de 1440, 1180 e 900 px. Ele guarda as capturas em `e2e/visual/__screenshots__/` e confere:
+  - nenhuma barra de rolagem horizontal na página;
+  - o contraste de texto mínimo do estilos.md nas cores calculadas;
+  - o menu só com ícones abaixo de 1180 px.
+  Ele roda com `pnpm e2e:visual`, fora do `pnpm e2e`.
+- Aceite: as capturas geradas e conferidas a olho pelo verificador contra o estilos §12 a §16; as três checagens automáticas verdes; o portão de cada épico passa a rodar o `pnpm e2e:visual`.
+
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88
 - modelo: sonnet
-- Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15).
+- Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
