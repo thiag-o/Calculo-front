@@ -905,7 +905,7 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 **F57 · Integração do épico 4: rotas, menu, Início e interface pública**
 - dep: F49, F51, F53, F54, F55, F56
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/workflows/index.ts`, `packages/react/src/workflows/Workflows.tsx`, `packages/react/src/module/`, `packages/react/src/home/`, `packages/react/src/index.ts`, `apps/shell/src/`, `docs/incorporacao.md`, `docs/glossario.md`, `README.md`, `.changeset/`
+- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/workflows/index.ts`, `packages/react/src/workflows/Workflows.tsx`, `packages/react/src/module/`, `packages/react/vite.config.ts`, `e2e/support/simulated-api.ts`, `e2e/epic-2/support/simulation.ts`, `e2e/epic-3/support/simulation.ts`, `packages/react/src/home/`, `packages/react/src/index.ts`, `apps/shell/src/`, `docs/incorporacao.md`, `docs/glossario.md`, `README.md`, `.changeset/`
 - Fazer:
   - **editor:** `<Editor>` monta o layout da F50 com o canvas e as camadas (F51), as propriedades por tipo de item (F53 e as da Tabela, da F54), a grade da F54 no lugar do canvas e as abas Problemas e Calcular (F50, F55);
     - peças prontas: `<WorkflowCanvas onOpenProperties>` e `<Layers>` (F51), o painel de Propriedades (F53), a grade (F54, aberta pelo `isGridPath`), a aba Calcular (F55) e o `<UnsavedChangesNotice>` (F74), este nas telas seguintes ao editor;
@@ -1082,9 +1082,20 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
 - Fazer (decidido pela sessão global em 2026-11-20; o NUL apareceu no código da F52 e da F57): um script que procura NUL (` `) e outros caracteres de controle (exceto tab, LF e CR) nos arquivos versionados de texto (`git ls-files`, ignorando binários) e falha apontando arquivo e linha. Ele entra no `pnpm lint`.
 - Aceite: um arquivo de teste temporário com NUL faz o `pnpm lint` falhar com o caminho e a linha; sem ele, o lint passa; a busca roda em menos de 5 s no repositório.
 
+**F83 · Manutenção: troca de tenant dentro do workflow e anúncios das camadas (revisão da F57)**
+- dep: F57
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/module/`, `packages/react/src/editor/layers/`
+- Fazer (decidido pela sessão global em 2026-11-20):
+  - ao trocar de tenant com um workflow aberto (qualquer rota `/workflows/:id…`), o módulo vai para `/workflows` do tenant novo, e a barra nunca mostra o workflow do tenant antigo;
+  - **menu no nível do workflow (E4-25, estilos §12):** o menu do workflow **substitui** o do tenant, como no Vercel. A volta ao nível do tenant é pelo seletor de contexto, em que o nome do tenant é clicável e leva ao Início. Confira que isso existe e funciona pelo teclado;
+  - as camadas usam o `useAnnouncement` para os anúncios de incluir e remover, e um anúncio igual ao anterior é lido de novo.
+- Aceite: um teste para cada item; os testes da F57 e da F79 seguem verdes.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
