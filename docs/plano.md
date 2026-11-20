@@ -1031,9 +1031,24 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - testes do `badInput` em data, em data e hora e num item da lista múltipla.
 - Aceite: um teste para cada item; os testes da F54 e da F55 seguem verdes.
 
+**F79 · Manutenção: desempenho e teclado do canvas (revisão da F51)**
+- dep: F51
+- modelo: opus
+- revisão: não
+- arquivos: `packages/react/src/editor/canvas/`, `packages/react/src/editor/layers/`, `packages/react/src/editor/decision-table/`, `packages/react/src/editor/draft/names.ts`, `docs/adr/0037-*.md`
+- Fazer (achados da revisão da tentativa 2 da F51, decididos pela sessão global em 2026-11-20):
+  - **desempenho (ALTO):** o `canvasGraph` devolve nós e arestas estáveis. Um bloco que não mudou mantém a mesma referência, e o `memo(BlockNode)` passa a valer. O cache apaga os ids removidos;
+  - o Delete usa a contagem só com a análise em dia (`problemsOutdated`); com ela atrasada, diz "Conferindo quem usa este bloco…" e espera;
+  - Delete e Esc funcionam pelas camadas, e o Tab das camadas segue a seleção do canvas;
+  - incluir e remover são anunciados ao leitor de tela, e depois de remover o foco vai para o bloco vizinho, ou para o canvas;
+  - o `newBlock` é calculado dentro do atualizador do estado;
+  - a regra do nome livre (`calc_N`, `resultado_N`) fica num lugar só (`editor/draft/names.ts`), usada pelo canvas e pela grade;
+  - a ADR 0037 passa a citar o `base.css` do React Flow.
+- Aceite: um teste que edita um bloco e confere que os outros nós mantêm a mesma referência (sem novo render); um teste para cada item de teclado e de leitor de tela; os testes da F51 e da F54 seguem verdes.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
