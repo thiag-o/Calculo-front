@@ -1320,6 +1320,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
     - ver os valores no canvas;
   - **no modo real**, usar o workflow "Campanha de referência" do `prepare-local` e os registros e valores esperados do `backend/tests/reference_campaign/`.
 - Aceite: `pnpm e2e` passa. O modo real é exercitado no teste de integração do CK5.
+- D31 (2026-11-21): a tela Auditoria › Configuração não existe; o fluxo do aceite da primeira linha vai até salvar o aceite no rascunho, e o evento fica provado pelos testes do back (B96). A tela entra no épico 10.
 
 **F88 · Prova visual das telas nos dois temas e nas três larguras**
 - dep: —
@@ -1389,9 +1390,16 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95, F96
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95, F96, F107
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
+
+**F107 · Manutenção: barra da fonte do lote sem permissão para ver o dataset (D31)**
+- dep: F69
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/sources/batch-source/`
+- Fazer: quem não tem `connections.view` (o Aprovador) não lê o catálogo. Hoje a `BatchSourceBar` fica em "Carregando dataset" para sempre. Ela passa a tratar o erro como as propriedades já tratam: mostra "Sem permissão para ver o dataset" (e o motivo de outros erros), nunca um carregando sem fim; a chave e as variáveis do workflow continuam aparecendo pelo nome no workflow.
+- Aceite: testes da barra com 403, com outro erro e com sucesso; o e2e do Aprovador (F70) passa a conferir o texto da barra.
 
 ### Épico 6 — Execução em lote e entrega em CSV
 
