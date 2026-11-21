@@ -130,11 +130,20 @@ export const DATETIME_RULE_MESSAGE = 'Use data e hora em ISO 8601 com fuso, como
 export function isIsoDateTime(text: string): boolean {
   const match = ISO_DATETIME.exec(text);
   if (!match) return false;
-  const [, , month, day, hour, minute, second = '0', zoneHour = '0', zoneMinute = '0'] = match;
-  const inRange =
-    Number(month) >= 1 && Number(month) <= 12 && Number(day) >= 1 && Number(day) <= 31 && Number(hour) <= 23 &&
-    Number(minute) <= 59 && Number(second) <= 59 && Number(zoneHour) <= 23 && Number(zoneMinute) <= 59;
-  return inRange && !Number.isNaN(Date.parse(text));
+  const [, year, month, day, hour, minute, second = '0', zoneHour = '0', zoneMinute = '0'] = match;
+  if (Number(second) > 59 || Number(zoneHour) > 23 || Number(zoneMinute) > 59) return false;
+  // Build the moment from the numbers of the text and compare back: a day that does not exist rolls over and differs.
+  // `setUTCFullYear` keeps years below 100 from being read as 19xx.
+  const built = new Date(0);
+  built.setUTCFullYear(Number(year), Number(month) - 1, Number(day));
+  built.setUTCHours(Number(hour), Number(minute), 0, 0);
+  return (
+    built.getUTCFullYear() === Number(year) &&
+    built.getUTCMonth() === Number(month) - 1 &&
+    built.getUTCDate() === Number(day) &&
+    built.getUTCHours() === Number(hour) &&
+    built.getUTCMinutes() === Number(minute)
+  );
 }
 
 /** What the field shows for a literal of the definition: the inverse of `toLiteral` (anything else shows as it is). */

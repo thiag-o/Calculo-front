@@ -51,6 +51,15 @@ describe('regras do filtro', () => {
     expect(toLiteral('datetime', null, 'DATA(2026, 1, 1)')).toEqual(refused);
   });
 
+  it('recusa data e hora de um dia que não existe e aceita o 29 de fevereiro de ano bissexto', () => {
+    const refused = { ok: false, message: 'Use data e hora em ISO 8601 com fuso, como 2026-10-01T08:00:00-03:00.' };
+    expect(toLiteral('datetime', null, '2026-02-30T08:00-03:00')).toEqual(refused);
+    expect(toLiteral('datetime', null, '2026-13-01T00:00Z')).toEqual(refused);
+    expect(toLiteral('datetime', null, '2026-04-31T10:00+00:00')).toEqual(refused);
+    expect(toLiteral('datetime', null, '2026-02-29T08:00-03:00')).toEqual(refused);
+    expect(toLiteral('datetime', null, '2028-02-29T08:00-03:00')).toEqual({ ok: true, value: '2028-02-29T08:00-03:00' });
+  });
+
   it('mostra o literal como a pessoa digita', () => {
     expect(fromLiteral('text', '"A"')).toBe('A');
     expect(fromLiteral('text', '"diz ""oi"""')).toBe('diz "oi"');
