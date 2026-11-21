@@ -1357,8 +1357,16 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - Fazer: o `isIsoDateTime` (`filterRules.ts`) aceita um dia que não existe, como `2026-02-30T08:00-03:00`, porque o `Date.parse` passa para o mês seguinte. A conferência passa a montar a data pelos números do texto e a comparar de volta (ano, mês, dia, hora e minuto iguais), sem depender do `Date.parse`; o aviso no campo é o mesmo da data inválida.
 - Aceite: `2026-02-30T08:00-03:00`, `2026-13-01T00:00Z` e `2026-04-31T10:00+00:00` são recusados; `2028-02-29T08:00-03:00` passa.
 
+**F94 · Manutenção: formatadores de valores num nível comum do editor (D25)**
+- dep: F66, F67
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/editor/values/` (novo), `packages/react/src/editor/preview/`, `packages/react/src/editor/unit-run/values.ts`, `packages/react/src/editor/unit-run/`
+- Fazer: os formatadores de número da API e de data e hora descem para `editor/values/`, usados pelo `preview` e pelo `unit-run`; saem as cópias locais da F66. O sentido de dependência fica: `unit-run` → `preview` (amostra da última prévia, F67), e os dois → `values`; nunca `preview` → `unit-run`.
+- Aceite: nenhum formatador duplicado; nenhum import de `../unit-run` no `preview`; os testes dos dois e o `pnpm e2e` passam sem mudar o que aparece na tela.
+
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
