@@ -31,8 +31,8 @@ export const ORDER_MAX = 10;
 export const OUTPUTS_MAX = 100;
 export const NODE_NAME_MAX = 200;
 export const DESCRIPTION_MAX = 500;
-/** The variable name rule (Contratos, "Nomes de variável"; E3-10), checked as typed, like the API. */
-export const NAME_PATTERN = /^[a-z][a-z0-9_]{0,62}$/;
+// The variable name rule (Contratos, "Nomes de variável"; E3-10), one copy: the one of the properties.
+export { NAME_PATTERN } from '../../properties';
 
 /** Where a node is: its `path` (`root.nodes[2]`, `root.nodes[1].nodes[0]`) and the groups around it, outermost first. */
 export interface NodePlace {

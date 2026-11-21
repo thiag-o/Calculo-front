@@ -57,6 +57,27 @@ describe('Propriedades da fonte do lote', () => {
     expect(within(order).getByText('A chave entra como último critério')).toBeVisible();
   });
 
+  it('com o componente de filtros, mostra um único grupo "Filtros", sem aninhar outro', async () => {
+    simulateApi();
+    renderWithDraft(
+      <BatchSourceProperties
+        renderFilters={({ filters }) => (
+          <fieldset>
+            <legend>Filtros</legend>
+            <p>{filters.length} filtro(s)</p>
+          </fieldset>
+        )}
+      />,
+      { draft: exampleDraft({ batchSource: exampleBatchSource() }) },
+    );
+
+    const groups = screen.getAllByRole('group', { name: 'Filtros' });
+    expect(groups).toHaveLength(1);
+    expect(within(groups[0]!).getByText('1 filtro(s)')).toBeInTheDocument();
+    expect(within(groups[0]!).queryByRole('group')).not.toBeInTheDocument();
+    expect(await screen.findByText('Itens de nota fiscal')).toBeInTheDocument();
+  });
+
   it('marcar uma variável a traz com o nome do catálogo; desmarcar tira também da chave e da ordenação', async () => {
     simulateApi();
     const { user } = renderSource(exampleBatchSource({ key: [], filters: [], order_by: [], outputs: [] }));

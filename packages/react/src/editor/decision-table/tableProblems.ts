@@ -6,7 +6,8 @@
 import type { WorkflowDefinition, WorkflowProblem } from '../draft';
 import { findTable, type DecisionTableNode } from './tableModel';
 
-const NODE_PATH = /^root\.nodes\[(\d+)\]/;
+// `root.nodes[1]`, or `root.nodes[1].nodes[0]` (a block inside a group, at any depth).
+const NODE_PATH = /^root\.nodes\[\d+\](?:\.nodes\[\d+\])*/;
 const CELL = /^\.rules\[(\d+)\]\.(when|then)\[(\d+)\]$/;
 const RULE = /^\.rules\[(\d+)\]$/;
 const CONDITION = /^\.conditions\[(\d+)\]\.expression$/;
@@ -75,7 +76,7 @@ function currentIndex<T>(analyzed: readonly T[] | undefined, current: readonly T
 
 /**
  * The place of a path of the table in the current table. `analyzed` is the table as it was analyzed (the same id in
- * `analyzedDefinition`); `rest` is the path after `root.nodes[i]`. `null` when the place no longer exists.
+ * `analyzedDefinition`); `rest` is the path after the block path (`root.nodes[i]`). `null` when the place no longer exists.
  */
 export function placeOf(rest: string, analyzed: DecisionTableNode | undefined, current: DecisionTableNode): TablePlace | null {
   let match = CELL.exec(rest);
@@ -121,12 +122,23 @@ export function placeOfPath(
   problemNodeId: string | null = null,
 ): TablePlace | null {
   const match = path ? NODE_PATH.exec(path) : null;
-  const analyzedNode = match ? analyzedDefinition.root.nodes[Number(match[1])] : undefined;
+  const analyzedNode = match ? nodeAtPath(analyzedDefinition, match[0]) : undefined;
   const owner = problemNodeId ?? analyzedNode?.id;
   if (owner !== nodeId) return null;
   if (!match || !path) return { kind: 'table' };
   const analyzed = analyzedNode && analyzedNode.id === nodeId && analyzedNode.type === 'decision_table' ? analyzedNode : findTable(analyzedDefinition, nodeId)?.node;
   return placeOf(path.slice(match[0].length), analyzed, current);
+}
+
+/** The node a block path (`root.nodes[1].nodes[0]`) points to in `definition`, or `undefined` when there is none. */
+function nodeAtPath(definition: WorkflowDefinition, blockPath: string): WorkflowDefinition['root']['nodes'][number] | undefined {
+  let nodes: readonly WorkflowDefinition['root']['nodes'][number][] | undefined = definition.root.nodes;
+  let node: WorkflowDefinition['root']['nodes'][number] | undefined;
+  for (const step of blockPath.matchAll(/\[(\d+)\]/g)) {
+    node = nodes?.[Number(step[1])];
+    nodes = node?.type === 'group' ? node.nodes : undefined;
+  }
+  return node;
 }
 
 function add<K>(map: Map<K, WorkflowProblem[]>, key: K, problem: WorkflowProblem) {

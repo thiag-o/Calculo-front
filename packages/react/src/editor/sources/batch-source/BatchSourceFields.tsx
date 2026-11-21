@@ -476,39 +476,42 @@ function FiltersPart({ source, catalog, renderFilters }: FiltersPartProps) {
     if (variable) variables.push({ name: output.name, type: variable.type, scale: variable.scale });
   }
 
-  return (
-    <fieldset className="fc-batch-source-part">
-      <legend className="fc-batch-source-legend fc-batch-source-title">Filtros</legend>
-      {renderFilters ? (
-        renderFilters({
+  // The filters component brings its own "Filtros" fieldset: wrapping it in another one would nest two with the same name.
+  if (renderFilters) {
+    return (
+      <div className="fc-batch-source-part">
+        {renderFilters({
           filters: source.filters,
           variables,
           path: FILTERS_PATH,
           problems: filterProblems,
           onChange: (filters) => change(editor, (current) => withFilters(current, filters)),
-        })
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <fieldset className="fc-batch-source-part">
+      <legend className="fc-batch-source-legend fc-batch-source-title">Filtros</legend>
+      {source.filters.length === 0 ? (
+        <Text as="p" variant="label-13" emphasis="secondary" className="fc-batch-source-empty">
+          {NO_FILTERS}
+        </Text>
       ) : (
-        <>
-          {source.filters.length === 0 ? (
-            <Text as="p" variant="label-13" emphasis="secondary" className="fc-batch-source-empty">
-              {NO_FILTERS}
-            </Text>
-          ) : (
-            <ul className="fc-batch-source-list" aria-label="Filtros da fonte do lote">
-              {source.filters.map((filter, index) => (
-                <li key={index} className="fc-batch-source-code">
-                  {[filter.variable, OPERATOR_TEXT[filter.operator], ...filter.values].join(' ')}
-                </li>
-              ))}
-            </ul>
-          )}
-          {filterProblems.map((problem, index) => (
-            <FieldMessage key={`${problem.code}-${index}`} type="error">
-              {problem.message}
-            </FieldMessage>
+        <ul className="fc-batch-source-list" aria-label="Filtros da fonte do lote">
+          {source.filters.map((filter, index) => (
+            <li key={index} className="fc-batch-source-code">
+              {[filter.variable, OPERATOR_TEXT[filter.operator], ...filter.values].join(' ')}
+            </li>
           ))}
-        </>
+        </ul>
       )}
+      {filterProblems.map((problem, index) => (
+        <FieldMessage key={`${problem.code}-${index}`} type="error">
+          {problem.message}
+        </FieldMessage>
+      ))}
     </fieldset>
   );
 }

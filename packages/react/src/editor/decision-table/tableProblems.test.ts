@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { definitionWith, problemAt, table } from './decision-table.test-support';
-import { insertRule, moveRule, removeColumn, removeRule, setCell } from './tableModel';
+import { nestedDraft } from '../groups/groups.test-support';
+import { findTable, insertRule, moveRule, removeColumn, removeRule, setCell } from './tableModel';
 import { cellKey, isGridPath, tableProblems } from './tableProblems';
 
 const message = 'Problema de exemplo.';
@@ -45,6 +46,23 @@ describe('tableProblems', () => {
     const problems = [problemAt('.rules[0].then[1]', message), problemAt('.rules[0].when[0]', message)];
     const current = removeColumn(analyzed, 0);
     expect([...tableProblems(problems, definition, current).cells.keys()]).toEqual([cellKey(0, 2)]);
+  });
+
+  it('põe o problema de uma Tabela dentro de dois grupos na célula, e não na tabela inteira', () => {
+    const definition = nestedDraft().definition;
+    const found = findTable(definition, 'td_elegibilidade')!;
+    const path = 'root.nodes[0].nodes[0].nodes[0]';
+    const problems = [
+      { ...problemAt('', message), node_id: 'td_elegibilidade', path: `${path}.rules[0].then[0]` },
+      { ...problemAt('', message), node_id: 'td_elegibilidade', path: `${path}.rules[0].when[0]` },
+      { ...problemAt('', message), node_id: 'td_elegibilidade', path: `${path}.name` },
+    ];
+    const placed = tableProblems(problems, definition, found.node);
+    expect([...placed.cells.keys()]).toEqual([cellKey(0, 1), cellKey(0, 0)]);
+    expect([...placed.fields.keys()]).toEqual(['name']);
+    expect(placed.table).toHaveLength(0);
+    expect(isGridPath(`${path}.rules[0].when[0]`)).toBe(true);
+    expect(isGridPath(`${path}.conditions[0].expression`)).toBe(false);
   });
 
   it('reconhece o path de uma célula ou de uma regra, que pede a grade', () => {
