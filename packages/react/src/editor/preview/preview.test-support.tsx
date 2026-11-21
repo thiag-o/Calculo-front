@@ -68,8 +68,6 @@ const CAMPANHA: DefinitionNode = {
   dataset_id: DATASET_CAMPANHA,
   links: [{ variable: 'cod_prod', column_variable_id: variable(30) }],
   filters: [],
-  no_match: 'error',
-  multiple_rows: 'error',
   exists: true,
 };
 

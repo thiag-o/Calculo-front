@@ -25,6 +25,11 @@ const MODE_LABELS: Record<Schemas['SourceMode'], string> = { linear: 'Linear', f
  * "Gerar erro" is an error, with "Manter vazio" a warning, with "Descartar" ignored; more than one line with "Gerar erro"
  * is an error and with "Aceitar a primeira linha" a warning. A zero count is gray.
  */
+/** A block that is now a Filtro has no policy to judge the counts by: the dot stays neutral (zero is gray anyway). */
+function blockTone(node: { mode: string } | undefined, count: number, policyTone: () => StatusTone): StatusTone {
+  return count === 0 || node?.mode === 'filter' ? 'gray' : policyTone();
+}
+
 function noMatchTone(count: number, policy: Schemas['NoMatchPolicy'] | undefined): StatusTone {
   if (count === 0) return 'gray';
   if (policy === 'keep_null') return 'amber';
@@ -175,10 +180,10 @@ function SourceItem({ source, name, label, node, types }: SourceItemProps) {
               <Status tone={(source.found ?? 0) > 0 ? 'green' : 'gray'}>{countText.found(source.found ?? 0)}</Status>
             </li>
             <li>
-              <Status tone={noMatchTone(source.no_match ?? 0, node?.no_match)}>{countText.noMatch(source.no_match ?? 0)}</Status>
+              <Status tone={blockTone(node, source.no_match ?? 0, () => noMatchTone(source.no_match ?? 0, node?.mode === 'linear' ? node.no_match : undefined))}>{countText.noMatch(source.no_match ?? 0)}</Status>
             </li>
             <li>
-              <Status tone={multipleRowsTone(source.multiple_rows ?? 0, node?.multiple_rows)}>
+              <Status tone={blockTone(node, source.multiple_rows ?? 0, () => multipleRowsTone(source.multiple_rows ?? 0, node?.mode === 'linear' ? node.multiple_rows : undefined))}>
                 {countText.multipleRows(source.multiple_rows ?? 0, source.max_rows)}
               </Status>
             </li>

@@ -1,5 +1,6 @@
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Schemas } from '../../api';
 import { clearSessionData } from '../../session';
 import {
   DRAFT,
@@ -128,6 +129,33 @@ describe('aba Prévia: estados', () => {
     expect(within(counts).getByText('0 com mais de uma linha')).toBeInTheDocument();
     expect(within(fatores).queryByRole('list', { name: /chaves de exemplo/ })).not.toBeInTheDocument();
     expect(within(fatores).getByRole('cell', { name: '0,1500' })).toBeInTheDocument();
+  });
+
+  it('no bloco que virou Filtro, a política não vale: as contagens da prévia ficam em ponto neutro', async () => {
+    const produto = DRAFT.definition.root.nodes.find((node) => node.id === 'produto');
+    if (produto?.type !== 'source') throw new Error('expected the Fonte "produto"');
+    const filter: Schemas['FilterSourceNode'] = {
+      id: produto.id,
+      type: 'source',
+      name: produto.name,
+      description: null,
+      position: produto.position,
+      mode: 'filter',
+      dataset_id: produto.dataset_id,
+      links: produto.links,
+      filters: [],
+      exists: true,
+    };
+    const draft: Schemas['Draft'] = {
+      ...DRAFT,
+      definition: { ...DRAFT.definition, root: { ...DRAFT.definition.root, nodes: DRAFT.definition.root.nodes.map((node) => (node.id === 'produto' ? filter : node)) } },
+    };
+    api.respond(PREVIEW_ROUTE, json(PREVIEW));
+    const { user } = renderTab({ draft });
+    await user.click(runButton());
+    const counts = await screen.findByRole('list', { name: 'Contagens de Produtos' });
+    expect(within(counts).getByText('12 sem correspondência').closest('.fc-status')).toHaveClass('fc-status-gray');
+    expect(within(counts).getByText('8 com mais de uma linha (máx. 3)').closest('.fc-status')).toHaveClass('fc-status-gray');
   });
 
   it('resultado por grupo: os registros de exemplo com Input e Output lado a lado', async () => {
