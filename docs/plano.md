@@ -1390,7 +1390,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95, F96, F107
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95, F96, F107, F108
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
 
@@ -1400,6 +1400,15 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - arquivos: `packages/react/src/editor/sources/batch-source/`
 - Fazer: quem não tem `connections.view` (o Aprovador) não lê o catálogo. Hoje a `BatchSourceBar` fica em "Carregando dataset" para sempre. Ela passa a tratar o erro como as propriedades já tratam: mostra "Sem permissão para ver o dataset" (e o motivo de outros erros), nunca um carregando sem fim; a chave e as variáveis do workflow continuam aparecendo pelo nome no workflow.
 - Aceite: testes da barra com 403, com outro erro e com sucesso; o e2e do Aprovador (F70) passa a conferir o texto da barra.
+
+**F108 · Manutenção: texto da barra no e2e do Aprovador e formatação de valores num lugar só**
+- dep: F96, F107
+- modelo: sonnet
+- arquivos: `e2e/epic-5/roles.spec.ts`, `packages/react/src/editor/unit-run/values.ts`, `packages/react/src/editor/unit-run/UnitRunResult.tsx`, `packages/react/src/editor/preview/`, `packages/react/src/editor/values/`
+- Fazer:
+  - o e2e do Aprovador confere o texto "Sem permissão para ver o dataset" na barra da fonte do lote (aceite da F107);
+  - a formatação de valores fica só em `editor/values/`: o `unit-run/values.ts` deixa de reexportar o `formatValue` (o `UnitRunResult.tsx` importa direto), e o `preview/values.ts` perde a sua `formatValue` e o `variableTypes` duplicados.
+- Aceite: o e2e do Aprovador confere o texto; `git grep` acha uma definição só de `formatValue` e de `variableTypes` no editor; testes e e2e verdes.
 
 ### Épico 6 — Execução em lote e entrega em CSV
 
