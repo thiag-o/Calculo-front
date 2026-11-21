@@ -1349,8 +1349,16 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - Fazer: regenerar os tipos com o `SourceNode` em `oneOf` (B126) e trocar o `Reflect.deleteProperty` da F64 pelo tipo do modo Filtro, que não tem `no_match` nem `multiple_rows`. Sem cast, sem `any`.
 - Aceite: nenhum `Reflect.deleteProperty` sobra no bloco Fonte; typecheck, testes e `pnpm e2e` verdes.
 
+**F93 · Manutenção: data e hora inexistente recusada no filtro (revisão da F64)**
+- dep: F64
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/editor/sources/filters/`
+- Fazer: o `isIsoDateTime` (`filterRules.ts`) aceita um dia que não existe, como `2026-02-30T08:00-03:00`, porque o `Date.parse` passa para o mês seguinte. A conferência passa a montar a data pelos números do texto e a comparar de volta (ano, mês, dia, hora e minuto iguais), sem depender do `Date.parse`; o aviso no campo é o mesmo da data inválida.
+- Aceite: `2026-02-30T08:00-03:00`, `2026-13-01T00:00Z` e `2026-04-31T10:00+00:00` são recusados; `2028-02-29T08:00-03:00` passa.
+
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
