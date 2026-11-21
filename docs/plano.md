@@ -1209,7 +1209,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 **F63 · Editor: fonte do lote e entradas declaradas**
 - dep: F62
 - modelo: opus
-- arquivos: `packages/react/src/editor/sources/batch-source/`, `packages/react/src/editor/properties/workflow/`
+- arquivos: `packages/react/src/editor/sources/batch-source/`, `packages/react/src/editor/properties/workflow/`, e (D21, ratificado) uma linha em `packages/react/src/editor/properties/PropertiesPanel.tsx` e uma em `packages/react/src/editor/properties/index.ts` (o `WorkflowProperties` mudou de pasta) e as exportações novas em `packages/react/src/catalog/index.ts` (`useDatasetList`, `useDatasetVariables`, `Dataset`, `Variable`, `DATASET_TYPE_LABELS`); quem entrar depois resolve o conflito no rebase
 - Fazer (E5-17):
   - no painel do workflow, a escolha Entradas declaradas | Fonte do lote, com a confirmação;
   - **propriedades da fonte do lote:**
@@ -1297,7 +1297,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 **F69 · Integração do épico 5: editor e interface pública**
 - dep: F63, F64, F65, F66, F67, F68
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/editor/properties/`, `packages/react/src/editor/layout/`, `docs/glossario.md`, `README.md`, `.changeset/`
+- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/editor/properties/`, `packages/react/src/editor/layout/`, `packages/react/src/editor/canvas/` (D21: só a ligação da `BatchSourceBar` da F63 no canvas, a seleção dela abrindo o `BatchSourceProperties` e os filtros da F64 pela prop `renderFilters`, sem mudar o resto do canvas da F65), `docs/glossario.md`, `README.md`, `.changeset/`
 - Fazer:
   - o `<Editor>` mostra as propriedades da fonte do lote, do bloco Fonte e do grupo;
   - a barra de ferramentas ganha Fonte e Agrupar;
