@@ -66,11 +66,12 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0044](0044-edicoes-mantem-a-identidade-do-que-nao-mudou.md) | Edições da definição mantêm os mesmos objetos do que não mudou, para a marca de problema acompanhar a regra (segue a 0042) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0045](0045-memoria-da-tela-em-weakmap-por-query-client.md) | Lembrar na tela sem persistir: `WeakMap` por `QueryClient`, com chave de pessoa, tenant e item (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0046](0046-texto-invalido-fica-no-campo-e-nao-vai-ao-rascunho.md) | Texto que daria erro de forma fica no campo, com o erro, e não vai ao rascunho (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
-| [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md) | Outras sub-verticais do editor podem importar peças de `properties/index.ts` (complementa 0042) | aceita, revisar no checkpoint | 2026-11-20 |
+| [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md) | Outras sub-verticais do editor podem importar peças de `properties/index.ts` (complementa 0042) | aceita, revisar no checkpoint (complementada por 0052) | 2026-11-20 |
 | [0048](0048-limpeza-unica-da-sessao-e-telas-remontadas.md) | Limpar a sessão num lugar só (`clearSessionData`, `replaceSessionInCache`, `onSessionDataCleared`) e remontar as telas por geração (complementa 0015 e 0019, corrige 0045) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0049](0049-marca-da-sessao-antes-de-gravar-no-cache.md) | Resposta que grava no cache confere a marca da sessão (`sessionDataMark`/`isSameSessionData`) (complementa 0015 e 0019) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0050](0050-workflows-recebe-o-editor-por-render-props.md) | `<Workflows>` recebe o editor por `renderEditor`; editor em rota irmã de tela cheia (segue a 0003) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0051](0051-plugin-troca-react-compiler-runtime-por-esm.md) | Plugin do Vite troca o `react-compiler-runtime` do React Flow por ESM (complementa 0037) | aceita, revisar no checkpoint | 2026-11-20 |
+| [0052](0052-properties-workflow-importa-sources-batch-source.md) | `properties/workflow` importa `sources/batch-source/index.ts`, com ciclo permitido entre as duas (complementa 0047) | aceita, revisar no checkpoint | 2026-11-21 |
 
 ## Pendentes (sem ADR ainda)
 

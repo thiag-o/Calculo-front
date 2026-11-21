@@ -1,0 +1,4 @@
+/* Editor › properties › workflow (estilos.md §3 and §7.2): the note under "Origem dos valores". Only fc- classes (ADR 0002). */
+.fc-properties-workflow-note {
+  margin: calc(-1 * var(--fc-space-4)) 0 0;
+}

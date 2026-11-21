@@ -7,7 +7,7 @@ export { CalculationProperties } from './CalculationProperties';
 export type { CalculationPropertiesProps } from './CalculationProperties';
 export { InputsProperties } from './InputsProperties';
 export { OutputProperties } from './OutputProperties';
-export { WorkflowProperties } from './WorkflowProperties';
+export { WorkflowProperties } from './workflow';
 
 // The pieces the other block forms reuse (the Decision Table's, F54): the frame with the read-only reason, the fields bound
 // to the definition, the policy selects with "Herdar do workflow", the segmented control and the problem paths.

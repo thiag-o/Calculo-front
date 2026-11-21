@@ -1,9 +1,9 @@
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { currentDefinition, exampleDraft, problem, renderPanel, simulateApi } from './properties.test-support';
+import { currentDefinition, exampleDraft, problem, renderPanel, simulateApi } from '../properties.test-support';
 
-vi.mock('../../formula', () => ({ FormulaEditor: () => null }));
+vi.mock('../../../formula', () => ({ FormulaEditor: () => null }));
 
 afterEach(() => {
   cleanup();

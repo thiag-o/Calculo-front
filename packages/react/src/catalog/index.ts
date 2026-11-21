@@ -14,3 +14,8 @@ export { ExcelFiles, ExcelFileList, ExcelFileDetail } from './files';
 
 // The pt-BR names of the data types (`DataType`), also used by the editor's properties (F53).
 export { DATA_TYPE_LABELS, dataTypeLabel } from './columns';
+
+// The tenant datasets and the variables of each, with the name of each dataset type, read by the editor's sources (E5-16).
+export { useDatasetList, useDatasetVariables } from './datasets/queries';
+export type { Dataset, Variable } from './datasets/queries';
+export { DATASET_TYPE_LABELS } from './datasets/origin';

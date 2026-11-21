@@ -4,7 +4,7 @@ import { CalculationProperties } from './CalculationProperties';
 import type { DecisionTableNode } from './definition';
 import { InputsProperties } from './InputsProperties';
 import { OutputProperties } from './OutputProperties';
-import { WorkflowProperties } from './WorkflowProperties';
+import { WorkflowProperties } from './workflow';
 
 export interface PropertiesPanelProps {
   /** The properties of a Decision Table (they belong to the grid, F54). Without it, a selected table shows nothing. */

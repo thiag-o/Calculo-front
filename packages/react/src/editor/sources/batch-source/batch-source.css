@@ -1,0 +1,230 @@
+/*
+ * Editor › batch source (estilos.md §2.4, §3, §4, §7.2, §7.6, §8 and §14): the form of the batch source in the 340px (300px)
+ * properties panel and the Fonte do lote bar of the canvas. Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-batch-source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-20);
+  min-width: 0;
+}
+
+.fc-batch-source-part,
+.fc-batch-source-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fc-batch-source-legend {
+  margin: 0 0 var(--fc-space-4);
+  padding: 0;
+}
+
+/* label-13, 500: the caption of a part of the panel (as in the other properties). */
+.fc-batch-source-title {
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.fc-batch-source-problems,
+.fc-batch-source-list,
+.fc-batch-source-datasets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-batch-source-empty {
+  margin: 0;
+}
+
+/* Variable names: mono-13, cut with an ellipsis only by the field itself. */
+.fc-batch-source-code {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.fc-batch-source-mono .fc-select-value {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+}
+
+/* The datasets of the search: one button per row, the type as a badge on the right (§7.4). */
+.fc-batch-source-datasets {
+  gap: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+.fc-batch-source-dataset {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: var(--fc-space-6) var(--fc-space-8);
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-batch-source-dataset:hover:not(:disabled) {
+  background-color: var(--fc-hover);
+}
+
+.fc-batch-source-dataset[aria-pressed='true'] {
+  background-color: var(--fc-active);
+}
+
+.fc-batch-source-dataset:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-batch-source-dataset:disabled {
+  cursor: not-allowed;
+}
+
+.fc-batch-source-dataset svg {
+  flex: none;
+}
+
+.fc-batch-source-dataset-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--fc-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-batch-source-dataset-chosen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-batch-source-dataset-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  color: var(--fc-text);
+  overflow-wrap: anywhere;
+}
+
+/* A variable brought: the box and, under it, the name in the workflow. */
+.fc-batch-source-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-batch-source-name {
+  margin-left: var(--fc-space-24);
+}
+
+.fc-batch-source-name .fc-field-input {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+}
+
+/* The order: variable and direction side by side, the arrows under them. */
+.fc-batch-source-order {
+  padding: var(--fc-space-12) 0 0;
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-batch-source-order:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.fc-batch-source-order-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+.fc-batch-source-order-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--fc-space-8);
+  align-items: start;
+}
+
+.fc-batch-source-order-actions {
+  display: flex;
+  gap: var(--fc-space-4);
+}
+
+/* A note beside a part: 12px secondary text with the info icon (it says how the order works, so it is essential). */
+.fc-batch-source-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fc-space-4);
+  margin: 0;
+}
+
+.fc-batch-source-note svg {
+  flex: none;
+  margin-top: var(--fc-space-2);
+}
+
+/* The Fonte do lote bar of the canvas: the dataset under the title, the key icon before a key variable. */
+.fc-batch-source-bar-dataset {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  padding: 0 var(--fc-space-8) var(--fc-space-6);
+  white-space: nowrap;
+}
+
+.fc-batch-source-bar-dataset-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc-batch-source-key {
+  display: inline-flex;
+  flex: none;
+  align-self: center;
+  color: var(--fc-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-batch-source-dataset {
+    transition: none;
+  }
+}
