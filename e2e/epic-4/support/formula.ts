@@ -471,9 +471,9 @@ export function checkExpression(expression: Expression, symbols: readonly Symbol
   };
 
   const mismatch = (node: Expression, type: CheckedType): CheckedType => {
-    const word = type in TYPE_WORDS ? TYPE_WORDS[type as DataType] : 'uma lista';
+    const word = type in TYPE_WORDS ? `${type === 'date' || type === 'datetime' ? 'uma' : 'um'} ${TYPE_WORDS[type as DataType]}` : 'uma lista';
     const subject = node.kind === 'variable' ? node.name : 'Este trecho';
-    problems.push({ code: 'type_mismatch', message: `${subject} é ${word} e não entra em conta.`, start: node.start, end: node.end });
+    problems.push({ code: 'type_mismatch', message: `Esperava um número, mas ${subject} é ${word}.`, start: node.start, end: node.end });
     return 'unknown';
   };
 

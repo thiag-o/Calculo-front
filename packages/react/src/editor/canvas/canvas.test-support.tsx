@@ -141,7 +141,7 @@ export const EXAMPLE_DEPENDENCIES: Schemas['Dependency'][] = [
 /** A problem of the "Pontos" formula (the contract example `AnalysisTypeMismatch`). */
 export const TYPE_MISMATCH: Schemas['WorkflowProblem'] = {
   code: 'type_mismatch',
-  message: 'categoria é texto e não entra em conta.',
+  message: 'Esperava um número, mas categoria é um texto.',
   path: 'root.nodes[1].expression',
   node_id: 'calc_pontos',
   start: 6,

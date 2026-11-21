@@ -168,7 +168,7 @@ describe('Editor, grade da Tabela de Decisão', () => {
         problems: [
           {
             code: 'type_mismatch',
-            message: 'categoria é texto e não entra em conta.',
+            message: 'Esperava um número, mas categoria é um texto.',
             path: 'root.nodes[1].expression',
             node_id: 'calc_pontos',
             start: 6,
@@ -182,7 +182,7 @@ describe('Editor, grade da Tabela de Decisão', () => {
     const { user } = open();
     const editor = await region();
 
-    await user.click(await within(editor).findByRole('button', { name: /categoria é texto e não entra em conta/ }, SLOW));
+    await user.click(await within(editor).findByRole('button', { name: /Esperava um número, mas categoria é um texto/ }, SLOW));
     expect(within(editor).queryByRole('region', { name: /^Tabela de Decisão/ })).not.toBeInTheDocument();
     expect(await within(editor).findByRole('toolbar', { name: 'Incluir bloco' }, SLOW)).toBeInTheDocument();
   });

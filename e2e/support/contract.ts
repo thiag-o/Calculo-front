@@ -1464,7 +1464,7 @@ export const EXAMPLES = {
     problems: [
       {
         code: 'type_mismatch',
-        message: 'categoria é texto e não entra em conta.',
+        message: 'Esperava um número, mas categoria é um texto.',
         path: 'root.nodes[2].expression',
         node_id: 'calc_pontos',
         start: 13,
@@ -1936,9 +1936,9 @@ export const EXAMPLES = {
   },
   DefinitionTooLarge: {
     type: 'about:blank',
-    title: 'Definição grande demais',
+    title: 'Arquivo grande demais',
     status: 413,
-    detail: 'A definição do workflow passa do limite de 1 MB.',
+    detail: 'O corpo da requisição passa do limite de 1 MB.',
     code: 'definition_too_large',
   },
   InvalidDataDefinition: {
@@ -1948,19 +1948,19 @@ export const EXAMPLES = {
     detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
     code: 'invalid_data',
     fields: {
-      'root.nodes[2].output.scale': 'Use de 0 a 18 casas decimais.',
+      'root.nodes[2].output.scale': 'Use de 0 a 18 casas.',
     },
   },
   DraftHasProblems: {
     type: 'about:blank',
-    title: 'Rascunho com problemas',
+    title: 'Dados inválidos',
     status: 422,
     detail: 'Corrija os problemas do rascunho antes de calcular.',
     code: 'draft_has_problems',
     problems: [
       {
         code: 'type_mismatch',
-        message: 'categoria é texto e não entra em conta.',
+        message: 'Esperava um número, mas categoria é um texto.',
         path: 'root.nodes[2].expression',
         node_id: 'calc_pontos',
         start: 13,
@@ -1971,7 +1971,7 @@ export const EXAMPLES = {
   },
   InvalidInputs: {
     type: 'about:blank',
-    title: 'Entradas inválidas',
+    title: 'Dados inválidos',
     status: 422,
     detail: 'Alguns valores digitados estão inválidos. Confira as entradas e tente de novo.',
     code: 'invalid_inputs',

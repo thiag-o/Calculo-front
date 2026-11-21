@@ -138,7 +138,7 @@ export const DRAFT: Schemas['Draft'] = {
 
 export const PROBLEM: Schemas['WorkflowProblem'] = {
   code: 'type_mismatch',
-  message: 'categoria é texto e não entra em conta.',
+  message: 'Esperava um número, mas categoria é um texto.',
   path: 'root.nodes[2].expression',
   node_id: 'calc_pontos',
   start: 6,

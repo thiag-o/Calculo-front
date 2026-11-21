@@ -20,7 +20,7 @@ import {
 
 const WRONG_FORMULA = 'valor_item + categoria';
 /** The backend's message for text in a sum (contract, example `AnalysisTypeMismatch`). */
-const TYPE_MISMATCH_MESSAGE = 'categoria é texto e não entra em conta.';
+const TYPE_MISMATCH_MESSAGE = 'Esperava um número, mas categoria é um texto.';
 
 test('o erro de tipo aparece na fórmula, no bloco, nas camadas e no contador, e some ao corrigir', async ({ page, epic4 }) => {
   const name = `Pontuação com erro e2e ${suffix()}`;

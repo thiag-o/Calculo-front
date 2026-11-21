@@ -170,7 +170,7 @@ describe('Propriedades do Cálculo', () => {
     const draft = exampleDraft({
       problems: [
         problem('cycle', 'Ciclo: pontos → pontos.', 'root.nodes[2]', 'calc_pontos'),
-        problem('type_mismatch', 'categoria é texto e não entra em conta.', 'root.nodes[2].expression', 'calc_pontos'),
+        problem('type_mismatch', 'Esperava um número, mas categoria é um texto.', 'root.nodes[2].expression', 'calc_pontos'),
         problem('duplicate_name', 'pontos já é o nome de outra variável.', 'root.nodes[2].output.name', 'calc_pontos'),
         problem('formula_empty', 'Escreva a fórmula de Pontos já ganhos.', 'root.nodes[1].expression', 'calc_historico'),
       ],
@@ -183,7 +183,7 @@ describe('Propriedades do Cálculo', () => {
     expect(screen.getByRole('textbox', { name: /^Nome da variável( \(.+\))?$/ })).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByRole('textbox', { name: /^Nome do bloco( \(.+\))?$/ })).not.toHaveAttribute('aria-invalid');
     // The formula's problems go to the formula editor, which shows them under the field.
-    expect(screen.getByText('categoria é texto e não entra em conta.')).toBeInTheDocument();
+    expect(screen.getByText('Esperava um número, mas categoria é um texto.')).toBeInTheDocument();
     expect(within(screen.getByRole('list', { name: 'Problemas' })).getByText('Ciclo: pontos → pontos.')).toBeInTheDocument();
     // Another block's problem is not here.
     expect(screen.queryByText('Escreva a fórmula de Pontos já ganhos.')).not.toBeInTheDocument();
