@@ -16,7 +16,7 @@ import {
 } from './messages';
 import { MultipleInputTable } from './MultipleInputTable';
 import { useUnitRun, type UnitRunRequest } from './queries';
-import { UnitRunResult } from './UnitRunResult';
+import { UnitRunResult, recordStatus } from './UnitRunResult';
 import { ValueField } from './ValueField';
 import { itemFieldPath, readForm, typedItems, typedLinear, type DeclaredInput, type FieldErrors, type TypedItem, type TypedValues } from './values';
 import './unit-run.css';
@@ -325,7 +325,7 @@ export function UnitRunPanel() {
           </>
         ) : null}
         <span className="fc-visually-hidden" role="status">
-          {run.data && !running ? `Resultado do cálculo: ${run.data.status === 'ok' ? 'ok' : run.data.status === 'ok_with_warnings' ? 'com avisos' : 'erro'}` : ''}
+          {run.data && !running ? `Resultado do cálculo: ${recordStatus[run.data.status].word}` : ''}
         </span>
       </div>
     </form>

@@ -5,8 +5,8 @@ import type { WorkflowDefinition } from '../draft';
 import type { Value } from './values';
 
 /** The result of a unit run (generated from the contract). */
-export type UnitRun = Schemas['UnitRun'];
-export type UnitRunNode = Schemas['UnitRunNode'];
+export type UnitRun = Schemas['UnitRunTrace'];
+export type UnitRunNode = UnitRun['nodes'][number];
 
 /** One "Calcular": the saved revision, the values and the definition they were read from (to name blocks and types). */
 export interface UnitRunRequest {

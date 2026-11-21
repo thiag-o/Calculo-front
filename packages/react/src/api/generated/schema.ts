@@ -1163,6 +1163,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workflows/{id}/draft/previews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Roda a prévia do rascunho salvo sobre a fonte do lote
+         * @description Aceita `workflows.edit` **ou** `simulations.run` (requisitos
+         *     alternativos, ADR 0046), como a execução unitária.
+         *
+         *     Roda o rascunho **salvo** na `revision` informada sobre os primeiros 500
+         *     registros da fonte do lote, pela ordenação dela (E5-11): nada é guardado.
+         *     O total do lote é do épico 6: `total_known` vem sempre `false`.
+         *     - Por bloco Fonte: no `linear`, as contagens `found`, `no_match` e
+         *       `multiple_rows`, o máximo de linhas achadas para um registro e até 5
+         *       chaves de exemplo de cada caso; no `filter`, as contagens `kept` e
+         *       `filtered`. Em ambos, as primeiras `sample_size` linhas trazidas.
+         *     - Por grupo, inclusive o raiz (`node_id` nulo): os primeiros
+         *       `sample_size` registros, com os valores de Input e de Output de cada
+         *       um.
+         *     - `sample_size` vai de 1 a 100 (padrão 20).
+         *     - `revision` diferente da atual: `409 draft_conflict`, com
+         *       `current_revision`.
+         *     - Rascunho com problemas: `409 draft_has_problems`, com a lista em
+         *       `problems`.
+         *     - Workflow sem fonte do lote: `409 no_batch_source`.
+         *     - Credencial guardada de uma conexão ilegível:
+         *       `409 connection_credential_unreadable` (D44).
+         *     - Erro de leitura (`schema_drift`, `source_read_denied`,
+         *       `parameter_table_rows`): `200`, com o erro em `error` (o bloco em
+         *       `node_id`, nulo na fonte do lote) e as listas vazias.
+         *     - Conexão com o banco do cliente que falha: `422 connection_failed`;
+         *       destino bloqueado: `422 connection_target_not_allowed`.
+         *     - Corpo acima de 1 MB: `413 definition_too_large`; outro `Content-Type`:
+         *       `415`.
+         */
+        post: operations["preview_draft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workflows/{id}/draft/unit-runs": {
         parameters: {
             query?: never;
@@ -1178,22 +1225,51 @@ export interface paths {
          *     alternativos, ADR 0046): o Configurador e o Aprovador calculam um
          *     registro (E4-14).
          *
-         *     Roda o rascunho **salvo** na `revision` informada, com os valores
-         *     digitados em `inputs` (por nome de entrada declarada), e nada é guardado.
-         *     Os números chegam como texto e nunca são arredondados na entrada; entrada
-         *     omitida vale nulo (múltipla omitida, lista vazia).
+         *     Roda o rascunho **salvo** na `revision` informada para um registro, e
+         *     nada é guardado (nem o trace, que é guardado só na execução em lote do
+         *     épico 6). O corpo tem uma de duas formas (`oneOf`):
+         *     - **`inputs`** (workflow sem fonte do lote, como no épico 4): os valores
+         *       digitados, por nome de entrada declarada. Os números chegam como texto
+         *       e nunca são arredondados na entrada; entrada omitida vale nulo
+         *       (múltipla omitida, lista vazia).
+         *     - **`record_key`** (workflow com fonte do lote, E5-12): o valor de cada
+         *       variável da chave, como texto. O registro é lido pela chave, com os
+         *       filtros da fonte do lote; fora do filtro, o status é `filtered`. Chave
+         *       que não existe: `404 record_not_found`.
+         *
+         *     `inputs` e `record_key` juntos, `record_key` num workflow sem fonte do
+         *     lote ou `inputs` num workflow com fonte do lote: `422 invalid_data`.
          *     - `revision` diferente da atual: `409 draft_conflict`, com
          *       `current_revision`.
+         *     - Credencial guardada de uma conexão ilegível:
+         *       `409 connection_credential_unreadable` (D44).
          *     - Rascunho com problemas: `422 draft_has_problems`, com a lista em
          *       `problems`.
          *     - Entrada recusada (valor de outro tipo, mais casas que a entrada
          *       declarada, nome que não foi declarado, campo que a lista não tem,
          *       lista grande demais): `422 invalid_inputs`, com `fields` por entrada,
          *       como `valor_item` ou `pontuacoes[1].taxa`.
+         *     - Conexão com o banco do cliente que falha: `422 connection_failed`;
+         *       destino bloqueado: `422 connection_target_not_allowed`.
          *
-         *     A resposta traz o status do registro, as saídas e, por nó, os valores, a
-         *     regra que casou, os avisos e o erro. Uma falha de dado (`FailureCode`)
-         *     não é erro HTTP: vem no `UnitRun`.
+         *     `invalid_data` e `invalid_inputs` dizem coisas diferentes. Um valor que
+         *     cabe no `Value` (texto, booleano, nulo ou lista de objetos) mas não na
+         *     entrada declarada é `invalid_inputs`: texto onde se espera número, como
+         *     `"abc"` em `valor_item`, que é decimal. Um valor que nem cabe no
+         *     `Value`, como um número JSON (`1500`, `1500.5`, `1e400`) ou um objeto, é
+         *     `422 invalid_data`, com a chave `inputs.<entrada>` em `fields`: por
+         *     exemplo, `{"revision": 3, "inputs": {"valor_item": 1500}}` dá
+         *     `fields: {"inputs.valor_item": ...}`; o número vai como texto
+         *     (`"1500.00"`). Chaves repetidas, campos que o corpo não declara e corpo
+         *     que não é JSON também dão `invalid_data`; outro `Content-Type` que não
+         *     seja `application/json` dá `415`.
+         *
+         *     A resposta é o `UnitRunTrace`: o status do registro, a origem de cada
+         *     entrada, por nó os valores, a regra que casou, as linhas achadas, os
+         *     avisos e o erro (aninhados por grupo), as saídas e os hashes. Sem fonte
+         *     do lote, `record_key` e cada `origin` vêm nulos. Uma falha de dado ou de
+         *     leitura (`FailureCode`, como `schema_drift`) não é erro HTTP: vem no
+         *     trace.
          */
         post: operations["run_unit"];
         delete?: never;
@@ -1852,10 +1928,12 @@ export interface components {
          */
         Cardinality: "linear" | "multiple";
         /**
-         * @description De onde vem a variável.
+         * @description De onde vem a variável: entrada declarada (`input`), Cálculo
+         *     (`calculation`), Tabela de Decisão (`decision_table`), fonte do lote
+         *     (`batch_source`) ou bloco Fonte (`source`).
          * @enum {string}
          */
-        SymbolOrigin: "input" | "calculation" | "decision_table";
+        SymbolOrigin: "input" | "calculation" | "decision_table" | "batch_source" | "source";
         /**
          * @description `scalar` (um valor por registro) ou `aggregation` (sobre um múltiplo).
          * @enum {string}
@@ -1870,22 +1948,38 @@ export interface components {
         FormulaContext: "calculation" | "decision_condition" | "decision_result";
         /**
          * @description Lista fechada dos problemas de uma definição (Contratos, "Validação do
-         *     workflow"). O texto em pt-BR é fixo por código, com os nomes do caso.
+         *     workflow" e, no épico 5, "Validação (problemas novos)"). O texto em
+         *     pt-BR é fixo por código, com os nomes do caso. `definition_invalid`
+         *     (B119) aponta, pelo `path`, um campo de uma definição guardada que o
+         *     motor passou a recusar na forma: "Este campo não é mais aceito.
+         *     Corrija-o e salve de novo.".
          * @enum {string}
          */
-        ProblemCode: "syntax_error" | "formula_empty" | "formula_too_long" | "formula_too_complex" | "unknown_variable" | "unknown_function" | "wrong_argument_count" | "type_mismatch" | "invalid_constant" | "operator_not_allowed" | "function_not_allowed_here" | "multiple_outside_aggregation" | "multiple_without_brackets" | "linear_with_brackets" | "more_than_one_list" | "nested_aggregation" | "aggregation_without_multiple" | "cycle" | "duplicate_name" | "duplicate_node_id" | "reserved_name" | "output_type_mismatch" | "multiple_in_output" | "missing_default_value" | "empty_decision_table" | "rule_width";
+        ProblemCode: "syntax_error" | "formula_empty" | "formula_too_long" | "formula_too_complex" | "unknown_variable" | "unknown_function" | "wrong_argument_count" | "type_mismatch" | "invalid_constant" | "operator_not_allowed" | "function_not_allowed_here" | "multiple_outside_aggregation" | "multiple_without_brackets" | "linear_with_brackets" | "more_than_one_list" | "nested_aggregation" | "aggregation_without_multiple" | "cycle" | "duplicate_name" | "duplicate_node_id" | "reserved_name" | "output_type_mismatch" | "multiple_in_output" | "missing_default_value" | "empty_decision_table" | "rule_width" | "inputs_with_batch_source" | "unknown_dataset" | "unknown_catalog_variable" | "variable_not_from_dataset" | "not_visible" | "link_to_calculated" | "link_type_mismatch" | "filter_outside_root" | "filter_type_mismatch" | "parameter_not_available" | "scale_above_engine_limit" | "group_too_deep" | "empty_group_output" | "missing_batch_source_key" | "missing_order_by" | "definition_invalid";
         /**
          * @description Falhas de dado de um registro (Contratos, "Execução unitária"). O aviso de
          *     uma política tem o mesmo código da falha. `multiple_rules_matched` é
          *     sempre erro do registro.
+         *
+         *     Do épico 5 (Contratos, "Leitura dos dados" e "Junção das fontes"):
+         *     - do registro: `no_match` e `multiple_rows` (do bloco Fonte, erro ou
+         *       aviso conforme a política), `value_scale_exceeded` (valor lido com
+         *       mais casas que a variável, nunca arredondado) e `value_type_mismatch`
+         *       (texto lido que não converte para o tipo da variável);
+         *     - da leitura: `schema_drift` (coluna ausente ou de tipo incompatível na
+         *       origem), `source_read_denied` (o usuário da conexão não tem SELECT) e
+         *       `parameter_table_rows` (tabela de parâmetros sem exatamente uma linha).
          * @enum {string}
          */
-        FailureCode: "division_by_zero" | "numeric_overflow" | "null_result" | "no_rule_matched" | "multiple_rules_matched";
+        FailureCode: "division_by_zero" | "numeric_overflow" | "null_result" | "no_rule_matched" | "multiple_rules_matched" | "no_match" | "multiple_rows" | "value_scale_exceeded" | "value_type_mismatch" | "schema_drift" | "source_read_denied" | "parameter_table_rows";
         /**
-         * @description Status do registro.
+         * @description Status do registro. `ignored`: um bloco Fonte com `no_match: discard`
+         *     não achou linha (o motivo vem nos `warnings`); `filtered`: o registro
+         *     não passou num filtro (da fonte do lote ou de um bloco Fonte `filter`),
+         *     sem erro.
          * @enum {string}
          */
-        UnitRunStatus: "ok" | "ok_with_warnings" | "error";
+        UnitRunStatus: "ok" | "ok_with_warnings" | "error" | "ignored" | "filtered";
         /**
          * @description Status de um nó: `not_run` quando um nó anterior, na ordem topológica,
          *     falhou com a política `error`.
@@ -1987,10 +2081,17 @@ export interface components {
          *     O workflow novo é `{"schema_version": 1, "kind": "batch", "settings":
          *     {"error_policy": "error", "rounding": {"scale": 2, "mode": "half_up"}},
          *     "root": {"inputs": [], "nodes": [], "output": {"fields": []}}}`.
+         *
+         *     Versão 2 (E5-1): a fonte do lote, o bloco Fonte e o grupo. Uma
+         *     definição na versão 1 é aceita e lida como 2, sem mudar nada (as
+         *     entradas declaradas continuam valendo); a gravação sai sempre na 2.
          */
         WorkflowDefinition: {
-            /** @constant */
-            schema_version: 1;
+            /**
+             * @description `2` é a versão atual; `1` é lida como 2.
+             * @enum {integer}
+             */
+            schema_version: 1 | 2;
             kind: components["schemas"]["WorkflowKind"];
             settings: components["schemas"]["WorkflowSettings"];
             root: components["schemas"]["WorkflowRoot"];
@@ -2006,12 +2107,22 @@ export interface components {
             /** @default half_up */
             mode: components["schemas"]["RoundingMode"];
         };
-        /** @description O grupo raiz do workflow. */
+        /**
+         * @description O grupo raiz do workflow. Com a fonte do lote, `inputs` tem de estar
+         *     vazio (o problema `inputs_with_batch_source`). Os 200 nós contam os de
+         *     dentro dos grupos; até 20 blocos Fonte e 5 níveis de grupo.
+         */
         WorkflowRoot: {
+            /**
+             * @description A fonte do lote (E5-2): o Input do workflow de lote. Opcional: sem
+             *     fonte do lote, o campo pode vir `null` ou ficar de fora (a gravação o omite).
+             * @default null
+             */
+            batch_source: components["schemas"]["BatchSource"] | null;
             /** @description As entradas declaradas (E4-1), até 100. */
             inputs: (components["schemas"]["LinearInput"] | components["schemas"]["MultipleInput"])[];
             /** @description Os nós, até 200. A ordem desfaz o empate da ordem topológica. */
-            nodes: (components["schemas"]["CalculationNode"] | components["schemas"]["DecisionTableNode"])[];
+            nodes: (components["schemas"]["CalculationNode"] | components["schemas"]["DecisionTableNode"] | components["schemas"]["SourceNode"] | components["schemas"]["GroupNode"])[];
             output: components["schemas"]["WorkflowOutput"];
         };
         /** @description Entrada declarada linear (um valor por registro). */
@@ -2160,7 +2271,10 @@ export interface components {
              */
             suggestion: string | null;
         };
-        /** @description Uma variável que a definição oferece (entrada, campo de lista ou saída de nó). */
+        /**
+         * @description Uma variável que a definição oferece (entrada, campo de lista, saída de
+         *     nó, da fonte do lote ou de um bloco Fonte).
+         */
         Symbol: {
             name: string;
             type: components["schemas"]["DataType"] | null;
@@ -2172,8 +2286,14 @@ export interface components {
              */
             list: string | null;
             origin: components["schemas"]["SymbolOrigin"];
-            /** @description O nó que produz a variável; nulo nas entradas. */
+            /** @description O nó que produz a variável; nulo nas entradas e na fonte do lote. */
             node_id: string | null;
+            /**
+             * @description O grupo onde a variável é produzida; nulo no grupo raiz. Ela é
+             *     visível no próprio grupo e nos de dentro dele; de fora, só pelo
+             *     Output do grupo (o problema `not_visible`).
+             */
+            group_id: string | null;
         };
         /**
          * @description Os nomes que um nó lê em todas as suas fórmulas (expressão, condições,
@@ -2198,6 +2318,13 @@ export interface components {
              *     revisão do resultado do épico 11.
              */
             revision: number;
+            /**
+             * @description A definição como está guardada (pode estar na versão 1). Se o motor
+             *     passou a recusar a forma de algum campo, o rascunho abre do mesmo
+             *     jeito (B119): a definição vem como está guardada, com um problema
+             *     `definition_invalid` por campo recusado (o `path` aponta o campo), e
+             *     `symbols`, `dependencies`, `order` e `groups` vêm vazias.
+             */
             definition: components["schemas"]["WorkflowDefinition"];
             problems: components["schemas"]["WorkflowProblem"][];
             symbols: components["schemas"]["Symbol"][];
@@ -2207,6 +2334,7 @@ export interface components {
              *     posição). Com ciclo, vem vazia.
              */
             order: string[];
+            groups: components["schemas"]["GroupInterface"][];
             /** Format: date-time */
             updated_at: string;
             updated_by: components["schemas"]["UserRef"];
@@ -2231,6 +2359,7 @@ export interface components {
              *     posição). Com ciclo, vem vazia.
              */
             order: string[];
+            groups: components["schemas"]["GroupInterface"][];
         };
         /**
          * @description Um valor na API (E4-14): `integer` e `decimal` vão como texto (`"1500.00"`,
@@ -2243,14 +2372,25 @@ export interface components {
         Value: string | boolean | null | {
             [key: string]: string | boolean | null;
         }[];
-        /** @description Corpo da execução unitária. */
-        NewUnitRun: {
+        /**
+         * @description Corpo da execução unitária: com `inputs` (sem fonte do lote) ou com
+         *     `record_key` (com fonte do lote), nunca os dois.
+         */
+        NewUnitRun: components["schemas"]["NewUnitRunWithInputs"] | components["schemas"]["NewUnitRunWithRecordKey"];
+        /** @description A execução unitária com os valores digitados (workflow sem fonte do lote). */
+        NewUnitRunWithInputs: {
             /** @description A revisão do rascunho salvo que deve rodar. */
             revision: number;
             /** @description O valor de cada entrada declarada, por nome; a omitida vale nulo. */
             inputs: {
                 [key: string]: components["schemas"]["Value"];
             };
+        };
+        /** @description A execução unitária de um registro real, pela chave (workflow com fonte do lote). */
+        NewUnitRunWithRecordKey: {
+            /** @description A revisão do rascunho salvo que deve rodar. */
+            revision: number;
+            record_key: components["schemas"]["RecordKey"];
         };
         /** @description Um valor com o nome da variável ou do campo de saída. */
         NamedValue: {
@@ -2280,7 +2420,11 @@ export interface components {
             warnings: components["schemas"]["Message"][];
             error: components["schemas"]["Message"] | null;
         };
-        /** @description O resultado da execução unitária (nada é guardado). */
+        /**
+         * @description O resultado da execução unitária do épico 4 (nada é guardado). A rota
+         *     passa a responder o `UnitRunTrace` (B97); este esquema fica só até lá
+         *     (ADR 0094).
+         */
         UnitRun: {
             status: components["schemas"]["UnitRunStatus"];
             /** @description Os campos de saída do workflow. Com `status` `error`, vem vazia. */
@@ -2326,6 +2470,429 @@ export interface components {
             };
             /** @description Os problemas do rascunho salvo. */
             problems?: components["schemas"]["WorkflowProblem"][];
+        };
+        /**
+         * @description Modo do bloco Fonte: `linear` (traz uma linha por registro, pelas
+         *     ligações) ou `filter` (só confere se a linha existe). O `multiple` entra
+         *     no épico 8 e, por ora, é erro de forma.
+         * @enum {string}
+         */
+        SourceMode: "linear" | "filter";
+        /**
+         * @description O que fazer quando o bloco Fonte não acha linha para o registro:
+         *     `error` (o erro do registro `no_match`), `keep_null` (as saídas ficam
+         *     nulas, com o aviso `no_match`) ou `discard` (o registro fica `ignored`,
+         *     com o motivo).
+         * @enum {string}
+         */
+        NoMatchPolicy: "error" | "keep_null" | "discard";
+        /**
+         * @description O que fazer quando o bloco Fonte acha mais de uma linha: `error` (o erro
+         *     do registro `multiple_rows`, com a contagem) ou `accept_first` (usa a
+         *     primeira pela ordenação, com o aviso `multiple_rows`; a troca para
+         *     `accept_first` é auditada como `workflow_multiple_rows_accepted`).
+         * @enum {string}
+         */
+        MultipleRowsPolicy: "error" | "accept_first";
+        /**
+         * @description `asc` (crescente) ou `desc` (decrescente).
+         * @enum {string}
+         */
+        SortDirection: "asc" | "desc";
+        /**
+         * @description Operador de um filtro (na fonte do lote e no bloco Fonte). Quantos
+         *     `values`: 1 nos de comparação; 2 no `between`; de 1 a 100 no `in`;
+         *     nenhum em `is_null` e `is_not_null` (outro número é erro de forma). Num
+         *     texto, só `=`, `<>`, `in` e os de nulo (senão, o problema
+         *     `filter_type_mismatch`).
+         * @enum {string}
+         */
+        FilterOperator: "=" | "<>" | ">" | ">=" | "<" | "<=" | "between" | "in" | "is_null" | "is_not_null";
+        /**
+         * @description A fonte do lote (E5-2): o dataset cujas linhas são os registros do
+         *     workflow, com a chave do registro, os filtros, a ordenação e as
+         *     variáveis trazidas. A chave vazia, ou com uma variável que não está em
+         *     `outputs`, é o problema `missing_batch_source_key`; sem ordenação, o
+         *     problema `missing_order_by`.
+         */
+        BatchSource: {
+            /**
+             * Format: uuid
+             * @description O dataset do catálogo do tenant.
+             */
+            dataset_id: string;
+            /** @description Os nomes (em `outputs`) das variáveis que identificam o registro, em ordem. */
+            key: string[];
+            filters: components["schemas"]["BatchSourceFilter"][];
+            /** @description A ordem dos registros (a prévia lê os primeiros 500 por ela). */
+            order_by: components["schemas"]["BatchSourceOrder"][];
+            outputs: components["schemas"]["SourceOutput"][];
+        };
+        /** @description Um filtro da fonte do lote, pelo nome da variável trazida. */
+        BatchSourceFilter: {
+            variable: string;
+            operator: components["schemas"]["FilterOperator"];
+            /**
+             * @description Literais da linguagem de fórmula (E4-3), do tipo da variável, como
+             *     `"\"A\""`, `"1500.00"` ou `"verdadeiro"`. Um parâmetro `@nome` é do
+             *     épico 6 (o problema `parameter_not_available`).
+             */
+            values: string[];
+        };
+        /** @description Um item da ordenação da fonte do lote, pelo nome da variável trazida. */
+        BatchSourceOrder: {
+            variable: string;
+            direction: components["schemas"]["SortDirection"];
+        };
+        /**
+         * @description Uma variável do catálogo trazida pela fonte, com o nome dela no
+         *     workflow (por padrão, o nome no catálogo). O nome segue a regra de nome
+         *     de variável e entra na unicidade dos nomes do workflow (E4-10).
+         */
+        SourceOutput: {
+            /** Format: uuid */
+            variable_id: string;
+            name: string;
+        };
+        /**
+         * @description Uma ligação do bloco Fonte: a variável do workflow (lida da fonte do lote
+         *     ou de outro bloco Fonte, nunca calculada: `link_to_calculated`) igual à
+         *     variável do dataset do bloco. Os tipos têm de ser iguais (`integer` e
+         *     `decimal` se ligam pelo valor); senão, `link_type_mismatch`.
+         */
+        SourceLink: {
+            variable: string;
+            /**
+             * Format: uuid
+             * @description A variável do catálogo, do dataset do bloco.
+             */
+            column_variable_id: string;
+        };
+        /** @description Um filtro do bloco Fonte, pela variável do catálogo do próprio dataset. */
+        SourceFilter: {
+            /** Format: uuid */
+            variable_id: string;
+            operator: components["schemas"]["FilterOperator"];
+            /** @description Literais da linguagem de fórmula, como em `BatchSourceFilter`. */
+            values: string[];
+        };
+        /** @description Um item da ordenação do bloco Fonte, pela variável do catálogo do próprio dataset. */
+        SourceOrder: {
+            /** Format: uuid */
+            variable_id: string;
+            direction: components["schemas"]["SortDirection"];
+        };
+        /**
+         * @description Um bloco Fonte: lê um dataset do catálogo pelas ligações com o registro.
+         *     - `linear`: traz uma linha por registro. `order_by` (de 1 a 10 itens),
+         *       `outputs` (de 1 a 100), `no_match` e `multiple_rows` são obrigatórios,
+         *       e `exists` vem `null`. Sem ligações, é uma tabela de parâmetros: o
+         *       dataset, depois dos filtros, tem de ter exatamente uma linha (senão, o
+         *       erro `parameter_table_rows`).
+         *     - `filter`: só confere se há linha (`exists: true`, EXISTE) ou se não há
+         *       (`exists: false`, NÃO EXISTE); o registro que não passa fica
+         *       `filtered`. `order_by`, `outputs`, `no_match` e `multiple_rows` não
+         *       existem no `filter`, que só vale no grupo raiz (`filter_outside_root`)
+         *       e precisa de pelo menos uma ligação.
+         *     - O `multiple` (`mode: multiple`, épico 8), `exists` num `linear` ou `outputs` num
+         *       `filter`: erro de forma (`422 invalid_data`).
+         */
+        SourceNode: {
+            id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "source";
+            name: string;
+            description: string | null;
+            position: components["schemas"]["NodePosition"];
+            mode: components["schemas"]["SourceMode"];
+            /**
+             * Format: uuid
+             * @description O dataset do catálogo do tenant.
+             */
+            dataset_id: string;
+            /** @description De 0 a 10; zero só no `linear` (tabela de parâmetros). */
+            links: components["schemas"]["SourceLink"][];
+            filters: components["schemas"]["SourceFilter"][];
+            /** @description Só no `linear`. A primeira linha pela ordenação vale no `accept_first`. */
+            order_by?: components["schemas"]["SourceOrder"][];
+            /** @default error */
+            no_match: components["schemas"]["NoMatchPolicy"];
+            /** @default error */
+            multiple_rows: components["schemas"]["MultipleRowsPolicy"];
+            /** @description Só no `filter`; `null` no `linear`. */
+            exists: boolean | null;
+            /** @description Só no `linear`. */
+            outputs?: components["schemas"]["SourceOutput"][];
+        };
+        /**
+         * @description Um grupo de nós, com Input e Output (E5-5). O Input não é guardado: o
+         *     motor o deriva das variáveis de fora que os blocos de dentro usam (vem
+         *     em `groups` do rascunho e da análise). O Output só aceita variáveis
+         *     lineares produzidas dentro do grupo (`multiple_in_output`); vazio, o
+         *     problema `empty_group_output`. Até 5 níveis (`group_too_deep`).
+         */
+        GroupNode: {
+            id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "group";
+            name: string;
+            description: string | null;
+            position: components["schemas"]["NodePosition"];
+            /** @description O grupo recolhido no canvas. */
+            collapsed: boolean;
+            /** @description Os nós de dentro do grupo, com a mesma forma dos do grupo raiz. */
+            nodes: (components["schemas"]["CalculationNode"] | components["schemas"]["DecisionTableNode"] | components["schemas"]["SourceNode"] | components["schemas"]["GroupNode"])[];
+            /** @description Os nomes das variáveis que o grupo entrega para fora. */
+            outputs: string[];
+        };
+        /** @description O Input derivado, o Output e a ordem de dentro de um grupo, calculados pelo motor. */
+        GroupInterface: {
+            node_id: string;
+            /** @description As variáveis de fora que os blocos de dentro usam, em ordem alfabética. */
+            inputs: string[];
+            /** @description O Output do grupo, na ordem da definição. */
+            outputs: string[];
+            /** @description Os ids dos nós de dentro, na ordem de execução. */
+            order: string[];
+        };
+        /**
+         * @description A chave de um registro ou de uma linha: o valor de cada variável da
+         *     chave, por nome, sempre como texto (`{"nf_id": "10", "item_seq": "1"}`).
+         */
+        RecordKey: {
+            [key: string]: string;
+        };
+        /** @description Corpo da prévia. */
+        NewPreview: {
+            /** @description A revisão do rascunho salvo que deve rodar. */
+            revision: number;
+            /** @default 20 */
+            sample_size: number;
+        };
+        /**
+         * @description A prévia sobre os primeiros 500 registros da fonte do lote (nada é
+         *     guardado). Com `error` (erro de leitura), `sources` e `groups` vêm
+         *     vazias e `counted_records`, 0.
+         */
+        Preview: {
+            /** @description Os registros lidos e contados (até 500). */
+            counted_records: number;
+            /**
+             * @description O total do lote é do épico 6; aqui é sempre `false`.
+             * @constant
+             */
+            total_known: false;
+            /** @description Um item por bloco Fonte, na ordem de execução (os de dentro dos grupos também). */
+            sources: components["schemas"]["PreviewSource"][];
+            /** @description O grupo raiz (`node_id` nulo) e depois cada grupo, na ordem de execução. */
+            groups: components["schemas"]["PreviewGroup"][];
+            error: components["schemas"]["TraceMessage"] | null;
+        };
+        /**
+         * @description As contagens de um bloco Fonte sobre os registros contados. No `linear`,
+         *     `found`, `no_match`, `multiple_rows` e `max_rows` vêm preenchidos e
+         *     `kept` e `filtered`, nulos; no `filter`, o contrário.
+         */
+        PreviewSource: {
+            node_id: string;
+            mode: components["schemas"]["SourceMode"];
+            /** @description Registros com exatamente uma linha. */
+            found: number | null;
+            /** @description Registros sem linha. */
+            no_match: number | null;
+            /** @description Registros com mais de uma linha. */
+            multiple_rows: number | null;
+            /** @description O maior número de linhas achadas para um registro. */
+            max_rows: number | null;
+            /** @description Até 5 chaves de registros sem linha (vazia no `filter`). */
+            no_match_keys: components["schemas"]["RecordKey"][];
+            /** @description Até 5 chaves de registros com mais de uma linha (vazia no `filter`). */
+            multiple_rows_keys: components["schemas"]["RecordKey"][];
+            /** @description Registros que passaram no filtro. */
+            kept: number | null;
+            /** @description Registros que o filtro tirou. */
+            filtered: number | null;
+            /**
+             * @description As primeiras `sample_size` linhas trazidas, com os valores por nome de
+             *     saída (no `filter`, pelo nome da variável de cada ligação).
+             */
+            rows: {
+                [key: string]: components["schemas"]["Value"];
+            }[];
+        };
+        /** @description Os registros de exemplo de um grupo, com os valores de Input e de Output. */
+        PreviewGroup: {
+            /** @description O grupo; nulo no grupo raiz (Input é a fonte do lote, Output os campos de saída). */
+            node_id: string | null;
+            records: components["schemas"]["PreviewRecord"][];
+        };
+        /** @description Um registro de exemplo num grupo (a execução unitária dele). */
+        PreviewRecord: {
+            record_key: components["schemas"]["RecordKey"];
+            status: components["schemas"]["UnitRunStatus"];
+            inputs: {
+                [key: string]: components["schemas"]["Value"];
+            };
+            /** @description Vazio quando o registro não chegou ao fim do grupo. */
+            outputs: {
+                [key: string]: components["schemas"]["Value"];
+            };
+        };
+        /**
+         * @description O `Problem` do `409` da prévia e da execução unitária. `current_revision`
+         *     só vem no `draft_conflict`; `problems`, só no `draft_has_problems`; o
+         *     `connection_credential_unreadable` (D44) não tem membro a mais.
+         */
+        DraftRunConflictProblem: {
+            /** @default about:blank */
+            type: string;
+            title: string;
+            status: number;
+            /** @description Mensagem em pt-BR para o usuário final. */
+            detail: string;
+            /** @description Identificador estável do erro (slug). */
+            code: string;
+            /** @description Erro por campo do corpo, quando houver (`{"<field>": "<error>"}`). */
+            fields?: {
+                [key: string]: string;
+            };
+            /** @description A revisão atual do rascunho. */
+            current_revision?: number;
+            /** @description Os problemas do rascunho salvo. */
+            problems?: components["schemas"]["WorkflowProblem"][];
+        };
+        /**
+         * @description O trace da execução unitária (E5-12, E5-13): na resposta e nunca
+         *     guardado. Os números vão como texto (`Value`).
+         */
+        UnitRunTrace: {
+            status: components["schemas"]["UnitRunStatus"];
+            /** @description A chave do registro; nula na execução com `inputs`. */
+            record_key: components["schemas"]["RecordKey"] | null;
+            /**
+             * @description Cada valor que entrou no registro: as entradas declaradas, as
+             *     variáveis da fonte do lote e as de cada bloco Fonte, na ordem de
+             *     execução.
+             */
+            inputs: components["schemas"]["TraceInput"][];
+            /** @description Os nós do grupo raiz, na ordem de execução; o grupo traz os de dentro. */
+            nodes: (components["schemas"]["TraceFormulaNode"] | components["schemas"]["TraceSourceNode"] | components["schemas"]["TraceGroupNode"])[];
+            /**
+             * @description Os campos de saída do workflow, por nome, com as casas do tipo
+             *     declarado. Vazio com `status` `error`, `ignored` ou `filtered`.
+             */
+            outputs: {
+                [key: string]: components["schemas"]["Value"];
+            };
+            /**
+             * @description SHA-256 do JSON canônico das entradas (`{variable: value}` de
+             *     `inputs`): chaves em ordem, sem espaços, números como texto, em
+             *     UTF-8 sem escapar os acentos.
+             */
+            input_hash: string;
+            /**
+             * @description SHA-256 do JSON canônico de `outputs`, como o `input_hash`; nulo
+             *     quando o registro não tem saída (`error`, `ignored`, `filtered`).
+             */
+            output_hash: string | null;
+            /** @description A falha que encerrou o registro (do registro ou da leitura). */
+            error: components["schemas"]["TraceMessage"] | null;
+            /** @description Os avisos de todos os nós, com o nó (com `ignored`, o motivo). */
+            warnings: components["schemas"]["TraceMessage"][];
+        };
+        /** @description Um valor que entrou no registro e de onde ele veio. */
+        TraceInput: {
+            variable: string;
+            value: components["schemas"]["Value"];
+            /** @description Nula nas entradas declaradas (valores digitados). */
+            origin: components["schemas"]["TraceOrigin"] | null;
+        };
+        /**
+         * @description A origem de um valor lido: a conexão, o dataset, a coluna e a chave da
+         *     linha. Na fonte do lote, a chave é a do registro; num bloco Fonte, os
+         *     valores das ligações, pelo nome da variável do workflow.
+         */
+        TraceOrigin: {
+            /** @description O nome da conexão; nulo num dataset de Excel. */
+            connection: string | null;
+            /** @description O nome do dataset. */
+            dataset: string;
+            /** @description A coluna na origem (no Excel, o cabeçalho da coluna). */
+            column: string;
+            row_key: components["schemas"]["RecordKey"];
+        };
+        /** @description Um Cálculo ou uma Tabela de Decisão no trace (o que o épico 4 já trazia). */
+        TraceFormulaNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "calculation" | "decision_table";
+            node_id: string;
+            status: components["schemas"]["NodeRunStatus"];
+            /** @description As saídas do nó, por nome, com as casas do tipo declarado. */
+            values: {
+                [key: string]: components["schemas"]["Value"];
+            };
+            /** @description Na Tabela de Decisão, a regra que casou (a partir de 1). */
+            matched_rule: number | null;
+            warnings: components["schemas"]["Message"][];
+            error: components["schemas"]["Message"] | null;
+        };
+        /** @description Um bloco Fonte no trace, com as linhas achadas para o registro. */
+        TraceSourceNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "source";
+            node_id: string;
+            status: components["schemas"]["NodeRunStatus"];
+            /** @description As saídas do bloco, por nome (vazio no `filter`). */
+            values: {
+                [key: string]: components["schemas"]["Value"];
+            };
+            rows_found: number;
+            warnings: components["schemas"]["Message"][];
+            error: components["schemas"]["Message"] | null;
+        };
+        /** @description Um grupo no trace, com o Input, o Output e os nós de dentro. */
+        TraceGroupNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "group";
+            node_id: string;
+            status: components["schemas"]["NodeRunStatus"];
+            inputs: {
+                [key: string]: components["schemas"]["Value"];
+            };
+            outputs: {
+                [key: string]: components["schemas"]["Value"];
+            };
+            nodes: (components["schemas"]["TraceFormulaNode"] | components["schemas"]["TraceSourceNode"] | components["schemas"]["TraceGroupNode"])[];
+        };
+        /**
+         * @description Uma falha ou um aviso no trace ou na prévia, com o nó e os valores
+         *     envolvidos.
+         */
+        TraceMessage: {
+            /** @description O nó; nulo quando é da fonte do lote. */
+            node_id: string | null;
+            code: components["schemas"]["FailureCode"];
+            /** @description Em pt-BR, com os nomes do caso. */
+            message: string;
+            /** @description Os valores envolvidos, por nome (vazio quando não há). */
+            values: {
+                [key: string]: components["schemas"]["Value"];
+            };
         };
     };
     responses: {
@@ -2395,6 +2962,18 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["InvalidDataProblem"];
+            };
+        };
+        /**
+         * @description `invalid_content_type`: o corpo não é `application/json` (nem sem
+         *     `Content-Type`, nem com outro tipo); o corpo não é lido.
+         */
+        InvalidBodyContentType: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
         /**
@@ -2797,6 +3376,7 @@ export interface components {
          */
         TooManyConnectionTests: {
             headers: {
+                "Retry-After": components["headers"]["RetryAfter"];
                 [name: string]: unknown;
             };
             content: {
@@ -2876,6 +3456,11 @@ export interface components {
         SetCookieLogin: string;
         /** @description Dois cabeçalhos `Set-Cookie` que apagam os cookies `fc_session` e `fc_csrf` (`Max-Age=0`). */
         SetCookieLogout: string;
+        /**
+         * @description Em quantos segundos o teste de conexão volta a ser aceito, o mesmo valor do
+         *     `retry_after_seconds` do corpo (de 1 a 60).
+         */
+        RetryAfter: number;
     };
     pathItems: never;
 }
@@ -4633,6 +5218,8 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             409: components["responses"]["WorkflowExists"];
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
             422: components["responses"]["InvalidData"];
         };
     };
@@ -4692,6 +5279,8 @@ export interface operations {
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["WorkflowExists"];
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
             422: components["responses"]["InvalidDataWithId"];
         };
     };
@@ -4777,6 +5366,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["DraftConflict"];
             413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
             422: components["responses"]["InvalidDefinition"];
         };
     };
@@ -4809,7 +5399,68 @@ export interface operations {
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
             413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
             422: components["responses"]["InvalidDefinition"];
+        };
+    };
+    preview_draft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPreview"];
+            };
+        };
+        responses: {
+            /** @description As contagens e os registros de exemplo, ou o erro de leitura. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preview"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
+             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
+             *     - `no_batch_source`: o workflow não tem fonte do lote;
+             *     - `connection_credential_unreadable`: a credencial guardada de uma
+             *       conexão que a prévia lê não pôde ser lida; cadastre-a de novo (D44).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                };
+            };
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
+            /**
+             * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+             *     - `connection_target_not_allowed`: o `host` de uma conexão resolve para uma rede bloqueada;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     run_unit: {
@@ -4828,23 +5479,51 @@ export interface operations {
             };
         };
         responses: {
-            /** @description O resultado da execução do registro. */
+            /** @description O trace da execução do registro. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitRun"];
+                    "application/json": components["schemas"]["UnitRunTrace"];
                 };
             };
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["DraftConflict"];
+            /**
+             * @description - `not_found`: o workflow não existe (ou não é do tenant atual);
+             *     - `record_not_found`: nenhum registro da fonte do lote com essa `record_key`.
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
+             *       nada é executado;
+             *     - `connection_credential_unreadable`: a credencial guardada de uma
+             *       conexão que a execução lê não pôde ser lida; cadastre-a de novo (D44).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                };
+            };
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
             /**
              * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
              *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
-             *     - `invalid_inputs`: alguma entrada foi recusada (`fields` por entrada).
+             *     - `invalid_inputs`: alguma entrada foi recusada (`fields` por entrada);
+             *     - `connection_target_not_allowed`: o `host` de uma conexão resolve para uma rede bloqueada;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou.
              */
             422: {
                 headers: {

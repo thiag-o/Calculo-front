@@ -7,7 +7,7 @@ import { useProblemCounts, type ProblemCounts } from '../problems';
 import { AlertIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
 import './layers.css';
 
-type RowKind = 'inputs' | 'input' | 'field' | 'calculation' | 'decision_table' | 'output' | 'output-field';
+type RowKind = 'inputs' | 'input' | 'field' | 'calculation' | 'decision_table' | 'source' | 'group' | 'output' | 'output-field';
 
 /** One item of the tree. */
 interface Row {

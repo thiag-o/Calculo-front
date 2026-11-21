@@ -129,7 +129,7 @@ export function variableTypes(definition: WorkflowDefinition): Map<string, DataT
   for (const input of definition.root.inputs) if (input.cardinality === 'linear') types.set(input.name, input.type);
   for (const node of definition.root.nodes) {
     if (node.type === 'calculation') types.set(node.output.name, node.output.type);
-    else for (const result of node.results) types.set(result.name, result.type);
+    else if (node.type === 'decision_table') for (const result of node.results) types.set(result.name, result.type);
   }
   return types;
 }

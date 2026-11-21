@@ -211,8 +211,8 @@ describe('Layers', () => {
   });
 
   it('sem entradas, blocos nem campos de saída, ficam só Entradas e Saída', () => {
-    const draft = exampleDraft({ symbols: [], dependencies: [], order: [] });
-    draft.definition = { ...draft.definition, root: { inputs: [], nodes: [], output: { fields: [] } } };
+    const draft = exampleDraft({ symbols: [], dependencies: [], order: [], groups: [] });
+    draft.definition = { ...draft.definition, root: { batch_source: null, inputs: [], nodes: [], output: { fields: [] } } };
     renderWithDraft(<Layers />, { draft });
     expect(items()).toEqual(['1 Entradas', '1 Saída']);
     expect(item('Entradas')).not.toHaveAttribute('aria-expanded');

@@ -78,6 +78,7 @@ export const DRAFT: Schemas['Draft'] = {
     kind: 'batch',
     settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
     root: {
+      batch_source: null,
       inputs: [
         { name: 'valor_item', cardinality: 'linear', type: 'decimal', scale: 2 },
         { name: 'categoria', cardinality: 'linear', type: 'text' },
@@ -114,16 +115,17 @@ export const DRAFT: Schemas['Draft'] = {
   },
   problems: [],
   symbols: [
-    { name: 'valor_item', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'input', node_id: null },
-    { name: 'categoria', type: 'text', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null },
-    { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade' },
-    { name: 'pontos', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_pontos' },
+    { name: 'valor_item', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null },
+    { name: 'categoria', type: 'text', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null },
+    { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade', group_id: null },
+    { name: 'pontos', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_pontos', group_id: null },
   ],
   dependencies: [
     { node_id: 'td_elegibilidade', reads: ['categoria'] },
     { node_id: 'calc_pontos', reads: ['fator', 'valor_item'] },
   ],
   order: ['td_elegibilidade', 'calc_pontos'],
+  groups: [],
   updated_at: '2026-11-18T14:05:00Z',
   updated_by: BRUNO,
 };

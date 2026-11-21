@@ -30,12 +30,12 @@ export const LANGUAGE: FormulaLanguage = {
 
 /** The symbols of the contract example draft: linear inputs, a multiple input with its fields, a Calculation and a Decision Table. */
 export const SYMBOLS: FormulaSymbol[] = [
-  { name: 'valor_item', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'input', node_id: null },
-  { name: 'categoria', type: 'text', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null },
-  { name: 'pontuacoes', type: null, scale: null, cardinality: 'multiple', list: null, origin: 'input', node_id: null },
-  { name: 'valor_compra', type: 'decimal', scale: 2, cardinality: 'multiple', list: 'pontuacoes', origin: 'input', node_id: null },
-  { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade' },
-  { name: 'pontos_historico', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_historico' },
+  { name: 'valor_item', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null },
+  { name: 'categoria', type: 'text', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null },
+  { name: 'pontuacoes', type: null, scale: null, cardinality: 'multiple', list: null, origin: 'input', node_id: null, group_id: null },
+  { name: 'valor_compra', type: 'decimal', scale: 2, cardinality: 'multiple', list: 'pontuacoes', origin: 'input', node_id: null, group_id: null },
+  { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade', group_id: null },
+  { name: 'pontos_historico', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_historico', group_id: null },
 ];
 
 /** An `unknown_variable` problem on `[start, end)` (code points), with the suggestion of the API. */

@@ -32,7 +32,7 @@ describe('itens do autocomplete', () => {
   });
 
   it('nomeia os tipos como nas portas dos blocos', () => {
-    const base = { name: 'x', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null } as const;
+    const base = { name: 'x', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null } as const;
     expect(typeLabelOf({ ...base, type: 'integer' })).toBe('inteiro');
     expect(typeLabelOf({ ...base, type: 'boolean' })).toBe('booleano');
     expect(typeLabelOf({ ...base, type: 'datetime' })).toBe('data e hora');

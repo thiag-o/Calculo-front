@@ -69,6 +69,7 @@ export function definitionWith(node: DecisionTableNode, errorPolicy: Schemas['Er
     kind: 'batch',
     settings: { error_policy: errorPolicy, rounding: { scale: 2, mode: 'half_up' } },
     root: {
+      batch_source: null,
       inputs: [
         { name: 'categoria', cardinality: 'linear', type: 'text' },
         { name: 'meta_atingida', cardinality: 'linear', type: 'boolean' },
@@ -106,6 +107,7 @@ export function draftWith(
     symbols: [],
     dependencies: [],
     order: [],
+    groups: [],
     updated_at: '2026-11-18T14:05:00Z',
     updated_by: BRUNO,
   };

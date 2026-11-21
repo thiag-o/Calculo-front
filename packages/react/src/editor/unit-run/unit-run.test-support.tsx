@@ -58,6 +58,7 @@ export const DRAFT: Schemas['Draft'] = {
     kind: 'batch',
     settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
     root: {
+      batch_source: null,
       inputs: [
         { name: 'valor_item', cardinality: 'linear', type: 'decimal', scale: 2 },
         { name: 'categoria', cardinality: 'linear', type: 'text' },
@@ -132,6 +133,7 @@ export const DRAFT: Schemas['Draft'] = {
     { node_id: 'calc_pontos', reads: ['fator', 'pontos_historico', 'valor_item'] },
   ],
   order: ['td_elegibilidade', 'calc_historico', 'calc_pontos'],
+  groups: [],
   updated_at: '2026-11-18T14:05:00Z',
   updated_by: BRUNO,
 };
@@ -146,70 +148,82 @@ export const PROBLEM: Schemas['WorkflowProblem'] = {
   suggestion: null,
 };
 
-/** The `ok` unit run of the contract examples. */
-export const RUN_OK: Schemas['UnitRun'] = {
+const INPUT_HASH = 'sha256:75165c8bcd4ca4b534982d17cc7dd60932f8b98416eda295284fc4c82bc6e14f';
+const OUTPUT_HASH = 'sha256:83590128dbe351da686faeeaf3010823a271e47971ff01329fa1f8b37fcc098f';
+
+/** The `ok` unit run (the trace of the contract). */
+export const RUN_OK: Schemas['UnitRunTrace'] = {
   status: 'ok',
-  outputs: [
-    { name: 'pontos', value: '1225.50' },
-    { name: 'elegivel', value: true },
-  ],
+  record_key: null,
+  inputs: [],
   nodes: [
     {
+      type: 'decision_table',
       node_id: 'td_elegibilidade',
       status: 'ok',
-      values: [
-        { name: 'elegivel', value: true },
-        { name: 'fator', value: '0.1500' },
-      ],
+      values: { elegivel: true, fator: '0.1500' },
       matched_rule: 2,
       warnings: [],
       error: null,
     },
-    { node_id: 'calc_historico', status: 'ok', values: [{ name: 'pontos_historico', value: '12.00' }], matched_rule: null, warnings: [], error: null },
-    { node_id: 'calc_pontos', status: 'ok', values: [{ name: 'pontos', value: '1225.50' }], matched_rule: null, warnings: [], error: null },
+    { type: 'calculation', node_id: 'calc_historico', status: 'ok', values: { pontos_historico: '12.00' }, matched_rule: null, warnings: [], error: null },
+    { type: 'calculation', node_id: 'calc_pontos', status: 'ok', values: { pontos: '1225.50' }, matched_rule: null, warnings: [], error: null },
   ],
+  outputs: { pontos: '1225.50', elegivel: true },
+  input_hash: INPUT_HASH,
+  output_hash: OUTPUT_HASH,
   error: null,
+  warnings: [],
 };
 
 /** `ok_with_warnings`: the history was null, and the policy left it empty with a warning. */
-export const RUN_WARNINGS: Schemas['UnitRun'] = {
+export const RUN_WARNINGS: Schemas['UnitRunTrace'] = {
   status: 'ok_with_warnings',
-  outputs: [
-    { name: 'pontos', value: null },
-    { name: 'elegivel', value: true },
-  ],
+  record_key: null,
+  inputs: [],
   nodes: [
     { ...RUN_OK.nodes[0]! },
     {
+      type: 'calculation',
       node_id: 'calc_historico',
       status: 'warning',
-      values: [{ name: 'pontos_historico', value: null }],
+      values: { pontos_historico: null },
       matched_rule: null,
       warnings: [{ code: 'null_result', message: 'O resultado foi nulo; o valor ficou vazio, como pede a política.' }],
       error: null,
     },
-    { node_id: 'calc_pontos', status: 'ok', values: [{ name: 'pontos', value: null }], matched_rule: null, warnings: [], error: null },
+    { type: 'calculation', node_id: 'calc_pontos', status: 'ok', values: { pontos: null }, matched_rule: null, warnings: [], error: null },
   ],
+  outputs: { pontos: null, elegivel: true },
+  input_hash: INPUT_HASH,
+  output_hash: OUTPUT_HASH,
   error: null,
+  warnings: [],
 };
 
 /** `error`: no rule matched; the next blocks did not run. */
-export const RUN_ERROR: Schemas['UnitRun'] = {
+export const RUN_ERROR: Schemas['UnitRunTrace'] = {
   status: 'error',
-  outputs: [],
+  record_key: null,
+  inputs: [],
   nodes: [
     {
+      type: 'decision_table',
       node_id: 'td_elegibilidade',
       status: 'error',
-      values: [],
+      values: {},
       matched_rule: null,
       warnings: [],
       error: { code: 'no_rule_matched', message: 'Nenhuma regra casou com os valores do registro.' },
     },
-    { node_id: 'calc_historico', status: 'not_run', values: [], matched_rule: null, warnings: [], error: null },
-    { node_id: 'calc_pontos', status: 'not_run', values: [], matched_rule: null, warnings: [], error: null },
+    { type: 'calculation', node_id: 'calc_historico', status: 'not_run', values: {}, matched_rule: null, warnings: [], error: null },
+    { type: 'calculation', node_id: 'calc_pontos', status: 'not_run', values: {}, matched_rule: null, warnings: [], error: null },
   ],
-  error: { node_id: 'td_elegibilidade', code: 'no_rule_matched', message: 'Nenhuma regra casou com os valores do registro.' },
+  outputs: {},
+  input_hash: INPUT_HASH,
+  output_hash: null,
+  error: { node_id: 'td_elegibilidade', code: 'no_rule_matched', message: 'Nenhuma regra casou com os valores do registro.', values: {} },
+  warnings: [],
 };
 
 export function json(body: unknown, status = 200): Response {

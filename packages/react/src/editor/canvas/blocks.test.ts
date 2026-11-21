@@ -53,7 +53,7 @@ describe('newBlock', () => {
 
 describe('freePosition', () => {
   it('centra o bloco no ponto, na grade de 16px', () => {
-    const empty: WorkflowDefinition = { ...exampleDefinition(), root: { inputs: [], nodes: [], output: { fields: [] } } };
+    const empty: WorkflowDefinition = { ...exampleDefinition(), root: { batch_source: null, inputs: [], nodes: [], output: { fields: [] } } };
     expect(freePosition(empty, { x: 503, y: 301 })).toEqual({ x: 400, y: 256 });
   });
 

@@ -72,6 +72,7 @@ export function exampleDefinition(): WorkflowDefinition {
     kind: 'batch',
     settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
     root: {
+      batch_source: null,
       inputs: [
         { name: 'valor_item', cardinality: 'linear', type: 'decimal', scale: 2 },
         { name: 'categoria', cardinality: 'linear', type: 'text' },
@@ -123,13 +124,13 @@ export function exampleDefinition(): WorkflowDefinition {
 
 /** The symbols and dependencies the analysis gives to the example. */
 export const EXAMPLE_SYMBOLS: Schemas['Symbol'][] = [
-  { name: 'valor_item', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'input', node_id: null },
-  { name: 'categoria', type: 'text', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null },
-  { name: 'compras', type: null, scale: null, cardinality: 'multiple', list: null, origin: 'input', node_id: null },
-  { name: 'valor_compra', type: 'decimal', scale: 2, cardinality: 'multiple', list: 'compras', origin: 'input', node_id: null },
-  { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade' },
-  { name: 'pontos', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_pontos' },
-  { name: 'total_compras', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_total' },
+  { name: 'valor_item', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null },
+  { name: 'categoria', type: 'text', scale: null, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null },
+  { name: 'compras', type: null, scale: null, cardinality: 'multiple', list: null, origin: 'input', node_id: null, group_id: null },
+  { name: 'valor_compra', type: 'decimal', scale: 2, cardinality: 'multiple', list: 'compras', origin: 'input', node_id: null, group_id: null },
+  { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade', group_id: null },
+  { name: 'pontos', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_pontos', group_id: null },
+  { name: 'total_compras', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_total', group_id: null },
 ];
 
 export const EXAMPLE_DEPENDENCIES: Schemas['Dependency'][] = [
@@ -158,6 +159,7 @@ export function exampleDraft(changes: Partial<Schemas['Draft']> = {}): Schemas['
     symbols: EXAMPLE_SYMBOLS,
     dependencies: EXAMPLE_DEPENDENCIES,
     order: ['td_elegibilidade', 'calc_pontos', 'calc_total'],
+    groups: [],
     updated_at: '2026-11-18T14:05:00Z',
     updated_by: BRUNO,
     ...changes,
@@ -215,7 +217,7 @@ export function renderWithDraft(panels: ReactNode, { draft = exampleDraft(), rea
       const { pathname } = new URL(request.url);
       if (request.method === 'POST' && pathname.endsWith('/draft/analysis')) {
         if (failAnalysis) return json({ type: 'about:blank', title: 'Erro interno', status: 500, code: 'internal_error' }, 500);
-        return json({ problems: draft.problems, symbols: draft.symbols, dependencies: draft.dependencies, order: draft.order });
+        return json({ problems: draft.problems, symbols: draft.symbols, dependencies: draft.dependencies, order: draft.order, groups: draft.groups });
       }
       if (request.method === 'PUT' && pathname.endsWith('/draft')) return json({ ...draft, revision: draft.revision + 1 });
       return new Response('rota não simulada', { status: 599 });

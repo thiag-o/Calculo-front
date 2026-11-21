@@ -1011,6 +1011,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'categoria',
@@ -1020,6 +1021,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'meta_atingida',
@@ -1029,6 +1031,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'pontuacoes',
@@ -1038,6 +1041,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'valor_compra',
@@ -1047,6 +1051,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'taxa',
@@ -1056,6 +1061,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'elegivel',
@@ -1065,6 +1071,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'fator',
@@ -1074,6 +1081,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'pontos_historico',
@@ -1083,6 +1091,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_historico',
+        group_id: null,
       },
       {
         name: 'pontos',
@@ -1092,6 +1101,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_pontos',
+        group_id: null,
       },
     ],
     dependencies: [
@@ -1101,14 +1111,14 @@ export const EXAMPLES = {
           'categoria',
           'meta_atingida',
           'pontuacoes',
-        ]
+        ],
       },
       {
         node_id: 'calc_historico',
         reads: [
           'taxa',
           'valor_compra',
-        ]
+        ],
       },
       {
         node_id: 'calc_pontos',
@@ -1116,7 +1126,7 @@ export const EXAMPLES = {
           'fator',
           'pontos_historico',
           'valor_item',
-        ]
+        ],
       },
     ],
     order: [
@@ -1124,6 +1134,7 @@ export const EXAMPLES = {
       'calc_historico',
       'calc_pontos',
     ],
+    groups: [],
     updated_at: '2026-11-18T14:05:00Z',
     updated_by: {
       id: '8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
@@ -1155,6 +1166,7 @@ export const EXAMPLES = {
     symbols: [],
     dependencies: [],
     order: [],
+    groups: [],
     updated_at: '2026-11-18T13:40:00Z',
     updated_by: {
       id: '5f0c2a8e-4b1d-4c3e-9a77-1d2e3f4a5b6c',
@@ -1346,6 +1358,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'categoria',
@@ -1355,6 +1368,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'meta_atingida',
@@ -1364,6 +1378,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'pontuacoes',
@@ -1373,6 +1388,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'valor_compra',
@@ -1382,6 +1398,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'taxa',
@@ -1391,6 +1408,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'elegivel',
@@ -1400,6 +1418,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'fator',
@@ -1409,6 +1428,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'pontos_historico',
@@ -1418,6 +1438,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_historico',
+        group_id: null,
       },
       {
         name: 'pontos',
@@ -1427,6 +1448,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_pontos',
+        group_id: null,
       },
     ],
     dependencies: [
@@ -1436,14 +1458,14 @@ export const EXAMPLES = {
           'categoria',
           'meta_atingida',
           'pontuacoes',
-        ]
+        ],
       },
       {
         node_id: 'calc_historico',
         reads: [
           'taxa',
           'valor_compra',
-        ]
+        ],
       },
       {
         node_id: 'calc_pontos',
@@ -1451,7 +1473,7 @@ export const EXAMPLES = {
           'fator',
           'pontos_historico',
           'valor_item',
-        ]
+        ],
       },
     ],
     order: [
@@ -1459,6 +1481,7 @@ export const EXAMPLES = {
       'calc_historico',
       'calc_pontos',
     ],
+    groups: [],
   },
   AnalysisTypeMismatch: {
     problems: [
@@ -1481,6 +1504,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'categoria',
@@ -1490,6 +1514,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'meta_atingida',
@@ -1499,6 +1524,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'pontuacoes',
@@ -1508,6 +1534,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'valor_compra',
@@ -1517,6 +1544,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'taxa',
@@ -1526,6 +1554,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'elegivel',
@@ -1535,6 +1564,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'fator',
@@ -1544,6 +1574,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'pontos_historico',
@@ -1553,6 +1584,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_historico',
+        group_id: null,
       },
       {
         name: 'pontos',
@@ -1562,6 +1594,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_pontos',
+        group_id: null,
       },
     ],
     dependencies: [
@@ -1571,14 +1604,14 @@ export const EXAMPLES = {
           'categoria',
           'meta_atingida',
           'pontuacoes',
-        ]
+        ],
       },
       {
         node_id: 'calc_historico',
         reads: [
           'taxa',
           'valor_compra',
-        ]
+        ],
       },
       {
         node_id: 'calc_pontos',
@@ -1586,7 +1619,7 @@ export const EXAMPLES = {
           'fator',
           'pontos_historico',
           'valor_item',
-        ]
+        ],
       },
     ],
     order: [
@@ -1594,6 +1627,7 @@ export const EXAMPLES = {
       'calc_historico',
       'calc_pontos',
     ],
+    groups: [],
   },
   AnalysisUnknownVariable: {
     problems: [
@@ -1616,6 +1650,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'categoria',
@@ -1625,6 +1660,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'meta_atingida',
@@ -1634,6 +1670,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'pontuacoes',
@@ -1643,6 +1680,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'valor_compra',
@@ -1652,6 +1690,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'taxa',
@@ -1661,6 +1700,7 @@ export const EXAMPLES = {
         list: 'pontuacoes',
         origin: 'input',
         node_id: null,
+        group_id: null,
       },
       {
         name: 'elegivel',
@@ -1670,6 +1710,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'fator',
@@ -1679,6 +1720,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'decision_table',
         node_id: 'td_elegibilidade',
+        group_id: null,
       },
       {
         name: 'pontos_historico',
@@ -1688,6 +1730,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_historico',
+        group_id: null,
       },
       {
         name: 'pontos',
@@ -1697,6 +1740,7 @@ export const EXAMPLES = {
         list: null,
         origin: 'calculation',
         node_id: 'calc_pontos',
+        group_id: null,
       },
     ],
     dependencies: [
@@ -1706,14 +1750,14 @@ export const EXAMPLES = {
           'categoria',
           'meta_atingida',
           'pontuacoes',
-        ]
+        ],
       },
       {
         node_id: 'calc_historico',
         reads: [
           'taxa',
           'valor_compra',
-        ]
+        ],
       },
       {
         node_id: 'calc_pontos',
@@ -1721,7 +1765,7 @@ export const EXAMPLES = {
           'fator',
           'pontos_historico',
           'valor_item',
-        ]
+        ],
       },
     ],
     order: [
@@ -1729,6 +1773,7 @@ export const EXAMPLES = {
       'calc_historico',
       'calc_pontos',
     ],
+    groups: [],
   },
   NewUnitRun: {
     revision: 3,
@@ -1741,115 +1786,130 @@ export const EXAMPLES = {
   },
   UnitRunOk: {
     status: 'ok',
-    outputs: [
+    record_key: null,
+    inputs: [
       {
-        name: 'pontos',
-        value: '225.00',
+        variable: 'valor_item',
+        value: '1500.00',
+        origin: null,
       },
       {
-        name: 'elegivel',
+        variable: 'categoria',
+        value: 'A',
+        origin: null,
+      },
+      {
+        variable: 'meta_atingida',
         value: true,
+        origin: null,
+      },
+      {
+        variable: 'pontuacoes',
+        value: [],
+        origin: null,
       },
     ],
     nodes: [
       {
+        type: 'decision_table',
         node_id: 'td_elegibilidade',
         status: 'ok',
-        values: [
-          {
-            name: 'elegivel',
-            value: true,
-          },
-          {
-            name: 'fator',
-            value: '0.1500',
-          },
-        ],
+        values: {
+          elegivel: true,
+          fator: '0.1500',
+        },
         matched_rule: 2,
         warnings: [],
         error: null,
       },
       {
+        type: 'calculation',
         node_id: 'calc_historico',
         status: 'ok',
-        values: [
-          {
-            name: 'pontos_historico',
-            value: '0.00',
-          },
-        ],
+        values: {
+          pontos_historico: '0.00',
+        },
         matched_rule: null,
         warnings: [],
         error: null,
       },
       {
+        type: 'calculation',
         node_id: 'calc_pontos',
         status: 'ok',
-        values: [
-          {
-            name: 'pontos',
-            value: '225.00',
-          },
-        ],
+        values: {
+          pontos: '225.00',
+        },
         matched_rule: null,
         warnings: [],
         error: null,
       },
     ],
+    outputs: {
+      pontos: '225.00',
+      elegivel: true,
+    },
+    input_hash: 'sha256:75165c8bcd4ca4b534982d17cc7dd60932f8b98416eda295284fc4c82bc6e14f',
+    output_hash: 'sha256:83590128dbe351da686faeeaf3010823a271e47971ff01329fa1f8b37fcc098f',
     error: null,
+    warnings: [],
   },
   UnitRunWithWarnings: {
     status: 'ok_with_warnings',
-    outputs: [
+    record_key: null,
+    inputs: [
       {
-        name: 'pontos',
+        variable: 'valor_item',
         value: null,
+        origin: null,
       },
       {
-        name: 'elegivel',
+        variable: 'categoria',
+        value: 'A',
+        origin: null,
+      },
+      {
+        variable: 'meta_atingida',
         value: true,
+        origin: null,
+      },
+      {
+        variable: 'pontuacoes',
+        value: [],
+        origin: null,
       },
     ],
     nodes: [
       {
+        type: 'decision_table',
         node_id: 'td_elegibilidade',
         status: 'ok',
-        values: [
-          {
-            name: 'elegivel',
-            value: true,
-          },
-          {
-            name: 'fator',
-            value: '0.1500',
-          },
-        ],
+        values: {
+          elegivel: true,
+          fator: '0.1500',
+        },
         matched_rule: 2,
         warnings: [],
         error: null,
       },
       {
+        type: 'calculation',
         node_id: 'calc_historico',
         status: 'ok',
-        values: [
-          {
-            name: 'pontos_historico',
-            value: '0.00',
-          },
-        ],
+        values: {
+          pontos_historico: '0.00',
+        },
         matched_rule: null,
         warnings: [],
         error: null,
       },
       {
+        type: 'calculation',
         node_id: 'calc_pontos',
         status: 'warning',
-        values: [
-          {
-            name: 'pontos',
-            value: null,
-          },
-        ],
+        values: {
+          pontos: null,
+        },
         matched_rule: null,
         warnings: [
           {
@@ -1860,51 +1920,78 @@ export const EXAMPLES = {
         error: null,
       },
     ],
+    outputs: {
+      pontos: null,
+      elegivel: true,
+    },
+    input_hash: 'sha256:ec60fb0c5d12bd069dd5498c64451b245f8403c1a5a8c13f0d7b835c2b607b04',
+    output_hash: 'sha256:b2dae4650729170f7fe953112fa31e6594b65c259e48cd90a5c831924c385fc5',
     error: null,
+    warnings: [
+      {
+        node_id: 'calc_pontos',
+        code: 'null_result',
+        message: 'O resultado de Pontos ficou nulo; o valor ficou nulo, como pede a política do nó.',
+        values: {},
+      },
+    ],
   },
   UnitRunError: {
     status: 'error',
-    outputs: [],
+    record_key: null,
+    inputs: [
+      {
+        variable: 'valor_item',
+        value: null,
+        origin: null,
+      },
+      {
+        variable: 'categoria',
+        value: 'A',
+        origin: null,
+      },
+      {
+        variable: 'meta_atingida',
+        value: true,
+        origin: null,
+      },
+      {
+        variable: 'pontuacoes',
+        value: [],
+        origin: null,
+      },
+    ],
     nodes: [
       {
+        type: 'decision_table',
         node_id: 'td_elegibilidade',
         status: 'ok',
-        values: [
-          {
-            name: 'elegivel',
-            value: true,
-          },
-          {
-            name: 'fator',
-            value: '0.1500',
-          },
-        ],
+        values: {
+          elegivel: true,
+          fator: '0.1500',
+        },
         matched_rule: 2,
         warnings: [],
         error: null,
       },
       {
+        type: 'calculation',
         node_id: 'calc_historico',
         status: 'ok',
-        values: [
-          {
-            name: 'pontos_historico',
-            value: '0.00',
-          },
-        ],
+        values: {
+          pontos_historico: '0.00',
+        },
         matched_rule: null,
         warnings: [],
         error: null,
       },
       {
+        type: 'calculation',
         node_id: 'calc_pontos',
         status: 'error',
-        values: [
-          {
-            name: 'pontos',
-            value: null,
-          },
-        ],
+        values: {
+          pontos: null,
+        },
         matched_rule: null,
         warnings: [],
         error: {
@@ -1913,11 +2000,18 @@ export const EXAMPLES = {
         },
       },
     ],
+    outputs: {},
+    input_hash: 'sha256:ec60fb0c5d12bd069dd5498c64451b245f8403c1a5a8c13f0d7b835c2b607b04',
+    output_hash: null,
     error: {
       node_id: 'calc_pontos',
       code: 'null_result',
       message: 'O resultado de Pontos ficou nulo.',
+      values: {
+        valor_item: null,
+      },
     },
+    warnings: [],
   },
   WorkflowExists: {
     type: 'about:blank',
@@ -1987,6 +2081,1714 @@ export const EXAMPLES = {
     detail: 'Muitos testes de conexão em pouco tempo. Aguarde e tente de novo.',
     code: 'too_many_connection_tests',
     retry_after_seconds: 42,
+  },
+  DraftWithSources: {
+    workflow_id: '4d0e2f3a-8b9c-4d5e-8f1a-2b3c4d5e6f70',
+    revision: 4,
+    definition: {
+      schema_version: 2,
+      kind: 'batch',
+      settings: {
+        error_policy: 'error',
+        rounding: {
+          scale: 2,
+          mode: 'half_up',
+        },
+      },
+      root: {
+        batch_source: {
+          dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',
+          key: [
+            'nf_id',
+            'item_seq',
+          ],
+          filters: [
+            {
+              variable: 'status',
+              operator: '=',
+              values: [
+                '"A"',
+              ],
+            },
+          ],
+          order_by: [
+            {
+              variable: 'data_emissao',
+              direction: 'asc',
+            },
+          ],
+          outputs: [
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e01',
+              name: 'nf_id',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e02',
+              name: 'item_seq',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e03',
+              name: 'cod_prod',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e04',
+              name: 'valor_item',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e05',
+              name: 'status',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e06',
+              name: 'data_emissao',
+            },
+          ],
+        },
+        inputs: [],
+        nodes: [
+          {
+            id: 'produto',
+            type: 'source',
+            name: 'Produto',
+            description: null,
+            position: {
+              x: 0,
+              y: 0,
+            },
+            mode: 'linear',
+            dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c02',
+            links: [
+              {
+                variable: 'cod_prod',
+                column_variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e11',
+              },
+            ],
+            filters: [],
+            order_by: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e12',
+                direction: 'desc',
+              },
+            ],
+            no_match: 'error',
+            multiple_rows: 'error',
+            exists: null,
+            outputs: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e13',
+                name: 'categoria',
+              },
+            ],
+          },
+          {
+            id: 'campanha',
+            type: 'source',
+            name: 'Produtos da campanha',
+            description: null,
+            position: {
+              x: 0,
+              y: 160,
+            },
+            mode: 'filter',
+            dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c03',
+            links: [
+              {
+                variable: 'cod_prod',
+                column_variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e21',
+              },
+            ],
+            filters: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e22',
+                operator: '=',
+                values: [
+                  'verdadeiro',
+                ],
+              },
+            ],
+            exists: true,
+          },
+          {
+            id: 'grp_pontuacao',
+            type: 'group',
+            name: 'Pontuação',
+            description: null,
+            position: {
+              x: 240,
+              y: 0,
+            },
+            collapsed: false,
+            nodes: [
+              {
+                id: 'td_elegibilidade',
+                type: 'decision_table',
+                name: 'Elegibilidade',
+                description: null,
+                position: {
+                  x: 0,
+                  y: 0,
+                },
+                hit_policy: 'first',
+                rounding_mode: null,
+                error_policy: null,
+                conditions: [
+                  {
+                    expression: 'categoria',
+                  },
+                ],
+                results: [
+                  {
+                    name: 'elegivel',
+                    type: 'boolean',
+                    default_value: null,
+                  },
+                  {
+                    name: 'fator',
+                    type: 'decimal',
+                    scale: 4,
+                    default_value: null,
+                  },
+                ],
+                rules: [
+                  {
+                    when: [
+                      '"A"',
+                    ],
+                    then: [
+                      'verdadeiro',
+                      '0.15',
+                    ],
+                  },
+                  {
+                    when: [
+                      '-',
+                    ],
+                    then: [
+                      'verdadeiro',
+                      '0.10',
+                    ],
+                  },
+                ],
+              },
+              {
+                id: 'calc_pontos',
+                type: 'calculation',
+                name: 'Pontos',
+                description: null,
+                position: {
+                  x: 240,
+                  y: 0,
+                },
+                expression: 'ARRED(valor_item * fator, 2)',
+                output: {
+                  name: 'pontos',
+                  type: 'decimal',
+                  scale: 2,
+                },
+                rounding_mode: null,
+                error_policy: null,
+                default_value: null,
+              },
+            ],
+            outputs: [
+              'elegivel',
+              'pontos',
+            ],
+          },
+        ],
+        output: {
+          fields: [
+            {
+              name: 'pontos',
+              variable: 'pontos',
+            },
+            {
+              name: 'elegivel',
+              variable: 'elegivel',
+            },
+          ],
+        },
+      },
+    },
+    problems: [],
+    symbols: [
+      {
+        name: 'nf_id',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'item_seq',
+        type: 'integer',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'cod_prod',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'valor_item',
+        type: 'decimal',
+        scale: 2,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'status',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'data_emissao',
+        type: 'date',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'categoria',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'source',
+        node_id: 'produto',
+        group_id: null,
+      },
+      {
+        name: 'elegivel',
+        type: 'boolean',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'decision_table',
+        node_id: 'td_elegibilidade',
+        group_id: 'grp_pontuacao',
+      },
+      {
+        name: 'fator',
+        type: 'decimal',
+        scale: 4,
+        cardinality: 'linear',
+        list: null,
+        origin: 'decision_table',
+        node_id: 'td_elegibilidade',
+        group_id: 'grp_pontuacao',
+      },
+      {
+        name: 'pontos',
+        type: 'decimal',
+        scale: 2,
+        cardinality: 'linear',
+        list: null,
+        origin: 'calculation',
+        node_id: 'calc_pontos',
+        group_id: 'grp_pontuacao',
+      },
+    ],
+    dependencies: [
+      {
+        node_id: 'produto',
+        reads: [
+          'cod_prod',
+        ],
+      },
+      {
+        node_id: 'campanha',
+        reads: [
+          'cod_prod',
+        ],
+      },
+      {
+        node_id: 'grp_pontuacao',
+        reads: [
+          'categoria',
+          'valor_item',
+        ],
+      },
+      {
+        node_id: 'td_elegibilidade',
+        reads: [
+          'categoria',
+        ],
+      },
+      {
+        node_id: 'calc_pontos',
+        reads: [
+          'fator',
+          'valor_item',
+        ],
+      },
+    ],
+    order: [
+      'produto',
+      'campanha',
+      'grp_pontuacao',
+    ],
+    groups: [
+      {
+        node_id: 'grp_pontuacao',
+        inputs: [
+          'categoria',
+          'valor_item',
+        ],
+        outputs: [
+          'elegivel',
+          'pontos',
+        ],
+        order: [
+          'td_elegibilidade',
+          'calc_pontos',
+        ],
+      },
+    ],
+    updated_at: '2026-11-21T10:15:00Z',
+    updated_by: {
+      id: '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b',
+      name: 'Ana Souza',
+    },
+  },
+  DraftUpdateWithSources: {
+    revision: 3,
+    definition: {
+      schema_version: 2,
+      kind: 'batch',
+      settings: {
+        error_policy: 'error',
+        rounding: {
+          scale: 2,
+          mode: 'half_up',
+        },
+      },
+      root: {
+        batch_source: {
+          dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',
+          key: [
+            'nf_id',
+            'item_seq',
+          ],
+          filters: [
+            {
+              variable: 'status',
+              operator: '=',
+              values: [
+                '"A"',
+              ],
+            },
+          ],
+          order_by: [
+            {
+              variable: 'data_emissao',
+              direction: 'asc',
+            },
+          ],
+          outputs: [
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e01',
+              name: 'nf_id',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e02',
+              name: 'item_seq',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e03',
+              name: 'cod_prod',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e04',
+              name: 'valor_item',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e05',
+              name: 'status',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e06',
+              name: 'data_emissao',
+            },
+          ],
+        },
+        inputs: [],
+        nodes: [
+          {
+            id: 'produto',
+            type: 'source',
+            name: 'Produto',
+            description: null,
+            position: {
+              x: 0,
+              y: 0,
+            },
+            mode: 'linear',
+            dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c02',
+            links: [
+              {
+                variable: 'cod_prod',
+                column_variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e11',
+              },
+            ],
+            filters: [],
+            order_by: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e12',
+                direction: 'desc',
+              },
+            ],
+            no_match: 'error',
+            multiple_rows: 'error',
+            exists: null,
+            outputs: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e13',
+                name: 'categoria',
+              },
+            ],
+          },
+          {
+            id: 'campanha',
+            type: 'source',
+            name: 'Produtos da campanha',
+            description: null,
+            position: {
+              x: 0,
+              y: 160,
+            },
+            mode: 'filter',
+            dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c03',
+            links: [
+              {
+                variable: 'cod_prod',
+                column_variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e21',
+              },
+            ],
+            filters: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e22',
+                operator: '=',
+                values: [
+                  'verdadeiro',
+                ],
+              },
+            ],
+            exists: true,
+          },
+          {
+            id: 'grp_pontuacao',
+            type: 'group',
+            name: 'Pontuação',
+            description: null,
+            position: {
+              x: 240,
+              y: 0,
+            },
+            collapsed: false,
+            nodes: [
+              {
+                id: 'td_elegibilidade',
+                type: 'decision_table',
+                name: 'Elegibilidade',
+                description: null,
+                position: {
+                  x: 0,
+                  y: 0,
+                },
+                hit_policy: 'first',
+                rounding_mode: null,
+                error_policy: null,
+                conditions: [
+                  {
+                    expression: 'categoria',
+                  },
+                ],
+                results: [
+                  {
+                    name: 'elegivel',
+                    type: 'boolean',
+                    default_value: null,
+                  },
+                  {
+                    name: 'fator',
+                    type: 'decimal',
+                    scale: 4,
+                    default_value: null,
+                  },
+                ],
+                rules: [
+                  {
+                    when: [
+                      '"A"',
+                    ],
+                    then: [
+                      'verdadeiro',
+                      '0.15',
+                    ],
+                  },
+                  {
+                    when: [
+                      '-',
+                    ],
+                    then: [
+                      'verdadeiro',
+                      '0.10',
+                    ],
+                  },
+                ],
+              },
+              {
+                id: 'calc_pontos',
+                type: 'calculation',
+                name: 'Pontos',
+                description: null,
+                position: {
+                  x: 240,
+                  y: 0,
+                },
+                expression: 'ARRED(valor_item * fator, 2)',
+                output: {
+                  name: 'pontos',
+                  type: 'decimal',
+                  scale: 2,
+                },
+                rounding_mode: null,
+                error_policy: null,
+                default_value: null,
+              },
+            ],
+            outputs: [
+              'elegivel',
+              'pontos',
+            ],
+          },
+        ],
+        output: {
+          fields: [
+            {
+              name: 'pontos',
+              variable: 'pontos',
+            },
+            {
+              name: 'elegivel',
+              variable: 'elegivel',
+            },
+          ],
+        },
+      },
+    },
+  },
+  DraftDefinitionInvalid: {
+    workflow_id: '4d0e2f3a-8b9c-4d5e-8f1a-2b3c4d5e6f70',
+    revision: 4,
+    definition: {
+      schema_version: 2,
+      kind: 'batch',
+      settings: {
+        error_policy: 'error',
+        rounding: {
+          scale: 2,
+          mode: 'half_up',
+        },
+      },
+      root: {
+        batch_source: {
+          dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',
+          key: [
+            'nf_id',
+            'item_seq',
+          ],
+          filters: [
+            {
+              variable: 'status',
+              operator: '=',
+              values: [
+                '"A"',
+              ],
+            },
+          ],
+          order_by: [
+            {
+              variable: 'data_emissao',
+              direction: 'asc',
+            },
+          ],
+          outputs: [
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e01',
+              name: 'nf_id',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e02',
+              name: 'item_seq',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e03',
+              name: 'cod_prod',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e04',
+              name: 'valor_item',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e05',
+              name: 'status',
+            },
+            {
+              variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e06',
+              name: 'data_emissao',
+            },
+          ],
+        },
+        inputs: [],
+        nodes: [
+          {
+            id: 'produto',
+            type: 'source',
+            name: 'Produto',
+            description: null,
+            position: {
+              x: 0,
+              y: 0,
+            },
+            mode: 'linear',
+            dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c02',
+            links: [
+              {
+                variable: 'cod_prod',
+                column_variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e11',
+              },
+            ],
+            filters: [],
+            order_by: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e12',
+                direction: 'desc',
+              },
+            ],
+            no_match: 'error',
+            multiple_rows: 'error',
+            exists: true,
+            outputs: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e13',
+                name: 'categoria',
+              },
+            ],
+          },
+          {
+            id: 'campanha',
+            type: 'source',
+            name: 'Produtos da campanha',
+            description: null,
+            position: {
+              x: 0,
+              y: 160,
+            },
+            mode: 'filter',
+            dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c03',
+            links: [
+              {
+                variable: 'cod_prod',
+                column_variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e21',
+              },
+            ],
+            filters: [
+              {
+                variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e22',
+                operator: '=',
+                values: [
+                  'verdadeiro',
+                ],
+              },
+            ],
+            exists: true,
+          },
+          {
+            id: 'grp_pontuacao',
+            type: 'group',
+            name: 'Pontuação',
+            description: null,
+            position: {
+              x: 240,
+              y: 0,
+            },
+            collapsed: false,
+            nodes: [
+              {
+                id: 'td_elegibilidade',
+                type: 'decision_table',
+                name: 'Elegibilidade',
+                description: null,
+                position: {
+                  x: 0,
+                  y: 0,
+                },
+                hit_policy: 'first',
+                rounding_mode: null,
+                error_policy: null,
+                conditions: [
+                  {
+                    expression: 'categoria',
+                  },
+                ],
+                results: [
+                  {
+                    name: 'elegivel',
+                    type: 'boolean',
+                    default_value: null,
+                  },
+                  {
+                    name: 'fator',
+                    type: 'decimal',
+                    scale: 4,
+                    default_value: null,
+                  },
+                ],
+                rules: [
+                  {
+                    when: [
+                      '"A"',
+                    ],
+                    then: [
+                      'verdadeiro',
+                      '0.15',
+                    ],
+                  },
+                  {
+                    when: [
+                      '-',
+                    ],
+                    then: [
+                      'verdadeiro',
+                      '0.10',
+                    ],
+                  },
+                ],
+              },
+              {
+                id: 'calc_pontos',
+                type: 'calculation',
+                name: 'Pontos',
+                description: null,
+                position: {
+                  x: 240,
+                  y: 0,
+                },
+                expression: 'ARRED(valor_item * fator, 2)',
+                output: {
+                  name: 'pontos',
+                  type: 'decimal',
+                  scale: 2,
+                },
+                rounding_mode: null,
+                error_policy: null,
+                default_value: null,
+              },
+            ],
+            outputs: [
+              'elegivel',
+              'pontos',
+            ],
+          },
+        ],
+        output: {
+          fields: [
+            {
+              name: 'pontos',
+              variable: 'pontos',
+            },
+            {
+              name: 'elegivel',
+              variable: 'elegivel',
+            },
+          ],
+        },
+      },
+    },
+    problems: [
+      {
+        code: 'definition_invalid',
+        message: 'Este campo não é mais aceito. Corrija-o e salve de novo.',
+        path: 'root.nodes[0].exists',
+        node_id: 'produto',
+        start: null,
+        end: null,
+        suggestion: null,
+      },
+    ],
+    symbols: [],
+    dependencies: [],
+    order: [],
+    groups: [],
+    updated_at: '2026-11-21T10:15:00Z',
+    updated_by: {
+      id: '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b',
+      name: 'Ana Souza',
+    },
+  },
+  AnalysisNotVisible: {
+    problems: [
+      {
+        code: 'not_visible',
+        message: 'pontos existe, mas não é visível aqui. Ela está dentro do grupo Pontuação.',
+        path: 'root.output.fields[0].variable',
+        node_id: null,
+        start: null,
+        end: null,
+        suggestion: null,
+      },
+    ],
+    symbols: [
+      {
+        name: 'nf_id',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'item_seq',
+        type: 'integer',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'cod_prod',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'valor_item',
+        type: 'decimal',
+        scale: 2,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'status',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'data_emissao',
+        type: 'date',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'batch_source',
+        node_id: null,
+        group_id: null,
+      },
+      {
+        name: 'categoria',
+        type: 'text',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'source',
+        node_id: 'produto',
+        group_id: null,
+      },
+      {
+        name: 'elegivel',
+        type: 'boolean',
+        scale: null,
+        cardinality: 'linear',
+        list: null,
+        origin: 'decision_table',
+        node_id: 'td_elegibilidade',
+        group_id: 'grp_pontuacao',
+      },
+      {
+        name: 'fator',
+        type: 'decimal',
+        scale: 4,
+        cardinality: 'linear',
+        list: null,
+        origin: 'decision_table',
+        node_id: 'td_elegibilidade',
+        group_id: 'grp_pontuacao',
+      },
+      {
+        name: 'pontos',
+        type: 'decimal',
+        scale: 2,
+        cardinality: 'linear',
+        list: null,
+        origin: 'calculation',
+        node_id: 'calc_pontos',
+        group_id: 'grp_pontuacao',
+      },
+    ],
+    dependencies: [
+      {
+        node_id: 'produto',
+        reads: [
+          'cod_prod',
+        ],
+      },
+      {
+        node_id: 'campanha',
+        reads: [
+          'cod_prod',
+        ],
+      },
+      {
+        node_id: 'grp_pontuacao',
+        reads: [
+          'categoria',
+          'valor_item',
+        ],
+      },
+      {
+        node_id: 'td_elegibilidade',
+        reads: [
+          'categoria',
+        ],
+      },
+      {
+        node_id: 'calc_pontos',
+        reads: [
+          'fator',
+          'valor_item',
+        ],
+      },
+    ],
+    order: [
+      'produto',
+      'campanha',
+      'grp_pontuacao',
+    ],
+    groups: [
+      {
+        node_id: 'grp_pontuacao',
+        inputs: [
+          'categoria',
+          'valor_item',
+        ],
+        outputs: [
+          'elegivel',
+        ],
+        order: [
+          'td_elegibilidade',
+          'calc_pontos',
+        ],
+      },
+    ],
+  },
+  NewPreview: {
+    revision: 4,
+    sample_size: 20,
+  },
+  Preview: {
+    counted_records: 500,
+    total_known: false,
+    sources: [
+      {
+        node_id: 'produto',
+        mode: 'linear',
+        found: 480,
+        no_match: 12,
+        multiple_rows: 8,
+        max_rows: 3,
+        no_match_keys: [
+          {
+            nf_id: '17',
+            item_seq: '2',
+          },
+          {
+            nf_id: '23',
+            item_seq: '1',
+          },
+        ],
+        multiple_rows_keys: [
+          {
+            nf_id: '12',
+            item_seq: '3',
+          },
+        ],
+        kept: null,
+        filtered: null,
+        rows: [
+          {
+            categoria: 'A',
+          },
+          {
+            categoria: 'B',
+          },
+        ],
+      },
+      {
+        node_id: 'campanha',
+        mode: 'filter',
+        found: null,
+        no_match: null,
+        multiple_rows: null,
+        max_rows: null,
+        no_match_keys: [],
+        multiple_rows_keys: [],
+        kept: 450,
+        filtered: 50,
+        rows: [
+          {
+            cod_prod: 'P-001',
+          },
+          {
+            cod_prod: 'P-002',
+          },
+        ],
+      },
+    ],
+    groups: [
+      {
+        node_id: null,
+        records: [
+          {
+            record_key: {
+              nf_id: '10',
+              item_seq: '1',
+            },
+            status: 'ok',
+            inputs: {
+              nf_id: '10',
+              item_seq: '1',
+              cod_prod: 'P-001',
+              valor_item: '1500.00',
+              status: 'A',
+              data_emissao: '2026-10-05',
+            },
+            outputs: {
+              pontos: '225.00',
+              elegivel: true,
+            },
+          },
+          {
+            record_key: {
+              nf_id: '10',
+              item_seq: '2',
+            },
+            status: 'filtered',
+            inputs: {
+              nf_id: '10',
+              item_seq: '2',
+              cod_prod: 'P-207',
+              valor_item: '80.00',
+              status: 'A',
+              data_emissao: '2026-10-05',
+            },
+            outputs: {},
+          },
+        ],
+      },
+      {
+        node_id: 'grp_pontuacao',
+        records: [
+          {
+            record_key: {
+              nf_id: '10',
+              item_seq: '1',
+            },
+            status: 'ok',
+            inputs: {
+              categoria: 'A',
+              valor_item: '1500.00',
+            },
+            outputs: {
+              elegivel: true,
+              pontos: '225.00',
+            },
+          },
+        ],
+      },
+    ],
+    error: null,
+  },
+  PreviewSchemaDrift: {
+    counted_records: 0,
+    total_known: false,
+    sources: [],
+    groups: [],
+    error: {
+      node_id: null,
+      code: 'schema_drift',
+      message: '`ItensNF.vl_itm` não existe mais na origem.',
+      values: {},
+    },
+  },
+  PreviewSourceReadDenied: {
+    counted_records: 0,
+    total_known: false,
+    sources: [],
+    groups: [],
+    error: {
+      node_id: 'produto',
+      code: 'source_read_denied',
+      message: 'O usuário da conexão não pode ler o dataset Produtos. Peça a permissão de leitura (SELECT) a quem cuida do banco.',
+      values: {},
+    },
+  },
+  PreviewParameterTableRows: {
+    counted_records: 0,
+    total_known: false,
+    sources: [],
+    groups: [],
+    error: {
+      node_id: 'fatores',
+      code: 'parameter_table_rows',
+      message: 'A tabela de parâmetros Fatores tem 2 linhas depois dos filtros; ela precisa de exatamente 1.',
+      values: {},
+    },
+  },
+  NewUnitRunWithRecordKey: {
+    revision: 4,
+    record_key: {
+      nf_id: '10',
+      item_seq: '1',
+    },
+  },
+  UnitRunTrace: {
+    status: 'ok',
+    record_key: {
+      nf_id: '10',
+      item_seq: '1',
+    },
+    inputs: [
+      {
+        variable: 'nf_id',
+        value: '10',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'nf_id',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'item_seq',
+        value: '1',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'item_seq',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'cod_prod',
+        value: 'P-001',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'cod_prod',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'valor_item',
+        value: '1500.00',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'vl_itm',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'status',
+        value: 'A',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'status',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'data_emissao',
+        value: '2026-10-05',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'dt_emissao',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'categoria',
+        value: 'A',
+        origin: {
+          connection: 'Cadastro',
+          dataset: 'Produtos',
+          column: 'categoria',
+          row_key: {
+            cod_prod: 'P-001',
+          },
+        },
+      },
+    ],
+    nodes: [
+      {
+        type: 'source',
+        node_id: 'produto',
+        status: 'ok',
+        values: {
+          categoria: 'A',
+        },
+        rows_found: 1,
+        warnings: [],
+        error: null,
+      },
+      {
+        type: 'source',
+        node_id: 'campanha',
+        status: 'ok',
+        values: {},
+        rows_found: 1,
+        warnings: [],
+        error: null,
+      },
+      {
+        type: 'group',
+        node_id: 'grp_pontuacao',
+        status: 'ok',
+        inputs: {
+          categoria: 'A',
+          valor_item: '1500.00',
+        },
+        outputs: {
+          elegivel: true,
+          pontos: '225.00',
+        },
+        nodes: [
+          {
+            type: 'decision_table',
+            node_id: 'td_elegibilidade',
+            status: 'ok',
+            values: {
+              elegivel: true,
+              fator: '0.1500',
+            },
+            matched_rule: 1,
+            warnings: [],
+            error: null,
+          },
+          {
+            type: 'calculation',
+            node_id: 'calc_pontos',
+            status: 'ok',
+            values: {
+              pontos: '225.00',
+            },
+            matched_rule: null,
+            warnings: [],
+            error: null,
+          },
+        ],
+      },
+    ],
+    outputs: {
+      pontos: '225.00',
+      elegivel: true,
+    },
+    input_hash: 'sha256:77b0db21bf50cd73110d3ba398acc52c9d59e1ff5b3a3cb10d67e03f86560506',
+    output_hash: 'sha256:83590128dbe351da686faeeaf3010823a271e47971ff01329fa1f8b37fcc098f',
+    error: null,
+    warnings: [],
+  },
+  UnitRunFiltered: {
+    status: 'filtered',
+    record_key: {
+      nf_id: '10',
+      item_seq: '1',
+    },
+    inputs: [
+      {
+        variable: 'nf_id',
+        value: '10',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'nf_id',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'item_seq',
+        value: '1',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'item_seq',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'cod_prod',
+        value: 'P-207',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'cod_prod',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'valor_item',
+        value: '1500.00',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'vl_itm',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'status',
+        value: 'A',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'status',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'data_emissao',
+        value: '2026-10-05',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'dt_emissao',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'categoria',
+        value: 'B',
+        origin: {
+          connection: 'Cadastro',
+          dataset: 'Produtos',
+          column: 'categoria',
+          row_key: {
+            cod_prod: 'P-207',
+          },
+        },
+      },
+    ],
+    nodes: [
+      {
+        type: 'source',
+        node_id: 'produto',
+        status: 'ok',
+        values: {
+          categoria: 'B',
+        },
+        rows_found: 1,
+        warnings: [],
+        error: null,
+      },
+      {
+        type: 'source',
+        node_id: 'campanha',
+        status: 'ok',
+        values: {},
+        rows_found: 0,
+        warnings: [],
+        error: null,
+      },
+      {
+        type: 'group',
+        node_id: 'grp_pontuacao',
+        status: 'not_run',
+        inputs: {},
+        outputs: {},
+        nodes: [],
+      },
+    ],
+    outputs: {},
+    input_hash: 'sha256:355e55c44700ceb2c8dc3c317501c9d5999bdba3e5237f5922c6fd55c3020c28',
+    output_hash: null,
+    error: null,
+    warnings: [],
+  },
+  UnitRunIgnored: {
+    status: 'ignored',
+    record_key: {
+      nf_id: '10',
+      item_seq: '1',
+    },
+    inputs: [
+      {
+        variable: 'nf_id',
+        value: '10',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'nf_id',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'item_seq',
+        value: '1',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'item_seq',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'cod_prod',
+        value: 'P-999',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'cod_prod',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'valor_item',
+        value: '1500.00',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'vl_itm',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'status',
+        value: 'A',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'status',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+      {
+        variable: 'data_emissao',
+        value: '2026-10-05',
+        origin: {
+          connection: 'ERP',
+          dataset: 'Itens NF',
+          column: 'dt_emissao',
+          row_key: {
+            nf_id: '10',
+            item_seq: '1',
+          },
+        },
+      },
+    ],
+    nodes: [
+      {
+        type: 'source',
+        node_id: 'produto',
+        status: 'warning',
+        values: {
+          categoria: null,
+        },
+        rows_found: 0,
+        warnings: [
+          {
+            code: 'no_match',
+            message: 'Produto não achou linha para cod_prod P-999; o registro foi ignorado, como pede a política do bloco.',
+          },
+        ],
+        error: null,
+      },
+      {
+        type: 'source',
+        node_id: 'campanha',
+        status: 'not_run',
+        values: {},
+        rows_found: 0,
+        warnings: [],
+        error: null,
+      },
+      {
+        type: 'group',
+        node_id: 'grp_pontuacao',
+        status: 'not_run',
+        inputs: {},
+        outputs: {},
+        nodes: [],
+      },
+    ],
+    outputs: {},
+    input_hash: 'sha256:5e23424ffc8c1666801e8b7e0e6aa076de19490df7233c151e4d40855ba4606b',
+    output_hash: null,
+    error: null,
+    warnings: [
+      {
+        node_id: 'produto',
+        code: 'no_match',
+        message: 'Produto não achou linha para cod_prod P-999; o registro foi ignorado, como pede a política do bloco.',
+        values: {
+          cod_prod: 'P-999',
+        },
+      },
+    ],
+  },
+  UnitRunSchemaDrift: {
+    status: 'error',
+    record_key: {
+      nf_id: '10',
+      item_seq: '1',
+    },
+    inputs: [],
+    nodes: [],
+    outputs: {},
+    input_hash: 'sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a',
+    output_hash: null,
+    error: {
+      node_id: null,
+      code: 'schema_drift',
+      message: '`ItensNF.vl_itm` não existe mais na origem.',
+      values: {},
+    },
+    warnings: [],
+  },
+  PreviewDraftHasProblems: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Corrija os problemas do rascunho antes de rodar a prévia.',
+    code: 'draft_has_problems',
+    problems: [
+      {
+        code: 'type_mismatch',
+        message: 'Esperava um número, mas categoria é um texto.',
+        path: 'root.nodes[2].expression',
+        node_id: 'calc_pontos',
+        start: 13,
+        end: 22,
+        suggestion: null,
+      },
+    ],
+  },
+  NoBatchSource: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Este workflow não tem fonte do lote. Escolha a fonte do lote para rodar a prévia.',
+    code: 'no_batch_source',
+  },
+  RecordNotFound: {
+    type: 'about:blank',
+    title: 'Não encontrado',
+    status: 404,
+    detail: 'Nenhum registro com essa chave.',
+    code: 'record_not_found',
+  },
+  InvalidDataPreview: {
+    type: 'about:blank',
+    title: 'Dados inválidos',
+    status: 422,
+    detail: 'Alguns dados enviados estão inválidos. Confira os campos e tente de novo.',
+    code: 'invalid_data',
+    fields: {
+      sample_size: 'Use de 1 a 100.',
+    },
   },
 } satisfies Record<string, unknown>;
 

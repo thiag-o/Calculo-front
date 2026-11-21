@@ -1,18 +1,21 @@
 import { useMemo } from 'react';
+import type { Schemas } from '../../api';
 import { Status, Text, type StatusTone } from '../../design-system';
 import type { WorkflowDefinition } from '../draft';
-import type { UnitRun, UnitRunNode } from './queries';
+import type { UnitRun } from './queries';
 import { formatValue, variableTypes } from './values';
 
 /** The record status (estilos.md §7.5): dot + word. */
-const recordStatus: Record<UnitRun['status'], { tone: StatusTone; word: string }> = {
+export const recordStatus: Record<UnitRun['status'], { tone: StatusTone; word: string }> = {
   ok: { tone: 'green', word: 'ok' },
   ok_with_warnings: { tone: 'amber', word: 'com avisos' },
   error: { tone: 'red', word: 'erro' },
+  ignored: { tone: 'gray', word: 'ignorado' },
+  filtered: { tone: 'gray', word: 'filtrado' },
 };
 
 /** The block status, as the record's; a block that did not run is gray (estilos.md §7.5 and §8, "Debug"). */
-const nodeStatus: Record<UnitRunNode['status'], { tone: StatusTone; word: string }> = {
+const nodeStatus: Record<Schemas['NodeRunStatus'], { tone: StatusTone; word: string }> = {
   ok: { tone: 'green', word: 'ok' },
   warning: { tone: 'amber', word: 'com avisos' },
   error: { tone: 'red', word: 'erro' },
@@ -51,12 +54,12 @@ export function UnitRunResult({ run, definition, currentDefinition, onSelectNode
 
       <section className="fc-unit-run-section" aria-label="Saídas">
         <h4 className="fc-unit-run-subtitle">Saídas</h4>
-        {run.outputs.length > 0 ? (
+        {Object.keys(run.outputs).length > 0 ? (
           <dl className="fc-unit-run-values">
-            {run.outputs.map((output) => (
-              <div key={output.name} className="fc-unit-run-value">
-                <dt className="fc-unit-run-name">{output.name}</dt>
-                <dd>{formatValue(output.value, outputTypes.get(output.name))}</dd>
+            {Object.entries(run.outputs).map(([name, value]) => (
+              <div key={name} className="fc-unit-run-value">
+                <dt className="fc-unit-run-name">{name}</dt>
+                <dd>{formatValue(value, outputTypes.get(name))}</dd>
               </div>
             ))}
           </dl>
@@ -75,6 +78,10 @@ export function UnitRunResult({ run, definition, currentDefinition, onSelectNode
               const name = names.get(node.node_id) ?? node.node_id;
               const exists = currentDefinition.root.nodes.some((current) => current.id === node.node_id);
               const { tone, word } = nodeStatus[node.status];
+              const values = Object.entries(node.type === 'group' ? node.outputs : node.values);
+              const matchedRule = node.type === 'group' || node.type === 'source' ? null : node.matched_rule;
+              const warnings = node.type === 'group' ? [] : node.warnings;
+              const failure = node.type === 'group' ? null : node.error;
               return (
                 <li key={node.node_id} className={node.status === 'not_run' ? 'fc-unit-run-node fc-unit-run-node-not-run' : 'fc-unit-run-node'}>
                   <div className="fc-unit-run-node-head">
@@ -93,25 +100,25 @@ export function UnitRunResult({ run, definition, currentDefinition, onSelectNode
                     ) : (
                       <span className="fc-unit-run-node-name fc-unit-run-node-gone">{name}</span>
                     )}
-                    {node.matched_rule !== null ? (
+                    {matchedRule !== null ? (
                       <Text as="span" variant="label-12" emphasis="secondary">
-                        {`Regra ${node.matched_rule.toLocaleString('pt-BR')}`}
+                        {`Regra ${matchedRule.toLocaleString('pt-BR')}`}
                       </Text>
                     ) : null}
                   </div>
-                  {node.values.length > 0 ? (
+                  {values.length > 0 ? (
                     <dl className="fc-unit-run-values fc-unit-run-node-values">
-                      {node.values.map((value) => (
-                        <div key={value.name} className="fc-unit-run-value">
-                          <dt className="fc-unit-run-name">{value.name}</dt>
-                          <dd>{formatValue(value.value, types.get(value.name))}</dd>
+                      {values.map(([valueName, value]) => (
+                        <div key={valueName} className="fc-unit-run-value">
+                          <dt className="fc-unit-run-name">{valueName}</dt>
+                          <dd>{formatValue(value, types.get(valueName))}</dd>
                         </div>
                       ))}
                     </dl>
                   ) : null}
-                  {node.warnings.length > 0 ? (
+                  {warnings.length > 0 ? (
                     <ul className="fc-unit-run-messages" aria-label={`Avisos de ${name}`}>
-                      {node.warnings.map((warning, index) => (
+                      {warnings.map((warning, index) => (
                         <li key={`${warning.code}:${index}`} className="fc-unit-run-message fc-unit-run-warning">
                           <span className="fc-unit-run-code">{warning.code}</span>
                           <span>{warning.message}</span>
@@ -119,10 +126,10 @@ export function UnitRunResult({ run, definition, currentDefinition, onSelectNode
                       ))}
                     </ul>
                   ) : null}
-                  {node.error ? (
+                  {failure ? (
                     <p className="fc-unit-run-message fc-unit-run-error">
-                      <span className="fc-unit-run-code">{node.error.code}</span>
-                      <span>{node.error.message}</span>
+                      <span className="fc-unit-run-code">{failure.code}</span>
+                      <span>{failure.message}</span>
                     </p>
                   ) : null}
                 </li>

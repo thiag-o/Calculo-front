@@ -12,7 +12,7 @@ export function usedNames(definition: WorkflowDefinition): Set<string> {
   }
   for (const node of definition.root.nodes) {
     if (node.type === 'calculation') names.add(node.output.name);
-    else for (const result of node.results) names.add(result.name);
+    else if (node.type === 'decision_table') for (const result of node.results) names.add(result.name);
   }
   return names;
 }

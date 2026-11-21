@@ -28,8 +28,9 @@ type WorkflowNode = Definition['root']['nodes'][number];
 type Symbol = Schemas['Symbol'];
 type Problem = Schemas['WorkflowProblem'];
 export type Analysis = Schemas['Analysis'];
-export type UnitRun = Schemas['UnitRun'];
-type UnitRunNode = Schemas['UnitRunNode'];
+export type UnitRun = Schemas['UnitRunTrace'];
+type TraceNode = Schemas['TraceFormulaNode'];
+type TraceMessage = Schemas['TraceMessage'];
 type Value = Schemas['Value'];
 
 // --- Analysis --------------------------------------------------------------------------------------------------------
@@ -42,19 +43,19 @@ function symbolsOf(definition: Definition): Symbol[] {
   };
   for (const input of definition.root.inputs) {
     if (input.cardinality === 'linear') {
-      add({ name: input.name, type: input.type, scale: input.scale ?? null, cardinality: 'linear', list: null, origin: 'input', node_id: null });
+      add({ name: input.name, type: input.type, scale: input.scale ?? null, cardinality: 'linear', list: null, origin: 'input', node_id: null, group_id: null });
     } else {
-      add({ name: input.name, type: null, scale: null, cardinality: 'multiple', list: null, origin: 'input', node_id: null });
+      add({ name: input.name, type: null, scale: null, cardinality: 'multiple', list: null, origin: 'input', node_id: null, group_id: null });
       for (const field of input.fields) {
-        add({ name: field.name, type: field.type, scale: field.scale ?? null, cardinality: 'multiple', list: input.name, origin: 'input', node_id: null });
+        add({ name: field.name, type: field.type, scale: field.scale ?? null, cardinality: 'multiple', list: input.name, origin: 'input', node_id: null, group_id: null });
       }
     }
   }
   for (const node of definition.root.nodes) {
     if (node.type === 'calculation') {
       const { name, type, scale } = node.output;
-      add({ name, type, scale: scale ?? null, cardinality: 'linear', list: null, origin: 'calculation', node_id: node.id });
-    } else {
+      add({ name, type, scale: scale ?? null, cardinality: 'linear', list: null, origin: 'calculation', node_id: node.id, group_id: null });
+    } else if (node.type === 'decision_table') {
       for (const result of node.results) {
         add({
           name: result.name,
@@ -64,6 +65,7 @@ function symbolsOf(definition: Definition): Symbol[] {
           list: null,
           origin: 'decision_table',
           node_id: node.id,
+          group_id: null,
         });
       }
     }
@@ -87,6 +89,7 @@ function formulasOf(node: WorkflowNode, index: number): NodeFormula[] {
     if (node.default_value !== null) formulas.push({ path: `${base}.default_value`, source: node.default_value, kind: 'formula', required: false });
     return formulas;
   }
+  if (node.type !== 'decision_table') return [];
   return [
     ...node.conditions.map((condition, column) => ({
       path: `${base}.conditions[${column}].expression`,
@@ -148,7 +151,7 @@ export function analyze(definition: Definition): Analysis {
     dependencies.push({ node_id: node.id, reads: [...reads].filter((name) => known.has(name)).sort() });
   });
 
-  return { problems, symbols, dependencies, order: order(definition, symbols, dependencies) };
+  return { problems, symbols, dependencies, order: order(definition, symbols, dependencies), groups: [] };
 }
 
 /** Topological order, the tie broken by the position in `root.nodes`; empty with a cycle. */
@@ -218,14 +221,14 @@ export function runUnit(definition: Definition, analysis: Analysis, inputs: Read
   const scope = inputScope(definition, inputs);
   const linear = scope.linear as Map<string, RuntimeValue>;
   const mode = definition.settings.rounding.mode;
-  const nodes: UnitRunNode[] = [];
-  let failure: Schemas['UnitRunError'] | null = null;
+  const nodes: TraceNode[] = [];
+  let failure: TraceMessage | null = null;
 
   for (const id of analysis.order) {
     const node = definition.root.nodes.find((each) => each.id === id);
-    if (!node) continue;
+    if (!node || (node.type !== 'calculation' && node.type !== 'decision_table')) continue;
     if (failure) {
-      nodes.push({ node_id: id, status: 'not_run', values: [], matched_rule: null, warnings: [], error: null });
+      nodes.push({ type: node.type, node_id: id, status: 'not_run', values: {}, matched_rule: null, warnings: [], error: null });
       continue;
     }
     const nodeMode = node.rounding_mode ?? mode;
@@ -235,7 +238,7 @@ export function runUnit(definition: Definition, analysis: Analysis, inputs: Read
         const value = outputValue(raw, node.output.type, node.output.scale, nodeMode);
         if (value === null) throw new EvaluationFailure('null_result', `O resultado de ${node.name} ficou nulo.`);
         linear.set(node.output.name, asRuntime(value));
-        nodes.push({ node_id: id, status: 'ok', values: [{ name: node.output.name, value }], matched_rule: null, warnings: [], error: null });
+        nodes.push({ type: 'calculation', node_id: id, status: 'ok', values: { [node.output.name]: value }, matched_rule: null, warnings: [], error: null });
         continue;
       }
       const conditions = node.conditions.map((condition) => evaluate(parseFormula(condition.expression), scope));
@@ -255,28 +258,41 @@ export function runUnit(definition: Definition, analysis: Analysis, inputs: Read
         return { name: result.name, value: outputValue(raw, result.type, result.scale, nodeMode) };
       });
       for (const { name, value } of values) linear.set(name, asRuntime(value));
-      nodes.push({ node_id: id, status: 'ok', values, matched_rule: chosen.number, warnings: [], error: null });
+      nodes.push({
+        type: 'decision_table',
+        node_id: id,
+        status: 'ok',
+        values: Object.fromEntries(values.map(({ name, value }) => [name, value])),
+        matched_rule: chosen.number,
+        warnings: [],
+        error: null,
+      });
     } catch (error) {
       if (!(error instanceof EvaluationFailure)) throw error;
       const message = { code: error.code, message: error.message };
       const outputs = node.type === 'calculation' ? [node.output.name] : node.results.map((result) => result.name);
       nodes.push({
+        type: node.type,
         node_id: id,
         status: 'error',
-        values: outputs.map((name) => ({ name, value: null })),
+        values: Object.fromEntries(outputs.map((name) => [name, null])),
         matched_rule: null,
         warnings: [],
         error: message,
       });
-      failure = { node_id: id, ...message };
+      failure = { node_id: id, ...message, values: {} };
     }
   }
 
-  if (failure) return { status: 'error', outputs: [], nodes, error: failure };
-  const outputs = definition.root.output.fields.map((field) => {
-    const produced = nodes.flatMap((node) => node.values).find((value) => value.name === field.variable);
-    const input = inputs[field.variable];
-    return { name: field.name, value: produced ? produced.value : (input ?? null) };
-  });
-  return { status: 'ok', outputs, nodes, error: null };
+  const declared = definition.root.inputs.map((input) => ({ variable: input.name, value: inputs[input.name] ?? null, origin: null }));
+  const inputHash = `sha256:${'0'.repeat(64)}`;
+  if (failure) {
+    return { status: 'error', record_key: null, inputs: declared, nodes, outputs: {}, input_hash: inputHash, output_hash: null, error: failure, warnings: [] };
+  }
+  const outputs: Record<string, Value> = {};
+  for (const field of definition.root.output.fields) {
+    const produced = nodes.map((node) => node.values[field.variable]).find((value) => value !== undefined);
+    outputs[field.name] = produced !== undefined ? produced : (inputs[field.variable] ?? null);
+  }
+  return { status: 'ok', record_key: null, inputs: declared, nodes, outputs, input_hash: inputHash, output_hash: inputHash, error: null, warnings: [] };
 }

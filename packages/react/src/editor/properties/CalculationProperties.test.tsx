@@ -152,7 +152,7 @@ describe('Propriedades do Cálculo', () => {
   });
 
   it('passa ao editor de fórmula o texto que foi analisado, até a análise nova voltar', async () => {
-    simulateApi(() => ({ problems: [], symbols: [], dependencies: [], order: [] }));
+    simulateApi(() => ({ problems: [], symbols: [], dependencies: [], order: [], groups: [] }));
     const { user } = renderPanel({ item: PONTOS });
 
     const formula = screen.getByRole('textbox', { name: 'Fórmula de Pontos' });

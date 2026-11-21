@@ -23,7 +23,10 @@ const ERRORS = EXAMPLES;
 export const SAMPLE_WORKFLOW = 'Pontuação de exemplo';
 
 /** The definition of a new workflow (contract, `WorkflowDefinition`). */
-const EMPTY_DEFINITION = EXAMPLES.DraftEmpty.definition as Definition;
+const EMPTY_DEFINITION = {
+  ...EXAMPLES.DraftEmpty.definition,
+  root: { ...EXAMPLES.DraftEmpty.definition.root, batch_source: null },
+} as Definition;
 
 const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

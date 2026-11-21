@@ -3,7 +3,14 @@
 // produces each name comes from the `symbols` (E4-9, D15). Pure functions, tested without React Flow.
 import type { Dependency, DraftSymbol, WorkflowDefinition } from '../draft';
 
-export type Block = WorkflowDefinition['root']['nodes'][number];
+type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
+/** The blocks the canvas draws today: Calculation and Decision Table. Source and Group blocks come with the epic 5 tasks. */
+export type Block = Extract<DefinitionNode, { type: 'calculation' | 'decision_table' }>;
+
+/** Whether a definition node is a block the canvas draws (Calculation or Decision Table). */
+export function isBlock(node: DefinitionNode): node is Block {
+  return node.type === 'calculation' || node.type === 'decision_table';
+}
 export type BlockKind = Block['type'];
 type DeclaredInput = WorkflowDefinition['root']['inputs'][number];
 type DataType = NonNullable<DraftSymbol['type']>;
@@ -194,7 +201,7 @@ export function canvasGraph(
   dependencies: readonly Dependency[],
   previous?: CanvasGraph | null,
 ): CanvasGraph {
-  const blocks = definition.root.nodes;
+  const blocks = definition.root.nodes.filter(isBlock);
   const byName = symbolsByName(symbols);
   const readsByNode = new Map<string, readonly string[]>();
   for (const dependency of dependencies) if (!readsByNode.has(dependency.node_id)) readsByNode.set(dependency.node_id, dependency.reads);
@@ -267,7 +274,7 @@ export function readersOf(
   symbols: readonly DraftSymbol[],
   dependencies: readonly Dependency[],
 ): number {
-  const block = definition.root.nodes.find((candidate) => candidate.id === blockId);
+  const block = definition.root.nodes.filter(isBlock).find((candidate) => candidate.id === blockId);
   const names = new Set<string>(block ? producedNames(block) : []);
   for (const symbol of symbols) if (symbol.node_id === blockId) names.add(symbol.name);
   const present = new Set(definition.root.nodes.map((candidate) => candidate.id));
