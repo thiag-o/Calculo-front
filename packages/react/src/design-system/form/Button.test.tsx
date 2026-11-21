@@ -155,7 +155,7 @@ describe('Botao desabilitado com motivo', () => {
     const text = screen.getByText(reason);
     expect(text).toBeVisible();
     expect(button).toHaveAccessibleDescription(reason);
-    expect(text).toHaveClass('fc-label-12', 'fc-text-tertiary');
+    expect(text).toHaveClass('fc-label-12', 'fc-text-secondary');
     button.focus();
     await user.hover(button);
     expect(screen.queryByRole('tooltip')).toBeNull();

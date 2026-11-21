@@ -151,7 +151,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     return (
       <span className="fc-button-with-reason">
         {withTooltip}
-        <span id={reasonId} className={`fc-button-reason ${textClasses({ variant: 'label-12', emphasis: 'tertiary' })}`}>
+        <span id={reasonId} className={`fc-button-reason ${textClasses({ variant: 'label-12', emphasis: 'secondary' })}`}>
           <InfoIcon size={12} />
           {disabledReason}
         </span>

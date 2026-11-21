@@ -189,7 +189,7 @@
   }
 }
 
-/* Reason beside the button: 12px tertiary text with an info icon (estilos.md §14). */
+/* Reason beside the button: 12px secondary text with an info icon (estilos.md §14). */
 .fc-button-with-reason {
   display: inline-flex;
   align-items: center;

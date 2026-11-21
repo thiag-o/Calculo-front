@@ -68,7 +68,7 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
             Entrar
           </Button>
         </form>
-        <Text as="p" variant="label-12" emphasis="tertiary" className="fc-sign-in-help">
+        <Text as="p" variant="label-12" emphasis="secondary" className="fc-sign-in-help">
           Esqueceu a senha? Peça ao administrador um link para criar uma nova.
         </Text>
       </Card>

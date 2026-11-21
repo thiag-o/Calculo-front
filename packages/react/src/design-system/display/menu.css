@@ -78,7 +78,7 @@
 .fc-menu-item-reason {
   font-size: 12px;
   line-height: 16px;
-  color: var(--fc-text-tertiary);
+  color: var(--fc-text-secondary);
 }
 
 .fc-menu-separator {
