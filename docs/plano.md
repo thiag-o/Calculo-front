@@ -1297,7 +1297,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 **F69 · Integração do épico 5: editor e interface pública**
 - dep: F63, F64, F65, F66, F67, F68
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/editor/properties/`, `packages/react/src/editor/layout/`, `packages/react/src/editor/canvas/` (D21: só a ligação da `BatchSourceBar` da F63 no canvas, a seleção dela abrindo o `BatchSourceProperties` e os filtros da F64 pela prop `renderFilters`, sem mudar o resto do canvas da F65), `docs/glossario.md`, `README.md`, `.changeset/`
+- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/editor.css`, `packages/react/src/editor/properties/`, `packages/react/src/editor/layout/`, `packages/react/src/editor/canvas/` (D21: só a ligação da `BatchSourceBar` da F63 no canvas, a seleção dela abrindo o `BatchSourceProperties` e os filtros da F64 pela prop `renderFilters`, sem mudar o resto do canvas da F65), `docs/glossario.md`, `README.md`, `.changeset/`; e (D29) `packages/react/src/editor/decision-table/tableModel.ts` e o teste dela, e no `packages/react/src/editor/draft/DraftEditor.tsx` só o `itemExists`, para a busca da Tabela de Decisão descer nos grupos; e `packages/react/src/editor/layers/Layers.tsx` (ratificado: "Entradas" vira "Fonte do lote" quando há fonte do lote)
 - Fazer:
   - o `<Editor>` mostra as propriedades da fonte do lote, do bloco Fonte e do grupo;
   - a barra de ferramentas ganha Fonte e Agrupar;
