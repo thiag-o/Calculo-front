@@ -1324,7 +1324,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - dep: —
 - modelo: sonnet
 - revisão: não
-- arquivos: `e2e/visual/`, `playwright.config.ts`, `README.md`
+- arquivos: `e2e/visual/`, `playwright.config.ts`, `README.md`, e (D18) `package.json` da raiz (só o script `e2e:visual`), `packages/react/src/editor/canvas/WorkflowCanvas.tsx` (só a cor da atribuição "React Flow") e `packages/react/src/editor/decision-table/decision-table.css` (só a cor do número da regra), com cores do `estilos.md` que passem 4,5:1 nos dois temas
 - Fazer (ressalva do portão F59, decidida pela sessão global em 2026-11-20): um projeto do Playwright, `visual`, que abre as telas dos épicos 1 a 4 (login, Início, Administração, Catálogo, lista de workflows, Visão geral e editor com canvas, propriedades, grade e Calcular) no modo simulado, nos temas claro e escuro (`colorScheme`) e nas larguras de 1440, 1180 e 900 px. Ele guarda as capturas em `e2e/visual/__screenshots__/` e confere:
   - nenhuma barra de rolagem horizontal na página;
   - o contraste de texto mínimo do estilos.md nas cores calculadas;
@@ -1332,8 +1332,16 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
   Ele roda com `pnpm e2e:visual`, fora do `pnpm e2e`.
 - Aceite: as capturas geradas e conferidas a olho pelo verificador contra o estilos §12 a §16; as três checagens automáticas verdes; o portão de cada épico passa a rodar o `pnpm e2e:visual`.
 
+**F91 · Manutenção: texto essencial nunca no terciário (achado da F88)**
+- dep: F88
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/module/shell/shell.css`, `packages/react/src/design-system/display/menu.css`, `packages/react/src/session/sign-in/SignInScreen.tsx`, `packages/react/src/editor/unit-run/unit-run.css`, `packages/react/src/editor/layout/editor-layout.css`, `e2e/visual/`
+- Fazer (D18, decidida pela sessão global em 2026-11-21): o `--fc-text-tertiary` (3,23:1 no tema claro) só vale para informação não essencial (estilos §11). Os textos que a F88 anotou como essenciais passam a usar o `--fc-text-secondary`: o e-mail no menu da conta, o aviso da tela de login e o motivo de um botão ou item desabilitado (no menu e no Calcular). O resto do terciário (legendas, tipos das portas, ajuda abaixo do campo) fica como está.
+- Aceite: o `pnpm e2e:visual` não anota mais nenhum texto essencial no terciário, nos dois temas; os testes unitários e o build passam.
+
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
