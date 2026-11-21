@@ -1392,3 +1392,135 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95, F96
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
+
+### Épico 6 — Execução em lote e entrega em CSV
+
+As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da execução, o CSV e o trace guardado estão no plano do back (`../backend/docs/plano.md`, épico 6, e Contratos, "Execução em lote e entrega em CSV"). O contrato é o da B132. Decisões do front, tomadas pela sessão global em 2026-11-21:
+- **E6-16, onde fica cada coisa:**
+  - `executions/`: a lista, o disparo, o painel da execução, os registros e o formulário de parâmetros (`executions/parameter-form/`, exportado pelo `executions/index.ts`, porque o editor também o usa);
+  - `editor/parameters/`: a declaração dos parâmetros e as configurações de execução do workflow;
+  - `formula/`: o `@nome` no Monaco;
+  - o trace de um registro usa o componente do trace da execução unitária, exportado pelo `editor/index.ts`.
+  - Motivo: ADR 0003; a execução é uma vertical própria, como no design §15 (tela Execuções).
+- **E6-17, parâmetros no editor:** o painel do workflow ganha a seção **Parâmetros**, com a lista, "Adicionar parâmetro" e, em cada parâmetro:
+  - **nome e tipo:** o tipo aparece com o rótulo em pt-BR, e `Período` está entre eles;
+  - **Lista:** caixa de marcar, escondida no Período e no Booleano;
+  - **Obrigatório;**
+  - **Padrão:** Nenhum, Fixo ou Relativo. Os rótulos dos relativos são "Hoje", "Ontem", "Primeiro dia do mês atual", "Primeiro dia do mês anterior", "Último dia do mês anterior", "Agora", "Mês atual", "Mês anterior", "Últimos 7 dias" e "Últimos 30 dias", só os que servem ao tipo;
+  - **Valores permitidos:** lista opcional;
+  - **Descrição.**
+  - A seção **Execução** do painel do workflow ganha o limite de erro (%) e o nível do trace (Mínimo, Padrão ou Completo), cada um com uma linha de explicação.
+  - Motivo: design §10 e §12.
+- **E6-18, `@` na fórmula e nos filtros:**
+  - no Monaco, `@` abre o autocomplete dos parâmetros e, depois do ponto, de `inicio` e `fim` no Período; o `@nome` tem realce próprio;
+  - nos filtros, o valor aceita `@` com a mesma lista, e o aviso "Parâmetros chegam no épico 6" sai.
+- **E6-19, disparo:** o botão **Executar** fica no cabeçalho do editor, na Visão geral do workflow e na lista de execuções do workflow (com `executions.trigger`). Ele abre um diálogo com:
+  - o formulário de parâmetros, já com os padrões (o relativo aparece pelo rótulo, "Mês anterior");
+  - a nota "Executa o rascunho salvo (revisão N). Mudanças feitas depois não entram nesta execução.";
+  - com problemas no rascunho, o botão desabilitado com o motivo e o link para a aba Problemas.
+  - Ao confirmar, o diálogo abre o painel da execução nova.
+- **E6-20, lista de execuções:**
+  - **onde:** o menu principal ganha **Execuções** (com `executions.view`), e o menu do workflow ganha **Execuções**, ao lado de Visão geral;
+  - **tabela:** workflow, status (selo com a cor do estilos.md), disparado por, início, duração, registros (ok, com erro) e parâmetros resumidos;
+  - **filtros:** status e workflow; paginação por cursor;
+  - **atualização:** a cada 5 s enquanto houver execução em andamento na página.
+- **E6-21, painel da execução:**
+  - **cabeçalho:** status e motivo do aborto; as fases Carga → Cálculo → Entrega, com a barra de progresso (registros feitos sobre o total) e "Aguardando a fonte (nova tentativa às 14:32)" no `awaiting_source`;
+  - **resumo:** parâmetros resolvidos ("Período: 01/10/2026 a 31/10/2026"), o "agora", o nível do trace, o limite de erro e quem disparou;
+  - **totais:** lidos, ok, com avisos, com erro, ignorados e filtrados;
+  - **erros agrupados:** por bloco e código; clicar num grupo filtra os registros;
+  - **registros:** tabela com status, chave e erro (com `traces.view`). Clicar num registro abre o trace numa gaveta lateral; no nível Mínimo, a gaveta mostra só os hashes, com "Esta execução guardou o trace mínimo.";
+  - **ações:** **Baixar CSV**, desabilitado com o motivo (rodando, abortada, cancelada ou expirada), e **Cancelar**, com confirmação, enquanto não termina;
+  - **atualização:** a cada 2 s até um estado final.
+  - Motivo: design §15 ("painel por execução (totais, alertas, erros agrupados)"); a tela de debug com o canvas é do épico 11.
+- **E6-22, Prévia e Calcular com parâmetros:** com parâmetros declarados, a Prévia e o Calcular mostram o formulário de parâmetros acima do botão, com os padrões e lembrando os últimos valores usados na sessão.
+
+**F97 · Tipos da API do épico 6**
+- tipo: contrato
+- dep: B132
+- modelo: sonnet
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, e os pontos do editor que quebrarem com a versão 3 (`packages/react/src/editor/draft/`), só para o ajuste mínimo de tipo (`schema_version: 3`, `parameters: []` e os dois campos novos de `settings`), sem comportamento novo
+- Fazer: gerar os tipos do contrato da B132 (`pnpm generate:api`) e acrescentar os exemplos do épico 6 ao contrato simulado do e2e.
+- Aceite: `pnpm typecheck` e o `contract-examples` verdes; os tipos da execução, dos registros e dos parâmetros aparecem no gerado.
+
+**F98 · Editor: parâmetros e configurações de execução do workflow**
+- dep: F97
+- modelo: opus
+- arquivos: `packages/react/src/editor/parameters/` (nova), `packages/react/src/editor/properties/workflow/`
+- Fazer (E6-17): a seção Parâmetros e a seção Execução do painel do workflow, com os problemas de cada campo pelo `path` e o modo só leitura.
+- Aceite: testes de criar um parâmetro de cada tipo, do padrão fixo e do relativo (só os rótulos que servem ao tipo), da lista escondida no Período, dos valores permitidos, do limite e do nível do trace, dos problemas `invalid_parameter_default` e `invalid_allowed_value` no campo certo e do modo só leitura.
+
+**F99 · Fórmula e filtros: `@parametro`**
+- dep: F97
+- modelo: opus
+- arquivos: `packages/react/src/formula/`, `packages/react/src/editor/sources/filters/`
+- Fazer (E6-18): o autocomplete e o realce do `@` no Monaco e no campo de texto simples de reserva (E4-21), a partir dos parâmetros do rascunho e da sintaxe do `GET /v1/formula-language`; o `@` nos valores dos filtros, com o tipo conferido no front só como dica (quem decide é a análise do back).
+- Aceite: testes de `@` abrir a lista, de `@periodo.` oferecer `inicio` e `fim`, do realce, do filtro aceitar `@lojas` no `em`, e dos problemas `unknown_parameter`, `period_without_part` e `list_outside_in` sublinhados na posição do back.
+
+**F100 · Formulário de parâmetros**
+- dep: F97
+- modelo: sonnet
+- arquivos: `packages/react/src/executions/parameter-form/` (nova), `packages/react/src/executions/index.ts`
+- Fazer: o formulário gerado a partir da declaração:
+  - um campo por tipo, com número e data no padrão brasileiro (E4-24) e o valor enviado no formato da API;
+  - o Período com duas datas;
+  - a lista com a seleção múltipla (de `allowed_values`) ou com etiquetas;
+  - o relativo mostrado pelo rótulo, com "Trocar por um valor fixo";
+  - os erros `missing_parameter` e `invalid_parameter` do back no campo certo.
+- Aceite: testes de cada tipo, do Período com início depois do fim (aviso no front e o 422 do back no campo), da lista, do relativo e do envio no formato da API.
+
+**F101 · Execuções: lista e disparo**
+- dep: F100
+- modelo: opus
+- arquivos: `packages/react/src/executions/list/`, `packages/react/src/executions/trigger/`, `packages/react/src/executions/api/`, `packages/react/src/executions/index.ts`
+- Fazer (E6-19, E6-20): a lista global e a do workflow (o mesmo componente, com o filtro do workflow fixo), a atualização a cada 5 s e o diálogo de disparo com os erros `draft_conflict`, `draft_has_problems` e `no_batch_source` explicados.
+- Aceite: testes da lista com cada status, dos filtros, da paginação, da atualização (com relógio falso), do disparo com sucesso abrindo o painel, de cada erro do disparo e do botão escondido sem `executions.trigger`.
+
+**F102 · Execuções: painel, registros e trace**
+- dep: F97
+- modelo: opus
+- arquivos: `packages/react/src/executions/detail/`, `packages/react/src/executions/records/`, `packages/react/src/executions/api/`, `packages/react/src/executions/index.ts`, e uma linha de export em `packages/react/src/editor/index.ts` (o componente do trace da `editor/unit-run/`)
+- Fazer (E6-21): o painel, os erros agrupados, a tabela de registros com filtro, a gaveta do trace, Baixar CSV (download pelo navegador, com o nome do arquivo do back) e Cancelar.
+- Aceite: testes de cada estado (inclusive `awaiting_source` e cada `abort_reason`), do progresso, de clicar num grupo de erro e filtrar os registros, da gaveta no nível Padrão e no Mínimo, do download desabilitado em cada motivo, do cancelamento com confirmação, da atualização parando no estado final e da tabela de registros escondida sem `traces.view`.
+
+**F103 · Editor: Prévia e Calcular com parâmetros**
+- dep: F100
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/preview/`, `packages/react/src/editor/unit-run/`
+- Fazer (E6-22): o formulário de parâmetros na Prévia e no Calcular, enviado em `parameters`, lembrando os últimos valores na sessão.
+- Aceite: testes da Prévia e do Calcular com e sem parâmetros, do 422 no campo e dos valores lembrados ao trocar de aba.
+
+**F104 · Integração do épico 6: módulo, editor e interface pública**
+- dep: F98, F99, F101, F102, F103
+- modelo: sonnet
+- arquivos: `packages/react/src/module/`, `packages/react/src/workflows/overview/`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/layout/`, `packages/react/src/editor/properties/PropertiesPanel.tsx`, `packages/react/src/editor/index.ts`, `docs/glossario.md`, `README.md`, `.changeset/`
+- Fazer:
+  - as rotas `/executions` e `/executions/:id` e a rota da lista do workflow (`/workflows/:id/executions`);
+  - o item Execuções no menu principal (por permissão) e no menu do workflow;
+  - o botão Executar no cabeçalho do editor e na Visão geral;
+  - a seção Parâmetros no painel do workflow;
+  - os nomes novos no glossário, com um changeset `minor`.
+- Aceite: testes por papel (o Operador dispara e acompanha; o Aprovador vê a lista e o painel e não dispara; o Auditor vê o painel e o trace, sem Executar nem Cancelar); `pnpm build` verde.
+
+**F105 · Testes ponta a ponta do épico 6**
+- dep: F104
+- modelo: opus
+- arquivos: `e2e/epic-6/`, `e2e/support/`, `e2e/visual/`, `README.md`
+- Fazer: **todos** os fluxos do épico 6 do plano global ("Fluxos ponta a ponta" e "Roteiro de teste"), no modo simulado. A lista abaixo é o mínimo; se o plano global tiver mais, eles também entram (D30):
+  - declarar o parâmetro `periodo` no workflow da campanha e usá-lo no filtro da fonte do lote e numa fórmula;
+  - rodar a Prévia e o Calcular com o parâmetro;
+  - disparar a execução com o padrão "Mês anterior" e com um período fixo, acompanhar as fases até `completed` e baixar o CSV;
+  - ver uma execução com erros dentro do limite (`completed_with_errors`), abrir um grupo de erro e o trace de um registro;
+  - ver uma execução `aborted` pelo limite de erro, sem CSV;
+  - cancelar uma execução em andamento;
+  - ver uma execução em `awaiting_source` voltar a andar;
+  - o Aprovador vê e não dispara; o Auditor vê o trace e não cancela;
+  - as telas do épico 6 (lista, painel, gaveta do trace, diálogo de disparo, seção Parâmetros) entram no `pnpm e2e:visual`, nos dois temas e nas faixas de largura do estilos §15.
+  - **No modo real**, usar o workflow "Campanha de referência" do `prepare-local` com um worker no ar, os valores esperados de `backend/tests/reference_campaign/` e o workflow de defeitos. A queda do worker no meio é do roteiro manual e do teste do back (B144), não do e2e.
+- Aceite: `pnpm e2e` e `pnpm e2e:visual` passam. O modo real é exercitado no teste de integração do CK6.
+
+**F106 · Portão do épico 6**
+- tipo: portao
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105
+- modelo: sonnet
+- Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
