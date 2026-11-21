@@ -1137,9 +1137,25 @@ As decisões E4-1 a E4-18, a linguagem e as permissões estão no plano do back 
   - os testes que provam a ausência de gravação esperam de forma determinística (a promise da requisição resolvida e o `queryClient` sem tarefas pendentes), sem `setTimeout` com tempo fixo.
 - Aceite: um teste que limpa a sessão durante o `cancelQueries` e confere que nada é gravado; nenhum `setTimeout` com tempo fixo no `session.test.tsx`.
 
+**F89 · Correção da integração do épico 4: texto real do erro de tipo**
+- dep: —
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/support/contract.ts`, `e2e/epic-4/support/formula.ts`, `e2e/epic-4/type-error.spec.ts`, `packages/react/src/editor/canvas/canvas.test-support.tsx`, `packages/react/src/editor/draft/editor.test-support.tsx`, `packages/react/src/editor/Editor.test.tsx`, `packages/react/src/editor/properties/CalculationProperties.test.tsx`, `packages/react/src/editor/unit-run/unit-run.test-support.tsx`
+- Fazer: a integração do CK4 reprovou no `type-error.spec.ts`: o front copiou do exemplo do contrato o texto "categoria é texto e não entra em conta.", e a API real devolve "Esperava um número, mas categoria é um texto." (D53; a B123 corrige o contrato). Troque o texto antigo pelo real em todos os arquivos acima (motor simulado, dados do contrato e testes). A tela mostra o `message` que vier da API, nunca um texto próprio.
+- Aceite: nenhum "não entra em conta" sobra no front (fora de relatórios); `pnpm e2e:real e2e/epic-4/type-error.spec.ts` passa com o back real; os testes unitários do editor passam.
+
+**F90 · Correção da integração do épico 4: teste ponta a ponta do limite de "Testar" (roteiro 10)**
+- dep: —
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/epic-4/connection-test-limit.spec.ts` (novo)
+- Fazer: o roteiro 10 do épico 4 ficou sem teste na integração. Em Catálogo › Conexões, o teste clica em "Testar" na conexão de exemplo além do limite da release (`FLUXO_CONNECTION_TEST_LIMIT_PER_MIN`) e confere o aviso de espera (o `CooldownNotice`) com o tempo do `Retry-After`, e que o botão volta depois do tempo. Roda no simulado e no `e2e:real`.
+- Aceite: o teste passa no simulado e com o back real; com o limite não atingido, nenhum aviso aparece.
+
 **F59 · Portão do épico 4**
 - tipo: portao
-- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84, F85, F86, F87
+- dep: F46, F47, F48, F49, F50, F51, F52, F53, F54, F55, F56, F57, F58, F61, F72, F73, F74, F75, F76, F77, F78, F79, F80, F81, F82, F83, F84, F85, F86, F87, F89, F90
 - modelo: sonnet
 - Aceite: o mesmo do F12, com as telas do épico 4 (lista, Visão geral, editor com canvas, propriedades, grade e Calcular, nos dois temas e nas faixas de largura do estilos §15); a entrada principal do pacote sem o Monaco (como na F47).
 
