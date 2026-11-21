@@ -1202,7 +1202,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - tipo: contrato
 - dep: B90
 - modelo: sonnet
-- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, e (D20, 2026-11-21) `packages/react/src/editor/canvas/`, `packages/react/src/editor/decision-table/`, `packages/react/src/editor/draft/`, `packages/react/src/editor/layers/`, `packages/react/src/editor/properties/`, `packages/react/src/editor/unit-run/` e os testes de `packages/react/src/formula/`, só para o ajuste mínimo de tipo (`group_id: null`, `groups: []` e campos novos obrigatórios), sem comportamento novo; a F62 entra com typecheck, build e e2e verdes
 - Fazer: gerar os tipos do contrato da B90 (`pnpm generate:api`) e acrescentar os exemplos do épico 5 ao contrato simulado do e2e. A regeneração também traz o cabeçalho `Retry-After` do 429 (B108), que ficou fora dos tipos no portão F59.
 - Aceite: `pnpm typecheck` e o `contract-examples` verdes; os tipos do rascunho na versão 2, da prévia e do trace aparecem no gerado.
 
