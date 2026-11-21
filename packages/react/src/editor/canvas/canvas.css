@@ -208,6 +208,11 @@
   stroke: var(--fc-gray-1000);
 }
 
+/* The library's attribution stays visible, in the secondary text color (4.5:1 in both themes; its own #999 gave 2.79:1). */
+.fc-canvas .react-flow__attribution a {
+  color: var(--fc-text-secondary);
+}
+
 /* Zoom and minimap: top right corner, the minimap 148×90px under the zoom (§8). */
 .fc-canvas .react-flow__panel {
   margin: var(--fc-space-12);

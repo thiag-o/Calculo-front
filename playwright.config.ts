@@ -1,6 +1,8 @@
 // Playwright (repository root). Two projects that use the same test files in e2e/:
 // - simulated: API simulated by a fixture (page.route); runs at the front gate.
 // - real: real backend (E2E_API_URL) + shell; runs in the checkpoint integration test.
+// - visual: the screens of epics 1 to 4 in both themes and three widths (e2e/visual/), simulated; `pnpm e2e:visual`, outside
+//   `pnpm e2e` and run at every epic's gate.
 // `pnpm e2e:real` runs with 2 workers (in the package.json script): on this machine, 6 browsers, the Vite dev server and the API
 // together saturate CPU and memory, and the sign-ins time out (global session decision, F39, measured before F35 served the
 // shell built instead of through the dev server). The API alone
@@ -36,6 +38,8 @@ const viteEnv: Record<string, string> = apiUrl ? { VITE_API_URL: apiUrl } : {};
 
 // The spec that runs in its own project, serialized and last (see the projects below).
 const LIMIT_SPEC = '**/epic-4/connection-test-limit.spec.ts';
+// The visual proof has its own project (`visual`) and does not run with the other ones.
+const VISUAL_SPECS = '**/visual/**';
 
 export default defineConfig({
   testDir: './e2e',
@@ -54,9 +58,17 @@ export default defineConfig({
       name: 'simulated',
       use: { ...devices['Desktop Chrome'] },
       metadata: { mode: 'simulated' },
-      testIgnore: LIMIT_SPEC,
+      testIgnore: [LIMIT_SPEC, VISUAL_SPECS],
       // Selecting `simulated` also runs `simulated-limit`, after it (a teardown runs even if the tests before it fail).
       teardown: 'simulated-limit',
+    },
+    // The screens in both themes (`colorScheme`) and at 1440, 1180 and 900 px, on the simulated API; saves the captures in
+    // e2e/visual/__screenshots__/ and checks scroll bar, text contrast and sidebar (e2e/visual/screens.spec.ts).
+    {
+      name: 'visual',
+      use: { ...devices['Desktop Chrome'] },
+      metadata: { mode: 'simulated' },
+      testMatch: '**/visual/*.spec.ts',
     },
     // Real only: 60 s timeout per test and per `expect` (global session decision, D8 of F39): the long audit
     // flow (8 sign-ins with argon2, 2 users, the link and 5 filters) took 33 s alone, with this machine loaded.
@@ -67,7 +79,7 @@ export default defineConfig({
       metadata: { mode: 'real' },
       timeout: 60_000,
       expect: { timeout: 60_000 },
-      testIgnore: LIMIT_SPEC,
+      testIgnore: [LIMIT_SPEC, VISUAL_SPECS],
       teardown: 'real-limit',
     },
     // The "Testar" limit test (epic 4, script 10) uses up the admin's limit window (60 s per tenant and user) and would make

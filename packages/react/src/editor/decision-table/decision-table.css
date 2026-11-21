@@ -169,7 +169,7 @@
 }
 
 .fc-dt-number {
-  color: var(--fc-gray-600);
+  color: var(--fc-text-secondary);
   font-family: var(--fc-font-mono);
   font-size: 12px;
   line-height: 16px;

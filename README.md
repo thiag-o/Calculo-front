@@ -65,6 +65,7 @@ pnpm dev
 | `pnpm generate:api` | Gera os tipos da API a partir do OpenAPI do backend (ADR 0005), em `packages/react/src/api/generated/` |
 | `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** |
 | `pnpm e2e:real` | Os mesmos testes contra o back de verdade (veja abaixo) |
+| `pnpm e2e:visual` | Prova visual das telas dos épicos 1 a 4, nos dois temas e em 1440, 1180 e 900 px, contra a API simulada (veja abaixo) |
 
 ## Testes em paralelo (worktrees)
 
@@ -84,6 +85,15 @@ No PowerShell: `$env:FLUXO_TEST_ISOLATION_ID='F62'; pnpm e2e`.
 - Dois ids diferentes podem, raramente, cair no mesmo par (são 450 pares); se isso acontecer, o Vite recusa subir (`strictPort`) e basta trocar o id.
 - O `pnpm e2e:real` também usa o id: o `playwright.config.ts` deriva dele as portas do casca e da página de incorporação nos dois modos (sem `E2E_SHELL_URL`). Sem o id, ficam 5173 e 5274. Ele roda só na integração do checkpoint, não em paralelo.
 - Com o id no `e2e:real`, a origem do casca passa a ser `http://localhost:<porta derivada do id>` (a porta par da faixa 6100 a 6999; `node -e "import('./scripts/e2e-ports.mjs').then(m=>console.log(m.e2ePorts()))"` com o id exportado mostra o par). Essa origem precisa estar na lista de origens permitidas do CORS da API, senão todo login dá preflight 400. Ponha-a na variável de ambiente `FLUXO_CORS_ORIGINS` (origens separadas por vírgula; `cors_origins` em `backend/src/fluxo/bootstrap/settings.py`) **do próprio processo da API**, ao subir (por exemplo `FLUXO_CORS_ORIGINS=http://localhost:5173,http://localhost:6102 uv run python -m fluxo.bootstrap api`), sem editar o `backend/.env`. Se a API já estiver no ar com outro valor, suba outra, ou use o id vazio.
+
+## Prova visual das telas
+
+O `pnpm e2e:visual` roda o projeto `visual` do Playwright (`e2e/visual/`), **fora do `pnpm e2e`**, e entra no portão de cada épico. Ele usa a API simulada (a mesma do `pnpm e2e`, com a conta Admin, o catálogo e a "Pontuação de exemplo") e, para cada tema (`colorScheme` claro e escuro) e cada largura (1440, 1180 e 900 px), abre: entrar, Início, Administração, Catálogo (Conexões, Datasets e Arquivos), lista de workflows, Visão geral e o editor (canvas, propriedades, grade da Tabela de Decisão e Calcular com o resultado).
+
+- As capturas ficam em `e2e/visual/__screenshots__/<tela>-<tema>-<largura>.png` e são regravadas a cada execução; não há comparação de pixels (datas e ids variam). Quem verifica confere as imagens a olho contra o estilos §12 a §16.
+- Três checagens automáticas, em cada captura: nenhuma barra de rolagem horizontal; contraste de texto de pelo menos 4,5:1 (estilos §11) nas cores calculadas; e o menu lateral com nomes e 240 px a partir de 1180 px, só com ícones (64 px) abaixo disso (o menu só é conferido nas telas do casca).
+- O texto na cor terciária (`--fc-text-tertiary`, gray-700, 3,23:1 no claro) não reprova: o estilos §11 o permite só para informação não essencial, o que uma máquina não julga. Ele aparece como anotação `terciário · <tela>` do teste (no relatório do Playwright), para quem verifica conferir.
+- Rode `pnpm build` antes, como no `pnpm e2e`, e use `FLUXO_TEST_ISOLATION_ID` numa worktree. O projeto sobe o mesmo casca do `pnpm e2e`; não rode os dois ao mesmo tempo com o mesmo id.
 
 ## Testes ponta a ponta no modo real
 

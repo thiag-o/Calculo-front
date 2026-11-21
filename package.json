@@ -17,7 +17,8 @@
     "changeset": "changeset",
     "release": "pnpm --filter @fluxo/react build && changeset publish",
     "e2e": "playwright test --project=simulated --pass-with-no-tests",
-    "e2e:real": "playwright test --project=real --workers=2 --pass-with-no-tests"
+    "e2e:real": "playwright test --project=real --workers=2 --pass-with-no-tests",
+    "e2e:visual": "playwright test --project=visual --pass-with-no-tests"
   },
   "//": "e2e:real runs with 2 workers: on this machine, 6 browsers, the Vite dev server and the API together saturate CPU and memory and the sign-ins time out (global session decision, F39). e2e (simulated) keeps the default parallelism.",
   "devDependencies": {
