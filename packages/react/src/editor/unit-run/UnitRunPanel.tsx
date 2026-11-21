@@ -4,18 +4,11 @@ import { useDraftEditor } from '../draft';
 import { useProblemCounts } from '../problems';
 import { CalculatorIcon } from './icons';
 import { useRememberedValues } from './memory';
-import {
-  CONFLICT_MESSAGE,
-  CONFLICT_REASON,
-  CONFLICT_TITLE,
-  UNIT_RUN_LABEL,
-  invalidInputs,
-  isConflict,
-  problemsReason,
-  runErrorMessage,
-} from './messages';
+import { CONFLICT_REASON, UNIT_RUN_LABEL, invalidInputs, isConflict, problemsReason } from './messages';
 import { MultipleInputTable } from './MultipleInputTable';
 import { useUnitRun, type UnitRunRequest } from './queries';
+import { RecordRunPanel } from './RecordRunPanel';
+import { RunError } from './RunError';
 import { UnitRunResult, recordStatus } from './UnitRunResult';
 import { ValueField } from './ValueField';
 import { itemFieldPath, readForm, typedItems, typedLinear, type DeclaredInput, type FieldErrors, type TypedItem, type TypedValues } from './values';
@@ -47,14 +40,24 @@ function belongsTo(path: string, input: string): boolean {
 }
 
 /**
- * The "Calcular" tab of the bottom panel (E4-14, E4-24): a form generated from the declared inputs and the result of the
+ * The "Calcular" tab of the bottom panel. With a batch source, "Escolher registro": a record of the sample of the last
+ * preview or its key typed, and the trace of that real record (E5-12, E5-20). Without one, the form of the declared
+ * inputs of epic 4, as it was. Inside the `DraftEditorProvider` (the editor screen mounts it).
+ */
+export function UnitRunPanel() {
+  const { definition } = useDraftEditor();
+  return definition.root.batch_source ? <RecordRunPanel /> : <InputsRunPanel />;
+}
+
+/**
+ * "Calcular" without a batch source (E4-14, E4-24): a form generated from the declared inputs and the result of the
  * saved draft for those values. "Calcular" saves what is pending first (`flush`) and is disabled with the reason while the
  * draft has problems. The values typed stay in memory, per workflow, while the module is open. Inside the
  * `DraftEditorProvider` (the editor screen mounts it).
  */
-export function UnitRunPanel() {
+function InputsRunPanel() {
   const editor = useDraftEditor();
-  const { workflowId, definition, readOnly, flush, save, revision, select, reload, reloadState } = editor;
+  const { workflowId, definition, symbols, readOnly, flush, save, revision, select, reload, reloadState } = editor;
   const counts = useProblemCounts();
   const [values, setValues] = useRememberedValues(workflowId);
   const inputs = definition.root.inputs;
@@ -73,8 +76,8 @@ export function UnitRunPanel() {
   // The date fields the browser holds half typed, by path (checked on leaving the field and on "Calcular").
   const [incomplete, setIncomplete] = useState<ReadonlySet<string>>(() => new Set());
   // What is on screen now, read again after the draft is saved: the edits made while saving are not lost.
-  const latest = useRef({ definition, values });
-  latest.current = { definition, values };
+  const latest = useRef({ definition, values, symbols });
+  latest.current = { definition, values, symbols };
   const runs = useRef(0);
   // A second submit before the screen shows "running" (a double click) does nothing.
   const busy = useRef(false);
@@ -89,7 +92,7 @@ export function UnitRunPanel() {
   const reading = useMemo(() => readForm(inputs, values, incomplete), [inputs, values, incomplete]);
   const typing = useMemo<FieldErrors>(() => (reading.ok ? {} : reading.errors), [reading]);
   // The values changed after "Calcular": the result is of the values before.
-  const stale = request !== null && (!reading.ok || !sameInputs(reading.inputs, request.inputs));
+  const stale = request !== null && (!reading.ok || !sameInputs(reading.inputs, request.inputs ?? {}));
   const errorAt = useCallback(
     (path: string): string | null => {
       const server = serverErrors?.[path];
@@ -202,7 +205,13 @@ export function UnitRunPanel() {
     }
     runs.current += 1;
     setEdited(new Set());
-    setRequest({ id: runs.current, revision: saved.revision, inputs: after.inputs, definition: latest.current.definition });
+    setRequest({
+      id: runs.current,
+      revision: saved.revision,
+      inputs: after.inputs,
+      definition: latest.current.definition,
+      symbols: latest.current.symbols,
+    });
     // Only when the save comes back (readScreen reads the latest screen through a ref).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved]);
@@ -321,7 +330,13 @@ export function UnitRunPanel() {
                 Resultado de valores anteriores. Calcule de novo para ver o dos valores atuais.
               </Text>
             ) : null}
-            <UnitRunResult run={run.data} definition={request.definition} currentDefinition={definition} onSelectNode={(id) => select({ type: 'node', id })} />
+            <UnitRunResult
+              run={run.data}
+              definition={request.definition}
+              symbols={request.symbols}
+              currentDefinition={definition}
+              onSelectNode={(id) => select({ type: 'node', id })}
+            />
           </>
         ) : null}
         <span className="fc-visually-hidden" role="status">
@@ -329,55 +344,5 @@ export function UnitRunPanel() {
         </span>
       </div>
     </form>
-  );
-}
-
-interface RunErrorProps {
-  error: unknown;
-  /** `invalid_inputs` paths with no field on screen (the inputs changed meanwhile). */
-  unmatched: readonly string[];
-  reloading: boolean;
-  reloadError: boolean;
-  onReload: () => void;
-}
-
-function RunError({ error, unmatched, reloading, reloadError, onReload }: RunErrorProps) {
-  if (isConflict(error)) {
-    return (
-      <Notice
-        type="warning"
-        title={CONFLICT_TITLE}
-        actions={
-          <Button size="small" loading={reloading} onClick={onReload}>
-            Recarregar rascunho
-          </Button>
-        }
-      >
-        {reloadError ? 'Não foi possível recarregar o rascunho. Tente de novo em instantes.' : CONFLICT_MESSAGE}
-      </Notice>
-    );
-  }
-  const fields = invalidInputs(error);
-  if (fields) {
-    return (
-      <Notice type="error" title="Alguns valores foram recusados">
-        Confira os campos marcados e calcule de novo.
-        {unmatched.length > 0 ? (
-          <ul className="fc-unit-run-unmatched">
-            {unmatched.map((path) => (
-              <li key={path}>
-                <span className="fc-unit-run-code">{path}</span> {fields[path]}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </Notice>
-    );
-  }
-  const { title, message } = runErrorMessage(error);
-  return (
-    <Notice type="error" title={title}>
-      {message}
-    </Notice>
   );
 }

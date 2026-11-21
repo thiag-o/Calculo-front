@@ -64,3 +64,13 @@ export function CalculatorIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Lucide "copy": copies a value, an origin or a hash. */
+export function CopyIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </Svg>
+  );
+}

@@ -26,7 +26,10 @@ function savedProblems(error: ApiError): number {
   return Array.isArray(problems) ? problems.length : 0;
 }
 
-/** What went wrong with a run, by `code` (ADR 0008). `draft_conflict` and `invalid_inputs` are shown elsewhere. */
+/**
+ * What went wrong with a run, by `code` (ADR 0008). `draft_conflict`, `invalid_inputs` and `record_not_found` are shown
+ * elsewhere.
+ */
 export function runErrorMessage(error: unknown): { title: string; message: string } {
   if (!(error instanceof ApiError)) return { title: 'Não foi possível calcular', message: UNKNOWN_MESSAGE };
   switch (error.code) {
@@ -47,6 +50,11 @@ export function runErrorMessage(error: unknown): { title: string; message: strin
     default:
       return { title: 'Não foi possível calcular', message: error.message || UNKNOWN_MESSAGE };
   }
+}
+
+/** `404 record_not_found`: no record of the batch source has the key typed or chosen (E5-12). */
+export function isRecordNotFound(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'record_not_found';
 }
 
 export function isConflict(error: unknown): boolean {

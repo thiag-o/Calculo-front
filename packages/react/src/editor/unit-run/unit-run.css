@@ -350,3 +350,188 @@ button.fc-unit-run-node-name:focus-visible {
 .fc-unit-run-stale {
   margin: 0;
 }
+
+/* Epic 5: "Escolher registro" and the trace (E5-12, E5-20). */
+
+.fc-unit-run-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fc-unit-run-key,
+.fc-unit-run-sample {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-unit-run-sample-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 160px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+}
+
+.fc-unit-run-sample-list > li + li {
+  border-top: 1px solid var(--fc-border);
+}
+
+/* A record of the sample: the key in mono-13 and the status it had in the preview; chosen, the active gray. */
+.fc-unit-run-sample-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-12);
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 var(--fc-space-8);
+  border: 0;
+  background-color: transparent;
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-unit-run-sample-list > li:first-child .fc-unit-run-sample-item {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.fc-unit-run-sample-list > li:last-child .fc-unit-run-sample-item {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+.fc-unit-run-sample-item:hover {
+  background-color: var(--fc-hover);
+}
+
+.fc-unit-run-sample-item[aria-pressed='true'] {
+  background-color: var(--fc-active);
+  font-weight: 500;
+}
+
+.fc-unit-run-sample-item:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--fc-focus);
+}
+
+.fc-unit-run-sample-item:disabled {
+  cursor: default;
+  color: var(--fc-text-secondary);
+}
+
+.fc-unit-run-record {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inputs of the trace: variable, value, origin (connection › dataset › column · row key) and copy. */
+.fc-unit-run-trace-inputs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-unit-run-trace-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-4) var(--fc-space-12);
+  min-height: 28px;
+}
+
+.fc-unit-run-trace-input + .fc-unit-run-trace-input {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-unit-run-trace-input-name {
+  color: var(--fc-text-secondary);
+}
+
+.fc-unit-run-trace-input-value {
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-unit-run-origin {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fc-unit-run-row-key {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-unit-run-copy {
+  flex: none;
+  margin-left: auto;
+}
+
+.fc-unit-run-hashes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-4) var(--fc-space-16);
+  margin: var(--fc-space-8) 0 0;
+}
+
+.fc-unit-run-hash dt {
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-unit-run-hash dd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-4);
+}
+
+/* A group of the trace: its Input and Output, and its blocks inside, indented (estilos.md §9, 20px per level). */
+.fc-unit-run-group-values {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  padding-left: var(--fc-space-4);
+}
+
+.fc-unit-run-group-label {
+  flex: none;
+  min-width: 48px;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.fc-unit-run-node-group > .fc-unit-run-nodes {
+  margin-left: var(--fc-space-20);
+  padding-left: var(--fc-space-12);
+  border-left: 1px solid var(--fc-border);
+}

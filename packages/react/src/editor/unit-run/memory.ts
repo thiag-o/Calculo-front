@@ -24,11 +24,26 @@ function storeOf(queryClient: QueryClient): Map<string, TypedValues> {
   return store;
 }
 
+/**
+ * What a "Calcular" tab remembers: the values of the declared inputs (`inputs`, epic 4) or the record key typed or chosen
+ * (`record_key`, with a batch source, E5-12). Each is kept apart, so switching the workflow between the two never mixes them.
+ */
+export type RememberedScope = 'inputs' | 'record_key';
+
+/** The memory key: the person, the tenant and the workflow (ADR 0045), and what is remembered. */
+export function memoryKey(userId: string | undefined, tenantId: string | undefined, workflowId: string, scope: RememberedScope = 'inputs'): string {
+  const base = `${userId ?? ''}:${tenantId ?? ''}:${workflowId}`;
+  return scope === 'inputs' ? base : `${base}:${scope}`;
+}
+
 /** The values typed in the "Calcular" tab of a workflow, kept when the tab or the editor closes and opens again. */
-export function useRememberedValues(workflowId: string): [TypedValues, (update: (current: TypedValues) => TypedValues) => void] {
+export function useRememberedValues(
+  workflowId: string,
+  scope: RememberedScope = 'inputs',
+): [TypedValues, (update: (current: TypedValues) => TypedValues) => void] {
   const queryClient = useQueryClient();
   const session = useSession();
-  const key = `${session.data?.user.id ?? ''}:${session.data?.current_tenant?.id ?? ''}:${workflowId}`;
+  const key = memoryKey(session.data?.user.id, session.data?.current_tenant?.id, workflowId, scope);
   const store = storeOf(queryClient);
 
   const [state, setState] = useState<{ key: string; values: TypedValues }>(() => ({ key, values: store.get(key) ?? {} }));

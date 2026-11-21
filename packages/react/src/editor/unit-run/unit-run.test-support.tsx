@@ -330,7 +330,11 @@ export interface TabScreen {
 
 /** Renders the "Calcular" tab inside the draft context, with the API (cookie mode) and the module root. */
 export function renderTab(
-  { draft = DRAFT, readOnly = false, queryClient = testQueryClient() }: { draft?: Schemas['Draft']; readOnly?: boolean; queryClient?: QueryClient } = {},
+  {
+    draft = DRAFT,
+    readOnly = false,
+    queryClient = testQueryClient(),
+  }: { draft?: Schemas['Draft']; readOnly?: boolean; queryClient?: QueryClient } = {},
 ): TabScreen {
   const user = userEvent.setup({ delay: null });
   // The editor screen opens only after the session (EditorScreen): the tab never starts without it.
@@ -349,3 +353,257 @@ export function renderTab(
   );
   return { user, queryClient, unmount };
 }
+
+// Epic 5: a workflow with a batch source (the contract's DraftWithSources, shortened), its preview and its traces.
+
+const ORIGIN_ROW = { nf_id: '10', item_seq: '1' };
+
+function batchSymbol(name: string, type: Schemas['DataType'], origin: Schemas['Symbol']['origin'] = 'batch_source'): Schemas['Symbol'] {
+  return { name, type, scale: type === 'decimal' ? 2 : null, cardinality: 'linear', list: null, origin, node_id: null, group_id: null };
+}
+
+/** A workflow whose records come from "Itens NF" (key nf_id + item_seq), with a Source block and a group. */
+export const DRAFT_WITH_SOURCES: Schemas['Draft'] = {
+  ...DRAFT,
+  revision: 4,
+  definition: {
+    schema_version: 2,
+    kind: 'batch',
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
+    root: {
+      batch_source: {
+        dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',
+        key: ['nf_id', 'item_seq'],
+        filters: [{ variable: 'status', operator: '=', values: ['"A"'] }],
+        order_by: [{ variable: 'data_emissao', direction: 'asc' }],
+        outputs: [
+          { variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e01', name: 'nf_id' },
+          { variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e02', name: 'item_seq' },
+          { variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e03', name: 'cod_prod' },
+          { variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e04', name: 'valor_item' },
+        ],
+      },
+      inputs: [],
+      nodes: [
+        {
+          id: 'produto',
+          type: 'source',
+          name: 'Produto',
+          description: null,
+          position: { x: 0, y: 0 },
+          mode: 'linear',
+          dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c02',
+          links: [{ variable: 'cod_prod', column_variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e11' }],
+          filters: [],
+          order_by: [{ variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e12', direction: 'desc' }],
+          no_match: 'error',
+          multiple_rows: 'error',
+          exists: null,
+          outputs: [{ variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e13', name: 'categoria' }],
+        },
+        {
+          id: 'grp_pontuacao',
+          type: 'group',
+          name: 'Pontuação',
+          description: null,
+          position: { x: 240, y: 0 },
+          collapsed: false,
+          nodes: [
+            {
+              id: 'td_elegibilidade',
+              type: 'decision_table',
+              name: 'Elegibilidade',
+              description: null,
+              position: { x: 0, y: 0 },
+              hit_policy: 'first',
+              rounding_mode: null,
+              error_policy: null,
+              conditions: [{ expression: 'categoria' }],
+              results: [
+                { name: 'elegivel', type: 'boolean', default_value: null },
+                { name: 'fator', type: 'decimal', scale: 4, default_value: null },
+              ],
+              rules: [{ when: ['"A"'], then: ['verdadeiro', '0.15'] }],
+            },
+            {
+              id: 'calc_pontos',
+              type: 'calculation',
+              name: 'Pontos',
+              description: null,
+              position: { x: 240, y: 0 },
+              expression: 'ARRED(valor_item * fator, 2)',
+              output: { name: 'pontos', type: 'decimal', scale: 2 },
+              rounding_mode: null,
+              error_policy: null,
+              default_value: null,
+            },
+          ],
+          outputs: ['elegivel', 'pontos'],
+        },
+      ],
+      output: {
+        fields: [
+          { name: 'pontos', variable: 'pontos' },
+          { name: 'elegivel', variable: 'elegivel' },
+        ],
+      },
+    },
+  },
+  symbols: [
+    batchSymbol('nf_id', 'text'),
+    batchSymbol('item_seq', 'integer'),
+    batchSymbol('cod_prod', 'text'),
+    batchSymbol('valor_item', 'decimal'),
+    batchSymbol('categoria', 'text', 'source'),
+  ],
+  dependencies: [],
+  order: ['produto', 'grp_pontuacao'],
+  groups: [{ node_id: 'grp_pontuacao', inputs: ['categoria', 'valor_item'], outputs: ['elegivel', 'pontos'], order: ['td_elegibilidade', 'calc_pontos'] }],
+};
+
+/** The preview of the contract: two records in the sample of the root group (and one of a group, not offered). */
+export const PREVIEW: Schemas['Preview'] = {
+  counted_records: 500,
+  total_known: false,
+  sources: [],
+  groups: [
+    {
+      node_id: null,
+      records: [
+        { record_key: { nf_id: '10', item_seq: '1' }, status: 'ok', inputs: {}, outputs: { pontos: '225.00' } },
+        { record_key: { nf_id: '10', item_seq: '1500' }, status: 'filtered', inputs: {}, outputs: {} },
+      ],
+    },
+    { node_id: 'grp_pontuacao', records: [{ record_key: { nf_id: '99', item_seq: '9' }, status: 'ok', inputs: {}, outputs: {} }] },
+  ],
+  error: null,
+};
+
+function origin(column: string, connection: string | null = 'ERP', dataset = 'Itens NF', rowKey: Record<string, string> = ORIGIN_ROW) {
+  return { connection, dataset, column, row_key: rowKey };
+}
+
+/** The trace of the contract (`UnitRunTrace`): the record nf_id 10 · item_seq 1, with the group nested. */
+export const TRACE_OK: Schemas['UnitRunTrace'] = {
+  status: 'ok',
+  record_key: { nf_id: '10', item_seq: '1' },
+  inputs: [
+    { variable: 'nf_id', value: '10', origin: origin('nf_id') },
+    { variable: 'valor_item', value: '1500.00', origin: origin('vl_itm') },
+    { variable: 'categoria', value: 'A', origin: origin('categoria', 'Cadastro', 'Produtos', { cod_prod: 'P-001' }) },
+    { variable: 'cotacao', value: '5.10', origin: origin('cotacao', null, 'Cotações.xlsx', {}) },
+  ],
+  nodes: [
+    { type: 'source', node_id: 'produto', status: 'ok', values: { categoria: 'A' }, rows_found: 1, warnings: [], error: null },
+    {
+      type: 'group',
+      node_id: 'grp_pontuacao',
+      status: 'ok',
+      inputs: { categoria: 'A', valor_item: '1500.00' },
+      outputs: { elegivel: true, pontos: '225.00' },
+      nodes: [
+        { type: 'decision_table', node_id: 'td_elegibilidade', status: 'ok', values: { elegivel: true, fator: '0.1500' }, matched_rule: 1, warnings: [], error: null },
+        { type: 'calculation', node_id: 'calc_pontos', status: 'ok', values: { pontos: '225.00' }, matched_rule: null, warnings: [], error: null },
+      ],
+    },
+  ],
+  outputs: { pontos: '225.00', elegivel: true },
+  input_hash: 'sha256:77b0db21bf50cd73110d3ba398acc52c9d59e1ff5b3a3cb10d67e03f86560506',
+  output_hash: 'sha256:83590128dbe351da686faeeaf3010823a271e47971ff01329fa1f8b37fcc098f',
+  error: null,
+  warnings: [],
+};
+
+const NOT_RUN_GROUP: Schemas['TraceGroupNode'] = { type: 'group', node_id: 'grp_pontuacao', status: 'not_run', inputs: {}, outputs: {}, nodes: [] };
+
+/** `filtered`: out of the batch source filter; nothing ran after it. */
+export const TRACE_FILTERED: Schemas['UnitRunTrace'] = {
+  ...TRACE_OK,
+  status: 'filtered',
+  nodes: [{ type: 'source', node_id: 'produto', status: 'ok', values: { categoria: 'B' }, rows_found: 1, warnings: [], error: null }, NOT_RUN_GROUP],
+  outputs: {},
+  output_hash: null,
+};
+
+export const NO_MATCH_MESSAGE = 'Produto não achou linha para cod_prod P-999; o registro foi ignorado, como pede a política do bloco.';
+
+/** `ignored`: the Source block found no row and its policy discards the record. */
+export const TRACE_IGNORED: Schemas['UnitRunTrace'] = {
+  ...TRACE_OK,
+  status: 'ignored',
+  nodes: [
+    {
+      type: 'source',
+      node_id: 'produto',
+      status: 'warning',
+      values: { categoria: null },
+      rows_found: 0,
+      warnings: [{ code: 'no_match', message: NO_MATCH_MESSAGE }],
+      error: null,
+    },
+    NOT_RUN_GROUP,
+  ],
+  outputs: {},
+  output_hash: null,
+  warnings: [{ node_id: 'produto', code: 'no_match', message: NO_MATCH_MESSAGE, values: { cod_prod: 'P-999' } }],
+};
+
+/** `error` of reading: the batch source column no longer exists (the error is of the batch source, `node_id` null). */
+export const TRACE_SCHEMA_DRIFT: Schemas['UnitRunTrace'] = {
+  ...TRACE_OK,
+  status: 'error',
+  inputs: [],
+  nodes: [],
+  outputs: {},
+  output_hash: null,
+  error: { node_id: null, code: 'schema_drift', message: '`ItensNF.vl_itm` não existe mais na origem.', values: {} },
+};
+
+/** `ok_with_warnings`: the Source block found 3 rows and took the first, as accepted. */
+export const TRACE_WARNINGS: Schemas['UnitRunTrace'] = {
+  ...TRACE_OK,
+  status: 'ok_with_warnings',
+  nodes: [
+    {
+      type: 'source',
+      node_id: 'produto',
+      status: 'warning',
+      values: { categoria: 'A' },
+      rows_found: 3,
+      warnings: [{ code: 'multiple_rows', message: 'Produto achou 3 linhas; valeu a primeira pela ordenação.' }],
+      error: null,
+    },
+    TRACE_OK.nodes[1]!,
+  ],
+};
+
+/** `error` in a block inside the group: the error at the block, nested, and the record without outputs. */
+export const TRACE_ERROR: Schemas['UnitRunTrace'] = {
+  ...TRACE_OK,
+  status: 'error',
+  nodes: [
+    TRACE_OK.nodes[0]!,
+    {
+      type: 'group',
+      node_id: 'grp_pontuacao',
+      status: 'error',
+      inputs: { categoria: 'Z', valor_item: '1500.00' },
+      outputs: {},
+      nodes: [
+        {
+          type: 'decision_table',
+          node_id: 'td_elegibilidade',
+          status: 'error',
+          values: {},
+          matched_rule: null,
+          warnings: [],
+          error: { code: 'no_rule_matched', message: 'Nenhuma regra casou com os valores do registro.' },
+        },
+        { type: 'calculation', node_id: 'calc_pontos', status: 'not_run', values: {}, matched_rule: null, warnings: [], error: null },
+      ],
+    },
+  ],
+  outputs: {},
+  output_hash: null,
+  error: { node_id: 'td_elegibilidade', code: 'no_rule_matched', message: 'Nenhuma regra casou com os valores do registro.', values: { categoria: 'Z' } },
+};

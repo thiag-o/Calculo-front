@@ -1,7 +1,7 @@
 // The form of the "Calcular" tab, generated from the declared inputs (E4-14, E4-24): what is typed (always text, as on
 // screen), how it goes to the API (`Value`) and how the result values are shown.
 import type { Schemas } from '../../api';
-import type { WorkflowDefinition } from '../draft';
+import type { DraftSymbol, WorkflowDefinition } from '../draft';
 import { formatApiNumber, readBrazilianNumber } from './numbers';
 
 export type DataType = Schemas['DataType'];
@@ -123,11 +123,31 @@ export function formErrors(inputs: readonly DeclaredInput[], values: TypedValues
   return reading.ok ? {} : reading.errors;
 }
 
-/** The type of each linear variable of the definition: inputs, Calculation outputs and Decision Table results. */
-export function variableTypes(definition: WorkflowDefinition): Map<string, DataType> {
+type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
+
+/** Every node of the definition, the ones inside groups too, in the order of the definition. */
+export function allNodes(definition: WorkflowDefinition): DefinitionNode[] {
+  const nodes: DefinitionNode[] = [];
+  const visit = (list: readonly DefinitionNode[]) => {
+    for (const node of list) {
+      nodes.push(node);
+      if (node.type === 'group') visit(node.nodes);
+    }
+  };
+  visit(definition.root.nodes);
+  return nodes;
+}
+
+/**
+ * The type of each linear variable: from the symbols of the analysis (the batch source and the Source blocks, whose types
+ * come from the catalog), then from the definition itself (inputs, Calculation outputs and Decision Table results, the
+ * ones inside groups too), which wins.
+ */
+export function variableTypes(definition: WorkflowDefinition, symbols: readonly DraftSymbol[] = []): Map<string, DataType> {
   const types = new Map<string, DataType>();
+  for (const symbol of symbols) if (symbol.cardinality === 'linear' && symbol.type !== null) types.set(symbol.name, symbol.type);
   for (const input of definition.root.inputs) if (input.cardinality === 'linear') types.set(input.name, input.type);
-  for (const node of definition.root.nodes) {
+  for (const node of allNodes(definition)) {
     if (node.type === 'calculation') types.set(node.output.name, node.output.type);
     else if (node.type === 'decision_table') for (const result of node.results) types.set(result.name, result.type);
   }

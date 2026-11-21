@@ -1,6 +1,7 @@
-// Sub-vertical "unit-run" of the "editor" vertical (ADR 0003): the "Calcular" tab of the bottom panel (E4-14, E4-24),
-// the form generated from the declared inputs and the result of the saved draft for one record. It reads and saves the
-// draft only through useDraftEditor (ADR 0042).
+// Sub-vertical "unit-run" of the "editor" vertical (ADR 0003): the "Calcular" tab of the bottom panel (E4-14, E4-24,
+// E5-12, E5-20). Without a batch source, the form generated from the declared inputs; with one, "Escolher registro" (the
+// sample of the last preview or the key typed). The result is the trace of the saved draft for one record. It reads and
+// saves the draft only through useDraftEditor (ADR 0042).
 export { UnitRunPanel } from './UnitRunPanel';
 export { UNIT_RUN_LABEL } from './messages';
 export { readBrazilianNumber, formatApiNumber } from './numbers';
