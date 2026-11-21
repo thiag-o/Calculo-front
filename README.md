@@ -63,7 +63,7 @@ pnpm dev
 | `pnpm test` | Testes (Vitest) |
 | `pnpm changeset` | Registra uma mudança do pacote para a próxima versão |
 | `pnpm generate:api` | Gera os tipos da API a partir do OpenAPI do backend (ADR 0005), em `packages/react/src/api/generated/` |
-| `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** |
+| `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** (no épico 5, com a campanha de referência: catálogo, prévia e Calcular por registro, em `e2e/epic-5/support/`) |
 | `pnpm e2e:real` | Os mesmos testes contra o back de verdade (veja abaixo) |
 | `pnpm e2e:visual` | Prova visual das telas dos épicos 1 a 4, nos dois temas e em 1440, 1180 e 900 px, contra a API simulada (veja abaixo) |
 
@@ -127,6 +127,14 @@ uv run python -m fluxo.bootstrap api
 
    Desde o épico 4, o `migrate` aplica a migration dos workflows e o `prepare-local` cria no tenant **Demonstração** o workflow "Pontuação de exemplo", com o rascunho do exemplo de Contratos do back. Os testes de `e2e/epic-4/` o usam. Rode-os num banco recém-preparado, como nos épicos anteriores.
 
+   Desde o épico 5, o `prepare-local` também carrega a campanha de referência (B98 e B100: as tabelas da campanha no `postgres-sample` e no SQL Server, a planilha de fatores, as conexões, os datasets e as variáveis) e cria o workflow "Campanha de referência". Os testes de `e2e/epic-5/` o usam:
+   - `preview-and-calculate.spec.ts` roda a prévia e confere as contagens; escolhe o primeiro registro da amostra em "Escolher registro" e confere o trace, o valor esperado e os valores no canvas; e digita a chave de cada caso de borda da campanha. Nada é salvo: o rascunho é só lido;
+   - `build-campaign.spec.ts` monta a campanha pela tela e só roda no simulado (no modo real, ele é pulado com o motivo);
+   - `group-visibility-and-run-values.spec.ts` e `accept-first-row.spec.ts` trabalham numa cópia da campanha, criada pela API a partir do rascunho dela (o workflow do `prepare-local` fica como está; as cópias ficam no banco): uma variável de dentro do grupo usada fora vira "não é visível aqui" e é corrigida pelo Output; os valores do canvas somem ao editar; e "Aceitar a primeira linha" pede a confirmação e vai para o rascunho;
+   - `roles.spec.ts` entra como o Aprovador (prévia e Calcular, nada salvo) e como o Auditor (só leitura), com as contas `aprovador@demo.local` e `auditor@demo.local` do `prepare-local`.
+
+   O modo real precisa do SQL Server no ar (`docker compose --profile sqlserver up -d`), porque o bloco "Produto" lê dele. Os valores esperados estão em `e2e/epic-5/support/expected.ts`, calculados à mão a partir das regras (`../backend/docs/campanha-de-referencia.md`) e dos dados da B98; os mesmos registros estão no aceite da B100 (`../backend/tests/reference_campaign/`). Os nomes dos blocos que os testes procuram ("Nota", "Loja", "Produto na campanha", "Produto", "Parâmetros", "Pontuação", "Fator da categoria", "Multiplicador", "Pontos base" e "Pontos") são os títulos das regras do documento da campanha. Das contagens da prévia, o modo real confere só as que não dependem de como um registro já ignorado, filtrado ou com erro conta nos blocos seguintes (o contrato não fixa isso); as outras ficam para o simulado.
+
 2. Exporte o endereço da API (sem o `/v1`) e as contas que o `prepare-local` imprime (também em `../backend/docs/ambientes.md`):
 
 ```bash
@@ -137,6 +145,7 @@ export E2E_TWO_TENANTS_EMAIL=dois.tenants@demo.local
 export E2E_TWO_TENANTS_PASSWORD=demo-dois-tenants-local
 export E2E_AUDITOR_EMAIL=auditor@demo.local
 export E2E_AUDITOR_PASSWORD=demo-auditor-local
+export E2E_APPROVER_PASSWORD=demo-aprovador-local
 export E2E_SAMPLE_READ_PASSWORD=exemplo_leitura_local
 export E2E_SAMPLE_WRITE_PASSWORD=exemplo_escrita_local
 ```
@@ -151,6 +160,8 @@ No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
 | `E2E_TWO_TENANTS_EMAIL`, `E2E_TWO_TENANTS_PASSWORD` | sim | Conta com acesso aos dois tenants de demonstração (troca de tenant). |
 | `E2E_AUDITOR_EMAIL` | não (padrão `auditor@demo.local`) | E-mail do Auditor de demonstração (o editor só para leitura, épico 4). |
 | `E2E_AUDITOR_PASSWORD` | sim | Senha do Auditor de demonstração (`demo-auditor-local` no ambiente local). |
+| `E2E_APPROVER_EMAIL` | não (padrão `aprovador@demo.local`) | E-mail do Aprovador de demonstração (prévia e Calcular sem editar, épico 5). |
+| `E2E_APPROVER_PASSWORD` | sim | Senha do Aprovador de demonstração (`demo-aprovador-local` no ambiente local). |
 | `E2E_SHELL_URL` | não (padrão `http://localhost:5173`) | Endereço do casca que o Playwright abre. |
 | `E2E_SAMPLE_HOST` | não (padrão `127.0.0.1`) | Host do banco de exemplo (`postgres-sample`), visto pela **API** (é ela que conecta, não o navegador). |
 | `E2E_SAMPLE_PORT` | não (padrão `5434`) | Porta do banco de exemplo (`FLUXO_SAMPLE_POSTGRES_PORT` do back). |
