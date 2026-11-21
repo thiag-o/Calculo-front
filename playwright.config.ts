@@ -34,6 +34,9 @@ const hostAppUrl = `http://localhost:${ports.hostAppPort}`;
 const apiUrl = process.env.E2E_API_URL?.trim().replace(/\/+$/, '');
 const viteEnv: Record<string, string> = apiUrl ? { VITE_API_URL: apiUrl } : {};
 
+// The spec that runs in its own project, serialized and last (see the projects below).
+const LIMIT_SPEC = '**/epic-4/connection-test-limit.spec.ts';
+
 export default defineConfig({
   testDir: './e2e',
   outputDir,
@@ -47,7 +50,14 @@ export default defineConfig({
   // Lido pelas fixtures (testInfo.config.metadata).
   metadata: { hostAppUrl },
   projects: [
-    { name: 'simulated', use: { ...devices['Desktop Chrome'] }, metadata: { mode: 'simulated' } },
+    {
+      name: 'simulated',
+      use: { ...devices['Desktop Chrome'] },
+      metadata: { mode: 'simulated' },
+      testIgnore: LIMIT_SPEC,
+      // Selecting `simulated` also runs `simulated-limit`, after it (a teardown runs even if the tests before it fail).
+      teardown: 'simulated-limit',
+    },
     // Real only: 60 s timeout per test and per `expect` (global session decision, D8 of F39): the long audit
     // flow (8 sign-ins with argon2, 2 users, the link and 5 filters) took 33 s alone, with this machine loaded.
     // The simulated project keeps the defaults (30 s and 5 s).
@@ -57,6 +67,24 @@ export default defineConfig({
       metadata: { mode: 'real' },
       timeout: 60_000,
       expect: { timeout: 60_000 },
+      testIgnore: LIMIT_SPEC,
+      teardown: 'real-limit',
+    },
+    // The "Testar" limit test (epic 4, script 10) uses up the admin's limit window (60 s per tenant and user) and would make
+    // other tests take a 429. So it has its own projects, which run alone, after all the others (see `teardown` above).
+    {
+      name: 'simulated-limit',
+      use: { ...devices['Desktop Chrome'] },
+      metadata: { mode: 'simulated' },
+      testMatch: LIMIT_SPEC,
+    },
+    {
+      name: 'real-limit',
+      use: { ...devices['Desktop Chrome'] },
+      metadata: { mode: 'real' },
+      timeout: 60_000,
+      expect: { timeout: 60_000 },
+      testMatch: LIMIT_SPEC,
     },
   ],
   webServer: [
