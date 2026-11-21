@@ -226,7 +226,7 @@ describe('valores do último cálculo no canvas', () => {
     expect(node('Bônus, Cálculo, erro no último cálculo')).toBeInTheDocument();
   });
 
-  it('um cálculo guardado com uma definição que não é a salva na revisão dele não mostra valores, e é esquecido', async () => {
+  it('um cálculo guardado com uma definição ainda não salva na revisão dele não mostra valores, mas só é esquecido quando a definição ou a revisão divergem', async () => {
     const draft = groupedDraft();
     simulateApi(draft);
     const queryClient = moduleQueryClient();
@@ -235,6 +235,7 @@ describe('valores do último cálculo no canvas', () => {
     const keep = (definition: typeof probe.definition) => {
       const run = { revision: draft.revision, definition, symbols: draft.symbols, trace: trace() };
       act(() => keepLastUnitRun(queryClient, draft.workflow_id, run));
+      return run;
     };
 
     // The control: the definition saved at the revision that ran shows its values.
@@ -243,13 +244,42 @@ describe('valores do último cálculo no canvas', () => {
     await user.click(screen.getByRole('button', { name: 'Limpar' }));
 
     // An edit not saved yet (as one made between the save of "Calcular" and its run): the trace of the revision does
-    // not have it, so the canvas shows nothing and forgets the run.
+    // not have it, so the canvas shows nothing; the run stays while the definition and the revision are the same.
     node(/^Bônus, Cálculo/).focus();
     await user.keyboard('{ArrowDown}');
-    keep(probe.definition);
+    const pending = keep(probe.definition);
     expect(banner()).not.toBeInTheDocument();
     expect(node('Bônus, Cálculo')).toBeInTheDocument();
+    expect(lastRunOf(queryClient, draft.workflow_id)).toBe(pending);
+
+    // Another edit: the definition on screen is no longer the one that ran, so the run is forgotten.
+    node(/^Bônus, Cálculo/).focus();
+    await user.keyboard('{ArrowRight}');
     await waitFor(() => expect(lastRunOf(queryClient, draft.workflow_id)).toBeNull());
+  });
+
+  it('um save em andamento esconde os valores, mas não faz o cálculo ser esquecido (o canvas pode remontar)', async () => {
+    const draft = groupedDraft();
+    const api = simulateApi(draft);
+    api.answerRuns(trace());
+    const queryClient = moduleQueryClient();
+    const { user, probe } = renderEditor(draft, queryClient);
+    await screen.findByRole('group', { name: /^Bônus, Cálculo/ });
+    node(/^Bônus, Cálculo/).focus();
+    await user.keyboard('{ArrowDown}');
+    const save = api.holdNextSave();
+    // "Calcular" saves the edit first: the save is in progress (held), with the definition and the revision on screen.
+    await user.click(screen.getByRole('button', { name: 'Calcular' }));
+    const run = { revision: draft.revision, definition: probe.definition, symbols: draft.symbols, trace: trace() };
+    act(() => keepLastUnitRun(queryClient, draft.workflow_id, run));
+
+    expect(banner()).not.toBeInTheDocument();
+    // Time for the effect that would forget the run, if it were going to.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(lastRunOf(queryClient, draft.workflow_id)).toBe(run);
+    save.release();
   });
 
   it('reabrir o editor (o rascunho lido de novo) limpa os valores', async () => {

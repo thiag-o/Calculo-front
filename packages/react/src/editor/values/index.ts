@@ -4,3 +4,4 @@ export { formatApiNumber, readBrazilianNumber } from './numbers';
 export type { NumberReading } from './numbers';
 export { formatDate, formatDateTime } from './dates';
 export { NO_VALUE } from './empty';
+export { formatValue } from './format';

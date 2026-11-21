@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LastUnitRun } from '../../unit-run';
 import { groupedDraft } from '../../groups/groups.test-support';
-import { formatRunValue, runViews } from './views';
+import { runViews } from './views';
 
 function lastRun(trace: LastUnitRun['trace']): LastUnitRun {
   const draft = groupedDraft();
@@ -69,14 +69,5 @@ describe('valores do último cálculo por nó', () => {
     );
     expect(views.nodes.get('td_elegibilidade')).not.toHaveProperty('matchedRule');
     expect(views.nodes.get('produto')).toMatchObject({ rowsFound: 1 });
-  });
-
-  it('mostra nulo, booleano, data e lista como no resultado do Calcular', () => {
-    expect(formatRunValue(null, 'decimal')).toBe('—');
-    expect(formatRunValue(true, 'boolean')).toBe('verdadeiro');
-    expect(formatRunValue('2026-11-20', 'date')).toBe('20/11/2026');
-    expect(formatRunValue('1500.5', 'decimal')).toBe('1.500,5');
-    expect(formatRunValue([{ a: '1' }, { a: '2' }], undefined)).toBe('lista com 2 itens');
-    expect(formatRunValue('A', 'text')).toBe('A');
   });
 });

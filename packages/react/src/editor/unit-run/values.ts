@@ -2,7 +2,7 @@
 // screen), how it goes to the API (`Value`) and how the result values are shown.
 import type { Schemas } from '../../api';
 import type { DraftSymbol, WorkflowDefinition } from '../draft';
-import { NO_VALUE, formatApiNumber, formatDate, formatDateTime, readBrazilianNumber } from '../values';
+import { readBrazilianNumber } from '../values';
 
 export type DataType = Schemas['DataType'];
 export type Value = Schemas['Value'];
@@ -154,23 +154,4 @@ export function variableTypes(definition: WorkflowDefinition, symbols: readonly 
   return types;
 }
 
-/**
- * A value of the result on screen (estilos.md §3): numbers as `1.500,00`, dates as `20/11/2026`, booleans as
- * "verdadeiro" and "falso", null as "—". `type` is the variable's declared type, when known.
- */
-export function formatValue(value: Value, type: DataType | undefined): string {
-  if (value === null) return NO_VALUE;
-  if (typeof value === 'boolean') return value ? 'verdadeiro' : 'falso';
-  if (Array.isArray(value)) return value.length === 1 ? 'lista com 1 item' : `lista com ${value.length.toLocaleString('pt-BR')} itens`;
-  switch (type) {
-    case 'integer':
-    case 'decimal':
-      return formatApiNumber(value);
-    case 'date':
-      return formatDate(value);
-    case 'datetime':
-      return formatDateTime(value);
-    default:
-      return value;
-  }
-}
+export { formatValue } from '../values';

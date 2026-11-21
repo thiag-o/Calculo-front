@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useDraftEditor } from '../../draft';
-import { useLastUnitRun, type LastUnitRun } from '../../unit-run';
+import { useLastUnitRun } from '../../unit-run';
 import { runViews, type RunViews } from './views';
 
 export interface RunValuesState {
@@ -21,15 +21,16 @@ export function useRunValues(): RunValuesState {
   const { workflowId, definition, revision, save } = useDraftEditor();
   const { lastRun, clear: forget } = useLastUnitRun(workflowId);
   const saved = save.status === 'saved';
-  const matches = (run: LastUnitRun) => run.definition === definition && run.revision === revision && saved;
-  const current = lastRun !== null && matches(lastRun) ? lastRun : null;
-  const stale = lastRun !== null && current === null;
+  // Forgotten only when the definition or the revision diverge; `saved` only decides whether the values show.
+  const stale = lastRun !== null && (lastRun.definition !== definition || lastRun.revision !== revision);
+  const current = lastRun !== null && !stale ? lastRun : null;
+  const shown = current !== null && saved ? current : null;
 
   useEffect(() => {
     if (stale && lastRun) forget(lastRun);
   }, [stale, lastRun, forget]);
 
-  const views = useMemo(() => (current ? runViews(current) : null), [current]);
+  const views = useMemo(() => (shown ? runViews(shown) : null), [shown]);
   const clear = useCallback(() => {
     if (current) forget(current);
   }, [current, forget]);

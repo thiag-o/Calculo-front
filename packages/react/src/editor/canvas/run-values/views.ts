@@ -3,7 +3,7 @@
 import type { Schemas } from '../../../api';
 import type { DraftSymbol, WorkflowDefinition } from '../../draft';
 import type { LastUnitRun, UnitRun } from '../../unit-run';
-import { NO_VALUE, formatApiNumber, formatDate, formatDateTime } from '../../values';
+import { formatValue } from '../../values';
 
 type DataType = Schemas['DataType'];
 type Value = Schemas['Value'];
@@ -59,29 +59,11 @@ function variableTypes(definition: WorkflowDefinition, symbols: readonly DraftSy
   return types;
 }
 
-/** A value on screen (estilos.md §3): `1.500,00`, `20/11/2026`, "verdadeiro", "—" for null. */
-export function formatRunValue(value: Value, type: DataType | undefined): string {
-  if (value === null) return NO_VALUE;
-  if (typeof value === 'boolean') return value ? 'verdadeiro' : 'falso';
-  if (Array.isArray(value)) return value.length === 1 ? 'lista com 1 item' : `lista com ${value.length.toLocaleString('pt-BR')} itens`;
-  switch (type) {
-    case 'integer':
-    case 'decimal':
-      return formatApiNumber(value);
-    case 'date':
-      return formatDate(value);
-    case 'datetime':
-      return formatDateTime(value);
-    default:
-      return value;
-  }
-}
-
 /** The views of every node of the trace, groups and what is inside them included. */
 export function runViews(run: LastUnitRun): RunViews {
   const types = variableTypes(run.definition, run.symbols);
   const values = (entries: Record<string, Value>): RunValue[] =>
-    Object.entries(entries).map(([name, value]) => ({ name, text: formatRunValue(value, types.get(name)) }));
+    Object.entries(entries).map(([name, value]) => ({ name, text: formatValue(value, types.get(name)) }));
   const nodes = new Map<string, NodeRunView>();
   const visit = (list: readonly TraceNode[]) => {
     for (const node of list) {
