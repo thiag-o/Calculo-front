@@ -1312,6 +1312,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - modelo: opus
 - arquivos: `e2e/epic-5/`, `e2e/support/`, `README.md`
 - Fazer:
+  - (sugestão do verificador da F67) o caminho Prévia → amostra guardada → Calcular com "Escolher registro" pela amostra real, ponta a ponta;
   - os fluxos do épico 5 do plano global, no modo simulado:
     - montar o workflow da campanha de referência com fonte do lote, fontes lineares, filtro e grupo;
     - rodar a prévia e conferir as contagens;
@@ -1365,8 +1366,18 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - Fazer: os formatadores de número da API e de data e hora descem para `editor/values/`, usados pelo `preview` e pelo `unit-run`; saem as cópias locais da F66. O sentido de dependência fica: `unit-run` → `preview` (amostra da última prévia, F67), e os dois → `values`; nunca `preview` → `unit-run`.
 - Aceite: nenhum formatador duplicado; nenhum import de `../unit-run` no `preview`; os testes dos dois e o `pnpm e2e` passam sem mudar o que aparece na tela.
 
+**F95 · Manutenção: achados da revisão da F68 (valores no canvas)**
+- dep: F68
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/canvas/run-values/`, `packages/react/src/editor/unit-run/values.ts`, `packages/react/src/editor/unit-run/index.ts`, `packages/react/src/editor/values/`, `packages/react/src/editor/sources/filters/filterRules.ts`
+- Fazer:
+  - o `useRunValues` só esquece um cálculo quando a `definition` ou a `revision` divergem; o estado `saved` serve só para mostrar. Um canvas que remonta durante um save em andamento não perde o cálculo válido;
+  - o despacho de formatação por tipo, hoje duplicado em `canvas/run-values/views.ts` e `unit-run/values.ts`, vai para `editor/values/`, e as duas cópias saem (o "A fazer" da ADR 0058);
+  - o `filterRules.ts` passa a importar `formatApiNumber` e `readBrazilianNumber` de `../../values`, e o reexport sai do `unit-run/index.ts` (pendência da ADR 0057).
+- Aceite: um teste do canvas remontando durante o save; nenhum formatador duplicado; nenhum import do `unit-run` em `sources/filters/`.
+
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
