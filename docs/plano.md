@@ -1404,9 +1404,10 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 **F108 · Manutenção: texto da barra no e2e do Aprovador e formatação de valores num lugar só**
 - dep: F96, F107
 - modelo: sonnet
-- arquivos: `e2e/epic-5/roles.spec.ts`, `packages/react/src/editor/unit-run/values.ts`, `packages/react/src/editor/unit-run/UnitRunResult.tsx`, `packages/react/src/editor/preview/`, `packages/react/src/editor/values/`
+- arquivos: `e2e/epic-5/roles.spec.ts`, `packages/react/src/editor/unit-run/values.ts`, `packages/react/src/editor/unit-run/UnitRunResult.tsx`, `packages/react/src/editor/preview/`, `packages/react/src/editor/values/`, e (D32) `packages/react/src/editor/problems/problemGroups.ts` e o teste dele
 - Fazer:
   - o e2e do Aprovador confere o texto "Sem permissão para ver o dataset" na barra da fonte do lote (aceite da F107);
+  - (D32, item 1 da F96) o problema da fonte do lote sem `path` de nó cai no item da fonte do lote, não no do workflow; o `problemItem` reconhece blocos dentro de grupos (`root.nodes[i].nodes[k]...`, em qualquer nível), e o problema sem `node_id` de um bloco dentro de um grupo cai no bloco, não no grupo;
   - a formatação de valores fica só em `editor/values/`: o `unit-run/values.ts` deixa de reexportar o `formatValue` (o `UnitRunResult.tsx` importa direto), e o `preview/values.ts` perde a sua `formatValue` e o `variableTypes` duplicados.
 - Aceite: o e2e do Aprovador confere o texto; `git grep` acha uma definição só de `formatValue` e de `variableTypes` no editor; testes e e2e verdes.
 
@@ -1451,6 +1452,15 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - **atualização:** a cada 2 s até um estado final.
   - Motivo: design §15 ("painel por execução (totais, alertas, erros agrupados)"); a tela de debug com o canvas é do épico 11.
 - **E6-22, Prévia e Calcular com parâmetros:** com parâmetros declarados, a Prévia e o Calcular mostram o formulário de parâmetros acima do botão, com os padrões e lembrando os últimos valores usados na sessão.
+
+**F109 · Manutenção: nomes e padrões do editor num lugar só (D32, itens 2 e 3 da F96)**
+- dep: F97
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/properties/index.ts`, `packages/react/src/editor/groups/tree.ts`, `packages/react/src/editor/unit-run/values.ts`, `packages/react/src/editor/sources/index.ts`, `packages/react/src/editor/canvas/blocks.ts`, `packages/react/src/editor/shared/` (nova), `docs/adr/`
+- Fazer:
+  - uma pasta comum do editor (`editor/shared/`), com uma ADR nova que diz o que pode entrar nela, para `producedNames`, `allNodes`, `variableNameCounts` e `locateNode`, usados pelo `groups/tree.ts` e pelo `unit-run/values.ts` sem cópia;
+  - os padrões do bloco Fonte novo (`defaultOutputs`, `defaultOrder`, `toLinearMode`) exportados pelo `sources/index.ts` e usados pelo `canvas/blocks.ts`, com a ADR 0059 ampliada para permitir `canvas` → `sources/source-block` por essa entrada.
+- Aceite: `git grep` acha uma definição só de cada função; lint das fronteiras verde; testes e build verdes.
 
 **F97 · Tipos da API do épico 6**
 - tipo: contrato
@@ -1538,6 +1548,6 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
