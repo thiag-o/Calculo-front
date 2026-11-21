@@ -5,3 +5,5 @@ export { Datasets } from './Datasets';
 export type { DatasetsProps } from './Datasets';
 export { DatasetDetail } from './DatasetDetail';
 export type { DatasetDetailProps } from './DatasetDetail';
+// The tenant datasets and the variables of one, read by the editor's Source block (E5-16, F64).
+export { useDatasetList, useDatasetVariables } from './queries';

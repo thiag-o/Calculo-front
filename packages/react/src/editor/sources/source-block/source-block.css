@@ -1,0 +1,106 @@
+/*
+ * Editor › sources › Source block (estilos.md §2.4, §3, §4, §7.2 and §7.7): the block's form in the properties panel.
+ * Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+.fc-source-section {
+  gap: var(--fc-space-12);
+}
+
+.fc-source-dataset {
+  min-width: 0;
+}
+
+/* One row per link, ordering item or output, with a 1px divider between them (one border only, estilos §4). */
+.fc-source-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-source-item {
+  padding: var(--fc-space-12) 0;
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-source-item:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Variable and direction side by side. */
+.fc-source-order-row {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--fc-space-8);
+  align-items: start;
+}
+
+/* The type beside the variable name of an output (mono-12 is for port types; here label-12, estilos §3). */
+.fc-source-type {
+  margin-left: var(--fc-space-6);
+}
+
+.fc-source-outside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--fc-space-6);
+  margin: 0;
+}
+
+/* The reason of a disabled box (estilos §14 and §3: an essential text, so at least the secondary colour). */
+.fc-source-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fc-space-4);
+  margin: 0;
+}
+
+.fc-source-reason svg {
+  flex: none;
+  margin-top: var(--fc-space-2);
+}
+
+/* "Tabela de parâmetros": a neutral note (gray-100 background, 6px radius, estilos §7.7), not a status. */
+.fc-source-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  padding: var(--fc-space-8) var(--fc-space-12);
+  border-radius: 6px;
+  background-color: var(--fc-hover);
+}
+
+.fc-source-note-title {
+  margin: 0;
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.fc-source-note-text {
+  margin: 0;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.fc-source-dialog-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.fc-source-dialog-text p {
+  margin: 0;
+}

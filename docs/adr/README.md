@@ -74,6 +74,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0052](0052-properties-workflow-importa-sources-batch-source.md) | `properties/workflow` importa `sources/batch-source/index.ts`, com ciclo permitido entre as duas (complementa 0047) | aceita, revisar no checkpoint | 2026-11-21 |
 | [0053](0053-use-draft-editor-expoe-groups.md) | `useDraftEditor()` expõe `groups`, o Input derivado da análise (complementa 0042) | aceita, revisar no checkpoint | 2026-11-21 |
 | [0054](0054-posicao-do-no-dentro-do-grupo-relativa-ao-conteudo.md) | Posição de um nó dentro de um grupo é relativa à área de conteúdo do grupo | aceita, revisar no checkpoint | 2026-11-21 |
+| [0055](0055-editor-le-o-catalogo-por-catalog-index.md) | O editor lê datasets e variáveis do catálogo por `catalog/index.ts` (segue a 0003, 0033 e 0034) | aceita, revisar no checkpoint | 2026-11-21 |
 
 ## Pendentes (sem ADR ainda)
 
