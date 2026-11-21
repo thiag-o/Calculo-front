@@ -1376,8 +1376,19 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
   - o `filterRules.ts` passa a importar `formatApiNumber` e `readBrazilianNumber` de `../../values`, e o reexport sai do `unit-run/index.ts` (pendência da ADR 0057).
 - Aceite: um teste do canvas remontando durante o save; nenhum formatador duplicado; nenhum import do `unit-run` em `sources/filters/`.
 
+**F96 · Manutenção: achados da revisão da F69 (integração do épico 5)**
+- dep: F69, F95
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/decision-table/tableProblems.ts`, `packages/react/src/editor/sources/batch-source/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/sources/source-block/`, `packages/react/src/editor/properties/definition.ts`, `packages/react/src/editor/properties/workflow/`
+- Fazer:
+  - numa Tabela dentro de grupo, em qualquer nível, o problema de célula cai na célula certa, e não na tabela inteira;
+  - a fonte do lote tem um fieldset "Filtros" só, sem aninhar dois;
+  - o problema da fonte do lote sem `path` (casado pelo `code`, D21) aparece no item da fonte do lote, e não no do workflow;
+  - o `producedNames` e o `allNodes` de `properties/definition.ts` e os padrões do `newSourceBlock` deixam de ser duplicados (o "A fazer" da ADR 0059).
+- Aceite: um teste por item; `pnpm e2e` verde.
+
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92, F93, F94, F95, F96
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
