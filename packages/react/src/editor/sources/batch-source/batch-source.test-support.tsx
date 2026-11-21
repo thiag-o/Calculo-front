@@ -172,7 +172,7 @@ export function simulateApi({ datasets = DATASETS, variables = { [ITEMS_DATASET.
     requests.push(route);
     if (route === 'GET /v1/datasets') {
       if (datasets === 'pending') return new Promise<Response>(() => {});
-      if (typeof datasets === 'number') return json({ type: 'about:blank', title: 'Erro', status: datasets, detail: 'Falha ao ler o catálogo.', code: 'internal_error' }, datasets);
+      if (typeof datasets === 'number') return json({ type: 'about:blank', title: 'Erro', status: datasets, detail: 'Falha ao ler o catálogo.', code: datasets === 403 ? 'no_permission' : 'internal_error' }, datasets);
       return json({ items: datasets });
     }
     const match = /^GET \/v1\/datasets\/([^/]+)\/variables$/.exec(route);

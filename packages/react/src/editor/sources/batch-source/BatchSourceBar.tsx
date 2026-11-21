@@ -1,10 +1,11 @@
 import { memo, type ReactNode } from 'react';
+import { ApiError } from '../../../api';
 import { DATASET_TYPE_LABELS, useDatasetList } from '../../../catalog';
 import { textClasses } from '../../../design-system';
 import type { DraftSymbol } from '../../draft';
 import { batchSourceBarRows, type BatchSource, type BatchSourceBarRow } from './batchSource';
 import { KeyIcon } from './icons';
-import { BATCH_SOURCE_TITLE, UNKNOWN_DATASET } from './messages';
+import { BATCH_SOURCE_TITLE, DATASET_LOAD_FAILED, DATASET_NO_PERMISSION, LOADING_DATASET, UNKNOWN_DATASET, datasetsErrorMessage } from './messages';
 import './batch-source.css';
 
 export interface BatchSourceBarProps {
@@ -17,6 +18,15 @@ export interface BatchSourceBarProps {
   problems?: ReactNode;
   /** What anchors the links of a variable (the canvas puts a React Flow handle here); nothing by default. */
   renderHandle?: (row: BatchSourceBarRow) => ReactNode;
+}
+
+/** What stands in the place of the dataset name: loading, the reason the read failed (never a loading with no end) or unknown. */
+function datasetLabel(datasets: { isError: boolean; isSuccess: boolean; error: unknown }): string {
+  if (datasets.isError) {
+    if (datasets.error instanceof ApiError && datasets.error.code === 'no_permission') return DATASET_NO_PERMISSION;
+    return `${DATASET_LOAD_FAILED}. ${datasetsErrorMessage(datasets.error)}`;
+  }
+  return datasets.isSuccess ? UNKNOWN_DATASET : LOADING_DATASET;
 }
 
 /**
@@ -36,7 +46,9 @@ export const BatchSourceBar = memo(function BatchSourceBar({ source, symbols, se
         {problems}
       </div>
       <p className={`fc-batch-source-bar-dataset ${textClasses({ variant: 'label-12', emphasis: 'secondary' })}`}>
-        <span className="fc-batch-source-bar-dataset-name">{dataset ? dataset.name : datasets.isSuccess ? UNKNOWN_DATASET : 'Carregando dataset'}</span>
+        <span className="fc-batch-source-bar-dataset-name" role={datasets.isError ? 'alert' : undefined}>
+          {dataset ? dataset.name : datasetLabel(datasets)}
+        </span>
         {dataset ? <span> · {DATASET_TYPE_LABELS[dataset.type]}</span> : null}
       </p>
       {rows.length > 0 ? (

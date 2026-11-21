@@ -47,4 +47,23 @@ describe('Barra Fonte do lote do canvas', () => {
     expect(screen.getByText('Nenhuma variável')).toBeInTheDocument();
     expect(await screen.findByText('Dataset fora do catálogo')).toBeInTheDocument();
   });
+
+  it('sem permissão para ver o catálogo diz o motivo, sem carregar para sempre, e segue mostrando as variáveis pelo nome', async () => {
+    simulateApi({ datasets: 403 });
+    renderWithDraft(<BatchSourceBar source={exampleBatchSource()} symbols={SYMBOLS} />);
+
+    expect(await screen.findByText('Sem permissão para ver o dataset')).toBeInTheDocument();
+    expect(screen.queryByText('Carregando dataset')).not.toBeInTheDocument();
+    const rows = within(screen.getByRole('list', { name: 'Variáveis da fonte do lote' })).getAllByRole('listitem');
+    expect(rows.map((row) => row.textContent)).toContain('nf_idinteger');
+    expect(within(rows[0]!).getByRole('img', { name: 'chave' })).toBeInTheDocument();
+  });
+
+  it('outro erro de leitura diz que não foi possível carregar o dataset, com o motivo', async () => {
+    simulateApi({ datasets: 500 });
+    renderWithDraft(<BatchSourceBar source={exampleBatchSource()} symbols={SYMBOLS} />);
+
+    expect(await screen.findByText(/Não foi possível carregar o dataset\. Falha ao ler o catálogo\./)).toBeInTheDocument();
+    expect(screen.queryByText('Carregando dataset')).not.toBeInTheDocument();
+  });
 });
