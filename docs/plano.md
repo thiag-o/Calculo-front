@@ -1226,7 +1226,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 **F64 · Editor: bloco Fonte**
 - dep: F62
 - modelo: opus
-- arquivos: `packages/react/src/editor/sources/source-block/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/sources/index.ts`
+- arquivos: `packages/react/src/editor/sources/source-block/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/sources/index.ts`, e (D22, ratificado) uma linha de export em `packages/react/src/catalog/index.ts` e uma em `packages/react/src/catalog/datasets/index.ts` (`useDatasetList` e `useDatasetVariables`)
 - Fazer (E5-18):
   - **propriedades do bloco Fonte:** dataset, modo, ligações, filtros, ordenação, sem correspondência, mais de uma linha (com a confirmação do aceite) e saída;
   - o componente de filtros, também usado pela F63: operador pelo tipo da variável (texto só `=`, `<>`, `em` e nulo); valor no padrão brasileiro para número (E4-24); `entre` com dois campos; `em` com uma lista; `@` mostra o aviso "Parâmetros chegam no épico 6";
@@ -1340,8 +1340,17 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - Fazer (D18, decidida pela sessão global em 2026-11-21): o `--fc-text-tertiary` (3,23:1 no tema claro) só vale para informação não essencial (estilos §11). Os textos que a F88 anotou como essenciais passam a usar o `--fc-text-secondary`: o e-mail no menu da conta, o aviso da tela de login e o motivo de um botão ou item desabilitado (no menu e no Calcular). O resto do terciário (legendas, tipos das portas, ajuda abaixo do campo) fica como está.
 - Aceite: o `pnpm e2e:visual` não anota mais nenhum texto essencial no terciário, nos dois temas; os testes unitários e o build passam.
 
+**F92 · Contrato: tipos do bloco Fonte com os dois modos (B126)**
+- tipo: contrato
+- dep: B126, F64
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, `packages/react/src/editor/sources/source-block/`
+- Fazer: regenerar os tipos com o `SourceNode` em `oneOf` (B126) e trocar o `Reflect.deleteProperty` da F64 pelo tipo do modo Filtro, que não tem `no_match` nem `multiple_rows`. Sem cast, sem `any`.
+- Aceite: nenhum `Reflect.deleteProperty` sobra no bloco Fonte; typecheck, testes e `pnpm e2e` verdes.
+
 **F71 · Portão do épico 5**
 - tipo: portao
-- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91
+- dep: F62, F63, F64, F65, F66, F67, F68, F69, F70, F88, F91, F92
 - modelo: sonnet
 - Aceite: o mesmo da F59, com as telas do épico 5 (propriedades das fontes, grupos no canvas, Prévia, trace e valores no canvas, nos dois temas e nas faixas de largura do estilos §15), provadas pelo `pnpm e2e:visual` da F88, com as telas do épico 5 incluídas nele.
