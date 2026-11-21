@@ -8,10 +8,14 @@ import type { BlockView, InputRow, OutputRow, Port } from './graph';
 import { AlertIcon } from './icons';
 import { blockKindLabel, problemsText } from './messages';
 import { NodeMenu } from './NodeMenu';
+import { BlockRunValues } from './run-values/RunValues';
+import type { NodeRunView } from './run-values/views';
 
 export interface BlockData extends Record<string, unknown> {
   view: BlockView;
   problems: number;
+  /** What the block gave in the last "Calcular", while the canvas shows it (E5-21). */
+  run?: NodeRunView | null;
 }
 
 export interface InputsBarData extends Record<string, unknown> {
@@ -61,12 +65,18 @@ function PortRow({ port, side }: { port: Port; side: 'in' | 'out' }) {
 /**
  * A Calculation, a Decision Table or a Fonte: category square, name, type, problems, the menu, and the ports it reads and
  * produces. A Fonte's left ports are its links (the variables it looks the dataset up by) and its right ports, its outputs.
+ * After a "Calcular", the status and the values of the last run come under the name (E5-21).
  */
 export const BlockNode = memo(function BlockNode({ id, data, selected }: NodeProps<BlockNodeType>) {
   const { block, reads, outputs } = data.view;
   const isSource = block.type === 'source';
   return (
-    <div className="fc-canvas-block" data-kind={block.type} data-selected={selected ? 'true' : undefined}>
+    <div
+      className="fc-canvas-block"
+      data-kind={block.type}
+      data-selected={selected ? 'true' : undefined}
+      data-run-status={data.run ? data.run.status : undefined}
+    >
       <div className="fc-canvas-block-head">
         <span className="fc-canvas-category" data-kind={block.type} aria-hidden="true" />
         <span className={`fc-canvas-block-name ${textClasses({ variant: 'mono-13', medium: true })}`}>{block.name}</span>
@@ -74,6 +84,7 @@ export const BlockNode = memo(function BlockNode({ id, data, selected }: NodePro
         <ProblemMark count={data.problems} />
         <NodeMenu id={id} name={block.name || block.id} />
       </div>
+      {data.run ? <BlockRunValues name={block.name || block.id} run={data.run} /> : null}
       {reads.length > 0 ? (
         <ul className="fc-canvas-ports" aria-label={isSource ? 'Liga por' : 'Lê'}>
           {reads.map((port) => (

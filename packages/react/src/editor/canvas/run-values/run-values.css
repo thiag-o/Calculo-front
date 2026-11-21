@@ -1,0 +1,117 @@
+/*
+ * Editor › canvas › values of the last "Calcular" (E5-21; estilos.md §7.5, §8 "Debug" and §11): the status (dot + word)
+ * and the values in mono-12 under the name of each block, the rule of a Decision Table on --fc-active, a failed block
+ * outlined in red-700, a block that did not run at 45% opacity, and the banner with "Limpar". Only fc- classes and --fc-*
+ * variables over the module root; no global selector (ADR 0002).
+ */
+
+.fc-run {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+  padding: 0 var(--fc-space-8) var(--fc-space-6);
+}
+
+.fc-run-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-run-status {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* The rule that matched, highlighted (estilos §8: background --fc-active). */
+.fc-run-rule {
+  padding: 0 var(--fc-space-6);
+  border-radius: 4px;
+  background-color: var(--fc-active);
+  color: var(--fc-text);
+}
+
+.fc-run-values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-run-value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fc-space-6);
+  min-width: 0;
+}
+
+.fc-run-value-name {
+  flex: none;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-run-value-text,
+.fc-run-port-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--fc-text);
+}
+
+.fc-run-value-text {
+  margin-left: auto;
+}
+
+.fc-run-port-value {
+  flex: 0 1 auto;
+  margin-left: auto;
+}
+
+.fc-run-error {
+  margin: 0;
+  color: var(--fc-danger-text);
+  overflow-wrap: anywhere;
+}
+
+/* A block that failed: red-700 outline (the selection keeps its own). */
+.fc-canvas-block[data-run-status='error']:not([data-selected='true']) {
+  box-shadow:
+    0 0 0 1px var(--fc-red-700),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.fc-group[data-run-status='error']:not([data-selected='true']) {
+  border-color: var(--fc-red-700);
+}
+
+/* A node that did not run: 45% opacity (estilos §8, "Debug"). */
+.fc-canvas-block[data-run-status='not_run'],
+.fc-group[data-run-status='not_run'] {
+  opacity: 0.45;
+}
+
+/* The banner: floating at the top left, like the toolbar (radius 12, the shadow of the floating bars). */
+.fc-canvas .fc-run-banner-panel {
+  margin: var(--fc-space-12);
+}
+
+.fc-run-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-12);
+  padding: var(--fc-space-4) var(--fc-space-4) var(--fc-space-4) var(--fc-space-12);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: var(--fc-shadow-menu);
+}

@@ -2,8 +2,10 @@
 // recolher e expandir and the menu) and two bars, the Input (derived by the analysis) on the left and the Output on the
 // right. Every link that enters or leaves the group goes through the bars: each name has a port outside the group and
 // one inside it. The nodes inside are React Flow children of this node; a collapsed group shows only the bars.
+// After a "Calcular", the canvas hands the group what the last run gave (E5-21): the status in the header and, collapsed,
+// the value of each Output; expanded, the nodes inside show their own.
 import { Handle, Position as Side, type Node, type NodeProps } from '@xyflow/react';
-import { memo, type ComponentType } from 'react';
+import { memo, type ComponentType, type ReactNode } from 'react';
 import { Button, Tooltip, textClasses } from '../../design-system';
 import { AlertIcon, ChevronDownIcon, ChevronRightIcon, DerivedIcon } from './icons';
 import { COLLAPSE_ACTION, DERIVED_INPUT_TEXT, EXPAND_ACTION, blockCountText, groupProblemsText } from './messages';
@@ -34,11 +36,16 @@ export interface GroupBoxData extends Record<string, unknown> {
   toggleReason?: string;
   /** The menu of the node ("Mais ações"), drawn by the canvas. */
   menu?: ComponentType<{ id: string; name: string }>;
+  /**
+   * The last "Calcular", drawn by the canvas (this sub-vertical never imports it): the node status (`ok`, `warning`,
+   * `error`, `not_run`), its mark (dot + word) and, by name, the value of each Output.
+   */
+  run?: { status: string; mark: ReactNode; outputs: ReadonlyMap<string, ReactNode> } | null;
 }
 
 export type GroupBoxNodeType = Node<GroupBoxData, 'groupBox'>;
 
-function BarRow({ port, side }: { port: GroupBoxPort; side: 'input' | 'output' }) {
+function BarRow({ port, side, value }: { port: GroupBoxPort; side: 'input' | 'output'; value?: ReactNode }) {
   // The Input takes each name from outside (left) and hands it on inside (right); the Output takes it inside (left) and
   // hands it on outside (right). Links are derived from the analysis, never drawn by hand: the handles only anchor them.
   const left = side === 'input' ? port.handle : port.inner;
@@ -47,13 +54,14 @@ function BarRow({ port, side }: { port: GroupBoxPort; side: 'input' | 'output' }
     <li className="fc-group-port">
       <Handle type="target" position={Side.Left} id={left} isConnectable={false} className="fc-group-port-dot" aria-hidden="true" />
       <span className={`fc-group-port-name ${textClasses({ variant: 'mono-12' })}`}>{port.label}</span>
-      {port.type ? <span className={`fc-group-port-type ${textClasses({ variant: 'mono-12', emphasis: 'tertiary' })}`}>{port.type}</span> : null}
+      {value ??
+        (port.type ? <span className={`fc-group-port-type ${textClasses({ variant: 'mono-12', emphasis: 'tertiary' })}`}>{port.type}</span> : null)}
       <Handle type="source" position={Side.Right} id={right} isConnectable={false} className="fc-group-port-dot" aria-hidden="true" />
     </li>
   );
 }
 
-function Bar({ side, ports }: { side: 'input' | 'output'; ports: GroupBoxPort[] }) {
+function Bar({ side, ports, values }: { side: 'input' | 'output'; ports: GroupBoxPort[]; values?: ReadonlyMap<string, ReactNode> }) {
   const title = side === 'input' ? 'Input' : 'Output';
   return (
     <div className="fc-group-bar" data-bar={side}>
@@ -70,7 +78,7 @@ function Bar({ side, ports }: { side: 'input' | 'output'; ports: GroupBoxPort[] 
       {ports.length > 0 ? (
         <ul className="fc-group-ports" aria-label={title}>
           {ports.map((port) => (
-            <BarRow key={port.handle} port={port} side={side} />
+            <BarRow key={port.handle} port={port} side={side} value={values?.get(port.label)} />
           ))}
         </ul>
       ) : (
@@ -88,12 +96,19 @@ export const GroupBoxNode = memo(function GroupBoxNode({ id, data, selected }: N
   const { collapsed } = group;
   const Menu = data.menu;
   const toggleLabel = collapsed ? EXPAND_ACTION : COLLAPSE_ACTION;
+  const run = data.run ?? null;
   return (
-    <div className="fc-group" data-collapsed={collapsed ? 'true' : undefined} data-selected={selected ? 'true' : undefined}>
+    <div
+      className="fc-group"
+      data-collapsed={collapsed ? 'true' : undefined}
+      data-selected={selected ? 'true' : undefined}
+      data-run-status={run ? run.status : undefined}
+    >
       <div className="fc-group-head">
         <span className="fc-group-category" aria-hidden="true" />
         <span className={`fc-group-name ${textClasses({ variant: 'mono-13', medium: true })}`}>{group.name || group.id}</span>
         <span className={`fc-group-count ${textClasses({ variant: 'label-12', emphasis: 'secondary' })}`}>{blockCountText(blockCount)}</span>
+        {run ? run.mark : null}
         {data.problems > 0 ? (
           <span className="fc-group-problems" role="img" aria-label={groupProblemsText(data.problems)}>
             <AlertIcon size={14} />
@@ -120,7 +135,7 @@ export const GroupBoxNode = memo(function GroupBoxNode({ id, data, selected }: N
         </span>
       </div>
       <Bar side="input" ports={inputs} />
-      <Bar side="output" ports={outputs} />
+      <Bar side="output" ports={outputs} values={collapsed && run ? run.outputs : undefined} />
     </div>
   );
 });

@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dataOrError, useApiClient, type Schemas } from '../../api';
+import { isSameSessionData, sessionDataMark } from '../../session';
 import { workflowDraftKey } from '../../workflows';
 import type { DraftSymbol, WorkflowDefinition } from '../draft';
+import { keepLastUnitRun } from './lastRun';
 import type { RecordKey } from './recordKey';
 import type { Value } from './values';
 
@@ -28,14 +30,17 @@ export type UnitRunRequest = RequestBase & ({ inputs: Record<string, Value>; rec
  * Runs the saved draft for one record (`POST /v1/workflows/{id}/draft/unit-runs`, E4-14). Nothing is saved, so it is a
  * query (ADR 0025): the key carries the run number, not the values, and the result leaves the cache as soon as nobody
  * reads it (`gcTime: 0`). Errors are `ApiError`: `409 draft_conflict`, `422 draft_has_problems` (with `problems`) and
- * `422 invalid_inputs` (with `fields` by input); with a record key, `404 record_not_found`.
+ * `422 invalid_inputs` (with `fields` by input); with a record key, `404 record_not_found`. The answer is kept as the
+ * workflow's last run (`useLastUnitRun`).
  */
 export function useUnitRun(workflowId: string, request: UnitRunRequest | null) {
   const client = useApiClient();
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: [...workflowDraftKey(workflowId), 'unit-run', request?.id ?? null] as const,
-    queryFn: ({ signal }) =>
-      dataOrError(
+    queryFn: async ({ signal }) => {
+      const mark = sessionDataMark(queryClient);
+      const trace = await dataOrError(
         client.POST('/v1/workflows/{id}/draft/unit-runs', {
           params: { path: { id: workflowId } },
           body: request!.recordKey
@@ -43,7 +48,14 @@ export function useUnitRun(workflowId: string, request: UnitRunRequest | null) {
             : { revision: request!.revision, inputs: request!.inputs ?? {} },
           signal,
         }),
-      ),
+      );
+      // The trace is the workflow's last run (the canvas shows its values); an answer of the previous person or tenant
+      // is never kept for the next one.
+      if (isSameSessionData(queryClient, mark)) {
+        keepLastUnitRun(queryClient, workflowId, { revision: request!.revision, definition: request!.definition, symbols: request!.symbols ?? [], trace });
+      }
+      return trace;
+    },
     enabled: request !== null,
     staleTime: Infinity,
     gcTime: 0,

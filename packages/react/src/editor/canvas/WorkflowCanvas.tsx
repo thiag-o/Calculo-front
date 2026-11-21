@@ -59,6 +59,9 @@ import { BLOCK_KEYS_HELP, BLOCK_KEYS_HELP_READ_ONLY, blockAddedText, blockLabel,
 import { NODE_TYPES, type CanvasNode } from './nodes';
 import { NodeMenu, NodeMenuContext, type NodeMenuState } from './NodeMenu';
 import { CanvasToolbar } from './CanvasToolbar';
+import { RUN_CLEARED_TEXT, RUN_SHOWN_TEXT, withRunStatus } from './run-values/messages';
+import { RunBanner, groupRuns } from './run-values/RunValues';
+import { useRunValues } from './run-values/useRunValues';
 import './canvas.css';
 
 /** One arrow press moves the block this far; with Shift, four times as far. */
@@ -99,7 +102,8 @@ export interface WorkflowCanvasProps {
  * Shift + clique, Shift + Espaço and the lasso (Shift + arrastar no fundo) pick the blocks to group; the menu of each
  * node ("Mais ações", the right click or Shift + F10) groups, ungroups and moves a block into or out of a group (never by
  * dragging, E5-19). Keyboard: Tab goes through the nodes, the arrows move, Enter opens the properties and Esc clears the
- * selection. Read-only: no toolbar, no menu, no moving and no removing. The selection is the editor's
+ * selection. Read-only: no toolbar, no menu, no moving and no removing. After a "Calcular", each node shows what the last
+ * run gave (E5-21), with the banner "Os valores são do último cálculo" and "Limpar"; any edit clears them. The selection is the editor's
  * (`useDraftEditor`), shared with the layers and the properties. Needs the `DraftEditorProvider` and `FluxoRoot`.
  */
 export function WorkflowCanvas(props: WorkflowCanvasProps) {
@@ -194,6 +198,10 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
   const edgeCache = useRef<KeptObjects<Edge>>(new Map());
 
   const graph = useStableGraph(definition, symbols, dependencies, groups);
+  // The values of the last "Calcular", while the definition on screen is the one that ran (E5-21).
+  const runValues = useRunValues();
+  const runViews = runValues.views;
+  const runsOfGroups = useMemo(() => groupRuns(runViews), [runViews]);
   const selectedId = flowId(selection.item);
   // A picked block removed since (Ctrl Z, Delete) is no longer picked; read-only picks nothing.
   const picked = useMemo(() => {
@@ -268,7 +276,8 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       if (group) {
         const size = sizes.get(id);
         const position = dragged.get(id) ?? flowPosition(group.group.position, group.parent);
-        return cached(id, [group, problems, selected, own, size, position, draggable, toggle, menu], () => ({
+        const run = runsOfGroups.get(id) ?? null;
+        return cached(id, [group, problems, selected, own, size, position, draggable, toggle, menu, run], () => ({
           id,
           type: 'groupBox',
           position,
@@ -277,30 +286,31 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
           hidden: group.hidden,
           width: size?.width,
           height: size?.height,
-          data: { view: group, problems, onToggle: toggle, toggleReason: READ_ONLY_REASON, menu },
+          data: { view: group, problems, onToggle: toggle, toggleReason: READ_ONLY_REASON, menu, run },
           selected,
           measured: size,
           draggable,
           deletable: false,
-          ariaLabel: groupLabel(group.group.name || id, group.blockCount, group.group.collapsed, problems),
+          ariaLabel: withRunStatus(groupLabel(group.group.name || id, group.blockCount, group.group.collapsed, problems), runViews?.nodes.get(id)?.status),
           domAttributes: { 'aria-current': own ? 'true' : undefined },
         }));
       }
       const view = blockViews.get(id)!;
       const position = dragged.get(id) ?? flowPosition(view.block.position, view.parent);
-      return cached(id, [view, problems, selected, own, measured.get(id), position, draggable], () => ({
+      const run = runViews?.nodes.get(id) ?? null;
+      return cached(id, [view, problems, selected, own, measured.get(id), position, draggable, run], () => ({
         id,
         type: 'block',
         position,
         parentId: view.parent ?? undefined,
         extent: view.parent ? INSIDE_GROUP : undefined,
         hidden: view.hidden,
-        data: { view, problems },
+        data: { view, problems, run },
         selected,
         measured: measured.get(id),
         draggable,
         deletable: false,
-        ariaLabel: blockLabel(view.block.name, view.block, problems),
+        ariaLabel: withRunStatus(blockLabel(view.block.name, view.block, problems), run?.status),
         domAttributes: { 'aria-current': own ? 'true' : undefined },
       }));
     });
@@ -318,7 +328,7 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       domAttributes: { 'aria-current': selectedId === OUTPUT_ID ? 'true' : undefined },
     }));
     return [inputs, ...nodes, output];
-  }, [graph, counts, selectedId, picked, measured, dragged, readOnly, sizes, toggleCollapsed]);
+  }, [graph, counts, selectedId, picked, measured, dragged, readOnly, sizes, toggleCollapsed, runViews, runsOfGroups]);
   const nodes = useStableList(nodeCache.current, builtNodes);
 
   const builtEdges = useMemo<Edge[]>(() => {
@@ -693,6 +703,20 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
     setAnnouncement(blockAddedText(block.name));
   };
 
+  // New values of a run on the canvas are announced (not when the canvas mounts with them, as after the grid closes).
+  const shownViews = useRef(runViews);
+  useEffect(() => {
+    if (runViews !== null && shownViews.current !== runViews) setAnnouncement(RUN_SHOWN_TEXT);
+    shownViews.current = runViews;
+  }, [runViews, setAnnouncement]);
+
+  // "Limpar": the values leave the canvas, which keeps the focus (the button is gone).
+  const clearRun = () => {
+    runValues.clear();
+    setAnnouncement(RUN_CLEARED_TEXT);
+    frame.current?.focus();
+  };
+
   const movingNode = moving === null || readOnly ? undefined : findNode(definition, moving);
   // The node went away (Ctrl Z) or the editor became read-only while the dialog was open: it closes for good.
   if (moving !== null && !movingNode) setMoving(null);
@@ -766,6 +790,11 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
                 title={readOnly ? 'Nenhum bloco neste rascunho' : 'Nenhum bloco ainda'}
                 description={readOnly ? undefined : 'Inclua um Cálculo ou uma Tabela de Decisão pela barra de ferramentas.'}
               />
+            </Panel>
+          ) : null}
+          {runViews ? (
+            <Panel position="top-left" className="fc-run-banner-panel">
+              <RunBanner record={runViews.record} onClear={clearRun} />
             </Panel>
           ) : null}
           {readOnly ? null : (
