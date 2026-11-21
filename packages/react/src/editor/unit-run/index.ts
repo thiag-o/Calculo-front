@@ -4,8 +4,8 @@
 // saves the draft only through useDraftEditor (ADR 0042).
 export { UnitRunPanel } from './UnitRunPanel';
 export { UNIT_RUN_LABEL } from './messages';
-export { readBrazilianNumber, formatApiNumber } from './numbers';
-export type { NumberReading } from './numbers';
+export { readBrazilianNumber, formatApiNumber } from '../values';
+export type { NumberReading } from '../values';
 export type { UnitRun, UnitRunNode } from './queries';
 
 /** The value of the "Calcular" tab of the bottom panel (`bottomTabs` of the editor screen). */

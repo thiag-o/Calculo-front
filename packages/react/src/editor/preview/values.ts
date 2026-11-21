@@ -2,44 +2,12 @@
 // Only text is handled: a value of the API never becomes a floating-point `number` (E4-4).
 import type { Schemas } from '../../api';
 import type { DraftSymbol, WorkflowDefinition } from '../draft';
+import { NO_VALUE, formatApiNumber, formatDate, formatDateTime } from '../values';
 
 type DataType = Schemas['DataType'];
 export type Value = Schemas['Value'];
 export type RecordKey = Schemas['RecordKey'];
 type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
-
-/** Empty values on screen (estilos.md §1.2). */
-export const NO_VALUE = '—';
-
-// Local copies of the number and date formatters of editor/unit-run (D25): the preview never imports ../unit-run, because
-// the unit run depends on the preview (useLastPreview, F67). F94 moves both to editor/values/ and removes these copies.
-
-/** Shows a number of the API (`"1500.00"`, `"-3"`) in the Brazilian pattern (`1.500,00`, `-3`), keeping every decimal. */
-export function formatApiNumber(value: string): string {
-  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(value);
-  if (!match) return value;
-  const [, sign = '', whole = '', decimals] = match;
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `${sign}${grouped}${decimals === undefined ? '' : `,${decimals}`}`;
-}
-
-function two(value: number): string {
-  return String(value).padStart(2, '0');
-}
-
-/** `2026-11-20` → `20/11/2026`, without going through a date (no time zone shift). */
-function formatDate(value: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
-}
-
-/** ISO 8601 → `20/11/2026 10:30:00`, in the browser's time zone. */
-function formatDateTime(value: string): string {
-  const moment = new Date(value);
-  if (Number.isNaN(moment.getTime())) return value;
-  const date = `${two(moment.getDate())}/${two(moment.getMonth() + 1)}/${moment.getFullYear()}`;
-  return `${date} ${two(moment.getHours())}:${two(moment.getMinutes())}:${two(moment.getSeconds())}`;
-}
 
 /** A value of the preview on screen. `type` is the variable's type, when known (from the symbols of the analysis). */
 export function formatValue(value: Value | undefined, type: DataType | null | undefined): string {

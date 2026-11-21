@@ -75,7 +75,8 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0053](0053-use-draft-editor-expoe-groups.md) | `useDraftEditor()` expõe `groups`, o Input derivado da análise (complementa 0042) | aceita, revisar no checkpoint | 2026-11-21 |
 | [0054](0054-posicao-do-no-dentro-do-grupo-relativa-ao-conteudo.md) | Posição de um nó dentro de um grupo é relativa à área de conteúdo do grupo | aceita, revisar no checkpoint | 2026-11-21 |
 | [0055](0055-editor-le-o-catalogo-por-catalog-index.md) | O editor lê datasets e variáveis do catálogo por `catalog/index.ts` (segue a 0003, 0033 e 0034) | aceita, revisar no checkpoint | 2026-11-21 |
-| [0056](0056-unit-run-depende-de-preview-e-ultima-previa-em-memoria.md) | `unit-run` depende de `preview` (só nesse sentido); a última prévia fica em memória por `QueryClient`, exposta por `useLastPreview` (complementa 0042, segue a 0045) | aceita, revisar no checkpoint | 2026-11-21 |
+| [0056](0056-unit-run-depende-de-preview-e-ultima-previa-em-memoria.md) | `unit-run` depende de `preview` (só nesse sentido); a última prévia fica em memória por `QueryClient`, exposta por `useLastPreview` (complementa 0042, segue a 0045) | aceita, revisar no checkpoint (complementada por 0057) | 2026-11-21 |
+| [0057](0057-editor-values-folha-e-sentido-canvas-unit-run-preview-values.md) | `editor/values/` é folha com os formatadores; sentido canvas → unit-run → preview → values (complementa 0056) | aceita, revisar no checkpoint | 2026-11-21 |
 
 ## Pendentes (sem ADR ainda)
 

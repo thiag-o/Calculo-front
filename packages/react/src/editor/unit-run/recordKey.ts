@@ -2,7 +2,7 @@
 // the API (`RecordKey`, every value as text) and how a key of the preview sample fills them.
 import type { Schemas } from '../../api';
 import type { DraftSymbol, WorkflowDefinition } from '../draft';
-import { formatApiNumber, readBrazilianNumber } from './numbers';
+import { formatApiNumber, readBrazilianNumber } from '../values';
 import type { DataType, FieldErrors, TypedValues } from './values';
 
 export type RecordKey = Schemas['RecordKey'];

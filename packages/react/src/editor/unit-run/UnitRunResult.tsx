@@ -5,7 +5,8 @@ import type { DraftSymbol, WorkflowDefinition } from '../draft';
 import { CopyIcon } from './icons';
 import type { UnitRun } from './queries';
 import { keyText } from './recordKey';
-import { NO_VALUE, allNodes, formatValue, variableTypes, type DataType, type Value } from './values';
+import { NO_VALUE } from '../values';
+import { allNodes, formatValue, variableTypes, type DataType, type Value } from './values';
 
 /** The record status (estilos.md §7.5): dot + word. */
 export const recordStatus: Record<UnitRun['status'], { tone: StatusTone; word: string }> = {

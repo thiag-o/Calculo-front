@@ -2,7 +2,7 @@
 // screen), how it goes to the API (`Value`) and how the result values are shown.
 import type { Schemas } from '../../api';
 import type { DraftSymbol, WorkflowDefinition } from '../draft';
-import { formatApiNumber, readBrazilianNumber } from './numbers';
+import { NO_VALUE, formatApiNumber, formatDate, formatDateTime, readBrazilianNumber } from '../values';
 
 export type DataType = Schemas['DataType'];
 export type Value = Schemas['Value'];
@@ -153,27 +153,6 @@ export function variableTypes(definition: WorkflowDefinition, symbols: readonly 
   }
   return types;
 }
-
-function two(value: number): string {
-  return String(value).padStart(2, '0');
-}
-
-/** `2026-11-20` → `20/11/2026`, without going through a date (no time zone shift). */
-function formatDate(value: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
-}
-
-/** ISO 8601 → `20/11/2026 10:30:00`, in the browser's time zone (the one the date was typed in). */
-function formatDateTime(value: string): string {
-  const moment = new Date(value);
-  if (Number.isNaN(moment.getTime())) return value;
-  const date = `${two(moment.getDate())}/${two(moment.getMonth() + 1)}/${moment.getFullYear()}`;
-  return `${date} ${two(moment.getHours())}:${two(moment.getMinutes())}:${two(moment.getSeconds())}`;
-}
-
-/** Empty values on screen (estilos.md §1.2). */
-export const NO_VALUE = '—';
 
 /**
  * A value of the result on screen (estilos.md §3): numbers as `1.500,00`, dates as `20/11/2026`, booleans as

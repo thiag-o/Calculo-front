@@ -1,6 +1,6 @@
 # 0056. `unit-run` depende de `preview` (só nesse sentido), e a última prévia fica em memória, exposta por `useLastPreview`
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por 0057: as cópias saíram para `editor/values/`)
 - **Data:** 2026-11-21
 - **Quem decidiu:** orquestração (tarefa F66, D25)
 - **Relacionadas:** ADRs 0003, 0025, 0042, 0045, 0048; `packages/react/src/editor/preview/`, `packages/react/src/editor/unit-run/`
