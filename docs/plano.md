@@ -1237,7 +1237,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 **F65 · Editor: grupos no canvas e nas camadas**
 - dep: F62
 - modelo: opus
-- arquivos: `packages/react/src/editor/groups/`, `packages/react/src/editor/canvas/`, `packages/react/src/editor/layers/`
+- arquivos: `packages/react/src/editor/groups/`, `packages/react/src/editor/canvas/`, `packages/react/src/editor/layers/`, e (D23, ratificado) `packages/react/src/editor/draft/` (`DraftEditor.tsx`, `queries.ts`, `index.ts`), só para o `useDraftEditor()` expor `groups`, com o complemento da ADR 0042 escrito pelo registrador
 - Fazer (E5-19):
   - **o nó de grupo no React Flow:**
     - contêiner com borda `gray-400` e cabeçalho com nome e contagem de blocos;
