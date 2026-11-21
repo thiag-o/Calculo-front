@@ -1336,7 +1336,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - dep: F88
 - modelo: sonnet
 - revisão: não
-- arquivos: `packages/react/src/module/shell/shell.css`, `packages/react/src/design-system/display/menu.css`, `packages/react/src/session/sign-in/SignInScreen.tsx`, `packages/react/src/editor/unit-run/unit-run.css`, `packages/react/src/editor/layout/editor-layout.css`, `e2e/visual/`
+- arquivos: `packages/react/src/design-system/form/button.css` e `packages/react/src/design-system/form/Button.tsx` (D19: só o `.fc-button-reason` no `--fc-text-secondary`; o override do `unit-run.css` sai), `packages/react/src/module/shell/shell.css`, `packages/react/src/design-system/display/menu.css`, `packages/react/src/session/sign-in/SignInScreen.tsx`, `packages/react/src/editor/unit-run/unit-run.css`, `packages/react/src/editor/layout/editor-layout.css`, `e2e/visual/`
 - Fazer (D18, decidida pela sessão global em 2026-11-21): o `--fc-text-tertiary` (3,23:1 no tema claro) só vale para informação não essencial (estilos §11). Os textos que a F88 anotou como essenciais passam a usar o `--fc-text-secondary`: o e-mail no menu da conta, o aviso da tela de login e o motivo de um botão ou item desabilitado (no menu e no Calcular). O resto do terciário (legendas, tipos das portas, ajuda abaixo do campo) fica como está.
 - Aceite: o `pnpm e2e:visual` não anota mais nenhum texto essencial no terciário, nos dois temas; os testes unitários e o build passam.
 
