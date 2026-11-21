@@ -2157,7 +2157,11 @@ export interface components {
             /** @description Casas decimais; obrigatória no `decimal` e só nele. */
             scale?: number | null;
         };
-        /** @description A posição do nó no canvas. */
+        /**
+         * @description A posição do nó no canvas. Dentro de um grupo, é relativa à área de
+         *     conteúdo do grupo; no grupo raiz, é relativa ao canvas. O motor não lê
+         *     a posição.
+         */
         NodePosition: {
             x: number;
             y: number;
@@ -2584,48 +2588,87 @@ export interface components {
         };
         /**
          * @description Um bloco Fonte: lê um dataset do catálogo pelas ligações com o registro.
-         *     - `linear`: traz uma linha por registro. `order_by` (de 1 a 10 itens),
-         *       `outputs` (de 1 a 100), `no_match` e `multiple_rows` são obrigatórios,
-         *       e `exists` vem `null`. Sem ligações, é uma tabela de parâmetros: o
-         *       dataset, depois dos filtros, tem de ter exatamente uma linha (senão, o
-         *       erro `parameter_table_rows`).
-         *     - `filter`: só confere se há linha (`exists: true`, EXISTE) ou se não há
-         *       (`exists: false`, NÃO EXISTE); o registro que não passa fica
-         *       `filtered`. `order_by`, `outputs`, `no_match` e `multiple_rows` não
-         *       existem no `filter`, que só vale no grupo raiz (`filter_outside_root`)
-         *       e precisa de pelo menos uma ligação.
-         *     - O `multiple` (`mode: multiple`, épico 8), `exists` num `linear` ou `outputs` num
-         *       `filter`: erro de forma (`422 invalid_data`).
+         *     É um dos dois modos, escolhido por `mode`:
+         *     - `linear` (`LinearSourceNode`): traz uma linha por registro. `order_by`
+         *       (de 1 a 10 itens), `outputs` (de 1 a 100), `no_match` e
+         *       `multiple_rows` são obrigatórios, e `exists` vem `null`. Sem ligações,
+         *       é uma tabela de parâmetros: o dataset, depois dos filtros, tem de ter
+         *       exatamente uma linha (senão, o erro `parameter_table_rows`).
+         *     - `filter` (`FilterSourceNode`): só confere se há linha (`exists: true`,
+         *       EXISTE) ou se não há (`exists: false`, NÃO EXISTE); o registro que não
+         *       passa fica `filtered`. `order_by`, `outputs`, `no_match` e
+         *       `multiple_rows` não existem no `filter`, que só vale no grupo raiz
+         *       (`filter_outside_root`) e precisa de pelo menos uma ligação.
+         *     - O `multiple` (`mode: multiple`, épico 8), `exists` num `linear` ou
+         *       `outputs` num `filter`: erro de forma (`422 invalid_data`).
          */
-        SourceNode: {
+        SourceNode: components["schemas"]["LinearSourceNode"] | components["schemas"]["FilterSourceNode"];
+        /**
+         * @description O bloco Fonte no modo `linear`: uma linha por registro. `order_by`,
+         *     `outputs`, `no_match` e `multiple_rows` são obrigatórios; só este modo
+         *     os tem.
+         */
+        LinearSourceNode: {
             id: string;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
+            /** @constant */
             type: "source";
             name: string;
             description: string | null;
             position: components["schemas"]["NodePosition"];
-            mode: components["schemas"]["SourceMode"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "linear";
             /**
              * Format: uuid
              * @description O dataset do catálogo do tenant.
              */
             dataset_id: string;
-            /** @description De 0 a 10; zero só no `linear` (tabela de parâmetros). */
+            /** @description De 0 a 10; zero é a tabela de parâmetros. */
             links: components["schemas"]["SourceLink"][];
             filters: components["schemas"]["SourceFilter"][];
-            /** @description Só no `linear`. A primeira linha pela ordenação vale no `accept_first`. */
-            order_by?: components["schemas"]["SourceOrder"][];
+            /** @description A primeira linha pela ordenação vale no `accept_first`. */
+            order_by: components["schemas"]["SourceOrder"][];
             /** @default error */
             no_match: components["schemas"]["NoMatchPolicy"];
             /** @default error */
             multiple_rows: components["schemas"]["MultipleRowsPolicy"];
-            /** @description Só no `filter`; `null` no `linear`. */
+            /**
+             * @description `null` no `linear`. Um valor booleano é recusado na escrita
+             *     (`422 invalid_data`); o esquema o aceita só para abrir o rascunho
+             *     guardado antes dessa recusa (`definition_invalid`).
+             */
             exists: boolean | null;
-            /** @description Só no `linear`. */
-            outputs?: components["schemas"]["SourceOutput"][];
+            outputs: components["schemas"]["SourceOutput"][];
+        };
+        /**
+         * @description O bloco Fonte no modo `filter`: confere se há linha (`exists: true`) ou
+         *     se não há (`exists: false`). Não tem `order_by`, `outputs`, `no_match`
+         *     nem `multiple_rows`.
+         */
+        FilterSourceNode: {
+            id: string;
+            /** @constant */
+            type: "source";
+            name: string;
+            description: string | null;
+            position: components["schemas"]["NodePosition"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "filter";
+            /**
+             * Format: uuid
+             * @description O dataset do catálogo do tenant.
+             */
+            dataset_id: string;
+            /** @description De 1 a 10 (o `filter` precisa de pelo menos uma ligação). */
+            links: components["schemas"]["SourceLink"][];
+            filters: components["schemas"]["SourceFilter"][];
+            /** @description `true` = EXISTE; `false` = NÃO EXISTE. */
+            exists: boolean;
         };
         /**
          * @description Um grupo de nós, com Input e Output (E5-5). O Input não é guardado: o

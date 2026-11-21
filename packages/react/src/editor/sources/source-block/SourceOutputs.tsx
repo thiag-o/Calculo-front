@@ -7,10 +7,10 @@ import { InfoIcon, TrashIcon } from '../filters/icons';
 import { fieldPath, rowProblems, scopedName } from '../filters/paths';
 import { indexOfItem, itemKey, removeItem, replaceItem } from './identity';
 import { DUPLICATE_VARIABLE_MESSAGE, NAME_RULE_MESSAGE, NAME_TOOLTIP, ONE_OUTPUT, OUTSIDE_DATASET } from './labels';
-import { NAME_PATTERN, OUTPUTS_MAX, variableNameCounts, type CatalogVariable, type SourceNode, type SourceOutput } from './sourceNode';
+import { NAME_PATTERN, OUTPUTS_MAX, variableNameCounts, type CatalogVariable, type LinearSourceNode, type SourceNode, type SourceOutput } from './sourceNode';
 
 export interface SourceOutputsProps {
-  node: SourceNode;
+  node: LinearSourceNode;
   analyzedNode: SourceNode | null;
   at: string | null;
   variables: readonly CatalogVariable[];
@@ -25,19 +25,19 @@ const validateName = (text: string) => (NAME_PATTERN.test(text) ? null : NAME_RU
  */
 export function SourceOutputs({ node, analyzedNode, at, variables, update }: SourceOutputsProps) {
   const { definition, problems } = useDraftEditor();
-  const outputs = node.outputs ?? [];
+  const outputs = node.outputs;
   const listPath = fieldPath(at, 'outputs');
   const names = variableNameCounts(definition);
   const known = new Set(variables.map((variable) => variable.id));
   const outside = outputs.filter((output) => !known.has(output.variable_id));
 
   function outputAt(output: SourceOutput): string | null {
-    const index = indexOfItem(analyzedNode?.outputs, output);
+    const index = indexOfItem(analyzedNode?.mode === 'linear' ? analyzedNode.outputs : undefined, output);
     return at === null || index < 0 ? null : `${at}.outputs[${index}]`;
   }
 
   function setOutputs(apply: (outputs: readonly SourceOutput[]) => SourceOutput[], mergeKey?: string) {
-    update((current) => ({ ...current, outputs: apply(current.outputs ?? []) }), mergeKey);
+    update((current) => (current.mode === 'linear' ? { ...current, outputs: apply(current.outputs) } : current), mergeKey);
   }
 
   return (

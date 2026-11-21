@@ -8,6 +8,8 @@ import type { DraftSymbol, WorkflowDefinition } from '../../draft';
 
 /** The types of the contract used by the Source block (generated, ADR 0005). */
 export type SourceNode = Schemas['SourceNode'];
+export type LinearSourceNode = Schemas['LinearSourceNode'];
+export type FilterSourceNode = Schemas['FilterSourceNode'];
 export type SourceLink = Schemas['SourceLink'];
 export type SourceFilter = Schemas['SourceFilter'];
 export type SourceOrder = Schemas['SourceOrder'];
@@ -104,19 +106,30 @@ export function defaultOrder(variables: readonly CatalogVariable[]): SourceOrder
   return first ? [{ variable_id: first.id, direction: 'asc' }] : [];
 }
 
-/** The fields that only exist in the Linear. */
-const LINEAR_ONLY_FIELDS = ['order_by', 'outputs', 'no_match', 'multiple_rows'] as const;
-
 /**
  * The block in the Filtro mode: it keeps the dataset, the links and the filters, checks EXISTE and drops what only the
  * Linear has. The caller makes sure there is a link (the Filtro needs one).
  */
-export function toFilterMode(node: SourceNode): SourceNode {
-  const next: SourceNode = { ...node, mode: 'filter', exists: true };
-  // The generated type keeps `no_match` and `multiple_rows` required, because they have a `default` in the contract; but
-  // a `filter` has no such fields, and the engine refuses them (`422 invalid_data`). They leave the object here.
-  for (const field of LINEAR_ONLY_FIELDS) Reflect.deleteProperty(next, field);
-  return next;
+export function toFilterMode(node: SourceNode): FilterSourceNode {
+  // Built field by field: the Filtro type has no `order_by`, `outputs`, `no_match` nor `multiple_rows`, and the engine
+  // refuses them (`422 invalid_data`), so none of them can come along in a spread.
+  return {
+    id: node.id,
+    type: 'source',
+    name: node.name,
+    description: node.description,
+    position: node.position,
+    mode: 'filter',
+    dataset_id: node.dataset_id,
+    links: node.links,
+    filters: node.filters,
+    exists: true,
+  };
+}
+
+/** The block as a Linear, or `null` when it is a Filtro (or there is no block). */
+export function asLinear(node: SourceNode | null): LinearSourceNode | null {
+  return node?.mode === 'linear' ? node : null;
 }
 
 /**
@@ -124,11 +137,18 @@ export function toFilterMode(node: SourceNode): SourceNode {
  * default (`defaultOrder`, `defaultOutputs`), "Gerar erro" in both policies and no `exists`. `null` when the dataset has
  * no variables (a Linear needs an output).
  */
-export function toLinearMode(node: SourceNode, variables: readonly CatalogVariable[]): SourceNode | null {
+export function toLinearMode(node: SourceNode, variables: readonly CatalogVariable[]): LinearSourceNode | null {
   if (variables.length === 0) return null;
   return {
-    ...node,
+    id: node.id,
+    type: 'source',
+    name: node.name,
+    description: node.description,
+    position: node.position,
     mode: 'linear',
+    dataset_id: node.dataset_id,
+    links: node.links,
+    filters: node.filters,
     exists: null,
     no_match: 'error',
     multiple_rows: 'error',
@@ -185,10 +205,9 @@ export function withDataset(
     }
     return [{ ...filter, variable_id: id }];
   });
-  const moved: SourceNode = { ...node, dataset_id: datasetId, links, filters };
-  if (node.mode !== 'linear') return { node: moved, dropped, unlinked };
+  if (node.mode !== 'linear') return { node: { ...node, dataset_id: datasetId, links, filters }, dropped, unlinked };
 
-  const order = (node.order_by ?? []).flatMap((item) => {
+  const order = node.order_by.flatMap((item) => {
     const id = remap(item.variable_id);
     if (id === undefined) {
       dropped.order += 1;
@@ -196,7 +215,7 @@ export function withDataset(
     }
     return [{ ...item, variable_id: id }];
   });
-  const outputs = (node.outputs ?? []).flatMap((output) => {
+  const outputs = node.outputs.flatMap((output) => {
     const id = remap(output.variable_id);
     if (id === undefined) {
       dropped.outputs += 1;
@@ -207,7 +226,10 @@ export function withDataset(
   if (after.length === 0) return { node: null, dropped, unlinked };
   return {
     node: {
-      ...moved,
+      ...node,
+      dataset_id: datasetId,
+      links,
+      filters,
       order_by: order.length > 0 ? order : defaultOrder(after),
       outputs: outputs.length > 0 ? outputs : defaultOutputs(after),
     },
@@ -257,7 +279,7 @@ export function variableNameCounts(definition: WorkflowDefinition): Map<string, 
     for (const node of nodes) {
       if (node.type === 'calculation') add(node.output.name);
       else if (node.type === 'decision_table') for (const result of node.results) add(result.name);
-      else if (node.type === 'source') for (const output of node.outputs ?? []) add(output.name);
+      else if (node.type === 'source') for (const output of node.mode === 'linear' ? node.outputs : []) add(output.name);
       else visit(node.nodes);
     }
   }

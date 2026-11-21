@@ -6,10 +6,10 @@ import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from '../filters/icon
 import { fieldPath, rowProblems, scopedName } from '../filters/paths';
 import { indexOfItem, itemKey, moveItem, removeItem, replaceItem } from './identity';
 import { DIRECTION_OPTIONS, ONE_ORDER, OUTSIDE_DATASET } from './labels';
-import { ORDER_MAX, type CatalogVariable, type SortDirection, type SourceNode, type SourceOrder } from './sourceNode';
+import { ORDER_MAX, type CatalogVariable, type SortDirection, type LinearSourceNode, type SourceNode, type SourceOrder } from './sourceNode';
 
 export interface SourceOrderingProps {
-  node: SourceNode;
+  node: LinearSourceNode;
   analyzedNode: SourceNode | null;
   at: string | null;
   variables: readonly CatalogVariable[];
@@ -23,7 +23,7 @@ export interface SourceOrderingProps {
 export function SourceOrdering({ node, analyzedNode, at, variables, update }: SourceOrderingProps) {
   const { problems } = useDraftEditor();
   const { readOnly } = useFieldsState();
-  const order = node.order_by ?? [];
+  const order = node.order_by;
   const listPath = fieldPath(at, 'order_by');
   const used = new Set(order.map((item) => item.variable_id));
   const next = variables.find((variable) => !used.has(variable.id)) ?? variables[0];
@@ -36,7 +36,7 @@ export function SourceOrdering({ node, analyzedNode, at, variables, update }: So
         : undefined;
 
   function setOrder(apply: (order: readonly SourceOrder[]) => SourceOrder[]) {
-    update((current) => ({ ...current, order_by: apply(current.order_by ?? []) }));
+    update((current) => (current.mode === 'linear' ? { ...current, order_by: apply(current.order_by) } : current));
   }
 
   return (
@@ -49,7 +49,7 @@ export function SourceOrdering({ node, analyzedNode, at, variables, update }: So
       ))}
       <ol className="fc-source-list" aria-label="Ordenação">
         {order.map((item, index) => {
-          const analyzedIndex = indexOfItem(analyzedNode?.order_by, item);
+          const analyzedIndex = indexOfItem(analyzedNode?.mode === 'linear' ? analyzedNode.order_by : undefined, item);
           const itemAt = at === null || analyzedIndex < 0 ? null : `${at}.order_by[${analyzedIndex}]`;
           const scope = `critério ${index + 1}`;
           const variablePath = fieldPath(itemAt, 'variable_id');

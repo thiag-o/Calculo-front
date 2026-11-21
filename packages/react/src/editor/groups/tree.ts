@@ -153,7 +153,7 @@ export function producedNames(node: DefinitionNode): string[] {
     case 'decision_table':
       return node.results.map((result) => result.name);
     case 'source':
-      return (node.outputs ?? []).map((output) => output.name);
+      return (node.mode === 'linear' ? node.outputs : []).map((output) => output.name);
     case 'group':
       return [...node.outputs];
   }

@@ -61,7 +61,7 @@ describe('o bloco Fonte na definição', () => {
       multiple_rows: 'error',
       order_by: [{ variable_id: variableId(PRODUTOS, 'codigo'), direction: 'asc' }],
     });
-    expect(node?.outputs?.map((output) => output.name)).toEqual(['codigo', 'vigencia_inicio', 'categoria', 'preco', 'ativo', 'estoque', 'atualizado_em']);
+    expect(node?.outputs.map((output) => output.name)).toEqual(['codigo', 'vigencia_inicio', 'categoria', 'preco', 'ativo', 'estoque', 'atualizado_em']);
     expect(toLinearMode(campanha(), [])).toBeNull();
   });
 
@@ -97,7 +97,7 @@ describe('o bloco Fonte na definição', () => {
     const change = withDataset(node, PRODUTOS_2024, VARIABLES[PRODUTOS]!, VARIABLES[PRODUTOS_2024]!);
     // `estoque` is text and `preco` has 4 places in Produtos 2024.
     expect(change.node?.filters).toEqual([]);
-    expect(change.node?.outputs).toEqual([{ variable_id: variableId(PRODUTOS_2024, 'categoria'), name: 'categoria' }]);
+    expect((change.node?.mode === 'linear' ? change.node.outputs : undefined)).toEqual([{ variable_id: variableId(PRODUTOS_2024, 'categoria'), name: 'categoria' }]);
     expect(change.dropped).toEqual({ filters: 1, order: 1, outputs: 1 });
   });
 

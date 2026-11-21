@@ -163,7 +163,7 @@ function blockOutputs(block: Block, byName: ReadonlyMap<string, DraftSymbol>): P
     return block.results.map((result) => ({ handle: outputHandle(result.name), label: result.name, type: typeCode(result.type, result.scale) }));
   }
   // A Fonte's output has the type of its catalog variable, which only the analysis knows.
-  return (block.outputs ?? []).map((output) => namePort(output.name, byName.get(output.name), outputHandle(output.name)));
+  return (block.mode === 'linear' ? block.outputs : []).map((output) => namePort(output.name, byName.get(output.name), outputHandle(output.name)));
 }
 
 function inputRows(inputs: readonly DeclaredInput[]): InputRow[] {

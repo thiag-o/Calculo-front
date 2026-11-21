@@ -9,7 +9,7 @@ import { ApiProvider, createQueryClient, type Schemas } from '../../../api';
 import { FluxoRoot } from '../../../design-system';
 import { DraftEditorProvider, useDraftEditor, type WorkflowDefinition } from '../../draft';
 import { SourceBlockProperties } from './SourceBlockProperties';
-import { findSourceNode, type SourceNode } from './sourceNode';
+import { findSourceNode, type FilterSourceNode, type LinearSourceNode, type SourceNode } from './sourceNode';
 
 if (!('ResizeObserver' in globalThis)) {
   globalThis.ResizeObserver = class {
@@ -111,7 +111,7 @@ function symbol(
 }
 
 /** The Linear "Produto": linked by `cod_prod`, ordered by the start of validity (newest first), bringing `categoria`. */
-export function produto(changes: Partial<SourceNode> = {}): SourceNode {
+export function produto(changes: Partial<LinearSourceNode> = {}): LinearSourceNode {
   return {
     id: 'produto',
     type: 'source',
@@ -132,8 +132,8 @@ export function produto(changes: Partial<SourceNode> = {}): SourceNode {
 }
 
 /** The Filtro "Produtos da campanha", as the API sends it (without the fields only a Linear has). */
-export function campanha(): SourceNode {
-  const node: SourceNode = {
+export function campanha(): FilterSourceNode {
+  return {
     id: 'campanha',
     type: 'source',
     name: 'Produtos da campanha',
@@ -144,13 +144,7 @@ export function campanha(): SourceNode {
     links: [{ variable: 'cod_prod', column_variable_id: variableId(CAMPANHA, 'cod_prod') }],
     filters: [{ variable_id: variableId(CAMPANHA, 'ativo'), operator: '=', values: ['verdadeiro'] }],
     exists: true,
-    no_match: 'error',
-    multiple_rows: 'error',
   };
-  // The contract has no `no_match` nor `multiple_rows` in a Filtro; the generated type asks for them (they have a default).
-  Reflect.deleteProperty(node, 'no_match');
-  Reflect.deleteProperty(node, 'multiple_rows');
-  return node;
 }
 
 /** A draft (schema v2) with the batch source, the Linear "Produto", the Filtro "Produtos da campanha" and a Calculation. */
@@ -314,6 +308,12 @@ export function currentDefinition(): WorkflowDefinition {
 }
 
 /** The Source block `id` of the definition on screen. */
+export function currentLinear(id = 'produto'): LinearSourceNode {
+  const node = currentSource(id);
+  if (node.mode !== 'linear') throw new Error(`o bloco Fonte ${id} não é Linear`);
+  return node;
+}
+
 export function currentSource(id = 'produto'): SourceNode {
   const node = findSourceNode(currentDefinition(), id);
   if (!node) throw new Error(`sem o bloco Fonte ${id}`);

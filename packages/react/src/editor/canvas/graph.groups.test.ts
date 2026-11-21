@@ -79,6 +79,27 @@ describe('canvasGraph com grupos', () => {
     expect(linksOf(withSourceAndEmptyGroup())).toContain(`${INPUTS_ID}|var:categoria -> produto|in:categoria`);
   });
 
+  it('o bloco Fonte no modo Filtro não produz saídas', () => {
+    const draft = withSourceAndEmptyGroup();
+    const linear = draft.definition.root.nodes.find((node) => node.id === 'produto');
+    if (linear?.type !== 'source') throw new Error('expected the Linear source "produto"');
+    const filter: Schemas['FilterSourceNode'] = {
+      id: linear.id,
+      type: 'source',
+      name: linear.name,
+      description: null,
+      position: linear.position,
+      mode: 'filter',
+      dataset_id: linear.dataset_id,
+      links: linear.links,
+      filters: [],
+      exists: true,
+    };
+    draft.definition.root.nodes = draft.definition.root.nodes.map((node) => (node.id === 'produto' ? filter : node));
+    const view = graphOf(draft).blocks.find((block) => block.block.id === 'produto')!;
+    expect(view.outputs).toEqual([]);
+  });
+
   it('a barra Saída fica à direita do grupo inteiro', () => {
     const draft = nestedDraft();
     draft.definition.root.nodes = draft.definition.root.nodes.slice(0, 1);

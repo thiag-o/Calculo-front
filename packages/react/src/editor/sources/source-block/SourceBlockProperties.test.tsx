@@ -8,6 +8,7 @@ import {
   VARIABLES,
   campanha,
   choose,
+  currentLinear,
   currentSource,
   problem,
   produto,
@@ -295,19 +296,19 @@ describe('propriedades do bloco Fonte', () => {
 
     expect(screen.getByRole('button', { name: 'Remover critério (critério 1)' })).toHaveAttribute('aria-disabled', 'true');
     await user.click(screen.getByRole('button', { name: 'Incluir critério' }));
-    expect(currentSource().order_by).toEqual([
+    expect(currentLinear().order_by).toEqual([
       { variable_id: variableId(PRODUTOS, 'vigencia_inicio'), direction: 'desc' },
       { variable_id: variableId(PRODUTOS, 'codigo'), direction: 'asc' },
     ]);
     await choose(user, 'Direção (critério 2)', 'Decrescente');
     await user.click(screen.getByRole('button', { name: 'Mover para cima (critério 2)' }));
-    expect(currentSource().order_by).toEqual([
+    expect(currentLinear().order_by).toEqual([
       { variable_id: variableId(PRODUTOS, 'codigo'), direction: 'desc' },
       { variable_id: variableId(PRODUTOS, 'vigencia_inicio'), direction: 'desc' },
     ]);
     await choose(user, 'Variável (critério 1)', 'preco · Decimal');
     await user.click(screen.getByRole('button', { name: 'Remover critério (critério 2)' }));
-    expect(currentSource().order_by).toEqual([{ variable_id: variableId(PRODUTOS, 'preco'), direction: 'desc' }]);
+    expect(currentLinear().order_by).toEqual([{ variable_id: variableId(PRODUTOS, 'preco'), direction: 'desc' }]);
   });
 
   it('muda o "Sem correspondência"', async () => {
@@ -316,9 +317,9 @@ describe('propriedades do bloco Fonte', () => {
     await loaded();
 
     await choose(user, scoped('Sem correspondência'), 'Manter vazio');
-    expect(currentSource().no_match).toBe('keep_null');
+    expect(currentLinear().no_match).toBe('keep_null');
     await choose(user, scoped('Sem correspondência'), 'Descartar o registro');
-    expect(currentSource().no_match).toBe('discard');
+    expect(currentLinear().no_match).toBe('discard');
   });
 
   it('pede a confirmação para aceitar a primeira linha e não muda nada ao cancelar', async () => {
@@ -331,17 +332,17 @@ describe('propriedades do bloco Fonte', () => {
     expect(dialog).toHaveAccessibleDescription('Você assume que vale a primeira linha pela ordenação. Isso fica registrado na auditoria.');
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(currentSource().multiple_rows).toBe('error');
+    expect(currentLinear().multiple_rows).toBe('error');
     await waitFor(() => expect(screen.getByRole('combobox', { name: scoped('Mais de uma linha') })).toHaveFocus());
 
     await choose(user, scoped('Mais de uma linha'), 'Aceitar a primeira linha');
     dialog = await screen.findByRole('dialog', { name: 'Aceitar a primeira linha' });
     await user.click(within(dialog).getByRole('button', { name: 'Aceitar a primeira linha' }));
-    expect(currentSource().multiple_rows).toBe('accept_first');
+    expect(currentLinear().multiple_rows).toBe('accept_first');
 
     // Back to "Gerar erro" needs no confirmation.
     await choose(user, scoped('Mais de uma linha'), 'Gerar erro');
-    expect(currentSource().multiple_rows).toBe('error');
+    expect(currentLinear().multiple_rows).toBe('error');
   });
 
   it('marca as variáveis da saída, troca o nome no workflow e não deixa o Linear sem saída', async () => {
@@ -354,7 +355,7 @@ describe('propriedades do bloco Fonte', () => {
     expect(categoria).toHaveAccessibleDescription('A fonte linear precisa de pelo menos uma variável de saída');
 
     await user.click(screen.getByRole('checkbox', { name: /^preco/ }));
-    expect(currentSource().outputs).toEqual([
+    expect(currentLinear().outputs).toEqual([
       { variable_id: variableId(PRODUTOS, 'categoria'), name: 'categoria' },
       { variable_id: variableId(PRODUTOS, 'preco'), name: 'preco' },
     ]);
@@ -363,16 +364,16 @@ describe('propriedades do bloco Fonte', () => {
     await user.clear(name);
     await user.type(name, 'Preço');
     expect(screen.getByText(/Use de 1 a 63 caracteres/)).toBeInTheDocument();
-    expect(currentSource().outputs?.[1]?.name).toBe('preco');
+    expect(currentLinear().outputs[1]?.name).toBe('preco');
     await user.clear(name);
     await user.type(name, 'cod_prod');
     expect(screen.getByText('Já existe uma variável com este nome. Escolha outro.')).toBeInTheDocument();
     await user.clear(name);
     await user.type(name, 'preco_tabela');
-    expect(currentSource().outputs?.[1]).toEqual({ variable_id: variableId(PRODUTOS, 'preco'), name: 'preco_tabela' });
+    expect(currentLinear().outputs[1]).toEqual({ variable_id: variableId(PRODUTOS, 'preco'), name: 'preco_tabela' });
 
     await user.click(screen.getByRole('checkbox', { name: /^categoria/ }));
-    expect(currentSource().outputs).toEqual([{ variable_id: variableId(PRODUTOS, 'preco'), name: 'preco_tabela' }]);
+    expect(currentLinear().outputs).toEqual([{ variable_id: variableId(PRODUTOS, 'preco'), name: 'preco_tabela' }]);
   });
 
   it('mostra os problemas da saída no nome da variável', async () => {

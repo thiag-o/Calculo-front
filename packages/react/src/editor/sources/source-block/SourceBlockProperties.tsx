@@ -76,7 +76,6 @@ export function SourceBlockProperties({ node }: SourceBlockPropertiesProps) {
   const analyzedNode = findSourceNode(analyzedDefinition, node.id);
   const path = (field: string) => fieldPath(at, field);
   const fieldProblems = (field: string) => problemsAt(problems, path(field));
-  const linear = node.mode === 'linear';
 
   function update(apply: (current: SourceNode, definition: WorkflowDefinition) => SourceNode, mergeKey?: string) {
     change((current) => updateSourceNode(current, node.id, (item) => apply(item, current)), mergeKey ? { mergeKey } : undefined);
@@ -190,7 +189,7 @@ export function SourceBlockProperties({ node }: SourceBlockPropertiesProps) {
         update={update}
       />
 
-      {linear ? (
+      {node.mode === 'linear' ? (
         <>
           <PathSelect
             label="Sem correspondência"
@@ -202,7 +201,7 @@ export function SourceBlockProperties({ node }: SourceBlockPropertiesProps) {
             problems={fieldProblems('no_match')}
             onChange={(value) => {
               const policy = NO_MATCH_POLICIES.find((candidate) => candidate === value);
-              if (policy) update((current) => ({ ...current, no_match: policy }));
+              if (policy) update((current) => (current.mode === 'linear' ? { ...current, no_match: policy } : current));
             }}
           />
           <div ref={multipleRowsField}>
@@ -216,7 +215,7 @@ export function SourceBlockProperties({ node }: SourceBlockPropertiesProps) {
               problems={fieldProblems('multiple_rows')}
               onChange={(value) => {
                 if (value === 'accept_first') setConfirmingAccept(true);
-                else update((current) => ({ ...current, multiple_rows: 'error' }));
+                else update((current) => (current.mode === 'linear' ? { ...current, multiple_rows: 'error' } : current));
               }}
             />
           </div>
@@ -229,12 +228,12 @@ export function SourceBlockProperties({ node }: SourceBlockPropertiesProps) {
           value={node.exists === false ? 'missing' : 'exists'}
           path={path('exists')}
           problems={fieldProblems('exists')}
-          onChange={(value) => update((current) => ({ ...current, exists: value === 'exists' }))}
+          onChange={(value) => update((current) => (current.mode === 'filter' ? { ...current, exists: value === 'exists' } : current))}
         />
       )}
 
 
-      {linear && catalogVariables ? (
+      {node.mode === 'linear' && catalogVariables ? (
         <SourceOutputs node={node} analyzedNode={analyzedNode} at={at} variables={catalogVariables} update={update} />
       ) : null}
 
