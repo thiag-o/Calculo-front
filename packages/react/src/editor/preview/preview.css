@@ -1,0 +1,287 @@
+/*
+ * Editor › "Prévia" tab (estilos.md §3, §7.5, §7.7, §9 and §14): the head with "Rodar prévia" and, below, the counts per
+ * Fonte block and the example records per group, inside the bottom panel. Only fc- classes and --fc-* variables; no
+ * global reset (ADR 0002).
+ */
+
+.fc-preview {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+  min-height: 100%;
+  padding: var(--fc-space-12) var(--fc-space-16);
+}
+
+.fc-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+/* heading-14 */
+.fc-preview-title {
+  margin: 0;
+  color: var(--fc-text);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: -0.28px;
+}
+
+.fc-preview-body,
+.fc-preview-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-preview-note,
+.fc-preview-stale,
+.fc-preview-none {
+  margin: 0;
+}
+
+.fc-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+/* label-12, tertiary: the section names (non-essential legend, estilos.md §3). */
+.fc-preview-subtitle {
+  margin: 0;
+  color: var(--fc-text-tertiary);
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.fc-preview-items {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One block or group per item, with a 1px divider between them (estilos.md §4: each border drawn once). */
+.fc-preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  padding: var(--fc-space-8) 0;
+}
+
+.fc-preview-item + .fc-preview-item {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-preview-item-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+/* The block name selects it in the canvas: mono-13/500, a ghost button with a 28px target (estilos.md §11). */
+.fc-preview-name {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 var(--fc-space-6);
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  outline: 2px solid transparent;
+  transition: background-color 150ms ease-out;
+}
+
+button.fc-preview-name {
+  cursor: pointer;
+}
+
+button.fc-preview-name:hover {
+  background-color: var(--fc-hover);
+}
+
+button.fc-preview-name:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-preview-name-static {
+  display: inline-flex;
+  align-items: center;
+}
+
+.fc-preview-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-4) var(--fc-space-16);
+  margin: 0;
+  padding: 0 var(--fc-space-6);
+  list-style: none;
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fc-text);
+}
+
+.fc-preview-keys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--fc-space-4) var(--fc-space-8);
+  padding: 0 var(--fc-space-6);
+}
+
+.fc-preview-key-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-4) var(--fc-space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Keys in mono-13 (ids, estilos.md §3). */
+.fc-preview-key {
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* The tables scroll sideways inside their box; the page never does (estilos.md §15). */
+.fc-preview-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+  outline: 2px solid transparent;
+}
+
+.fc-preview-scroll:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* mono-13 for the values, with the header in tertiary label-12 (estilos.md §9). */
+.fc-preview-table {
+  border-collapse: collapse;
+  min-width: 100%;
+  color: var(--fc-text);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-preview-table th,
+.fc-preview-table td {
+  padding: var(--fc-space-4) var(--fc-space-12);
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.fc-preview-table thead th {
+  height: 32px;
+  box-sizing: border-box;
+  color: var(--fc-text-tertiary);
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+/* The variable names of the header stay in mono (they are names of the workflow). */
+.fc-preview-table thead tr + tr th {
+  font-family: var(--fc-font-mono);
+}
+
+.fc-preview-table tbody tr + tr th,
+.fc-preview-table tbody tr + tr td {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-preview-table tbody th {
+  font-weight: 400;
+}
+
+.fc-preview-status {
+  font-family: var(--fc-font-sans);
+}
+
+/* Input and Output side by side: a divider opens each side. */
+.fc-preview-table .fc-preview-side {
+  border-left: 1px solid var(--fc-border);
+}
+
+.fc-preview-error {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--fc-space-4);
+}
+
+.fc-preview-error .fc-preview-name {
+  padding: 0 var(--fc-space-2);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fc-preview-error .fc-preview-name::after {
+  content: ':';
+}
+
+.fc-preview-error .fc-preview-name-static::after {
+  content: ':';
+}
+
+.fc-preview-empty {
+  flex: 1;
+}
+
+.fc-preview-loading .fc-loading-shape {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+.fc-preview-loading-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+.fc-preview-loading-counts {
+  display: flex;
+  gap: var(--fc-space-16);
+}
