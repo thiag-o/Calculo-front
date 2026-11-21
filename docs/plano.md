@@ -1345,7 +1345,7 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - dep: B126, F64
 - modelo: sonnet
 - revisão: não
-- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, `packages/react/src/editor/sources/source-block/`, e (D24) `packages/react/src/editor/canvas/graph.ts` e `packages/react/src/editor/groups/tree.ts`, só para ler `outputs` estreitando por `mode` (o Filtro não produz variáveis)
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, `packages/react/src/editor/sources/source-block/`, e (D24) `packages/react/src/editor/canvas/graph.ts` e `packages/react/src/editor/groups/tree.ts`, só para ler `outputs` estreitando por `mode` (o Filtro não produz variáveis); e (D26) `packages/react/src/editor/preview/PreviewResult.tsx` e `packages/react/src/editor/preview/preview.test-support.tsx`, só para ler `no_match` e `multiple_rows` estreitando por `mode` (no Filtro, o ponto das contagens fica na cor neutra), com um teste do Filtro
 - Fazer: regenerar os tipos com o `SourceNode` em `oneOf` (B126) e trocar o `Reflect.deleteProperty` da F64 pelo tipo do modo Filtro, que não tem `no_match` nem `multiple_rows`. Sem cast, sem `any`.
 - Aceite: nenhum `Reflect.deleteProperty` sobra no bloco Fonte; typecheck, testes e `pnpm e2e` verdes.
 
