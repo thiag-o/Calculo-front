@@ -82,7 +82,8 @@ No PowerShell: `$env:FLUXO_TEST_ISOLATION_ID='F62'; pnpm e2e`.
 - Com a variável, também a pasta de artefatos do Playwright (`test-results/<id>`) e o build do casca para o e2e (`node_modules/.cache/e2e-shell-<id>`) levam o id, então duas execuções no mesmo checkout não dividem nem apagam os arquivos uma da outra.
 - Sem a variável, ficam as portas de sempre: 5173 (casca) e 5274 (página de incorporação).
 - Dois ids diferentes podem, raramente, cair no mesmo par (são 450 pares); se isso acontecer, o Vite recusa subir (`strictPort`) e basta trocar o id.
-- O `pnpm e2e:real` não muda: usa as portas de sempre e roda só na integração do checkpoint, não em paralelo.
+- O `pnpm e2e:real` também usa o id: o `playwright.config.ts` deriva dele as portas do casca e da página de incorporação nos dois modos (sem `E2E_SHELL_URL`). Sem o id, ficam 5173 e 5274. Ele roda só na integração do checkpoint, não em paralelo.
+- Com o id no `e2e:real`, a origem do casca passa a ser `http://localhost:<porta derivada do id>` (a porta par da faixa 6100 a 6999; `node -e "import('./scripts/e2e-ports.mjs').then(m=>console.log(m.e2ePorts()))"` com o id exportado mostra o par). Essa origem precisa estar na lista de origens permitidas do CORS da API, senão todo login dá preflight 400. Ponha-a na variável de ambiente `FLUXO_CORS_ORIGINS` (origens separadas por vírgula; `cors_origins` em `backend/src/fluxo/bootstrap/settings.py`) **do próprio processo da API**, ao subir (por exemplo `FLUXO_CORS_ORIGINS=http://localhost:5173,http://localhost:6102 uv run python -m fluxo.bootstrap api`), sem editar o `backend/.env`. Se a API já estiver no ar com outro valor, suba outra, ou use o id vazio.
 
 ## Testes ponta a ponta no modo real
 
