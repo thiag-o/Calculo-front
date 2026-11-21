@@ -73,3 +73,55 @@ describe('Problemas: achados numa definição que já mudou', () => {
     expect(countProblems(problems, analyzed).byNode.get('calc_pontos')).toBe(1);
   });
 });
+
+describe('Problemas: blocos dentro de grupos e fonte do lote', () => {
+  const [table, calculation] = definition.root.nodes;
+  const inner = { ...calculation!, id: 'calc_dentro' };
+  const group = (id: string, nodes: typeof definition.root.nodes): (typeof definition.root.nodes)[number] => ({
+    id,
+    type: 'group',
+    name: id,
+    description: null,
+    position: { x: 0, y: 0 },
+    collapsed: false,
+    nodes,
+    outputs: [],
+  });
+  const grouped = {
+    ...definition,
+    root: { ...definition.root, nodes: [table!, group('grupo_a', [table!, group('grupo_b', [inner])])] },
+  };
+
+  it('um problema sem node_id cai no bloco de dentro do grupo, em qualquer nível, não no grupo', () => {
+    expect(problemItem(at('root.nodes[1].nodes[0].conditions[0].expression'), grouped)).toEqual({ type: 'node', id: 'td_elegibilidade' });
+    expect(problemItem(at('root.nodes[1].nodes[1].nodes[0].expression'), grouped)).toEqual({ type: 'node', id: 'calc_dentro' });
+    expect(problemItem(at('root.nodes[1].nodes[1]'), grouped)).toEqual({ type: 'node', id: 'grupo_b' });
+    expect(problemItem(at('root.nodes[1].nodes[5].expression'), grouped)).toEqual({ type: 'workflow' });
+    expect(problemItem(at('root.nodes[0].nodes[0].expression'), grouped)).toEqual({ type: 'workflow' });
+  });
+
+  it('o nome e o tipo do bloco de dentro do grupo saem da definição', () => {
+    const [found] = groupProblems([at('root.nodes[1].nodes[1].nodes[0].expression')], grouped);
+    expect(found).toMatchObject({ key: 'node:calc_dentro', kind: 'calculation', title: 'Pontos' });
+    const [tableGroup] = groupProblems([at('root.nodes[1].nodes[0].rules[0]')], grouped);
+    expect(tableGroup).toMatchObject({ kind: 'decision_table', title: 'Elegibilidade' });
+  });
+
+  it('o problema da fonte do lote sem path cai no item das entradas, quando a definição tem fonte do lote', () => {
+    const withSource = {
+      ...definition,
+      root: {
+        ...definition.root,
+        batch_source: { dataset_id: '3c9d1e2f-7a8b-4c5d-9e0f-1a2b3c4d5e6f', key: [], filters: [], order_by: [], outputs: [] },
+      },
+    };
+    const problem = (code: WorkflowProblem['code'], path: string | null): WorkflowProblem => ({ ...at(path), code });
+    expect(problemItem(problem('missing_batch_source_key', null), withSource)).toEqual({ type: 'inputs' });
+    expect(problemItem(problem('missing_order_by', null), withSource)).toEqual({ type: 'inputs' });
+    expect(problemItem(problem('unknown_variable', 'root.batch_source.filters[0].variable'), withSource)).toEqual({ type: 'inputs' });
+    // Without a batch source in the definition, it stays with the workflow.
+    expect(problemItem(problem('missing_batch_source_key', null), definition)).toEqual({ type: 'workflow' });
+    // A block problem of the same code keeps its block.
+    expect(problemItem({ ...problem('missing_order_by', null), node_id: 'calc_pontos' }, withSource)).toEqual({ type: 'node', id: 'calc_pontos' });
+  });
+});

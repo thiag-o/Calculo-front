@@ -1,31 +1,11 @@
-// Values of the "Prévia" tab on screen (estilos.md §3): numbers in the Brazilian pattern, dates as dd/mm/aaaa, null as "—".
-// Only text is handled: a value of the API never becomes a floating-point `number` (E4-4).
+// Helpers of the "Prévia" tab. The formatting of a value is in `../values` (ADR 0057).
 import type { Schemas } from '../../api';
-import type { DraftSymbol, WorkflowDefinition } from '../draft';
-import { NO_VALUE, formatApiNumber, formatDate, formatDateTime } from '../values';
+import type { WorkflowDefinition } from '../draft';
 
 type DataType = Schemas['DataType'];
 export type Value = Schemas['Value'];
 export type RecordKey = Schemas['RecordKey'];
 type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
-
-/** A value of the preview on screen. `type` is the variable's type, when known (from the symbols of the analysis). */
-export function formatValue(value: Value | undefined, type: DataType | null | undefined): string {
-  if (value === null || value === undefined) return NO_VALUE;
-  if (typeof value === 'boolean') return value ? 'verdadeiro' : 'falso';
-  if (Array.isArray(value)) return value.length === 1 ? 'lista com 1 item' : `lista com ${value.length.toLocaleString('pt-BR')} itens`;
-  switch (type) {
-    case 'integer':
-    case 'decimal':
-      return formatApiNumber(value);
-    case 'date':
-      return formatDate(value);
-    case 'datetime':
-      return formatDateTime(value);
-    default:
-      return value === '' ? NO_VALUE : value;
-  }
-}
 
 /** A count in the Brazilian pattern (`1.480`). */
 export function formatCount(count: number): string {
@@ -37,13 +17,6 @@ export function recordKeyText(key: RecordKey): string {
   return Object.entries(key)
     .map(([name, value]) => `${name} ${value}`)
     .join(' · ');
-}
-
-/** The type of each linear variable of the workflow, by name, from the symbols of the analysis. */
-export function variableTypes(symbols: readonly DraftSymbol[]): Map<string, DataType | null> {
-  const types = new Map<string, DataType | null>();
-  for (const symbol of symbols) if (symbol.cardinality === 'linear' && !types.has(symbol.name)) types.set(symbol.name, symbol.type);
-  return types;
 }
 
 /** The type of each output field of the workflow (the Output of the root group), by the field name. */

@@ -1,14 +1,11 @@
 // The values of the last "Calcular" on the canvas (E5-21; design §12, "Tela de debug"): what each node of the trace gave,
 // already as text for the screen. Pure: the canvas draws it (nodes.tsx and the group node).
 import type { Schemas } from '../../../api';
-import type { DraftSymbol, WorkflowDefinition } from '../../draft';
 import type { LastUnitRun, UnitRun } from '../../unit-run';
-import { formatValue } from '../../values';
+import { formatValue, variableTypes } from '../../values';
 
-type DataType = Schemas['DataType'];
 type Value = Schemas['Value'];
 type TraceNode = UnitRun['nodes'][number];
-type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
 
 export type NodeRunStatus = Schemas['NodeRunStatus'];
 export type RecordRunStatus = UnitRun['status'];
@@ -38,25 +35,6 @@ export interface NodeRunView {
 export interface RunViews {
   record: RecordRunStatus;
   nodes: ReadonlyMap<string, NodeRunView>;
-}
-
-/**
- * The type of each linear variable when it ran: from the symbols (the batch source and the Fonte blocks), then from the
- * definition (inputs, Calculation outputs, Decision Table results), which wins.
- */
-function variableTypes(definition: WorkflowDefinition, symbols: readonly DraftSymbol[]): Map<string, DataType> {
-  const types = new Map<string, DataType>();
-  for (const symbol of symbols) if (symbol.cardinality === 'linear' && symbol.type !== null) types.set(symbol.name, symbol.type);
-  for (const input of definition.root.inputs) if (input.cardinality === 'linear') types.set(input.name, input.type);
-  const visit = (nodes: readonly DefinitionNode[]) => {
-    for (const node of nodes) {
-      if (node.type === 'calculation') types.set(node.output.name, node.output.type);
-      else if (node.type === 'decision_table') for (const result of node.results) types.set(result.name, result.type);
-      else if (node.type === 'group') visit(node.nodes);
-    }
-  };
-  visit(definition.root.nodes);
-  return types;
 }
 
 /** The views of every node of the trace, groups and what is inside them included. */

@@ -4,7 +4,8 @@ import { Notice, Status, Text, type StatusTone } from '../../design-system';
 import type { DraftSymbol, WorkflowDefinition } from '../draft';
 import { BATCH_SOURCE_NAME, COUNT_NOTE, ROOT_GROUP_NAME, countText, readErrorTitle } from './messages';
 import type { LastPreview, PreviewGroup, PreviewSource } from './queries';
-import { columnsOf, formatValue, nodesById, outputFieldTypes, recordKeyText, variableTypes, type RecordKey, type Value } from './values';
+import { formatValue, variableTypes } from '../values';
+import { columnsOf, nodesById, outputFieldTypes, recordKeyText, type RecordKey, type Value } from './values';
 
 type DataType = Schemas['DataType'];
 type Types = ReadonlyMap<string, DataType | null>;
@@ -63,7 +64,7 @@ export function PreviewResult({ last, currentDefinition, symbols, onSelectNode, 
   const { preview, definition } = last;
   const nodes = useMemo(() => nodesById(definition), [definition]);
   const current = useMemo(() => nodesById(currentDefinition), [currentDefinition]);
-  const types = useMemo(() => variableTypes(symbols), [symbols]);
+  const types = useMemo(() => variableTypes(definition, symbols), [definition, symbols]);
   const outputTypes = useMemo(() => outputFieldTypes(definition, types), [definition, types]);
 
   const blockName = (nodeId: string | null) => {

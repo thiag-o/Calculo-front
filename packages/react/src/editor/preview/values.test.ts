@@ -1,20 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { countText, problemsReason, readErrorTitle } from './messages';
-import { columnsOf, formatValue, recordKeyText } from './values';
+import { columnsOf, recordKeyText } from './values';
 
 describe('valores da prévia', () => {
-  it('mostra cada tipo no padrão brasileiro', () => {
-    expect(formatValue('1500.00', 'decimal')).toBe('1.500,00');
-    expect(formatValue('-3', 'integer')).toBe('-3');
-    expect(formatValue('2026-10-05', 'date')).toBe('05/10/2026');
-    expect(formatValue(true, 'boolean')).toBe('verdadeiro');
-    expect(formatValue(null, 'text')).toBe('—');
-    expect(formatValue(undefined, 'text')).toBe('—');
-    expect(formatValue('', 'text')).toBe('—');
-    expect(formatValue([{ a: '1' }, { a: '2' }], null)).toBe('lista com 2 itens');
-    expect(formatValue('1500.00', null)).toBe('1500.00');
-  });
-
   it('escreve a chave do registro com os nomes, na ordem', () => {
     expect(recordKeyText({ nf_id: '10', item_seq: '1' })).toBe('nf_id 10 · item_seq 1');
   });

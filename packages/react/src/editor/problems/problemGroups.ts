@@ -24,20 +24,44 @@ export interface ProblemCounts {
   workflow: number;
 }
 
-const NODE_PATH = /^root\.nodes\[(\d+)\]/;
+type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
+
+/** `root.nodes[1]` and, inside groups at any level, `.nodes[0].nodes[2]`… */
+const NODE_PATH = /^root\.nodes\[(\d+)\]((?:\.nodes\[\d+\])*)/;
+const BATCH_SOURCE_CODES: ReadonlySet<string> = new Set(['missing_batch_source_key', 'missing_order_by']);
+
+/** The block a `root.nodes[i].nodes[k]…` path points to, or `undefined` when the path leads nowhere. */
+function nodeAtPath(path: string, definition: WorkflowDefinition): DefinitionNode | undefined {
+  const match = NODE_PATH.exec(path);
+  if (!match) return undefined;
+  const indexes = [match[1]!, ...[...(match[2] ?? '').matchAll(/\[(\d+)\]/g)].map((part) => part[1]!)].map(Number);
+  let node: DefinitionNode | undefined = definition.root.nodes[indexes[0]!];
+  for (const index of indexes.slice(1)) node = node?.type === 'group' ? node.nodes[index] : undefined;
+  return node;
+}
+
+/** A block by id, the ones inside groups (at any level) included. */
+function findNode(nodes: readonly DefinitionNode[], id: string): DefinitionNode | undefined {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const inside = node.type === 'group' ? findNode(node.nodes, id) : undefined;
+    if (inside) return inside;
+  }
+  return undefined;
+}
 
 /**
- * The item a problem belongs to: the block of `node_id` (or of the `root.nodes[i]` of the path, when the API sends no id),
- * the inputs (`root.inputs…`), the output (`root.output…`) or, otherwise, the workflow. `definition` is the one the
+ * The item a problem belongs to: the block of `node_id` (or of the `root.nodes[i]` of the path, also `.nodes[k]` inside groups, when the API sends no
+ * id), the inputs (`root.inputs…`, and the batch source problems, when the definition has one: they belong to the batch source bar), the output (`root.output…`) or, otherwise, the workflow. `definition` is the one the
  * problem was found in (`analyzedDefinition`): while a newer analysis is on the way, the blocks may have moved and
  * `root.nodes[i]` of the current definition may be another block.
  */
 export function problemItem(problem: WorkflowProblem, definition: WorkflowDefinition): EditorItem {
   if (problem.node_id) return { type: 'node', id: problem.node_id };
   const path = problem.path ?? '';
-  const index = NODE_PATH.exec(path)?.[1];
-  const node = index === undefined ? undefined : definition.root.nodes[Number(index)];
+  const node = nodeAtPath(path, definition);
   if (node) return { type: 'node', id: node.id };
+  if (definition.root.batch_source && (BATCH_SOURCE_CODES.has(problem.code) || path.startsWith('root.batch_source'))) return { type: 'inputs' };
   if (path.startsWith('root.inputs')) return { type: 'inputs' };
   if (path.startsWith('root.output')) return { type: 'output' };
   return { type: 'workflow' };
@@ -80,7 +104,7 @@ function owner(item: EditorItem, current: WorkflowDefinition, analyzed: Workflow
     case 'workflow':
       return { kind: 'workflow', title: 'Workflow' };
     case 'node': {
-      const find = (definition: WorkflowDefinition) => definition.root.nodes.find((candidate) => candidate.id === item.id);
+      const find = (definition: WorkflowDefinition) => findNode(definition.root.nodes, item.id);
       const node = find(current) ?? find(analyzed);
       return { kind: node?.type === 'decision_table' ? 'decision_table' : 'calculation', title: node?.name || item.id };
     }

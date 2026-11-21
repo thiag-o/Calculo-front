@@ -14,4 +14,11 @@ describe('formatValue', () => {
     expect(formatValue([{ a: '1' }], null)).toBe('lista com 1 item');
     expect(formatValue([{ a: '1' }, { a: '2' }], undefined)).toBe('lista com 2 itens');
   });
+
+  it('mostra "—" para o que não veio (undefined) e para o texto vazio, em qualquer tipo', () => {
+    expect(formatValue(undefined, 'text')).toBe('—');
+    expect(formatValue(undefined, 'decimal')).toBe('—');
+    expect(formatValue('', 'text')).toBe('—');
+    expect(formatValue('', undefined)).toBe('—');
+  });
 });

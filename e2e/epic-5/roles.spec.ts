@@ -60,6 +60,8 @@ test('o Aprovador roda a prévia e o Calcular e não edita', async ({ page, epic
   await expect(canvasNode(page, BLOCKS.points, 'Cálculo')).toHaveAccessibleName(`${BLOCKS.points}, Cálculo, ok no último cálculo`);
 
   // The Aprovador has no `connections.view`: the catalog (the batch source variables) is not his to read.
+  // The batch source bar says why it has no dataset to show, instead of loading forever (F107).
+  await expect(page.getByText('Sem permissão para ver o dataset')).toBeVisible();
   await expectReadOnlyProperties(page, false);
   expect(writes, 'o Aprovador não muda o workflow').toEqual([]);
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DRAFT } from './unit-run.test-support';
-import { formatValue, readForm, variableTypes } from './values';
+import { readForm } from './values';
 
 const inputs = DRAFT.definition.root.inputs;
 
@@ -77,21 +77,5 @@ describe('formulário do Calcular', () => {
       ok: false,
       errors: { data_compra: 'Digite a data completa.', momento: 'Digite a data e a hora completas.' },
     });
-  });
-
-  it('mostra os valores do resultado no padrão brasileiro, pelo tipo declarado', () => {
-    const types = variableTypes(DRAFT.definition);
-    expect(types.get('fator')).toBe('decimal');
-    expect(types.get('elegivel')).toBe('boolean');
-    expect(types.get('pontos')).toBe('decimal');
-    expect(formatValue('1225.50', 'decimal')).toBe('1.225,50');
-    expect(formatValue('1500', 'integer')).toBe('1.500');
-    expect(formatValue('1500.50', 'text')).toBe('1500.50');
-    expect(formatValue(true, 'boolean')).toBe('verdadeiro');
-    expect(formatValue(false, 'boolean')).toBe('falso');
-    expect(formatValue(null, 'decimal')).toBe('—');
-    expect(formatValue('2026-11-20', 'date')).toBe('20/11/2026');
-    expect(formatValue(new Date(2026, 10, 20, 10, 30, 15).toISOString(), 'datetime')).toBe('20/11/2026 10:30:15');
-    expect(formatValue([{ a: '1' }, { a: '2' }], undefined)).toBe('lista com 2 itens');
   });
 });
