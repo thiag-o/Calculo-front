@@ -1462,6 +1462,20 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - os padrões do bloco Fonte novo (`defaultOutputs`, `defaultOrder`, `toLinearMode`) exportados pelo `sources/index.ts` e usados pelo `canvas/blocks.ts`, com a ADR 0059 ampliada para permitir `canvas` → `sources/source-block` por essa entrada.
 - Aceite: `git grep` acha uma definição só de cada função; lint das fronteiras verde; testes e build verdes.
 
+**F110 · Manutenção: canvas a 900 px abre com o grafo cortado (portão F71)**
+- dep: F97
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/canvas/`
+- Fazer: na abertura do editor e depois de redimensionar a janela, o canvas enquadra o grafo inteiro (o ajuste de vista roda depois que a área tem o tamanho final), em todas as faixas de largura do estilos §15.
+- Aceite: teste do ajuste de vista com a área mudando de tamanho; o `pnpm e2e:visual` a 900 px mostra o grafo inteiro.
+
+**F111 · Manutenção: e2e estável sob carga (portão F71)**
+- dep: F97
+- modelo: sonnet
+- arquivos: `playwright.config.ts`, `e2e/support/`, `README.md`
+- Fazer: o modo simulado do e2e roda com menos workers (o número sai de uma variável, com um padrão que não sature a CPU no primeiro carregamento do shell), e os testes que estouraram o tempo sob carga (`configurator-and-reset-link.spec.ts:24`, `sign-out.spec.ts:6`, `draft-autosave.spec.ts:54`) esperam pelo estado da tela, nunca por tempo fixo.
+- Aceite: três rodadas seguidas do `pnpm e2e` com duas worktrees rodando ao mesmo tempo, sem estouro de tempo.
+
 **F97 · Tipos da API do épico 6**
 - tipo: contrato
 - dep: B132
@@ -1548,6 +1562,6 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
