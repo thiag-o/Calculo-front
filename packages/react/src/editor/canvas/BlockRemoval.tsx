@@ -2,6 +2,7 @@
 // announcement and where the focus goes afterwards. One hook, so both panels behave the same.
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { WORKFLOW_ITEM, useDraftEditor } from '../draft';
+import { findEntry, findNode, siblingsOf } from '../groups';
 import { blockRemovedText } from './messages';
 import { readersOf } from './graph';
 import { removeBlock } from './blocks';
@@ -11,8 +12,8 @@ export interface BlockRemovalOptions {
   /** Tells screen readers that the block went away (the panel's `role="status"` region). */
   announce: (text: string) => void;
   /**
-   * The element that takes the focus after the removal: the one of the neighbour block (the next in `root.nodes`, or
-   * the previous when it was the last), or the panel's own when no block is left (`neighbourId` null).
+   * The element that takes the focus after the removal: the one of the neighbour block (the next in its group, or the
+   * previous when it was the last), or the panel's own when no block is left there (`neighbourId` null).
    */
   focusAfterRemoval: (neighbourId: string | null) => HTMLElement | null;
   /** The element that gets the focus back when the confirmation closes without removing (the block itself). */
@@ -49,7 +50,7 @@ export function useBlockRemoval({ announce, focusAfterRemoval, focusOnCancel }: 
     [readOnly],
   );
 
-  const block = removing === null || readOnly ? undefined : definition.root.nodes.find((node) => node.id === removing);
+  const block = removing === null || readOnly ? undefined : findNode(definition, removing);
   // The block went away (Ctrl Z of its inclusion) or the editor became read-only while the confirmation was open: it closes
   // for good, so the same id coming back (Ctrl Shift Z) does not open it again by itself.
   if (removing !== null && !block) setRemoving(null);
@@ -64,10 +65,12 @@ export function useBlockRemoval({ announce, focusAfterRemoval, focusOnCancel }: 
       onClose={() => setRemoving(null)}
       onRemove={() => {
         if (readOnly) return;
-        const nodes = definition.root.nodes;
+        // The neighbour in the same group (the next one, or the previous when it was the last).
+        const nodes = siblingsOf(definition, block.id);
         const index = nodes.findIndex((node) => node.id === block.id);
-        const neighbour = nodes[index + 1] ?? nodes[index - 1] ?? null;
-        closing.current = { id: block.id, removed: true, neighbour: neighbour?.id ?? null };
+        // The last one of a group gives the focus to the group.
+        const neighbour = nodes[index + 1]?.id ?? nodes[index - 1]?.id ?? findEntry(definition, block.id)?.parent ?? null;
+        closing.current = { id: block.id, removed: true, neighbour };
         setRemoving(null);
         change((current) => removeBlock(current, block.id));
         select(WORKFLOW_ITEM);

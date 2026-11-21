@@ -13,6 +13,8 @@ export type WorkflowProblem = Schemas['WorkflowProblem'];
 export type DraftSymbol = Schemas['Symbol'];
 /** What a node reads in all its formulas (generated from the contract). */
 export type Dependency = Schemas['Dependency'];
+/** The derived Input, the Output and the inner order of a group, from the analysis (E5-5). */
+export type GroupInterface = Schemas['GroupInterface'];
 /** The problems and the symbols of a definition (generated from the contract). */
 export type Analysis = Schemas['Analysis'];
 

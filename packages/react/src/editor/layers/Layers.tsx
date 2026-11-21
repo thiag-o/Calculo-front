@@ -3,6 +3,7 @@ import { textClasses } from '../../design-system';
 import { useBlockRemoval } from '../canvas';
 import { useAnnouncement } from '../canvas/announcement';
 import { WORKFLOW_ITEM, sameItem, useDraftEditor, type EditorItem, type WorkflowDefinition } from '../draft';
+import { isGroup, type DefinitionNode } from '../groups';
 import { useProblemCounts, type ProblemCounts } from '../problems';
 import { AlertIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
 import './layers.css';
@@ -12,7 +13,7 @@ type RowKind = 'inputs' | 'input' | 'field' | 'calculation' | 'decision_table' |
 /** One item of the tree. */
 interface Row {
   key: string;
-  /** 1 for Entradas, the blocks and Saída; deeper for what is inside them. */
+  /** 1 for Entradas, the nodes of the root and Saída; deeper for what is inside them (a group's nodes, at any depth). */
   level: number;
   /** The row this one is inside (`null` on the first level). */
   parent: string | null;
@@ -32,13 +33,18 @@ interface Row {
 const KIND_TEXT: Partial<Record<RowKind, string>> = {
   calculation: 'Cálculo',
   decision_table: 'Tabela de Decisão',
+  source: 'Fonte',
+  group: 'Grupo',
 };
 
 function problemsText(count: number): string {
   return count === 1 ? '1 problema' : `${count.toLocaleString('pt-BR')} problemas`;
 }
 
-/** The tree: Entradas (inputs, a multiple one with its fields) › the blocks in the order of `root.nodes` › Saída (fields). */
+/**
+ * The tree: Entradas (inputs, a multiple one with its fields) › the nodes in the order of `root.nodes`, each group with
+ * the nodes inside it (groups inside groups) › Saída (fields).
+ */
 function treeRows(definition: WorkflowDefinition, counts: ProblemCounts): Row[] {
   const rows: Row[] = [];
   const { inputs, nodes, output } = definition.root;
@@ -92,21 +98,27 @@ function treeRows(definition: WorkflowDefinition, counts: ProblemCounts): Row[] 
       );
     }
   });
-  nodes.forEach((node, index) =>
-    rows.push({
-      key: `node:${node.id}`,
-      level: 1,
-      parent: null,
-      kind: node.type,
-      label: node.name || node.id,
-      item: { type: 'node', id: node.id },
-      own: true,
-      problems: counts.byNode.get(node.id) ?? 0,
-      hasChildren: false,
-      position: index + 2,
-      siblings: top,
-    }),
-  );
+  const addNodes = (list: readonly DefinitionNode[], level: number, parent: string | null) =>
+    list.forEach((node, index) => {
+      const key = `node:${node.id}`;
+      const inside = isGroup(node) ? node.nodes : [];
+      rows.push({
+        key,
+        level,
+        parent,
+        kind: node.type,
+        label: node.name || node.id,
+        item: { type: 'node', id: node.id },
+        own: true,
+        problems: counts.byNode.get(node.id) ?? 0,
+        hasChildren: inside.length > 0,
+        // On the first level, Entradas comes first; inside a group, the count starts again.
+        position: parent === null ? index + 2 : index + 1,
+        siblings: parent === null ? top : list.length,
+      });
+      addNodes(inside, level + 1, key);
+    });
+  addNodes(nodes, 1, null);
   rows.push({
     key: 'output',
     level: 1,
@@ -139,8 +151,8 @@ function treeRows(definition: WorkflowDefinition, counts: ProblemCounts): Row[] 
 }
 
 /**
- * The Camadas panel (estilos.md §8, §9 and §14): the tree Entradas › blocks (in the order of `root.nodes`) › Saída, in
- * mono-13, with the red problem icon on the items that have problems. The selection is the editor's (`useDraftEditor`),
+ * The Camadas panel (estilos.md §8, §9 and §14): the tree Entradas › nodes (in the order of `root.nodes`, each group with
+ * what is inside it) › Saída, in mono-13, with the red problem icon on the items that have problems. The selection is the editor's (`useDraftEditor`),
  * the same as the canvas and the properties: a click, Enter or Space selects the item (a part of Entradas or Saída
  * selects the bar). Keyboard of a WAI-ARIA tree: up and down arrows, right and left open, close and go in and out,
  * Home and End. As on the canvas, Esc clears the selection and Delete removes a block (with the same confirmation, the

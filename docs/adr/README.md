@@ -61,7 +61,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0039](0039-recarga-de-conflito-rejeita-e-dialogo-espera.md) | Recarga depois de conflito rejeita quando falha (`throwOnError`), e o diálogo só fecha depois de recarregar | aceita, revisar no checkpoint | 2026-11-20 |
 | [0040](0040-monaco-environment-do-hospedeiro-tem-prioridade.md) | `MonacoEnvironment` do hospedeiro tem prioridade; o pacote só define o dele se faltar (complementa 0037) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0041](0041-formula-editor-recebe-o-texto-analisado.md) | `<FormulaEditor>` recebe `analyzedValue`, o texto em que os problemas foram calculados | aceita, revisar no checkpoint | 2026-11-20 |
-| [0042](0042-contrato-do-editor-entre-sub-verticais.md) | Sub-verticais do editor falam com o rascunho só por `useDraftEditor()` e `useProblemCounts()` | aceita, revisar no checkpoint (complementada por 0047) | 2026-11-20 |
+| [0042](0042-contrato-do-editor-entre-sub-verticais.md) | Sub-verticais do editor falam com o rascunho só por `useDraftEditor()` e `useProblemCounts()` | aceita, revisar no checkpoint (complementada por 0047 e 0053) | 2026-11-20 |
 | [0043](0043-salvamento-do-rascunho-fora-do-use-mutation.md) | Salvar o rascunho com função controlada por refs, e ler o rascunho só depois dos salvamentos em voo (complementa 0025) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0044](0044-edicoes-mantem-a-identidade-do-que-nao-mudou.md) | Edições da definição mantêm os mesmos objetos do que não mudou, para a marca de problema acompanhar a regra (segue a 0042) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0045](0045-memoria-da-tela-em-weakmap-por-query-client.md) | Lembrar na tela sem persistir: `WeakMap` por `QueryClient`, com chave de pessoa, tenant e item (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
@@ -72,6 +72,8 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0050](0050-workflows-recebe-o-editor-por-render-props.md) | `<Workflows>` recebe o editor por `renderEditor`; editor em rota irmã de tela cheia (segue a 0003) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0051](0051-plugin-troca-react-compiler-runtime-por-esm.md) | Plugin do Vite troca o `react-compiler-runtime` do React Flow por ESM (complementa 0037) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0052](0052-properties-workflow-importa-sources-batch-source.md) | `properties/workflow` importa `sources/batch-source/index.ts`, com ciclo permitido entre as duas (complementa 0047) | aceita, revisar no checkpoint | 2026-11-21 |
+| [0053](0053-use-draft-editor-expoe-groups.md) | `useDraftEditor()` expõe `groups`, o Input derivado da análise (complementa 0042) | aceita, revisar no checkpoint | 2026-11-21 |
+| [0054](0054-posicao-do-no-dentro-do-grupo-relativa-ao-conteudo.md) | Posição de um nó dentro de um grupo é relativa à área de conteúdo do grupo | aceita, revisar no checkpoint | 2026-11-21 |
 
 ## Pendentes (sem ADR ainda)
 

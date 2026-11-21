@@ -1,0 +1,197 @@
+/*
+ * Editor › groups (estilos.md §2.4, §4 and §8): the group on the canvas, a dashed 1px gray-500 container with 12px radius,
+ * the header with the category square, and the Input and Output bars as fields (6px radius, outline) in mono-12. React
+ * Flow draws the nodes inside it over it. Only fc- classes and --fc-* variables; no global selector (ADR 0002).
+ */
+
+.fc-group {
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 1px dashed var(--fc-gray-500);
+  border-radius: 12px;
+  background-color: color-mix(in srgb, var(--fc-background-100) 60%, transparent);
+  transition: border-color 150ms ease-out;
+}
+
+/* Selection: the canvas selection color (§8), here on the dashed border. */
+.fc-group[data-selected='true'] {
+  border-color: var(--fc-gray-1000);
+  box-shadow: 0 0 0 1px var(--fc-gray-1000);
+}
+
+.fc-group-head {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  height: 40px;
+  min-width: 0;
+  padding: 0 var(--fc-space-6) 0 var(--fc-space-12);
+}
+
+/* Category square: 8px, 2px radius, cat-group (§2.4). */
+.fc-group-category {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--fc-cat-group);
+}
+
+.fc-group-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-group-count {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.fc-group-problems {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-2);
+  color: var(--fc-red-700);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.fc-group-problems > span {
+  color: var(--fc-red-900);
+}
+
+.fc-group-actions {
+  flex: none;
+  display: inline-flex;
+  gap: var(--fc-space-2);
+}
+
+/* The bars: fields with 6px radius and the border outline (§8), Input on the left and Output on the right. */
+.fc-group-bar {
+  box-sizing: border-box;
+  position: absolute;
+  top: 40px;
+  width: 160px;
+  border-radius: 6px;
+  background-color: var(--fc-background-100);
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+.fc-group-bar[data-bar='input'] {
+  left: 12px;
+}
+
+.fc-group-bar[data-bar='output'] {
+  right: 12px;
+}
+
+.fc-group-bar-title {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-4);
+  height: 28px;
+  padding: 0 var(--fc-space-12);
+  color: var(--fc-text-secondary);
+}
+
+.fc-group-derived {
+  display: inline-flex;
+  color: var(--fc-text-secondary);
+}
+
+.fc-group-ports {
+  margin: 0;
+  padding: 0 0 var(--fc-space-8);
+  list-style: none;
+}
+
+.fc-group-port {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--fc-space-6);
+  height: 20px;
+  min-width: 0;
+  padding: var(--fc-space-2) var(--fc-space-12);
+}
+
+.fc-group-port-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-group-port-type {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Port: 7px circle with a gray-600 border, as on the blocks (§8). */
+.fc-canvas .fc-group-port-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--fc-gray-600);
+  border-radius: 50%;
+  background-color: var(--fc-background-100);
+  cursor: default;
+}
+
+.fc-group-bar-empty {
+  box-sizing: border-box;
+  height: 20px;
+  margin: 0 0 var(--fc-space-8);
+  padding: var(--fc-space-2) var(--fc-space-12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-group {
+    transition: none;
+  }
+}
+
+/* The group properties: the derived Input (read only) and the Output checkboxes. */
+.fc-group-properties-part {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fc-group-properties-part > p {
+  margin: 0;
+}
+
+.fc-group-properties-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-4);
+  margin: 0;
+  padding: 0;
+}
+
+.fc-group-properties-names,
+.fc-group-properties-checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

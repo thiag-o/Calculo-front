@@ -1,8 +1,9 @@
-// The canvas edits of the definition: include, move and remove a block. Pure functions that keep the same objects for
-// everything that did not change (ADR 0044): the problem marks of the other blocks stay on them while the analysis of
-// the edit is on the way.
-import { freeBlockId, freeResultName, type WorkflowDefinition } from '../draft';
-import { BLOCK_WIDTH, type Block, type BlockKind } from './graph';
+// The canvas edits of the definition: include, move and remove a block (at any depth of the groups). Pure functions that
+// keep the same objects for everything that did not change (ADR 0044): the problem marks of the other blocks stay on
+// them while the analysis of the edit is on the way.
+import type { WorkflowDefinition } from '../draft';
+import { clampInside, declaredNames, findEntry, firstFree, freeNodeId, removeNode, treeEntries, updateNodes } from '../groups';
+import { BLOCK_WIDTH, type Block, type NewBlockKind } from './graph';
 
 export interface Position {
   x: number;
@@ -10,7 +11,7 @@ export interface Position {
 }
 
 /** The id prefix and the name of a new block of each kind (`calc_1` "Cálculo 1", `td_1` "Tabela de Decisão 1"). */
-const NEW_BLOCK: Readonly<Record<BlockKind, { prefix: string; name: string }>> = {
+const NEW_BLOCK: Readonly<Record<NewBlockKind, { prefix: string; name: string }>> = {
   calculation: { prefix: 'calc', name: 'Cálculo' },
   decision_table: { prefix: 'td', name: 'Tabela de Decisão' },
 };
@@ -33,14 +34,14 @@ export function freePosition(definition: WorkflowDefinition, center: Position): 
 }
 
 /**
- * A new block at `position`, with a free id (`calc_1`, `td_1`…) and a free output name (`resultado_1`…), by the
- * editor's one rule of free names (`editor/draft/names.ts`, the same as the Decision Table grid). A Calculation
+ * A new block at `position`, with an id (`calc_1`, `td_1`…) and an output name (`resultado_1`…) free among every node and
+ * variable of the workflow, inside the groups too (the editor's one rule of free names). A Calculation
  * starts with an empty formula and a `decimal` output with the workflow's scale; a Decision Table starts with one result
  * column of that type and no condition nor rule (the grid includes them).
  */
-export function newBlock(definition: WorkflowDefinition, kind: BlockKind, position: Position): Block {
-  const id = freeBlockId(definition, NEW_BLOCK[kind].prefix);
-  const output = freeResultName(definition);
+export function newBlock(definition: WorkflowDefinition, kind: NewBlockKind, position: Position): Block {
+  const id = freeNodeId(definition, NEW_BLOCK[kind].prefix);
+  const output = firstFree('resultado', declaredNames(definition)).name;
   const scale = definition.settings.rounding.scale;
   const common = {
     id: id.name,
@@ -68,20 +69,22 @@ export function addBlock(definition: WorkflowDefinition, block: Block): Workflow
   return { ...definition, root: { ...definition.root, nodes: [...definition.root.nodes, block] } };
 }
 
-/** The definition with the blocks of `positions` moved (by id); the same definition when nothing moved. */
+/**
+ * The definition with the nodes of `positions` moved (by id, at any depth; a node inside a group never goes above or left
+ * of the group's content area); the same definition when nothing moved.
+ */
 export function moveBlocks(definition: WorkflowDefinition, positions: ReadonlyMap<string, Position>): WorkflowDefinition {
-  let moved = false;
-  const nodes = definition.root.nodes.map((node) => {
-    const position = positions.get(node.id);
-    if (!position || (position.x === node.position.x && position.y === node.position.y)) return node;
-    moved = true;
+  const parents = new Map(treeEntries(definition).map((entry) => [entry.node.id, entry.parent]));
+  return updateNodes(definition, (node) => {
+    const wanted = positions.get(node.id);
+    if (!wanted) return node;
+    const position = parents.get(node.id) ? clampInside(wanted) : wanted;
+    if (position.x === node.position.x && position.y === node.position.y) return node;
     return { ...node, position: { x: position.x, y: position.y } };
   });
-  return moved ? { ...definition, root: { ...definition.root, nodes } } : definition;
 }
 
-/** The definition without the block; the same definition when it is not there. */
+/** The definition without the node (a group goes with everything inside it); the same definition when it is not there. */
 export function removeBlock(definition: WorkflowDefinition, id: string): WorkflowDefinition {
-  if (!definition.root.nodes.some((node) => node.id === id)) return definition;
-  return { ...definition, root: { ...definition.root, nodes: definition.root.nodes.filter((node) => node.id !== id) } };
+  return findEntry(definition, id) ? removeNode(definition, id) : definition;
 }

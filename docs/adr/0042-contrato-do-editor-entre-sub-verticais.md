@@ -1,6 +1,6 @@
 # 0042. Sub-verticais do editor falam com o rascunho só por `useDraftEditor()` e `useProblemCounts()`
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md): peças exportadas por `properties/index.ts`)
+- **Status:** aceita, revisar no checkpoint (complementada por [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md): peças exportadas por `properties/index.ts`; e por [0053](0053-use-draft-editor-expoe-groups.md): `groups`)
 - **Data:** 2026-11-20
 - **Quem decidiu:** orquestração (tarefa F50)
 - **Relacionadas:** ADRs 0003, 0009, 0025, 0038, 0041

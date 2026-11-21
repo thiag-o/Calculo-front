@@ -1,10 +1,13 @@
-// The canvas nodes (estilos.md §8): the Calculation and Decision Table blocks, and the Entradas and Saída bars.
+// The canvas nodes (estilos.md §8): the Calculation, Decision Table and Fonte blocks, the groups (editor/groups), and the
+// Entradas and Saída bars.
 import { Handle, Position as Side, type Node, type NodeProps } from '@xyflow/react';
 import { memo } from 'react';
 import { textClasses } from '../../design-system';
+import { GroupBoxNode, type GroupBoxNodeType } from '../groups';
 import type { BlockView, InputRow, OutputRow, Port } from './graph';
 import { AlertIcon } from './icons';
-import { BLOCK_KIND_LABELS, problemsText } from './messages';
+import { blockKindLabel, problemsText } from './messages';
+import { NodeMenu } from './NodeMenu';
 
 export interface BlockData extends Record<string, unknown> {
   view: BlockView;
@@ -24,7 +27,7 @@ export interface OutputBarData extends Record<string, unknown> {
 export type BlockNodeType = Node<BlockData, 'block'>;
 export type InputsBarNodeType = Node<InputsBarData, 'inputs'>;
 export type OutputBarNodeType = Node<OutputBarData, 'output'>;
-export type CanvasNode = BlockNodeType | InputsBarNodeType | OutputBarNodeType;
+export type CanvasNode = BlockNodeType | GroupBoxNodeType | InputsBarNodeType | OutputBarNodeType;
 
 /** The red icon and the number of problems (estilos §8, "Erro de validação"). */
 function ProblemMark({ count }: { count: number }) {
@@ -55,19 +58,24 @@ function PortRow({ port, side }: { port: Port; side: 'in' | 'out' }) {
   );
 }
 
-/** A Calculation or a Decision Table: category square, name, type, problems, and the ports it reads and produces. */
-export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<BlockNodeType>) {
+/**
+ * A Calculation, a Decision Table or a Fonte: category square, name, type, problems, the menu, and the ports it reads and
+ * produces. A Fonte's left ports are its links (the variables it looks the dataset up by) and its right ports, its outputs.
+ */
+export const BlockNode = memo(function BlockNode({ id, data, selected }: NodeProps<BlockNodeType>) {
   const { block, reads, outputs } = data.view;
+  const isSource = block.type === 'source';
   return (
     <div className="fc-canvas-block" data-kind={block.type} data-selected={selected ? 'true' : undefined}>
       <div className="fc-canvas-block-head">
         <span className="fc-canvas-category" data-kind={block.type} aria-hidden="true" />
         <span className={`fc-canvas-block-name ${textClasses({ variant: 'mono-13', medium: true })}`}>{block.name}</span>
-        <span className="fc-canvas-block-kind">{BLOCK_KIND_LABELS[block.type]}</span>
+        <span className="fc-canvas-block-kind">{blockKindLabel(block)}</span>
         <ProblemMark count={data.problems} />
+        <NodeMenu id={id} name={block.name || block.id} />
       </div>
       {reads.length > 0 ? (
-        <ul className="fc-canvas-ports" aria-label="Lê">
+        <ul className="fc-canvas-ports" aria-label={isSource ? 'Liga por' : 'Lê'}>
           {reads.map((port) => (
             <PortRow key={port.handle} port={port} side="in" />
           ))}
@@ -79,6 +87,12 @@ export const BlockNode = memo(function BlockNode({ data, selected }: NodeProps<B
             <PortRow key={port.handle} port={port} side="out" />
           ))}
         </ul>
+      ) : null}
+      {block.type === 'source' && block.mode === 'filter' ? (
+        // A Fonte Filtro brings no variable: it only decides whether the record goes on.
+        <p className={`fc-canvas-bar-empty ${textClasses({ variant: 'label-12', emphasis: 'secondary' })}`}>
+          {block.exists === false ? 'Só registros sem linha (NÃO EXISTE)' : 'Só registros com linha (EXISTE)'}
+        </p>
       ) : null}
     </div>
   );
@@ -132,4 +146,4 @@ export const OutputBarNode = memo(function OutputBarNode({ data, selected }: Nod
   );
 });
 
-export const NODE_TYPES = { block: BlockNode, inputs: InputsBarNode, output: OutputBarNode };
+export const NODE_TYPES = { block: BlockNode, groupBox: GroupBoxNode, inputs: InputsBarNode, output: OutputBarNode };

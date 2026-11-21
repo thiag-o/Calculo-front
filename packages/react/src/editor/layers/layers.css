@@ -80,8 +80,13 @@
   background-color: var(--fc-cat-decision);
 }
 
-.fc-layers-category[data-kind='inputs'] {
+.fc-layers-category[data-kind='inputs'],
+.fc-layers-category[data-kind='source'] {
   background-color: var(--fc-cat-source);
+}
+
+.fc-layers-category[data-kind='group'] {
+  background-color: var(--fc-cat-group);
 }
 
 .fc-layers-category[data-kind='output'] {

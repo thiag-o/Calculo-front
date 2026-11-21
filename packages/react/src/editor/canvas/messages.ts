@@ -1,11 +1,17 @@
 // Texts of the canvas on screen (pt-BR).
-import type { BlockKind } from './graph';
+import type { Block, NewBlockKind } from './graph';
 
-/** The block type beside its name (11px, tertiary) and in the toolbar. */
-export const BLOCK_KIND_LABELS: Readonly<Record<BlockKind, string>> = {
+/** The block type in the toolbar and beside the name of a new block. */
+export const BLOCK_KIND_LABELS: Readonly<Record<NewBlockKind, string>> = {
   calculation: 'Cálculo',
   decision_table: 'Tabela de Decisão',
 };
+
+/** The block type beside its name (11px, tertiary): "Cálculo", "Tabela de Decisão", "Fonte Linear", "Fonte Filtro". */
+export function blockKindLabel(block: Block): string {
+  if (block.type === 'source') return block.mode === 'filter' ? 'Fonte Filtro' : 'Fonte Linear';
+  return BLOCK_KIND_LABELS[block.type];
+}
 
 /** "1 problema", "3 problemas". */
 export function problemsText(count: number): string {
@@ -13,8 +19,8 @@ export function problemsText(count: number): string {
 }
 
 /** The accessible name of a block on the canvas: "Pontos, Cálculo, 1 problema". */
-export function blockLabel(name: string, kind: BlockKind, problems: number): string {
-  return [name, BLOCK_KIND_LABELS[kind], problems > 0 ? problemsText(problems) : null].filter(Boolean).join(', ');
+export function blockLabel(name: string, block: Block, problems: number): string {
+  return [name, blockKindLabel(block), problems > 0 ? problemsText(problems) : null].filter(Boolean).join(', ');
 }
 
 /**
@@ -43,7 +49,8 @@ export function blockRemovedText(name: string): string {
 }
 
 /** What the keyboard does on a block (its `aria-describedby`). */
-export const BLOCK_KEYS_HELP = 'Enter abre as propriedades, as setas movem o bloco, Delete remove e Esc tira a seleção.';
+export const BLOCK_KEYS_HELP =
+  'Enter abre as propriedades, as setas movem o bloco, Delete remove e Esc tira a seleção. Shift + Espaço junta o bloco à seleção para agrupar e Shift + F10 abre o menu do bloco.';
 export const BLOCK_KEYS_HELP_READ_ONLY = 'Enter abre as propriedades e Esc tira a seleção.';
 
 /** The announcement after a block moved by the keyboard. */

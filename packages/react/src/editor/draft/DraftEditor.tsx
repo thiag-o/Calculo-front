@@ -10,6 +10,7 @@ import {
   type AnalysisTarget,
   type Dependency,
   type Draft,
+  type GroupInterface,
   type DraftSymbol,
   type WorkflowDefinition,
   type WorkflowProblem,
@@ -74,6 +75,11 @@ export interface DraftEditorValue {
   dependencies: readonly Dependency[];
   /** The node ids in run order (topological), from the same analysis or save; empty with a cycle. */
   order: readonly string[];
+  /**
+   * The derived Input, the Output and the inner order of each group (`groups` of the same analysis or save): the canvas
+   * draws the group's Input bar from here, never from the formulas. A group added after the analysis has no entry yet.
+   */
+  groups: readonly GroupInterface[];
   /**
    * The definition those problems were found in. Their `path` (`root.nodes[1]…`) and positions refer to it, not to
    * `definition`, while the analysis of the latest change has not come back.
@@ -142,6 +148,7 @@ interface AnalysisResult {
   symbols: readonly DraftSymbol[];
   dependencies: readonly Dependency[];
   order: readonly string[];
+  groups: readonly GroupInterface[];
 }
 
 function itemExists(definition: WorkflowDefinition, item: EditorItem): boolean {
@@ -189,6 +196,7 @@ export function DraftEditorProvider({ draft, readOnly, owner = '', unsaved = nul
     symbols: draft.symbols,
     dependencies: draft.dependencies,
     order: draft.order,
+    groups: draft.groups,
   }));
   /** The local version on screen (the `live.version` of the last render). */
   const [version, setVersion] = useState(restoredVersion);
@@ -279,6 +287,7 @@ export function DraftEditorProvider({ draft, readOnly, owner = '', unsaved = nul
           symbols: saved.symbols,
           dependencies: saved.dependencies,
           order: saved.order,
+          groups: saved.groups,
         });
         // "Salvo há…" counts from this browser's clock: a server clock a little ahead would show "há 2 min" right away.
         setSave({ status: state.version === version ? 'saved' : 'pending', savedAt: new Date().toISOString(), error: null });
@@ -409,6 +418,7 @@ export function DraftEditorProvider({ draft, readOnly, owner = '', unsaved = nul
         symbols: fresh.symbols,
         dependencies: fresh.dependencies,
         order: fresh.order,
+        groups: fresh.groups,
       });
       setSave({ status: 'saved', savedAt: fresh.updated_at, error: null });
       setSelection((current) => (itemExists(fresh.definition, current.item) ? current : { item: WORKFLOW_ITEM, field: null }));
@@ -429,6 +439,7 @@ export function DraftEditorProvider({ draft, readOnly, owner = '', unsaved = nul
         symbols: analysis.data.symbols,
         dependencies: analysis.data.dependencies,
         order: analysis.data.order,
+        groups: analysis.data.groups,
       });
     }
   }, [analysis.data, analysisTarget, applyResult]);
@@ -467,6 +478,7 @@ export function DraftEditorProvider({ draft, readOnly, owner = '', unsaved = nul
       symbols: result.symbols,
       dependencies: result.dependencies,
       order: result.order,
+      groups: result.groups,
       analyzedDefinition: result.definition,
       problemsOutdated: result.version !== version,
       analysisFailed,
