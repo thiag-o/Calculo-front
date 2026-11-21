@@ -152,7 +152,11 @@ interface AnalysisResult {
 }
 
 function itemExists(definition: WorkflowDefinition, item: EditorItem): boolean {
-  return item.type !== 'node' || definition.root.nodes.some((node) => node.id === item.id);
+  if (item.type !== 'node') return true;
+  // At any depth: a node inside a group (inside another group) is still there.
+  const present = (nodes: WorkflowDefinition['root']['nodes']): boolean =>
+    nodes.some((node) => node.id === item.id || (node.type === 'group' && present(node.nodes)));
+  return present(definition.root.nodes);
 }
 
 export interface DraftEditorProviderProps {

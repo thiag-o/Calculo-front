@@ -64,6 +64,50 @@ export function newBlock(definition: WorkflowDefinition, kind: NewBlockKind, pos
   };
 }
 
+/** The most variables a Linear Fonte brings (the contract's limit). */
+const SOURCE_OUTPUTS_MAX = 100;
+
+/**
+ * A new Linear Fonte block over a catalog dataset, at `position`: it brings the variables of the dataset (up to 100, each
+ * with its catalog name, or a free one when the name is already a variable of the workflow), orders by the first one,
+ * has no link (a parameter table) and "Gerar erro" in both policies. The shape the contract asks (an output and an
+ * ordering at least), so the draft is never saved with a shape error (ADR 0046). `null` when the dataset has no variable.
+ */
+export function newSourceBlock(
+  definition: WorkflowDefinition,
+  datasetId: string,
+  variables: readonly { id: string; name: string }[],
+  position: Position,
+): Block | null {
+  const brought = variables.slice(0, SOURCE_OUTPUTS_MAX);
+  const first = brought[0];
+  if (!first) return null;
+  const id = freeNodeId(definition, 'src');
+  const taken = declaredNames(definition);
+  const outputs = brought.map((variable) => {
+    let name = variable.name;
+    for (let number = 2; taken.has(name); number++) name = `${variable.name}_${number}`;
+    taken.add(name);
+    return { variable_id: variable.id, name };
+  });
+  return {
+    id: id.name,
+    type: 'source',
+    name: `Fonte ${id.number}`,
+    description: null,
+    position: { x: position.x, y: position.y },
+    mode: 'linear',
+    dataset_id: datasetId,
+    links: [],
+    filters: [],
+    order_by: [{ variable_id: first.id, direction: 'asc' }],
+    no_match: 'error',
+    multiple_rows: 'error',
+    exists: null,
+    outputs,
+  };
+}
+
 /** The definition with the block at the end of `root.nodes`. */
 export function addBlock(definition: WorkflowDefinition, block: Block): WorkflowDefinition {
   return { ...definition, root: { ...definition.root, nodes: [...definition.root.nodes, block] } };

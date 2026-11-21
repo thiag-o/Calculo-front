@@ -2,7 +2,8 @@
 // Workflow editor (React Flow): canvas, layers, properties, blocks, groups and Decision Table.
 // This file is the vertical's public interface; the rest of the folder is private.
 
-// The editor screen: layout, canvas, layers, properties, the Decision Table grid and the Problemas and Calcular tabs.
+// The editor screen: layout, canvas, layers, properties (batch source, Fonte, group, Calculation, Decision Table), the grid and the
+// Problemas, Prévia and Calcular tabs.
 export { Editor } from './Editor';
 export type { EditorProps } from './Editor';
 

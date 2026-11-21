@@ -1,4 +1,5 @@
 import type { WorkflowDefinition, WorkflowProblem } from '../draft';
+import { locateNode } from './definition';
 
 /**
  * The problems are found in the analysed definition, and their `path` (`root.nodes[2].expression`) points into it. The
@@ -23,12 +24,12 @@ export function nodePathAt(index: number): string {
 }
 
 /**
- * Where the block `id` was in the analysed definition (`root.nodes[i]`), so its problems are found even after blocks
- * were added, removed or moved while the analysis of the latest change was on the way. `null` if it was not there yet.
+ * Where the block `id` was in the analysed definition (`root.nodes[i]`, or `root.nodes[i].nodes[j]` inside a group), so its
+ * problems are found even after blocks were added, removed or moved while the analysis of the latest change was on the
+ * way. `null` if it was not there yet.
  */
 export function analyzedNodePath(analyzed: WorkflowDefinition, id: string): string | null {
-  const index = analyzed.root.nodes.findIndex((node) => node.id === id);
-  return index < 0 ? null : nodePathAt(index);
+  return locateNode(analyzed, id)?.path ?? null;
 }
 
 /** The problems of exactly this field. */

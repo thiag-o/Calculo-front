@@ -49,7 +49,8 @@ import {
 } from '../groups';
 import { usePanelWidths } from '../layout';
 import { useProblemCounts } from '../problems';
-import { addBlock, freePosition, moveBlocks, newBlock, type Position } from './blocks';
+import { BATCH_SOURCE_PATH, isBatchSourceCode } from '../sources/batch-source';
+import { addBlock, freePosition, moveBlocks, newBlock, newSourceBlock, type Position } from './blocks';
 import { useBlockRemoval } from './BlockRemoval';
 import { useAnnouncement } from './announcement';
 import { keep, useStableList, type KeptObjects } from './keptObjects';
@@ -57,6 +58,7 @@ import { INPUTS_ID, OUTPUT_ID, canvasGraph, type Block, type CanvasGraph, type N
 import { BlocksIcon, FitIcon, ZoomInIcon, ZoomOutIcon } from './icons';
 import { BLOCK_KEYS_HELP, BLOCK_KEYS_HELP_READ_ONLY, blockAddedText, blockLabel, linkLabel, movedText } from './messages';
 import { NODE_TYPES, type CanvasNode } from './nodes';
+import { NewSourceDialog } from './NewSourceDialog';
 import { NodeMenu, NodeMenuContext, type NodeMenuState } from './NodeMenu';
 import { CanvasToolbar } from './CanvasToolbar';
 import { RUN_CLEARED_TEXT, RUN_SHOWN_TEXT, withRunStatus } from './run-values/messages';
@@ -177,7 +179,7 @@ function definitionPosition(position: Position, parent: string | undefined): Pos
 }
 
 function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
-  const { definition, symbols, dependencies, groups, selection, select, change, readOnly } = useDraftEditor();
+  const { definition, symbols, dependencies, groups, problems, selection, select, change, readOnly } = useDraftEditor();
   const counts = useProblemCounts();
   const flow = useReactFlow();
   const frame = useRef<HTMLDivElement>(null);
@@ -191,6 +193,9 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
   const [pickedIds, setPickedIds] = useState<ReadonlySet<string>>(NO_PICK);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [moving, setMoving] = useState<string | null>(null);
+  // The "Fonte" button asks for the dataset first, in a dialog.
+  const [addingSource, setAddingSource] = useState(false);
+  const sourceButton = useRef<HTMLElement | null>(null);
   // The selection came from the canvas itself (no need to bring the block into view).
   const selectedHere = useRef(false);
   const lasso = useRef<Set<string> | null>(null);
@@ -246,21 +251,24 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
     const cache = nodeCache.current;
     const cached = (id: string, parts: readonly unknown[], make: () => CanvasNode) => keep(cache, id, parts, make);
     const draggable = !readOnly;
-    const inputsProblems = counts.inputs;
+    // With a batch source the bar is the Fonte do lote: the problems of the source (by `path` or by code) count on it too.
+    const batchSource = definition.root.batch_source ?? null;
+    const inputsProblems =
+      counts.inputs + (batchSource ? problems.filter((problem) => problem.path?.startsWith(BATCH_SOURCE_PATH) || isBatchSourceCode(problem)).length : 0);
     const outputProblems = counts.output;
     const { x: ix, y: iy } = graph.inputsPosition;
     const { x: ox, y: oy } = graph.outputPosition;
-    const inputs = cached(INPUTS_ID, [graph.inputs, inputsProblems, selectedId === INPUTS_ID, measured.get(INPUTS_ID), ix, iy], () => ({
+    const inputs = cached(INPUTS_ID, [graph.inputs, inputsProblems, selectedId === INPUTS_ID, measured.get(INPUTS_ID), ix, iy, batchSource, symbols], () => ({
       id: INPUTS_ID,
       type: 'inputs',
       position: { x: ix, y: iy },
-      data: { rows: graph.inputs, problems: inputsProblems },
+      data: { rows: graph.inputs, problems: inputsProblems, batchSource, symbols },
       selected: selectedId === INPUTS_ID,
       selectable: false,
       measured: measured.get(INPUTS_ID),
       draggable: false,
       deletable: false,
-      ariaLabel: 'Entradas',
+      ariaLabel: batchSource ? 'Fonte do lote' : 'Entradas',
       domAttributes: { 'aria-current': selectedId === INPUTS_ID ? 'true' : undefined },
     }));
     const blockViews = new Map(graph.blocks.map((view) => [view.block.id, view]));
@@ -328,7 +336,7 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
       domAttributes: { 'aria-current': selectedId === OUTPUT_ID ? 'true' : undefined },
     }));
     return [inputs, ...nodes, output];
-  }, [graph, counts, selectedId, picked, measured, dragged, readOnly, sizes, toggleCollapsed, runViews, runsOfGroups]);
+  }, [graph, counts, definition.root.batch_source, problems, symbols, selectedId, picked, measured, dragged, readOnly, sizes, toggleCollapsed, runViews, runsOfGroups]);
   const nodes = useStableList(nodeCache.current, builtNodes);
 
   const builtEdges = useMemo<Edge[]>(() => {
@@ -703,6 +711,24 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
     setAnnouncement(blockAddedText(block.name));
   };
 
+  /** The dataset is chosen in the "Fonte" dialog: the block is included over its variables, at the center of the view. */
+  const addSource = (datasetId: string, variables: readonly { id: string; name: string }[]) => {
+    const box = frame.current?.getBoundingClientRect();
+    const center = flow.screenToFlowPosition({ x: (box?.left ?? 0) + (box?.width ?? 0) / 2, y: (box?.top ?? 0) + (box?.height ?? 0) / 2 });
+    let added: Block | null = null;
+    change((current) => {
+      const block = newSourceBlock(current, datasetId, variables, freePosition(current, center));
+      if (!block) return current;
+      added = block;
+      return addBlock(current, block);
+    });
+    setAddingSource(false);
+    const block = added as Block | null;
+    if (!block) return;
+    choose({ type: 'node', id: block.id });
+    setAnnouncement(blockAddedText(block.name));
+  };
+
   // New values of a run on the canvas are announced (not when the canvas mounts with them, as after the grid closes).
   const shownViews = useRef(runViews);
   useEffect(() => {
@@ -801,6 +827,10 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
             <Panel position="bottom-center" className="fc-canvas-toolbar-panel">
               <CanvasToolbar
                 onAdd={addAtCenter}
+                onAddSource={() => {
+                  sourceButton.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                  setAddingSource(true);
+                }}
                 compact={compact}
                 onGroup={() => groupThese(toGroup)}
                 groupReason={groupReason(definition, toGroup) ?? undefined}
@@ -812,6 +842,13 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
           {announcement}
         </div>
         {removal.dialog}
+        {addingSource && !readOnly ? (
+          <NewSourceDialog
+            onCreate={(dataset, variables) => addSource(dataset.id, variables)}
+            onClose={() => setAddingSource(false)}
+            focusOnClose={() => sourceButton.current ?? frame.current}
+          />
+        ) : null}
         {movingNode ? (
           <MoveToGroupDialog
             name={movingNode.name || movingNode.id}

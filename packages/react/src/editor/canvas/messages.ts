@@ -7,6 +7,21 @@ export const BLOCK_KIND_LABELS: Readonly<Record<NewBlockKind, string>> = {
   decision_table: 'Tabela de Decisão',
 };
 
+/** The toolbar button that includes a Fonte (it asks for the dataset first, so it is not a `NewBlockKind`). */
+export const SOURCE_TOOL_LABEL = 'Fonte';
+
+/** The dialog of the Fonte button. */
+export const NEW_SOURCE_TITLE = 'Incluir bloco Fonte';
+export const NEW_SOURCE_DESCRIPTION = 'Escolha o dataset do catálogo. O bloco traz as variáveis dele, e você ajusta a ligação, os filtros e a ordenação nas propriedades.';
+export const NEW_SOURCE_CONFIRM = 'Incluir Fonte';
+export const NEW_SOURCE_NO_VARIABLES = 'Este dataset não tem variáveis. Crie as variáveis no catálogo para incluir uma Fonte Linear.';
+export const NEW_SOURCE_VARIABLES_ERROR = 'Não foi possível carregar as variáveis do dataset.';
+
+/** "Dataset: Produtos · 3 variáveis". */
+export function newSourceDatasetText(name: string, variables: number): string {
+  return `${name} · ${variables === 1 ? '1 variável' : `${variables.toLocaleString('pt-BR')} variáveis`}`;
+}
+
 /** The block type beside its name (11px, tertiary): "Cálculo", "Tabela de Decisão", "Fonte Linear", "Fonte Filtro". */
 export function blockKindLabel(block: Block): string {
   if (block.type === 'source') return block.mode === 'filter' ? 'Fonte Filtro' : 'Fonte Linear';

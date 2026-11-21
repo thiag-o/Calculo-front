@@ -16,7 +16,7 @@ import {
   type SimulatedApi,
 } from './draft/editor.test-support';
 
-// The editor as the module mounts it: layers, canvas, properties, the Decision Table grid and the Problemas and Calcular tabs.
+// The editor as the module mounts it: layers, canvas, properties, the Decision Table grid and the Problemas, Prévia and Calcular tabs.
 
 const WORKFLOW_ID = DRAFT.workflow_id;
 const SLOW = { timeout: 4000 };
@@ -43,7 +43,7 @@ const region = () => screen.findByRole('region', { name: 'Editor de Pontuação 
 const tabNames = (editor: HTMLElement) => within(editor).getAllByRole('tab').map((tab) => tab.textContent);
 
 describe('Editor, montagem', () => {
-  it('monta as camadas, o canvas, as propriedades do workflow e as abas Problemas e Calcular', async () => {
+  it('monta as camadas, o canvas, as propriedades do workflow e as abas Problemas, Prévia e Calcular', async () => {
     open();
     const editor = await region();
 
@@ -52,7 +52,7 @@ describe('Editor, montagem', () => {
     expect(within(editor).getByRole('treeitem', { name: /Elegibilidade/ })).toBeInTheDocument();
     // Nothing selected: the workflow settings.
     expect(within(editor).getByText('Política de erro')).toBeInTheDocument();
-    expect(tabNames(editor)).toEqual(['Problemas', 'Calcular']);
+    expect(tabNames(editor)).toEqual(['Problemas', 'Prévia', 'Calcular']);
     expect(within(editor).getByText('Nenhum problema')).toBeInTheDocument();
   });
 
@@ -77,7 +77,7 @@ describe('Editor, montagem', () => {
 });
 
 describe('Editor, por permissão', () => {
-  it('quem só vê o workflow abre o editor para leitura, sem Calcular', async () => {
+  it('quem só vê o workflow abre o editor para leitura, sem Prévia e sem Calcular', async () => {
     api = simulateApi(VIEWER_PERMISSIONS);
     open();
     const editor = await region();
@@ -87,13 +87,13 @@ describe('Editor, por permissão', () => {
     expect(within(editor).queryByRole('toolbar', { name: 'Incluir bloco' })).not.toBeInTheDocument();
   });
 
-  it('quem tem simulations.run vê Calcular e não edita', async () => {
+  it('quem tem simulations.run vê Prévia e Calcular e não edita', async () => {
     api = simulateApi(['workflows.view', 'simulations.run']);
     const { user } = open();
     const editor = await region();
 
     expect(within(editor).getByText('Só leitura')).toBeInTheDocument();
-    expect(tabNames(editor)).toEqual(['Problemas', 'Calcular']);
+    expect(tabNames(editor)).toEqual(['Problemas', 'Prévia', 'Calcular']);
     await user.click(within(editor).getByRole('tab', { name: 'Calcular' }));
     expect(await within(editor).findByRole('button', { name: 'Calcular' }, SLOW)).toBeInTheDocument();
   });

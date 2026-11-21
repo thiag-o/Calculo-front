@@ -186,6 +186,28 @@ Nomes nascidos já em inglês no épico 4, pelo vocabulário do back. A coluna d
 | seletor "cliente › workflow" do menu lateral | `WorkflowContext` (`module/shell/WorkflowContext.tsx`) |
 | ícones do menu | `WorkflowsIcon`, `OverviewIcon` (`module/icons.tsx`) |
 
+## Fontes, grupos e execução unitária no editor (épico 5, F63 a F69)
+
+Nomes nascidos já em inglês no épico 5, pelo vocabulário do back (`backend/docs/glossario.md`). A coluna da esquerda é o conceito. Tudo fica na vertical `editor`, uma sub-vertical por funcionalidade (E5-16).
+
+| Conceito | Nome no código |
+|---|---|
+| sub-verticais do épico 5 | `editor/sources` (`batch-source`, `source-block`, `filters`), `editor/groups`, `editor/preview`, `editor/unit-run`, `editor/values` |
+| fonte do lote (o dataset cujas linhas são os registros) | `batch_source` (`BatchSource`), `<BatchSourceProperties>`, `<BatchSourceBar>` |
+| barra Fonte do lote (toma o lugar da barra Entradas no canvas) | `InputsBarNode` com `data.batchSource`, id `@inputs` (`INPUTS_ID`), item de seleção `{ type: 'inputs' }` |
+| entradas declaradas × fonte do lote (origem dos valores) | `RecordsOrigin` (`declared` \| `batch`), em `properties/workflow` |
+| chave do registro, filtros e ordenação da fonte do lote | `key`, `filters`, `order_by` (`BatchSourceFilter`, `BatchSourceOrder`); `renderFilters` (`BatchSourceFiltersProps`) |
+| bloco Fonte (modo Linear \| Filtro) | `SourceNode` (`LinearSourceNode`, `FilterSourceNode`), `<SourceBlockProperties>`, `findSourceNode` |
+| lista de filtros compartilhada | `<FilterList>`, `FilterEntry`, `FilterVariable` |
+| botão Fonte da barra de ferramentas (escolhe o dataset antes de incluir) | `onAddSource`, `<NewSourceDialog>`, `newSourceBlock` (`canvas/`) |
+| grupo (contêiner com Input derivado e Output) | `GroupNode` (`type: 'group'`, `collapsed`, `outputs`), `GroupInterface` (`groups` da análise), `<GroupProperties>`, `GroupBoxNode` |
+| Agrupar, Desagrupar, "Mover para o grupo…", "Tirar do grupo" | `groupNodes`, `ungroup`, `moveToGroup`, `takeOutOfGroup` |
+| propriedades do Cálculo, da Tabela, da Fonte, do grupo e da fonte do lote no painel | `PropertiesPanel` (`decisionTable`, `sourceBlock`, `group`, `batchSource`, `renderFilters`), `locateNode` |
+| aba Prévia do painel inferior | `<PreviewPanel>`, `PREVIEW_TAB`, `canRunPreview`, `useLastPreview`, `Preview` |
+| Calcular por registro (com fonte do lote) | `RecordRunPanel`, `record_key`, `useUnitRun`, `UnitRunTrace` |
+| último cálculo em memória e valores no canvas | `useLastUnitRun`, `canvas/run-values` (`useRunValues`, `RunBanner`) |
+| formatadores de valor (número e data) | `editor/values` (`formatApiNumber`, `readBrazilianNumber`, `formatDate`, `formatDateTime`) |
+
 ## Chaves de cache (TanStack Query)
 
 | Português | Inglês |

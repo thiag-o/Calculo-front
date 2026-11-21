@@ -308,3 +308,16 @@
     transition: none;
   }
 }
+
+/* The dialog of the "Fonte" button: the chosen dataset and what to do with it. */
+.fc-canvas-new-source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+.fc-canvas-new-source-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--fc-space-8);
+}

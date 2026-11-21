@@ -30,26 +30,53 @@ export function cutCell(value: string): string {
   return value.slice(0, highSurrogate ? MAX_CELL_LENGTH - 1 : MAX_CELL_LENGTH);
 }
 
-/** The Decision Table with this id, and its position in `root.nodes`. */
+type AnyNode = WorkflowDefinition['root']['nodes'][number];
+
+/** The Decision Table with this id, at any depth of the groups (and its position in the list that holds it). */
 export function findTable(definition: WorkflowDefinition, nodeId: string): { node: DecisionTableNode; index: number } | null {
-  const index = definition.root.nodes.findIndex((node) => node.id === nodeId);
-  const node = definition.root.nodes[index];
-  return node && node.type === 'decision_table' ? { node, index } : null;
+  const search = (nodes: readonly AnyNode[]): { node: DecisionTableNode; index: number } | null => {
+    for (const [index, node] of nodes.entries()) {
+      if (node.id === nodeId) return node.type === 'decision_table' ? { node, index } : null;
+      if (node.type === 'group') {
+        const found = search(node.nodes);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+  return search(definition.root.nodes);
 }
 
-/** The definition with the table changed by `update` (the same definition when the table is not there). */
+/**
+ * The definition with the table changed by `update`, wherever it is (inside groups too); the same definition when the
+ * table is not there or did not change. The groups around it are new objects; everything else stays the same.
+ */
 export function updateTable(
   definition: WorkflowDefinition,
   nodeId: string,
   update: (node: DecisionTableNode) => DecisionTableNode,
 ): WorkflowDefinition {
-  const found = findTable(definition, nodeId);
-  if (!found) return definition;
-  const next = update(found.node);
-  if (next === found.node) return definition;
-  const nodes = definition.root.nodes.slice();
-  nodes[found.index] = next;
-  return { ...definition, root: { ...definition.root, nodes } };
+  const inside = (nodes: readonly AnyNode[]): readonly AnyNode[] => {
+    let changed = false;
+    const next = nodes.map((node): AnyNode => {
+      if (node.type === 'decision_table' && node.id === nodeId) {
+        const updated = update(node);
+        if (updated !== node) changed = true;
+        return updated;
+      }
+      if (node.type === 'group') {
+        const children = inside(node.nodes);
+        if (children !== node.nodes) {
+          changed = true;
+          return { ...node, nodes: [...children] };
+        }
+      }
+      return node;
+    });
+    return changed ? next : nodes;
+  };
+  const nodes = inside(definition.root.nodes);
+  return nodes === definition.root.nodes ? definition : { ...definition, root: { ...definition.root, nodes: [...nodes] } };
 }
 
 /** How many columns the grid has: the conditions, then the results. */

@@ -3,7 +3,9 @@
 import { Handle, Position as Side, type Node, type NodeProps } from '@xyflow/react';
 import { memo } from 'react';
 import { textClasses } from '../../design-system';
+import type { DraftSymbol } from '../draft';
 import { GroupBoxNode, type GroupBoxNodeType } from '../groups';
+import { BatchSourceBar, type BatchSource } from '../sources/batch-source';
 import type { BlockView, InputRow, OutputRow, Port } from './graph';
 import { AlertIcon } from './icons';
 import { blockKindLabel, problemsText } from './messages';
@@ -21,6 +23,10 @@ export interface BlockData extends Record<string, unknown> {
 export interface InputsBarData extends Record<string, unknown> {
   rows: InputRow[];
   problems: number;
+  /** The batch source of the workflow: its bar takes the place of the Entradas one (E5-17). */
+  batchSource?: BatchSource | null;
+  /** The symbols of the analysis, for the type of each variable the batch source brings. */
+  symbols?: readonly DraftSymbol[];
 }
 
 export interface OutputBarData extends Record<string, unknown> {
@@ -109,8 +115,25 @@ export const BlockNode = memo(function BlockNode({ id, data, selected }: NodePro
   );
 });
 
-/** The Entradas bar, left of the blocks: the declared inputs, a multiple one with its fields. */
+/**
+ * The Entradas bar, left of the blocks: the declared inputs, a multiple one with its fields. With a batch source it is the
+ * Fonte do lote bar instead: the dataset and the variables it brings, the key ones with the key icon.
+ */
 export const InputsBarNode = memo(function InputsBarNode({ data, selected }: NodeProps<InputsBarNodeType>) {
+  if (data.batchSource) {
+    return (
+      <BatchSourceBar
+        source={data.batchSource}
+        symbols={data.symbols ?? []}
+        selected={selected}
+        problems={<ProblemMark count={data.problems} />}
+        renderHandle={(row) => (
+          // The variable leaves through the same `var:<name>` handle a declared input has, so the links keep their ids.
+          <Handle type="source" position={Side.Right} id={`var:${row.name}`} isConnectable={false} className="fc-canvas-port-dot" aria-hidden="true" />
+        )}
+      />
+    );
+  }
   return (
     <div className="fc-canvas-bar" data-bar="inputs" data-selected={selected ? 'true' : undefined}>
       <div className="fc-canvas-bar-head">

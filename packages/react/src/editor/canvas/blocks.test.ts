@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkflowDefinition } from '../draft';
-import { addBlock, freePosition, moveBlocks, newBlock, removeBlock } from './blocks';
+import { addBlock, freePosition, moveBlocks, newBlock, newSourceBlock, removeBlock } from './blocks';
 import { exampleDefinition } from './canvas.test-support';
 
 describe('newBlock', () => {
@@ -90,5 +90,53 @@ describe('edições da definição', () => {
     expect(next.root.nodes[0]).toBe(definition.root.nodes[0]);
     expect(next.root.nodes[1]).toBe(definition.root.nodes[2]);
     expect(removeBlock(definition, 'nao_existe')).toBe(definition);
+  });
+});
+
+describe('newSourceBlock', () => {
+  const variables = [
+    { id: '00000000-0000-4000-8000-000000000101', name: 'loja' },
+    { id: '00000000-0000-4000-8000-000000000102', name: 'meta' },
+  ];
+
+  it('a Fonte nasce Linear sobre o dataset, com as variáveis dele, ordenada pela primeira e sem ligação', () => {
+    const block = newSourceBlock(exampleDefinition(), 'dataset-1', variables, { x: 16, y: 32 });
+    expect(block).toEqual({
+      id: 'src_1',
+      type: 'source',
+      name: 'Fonte 1',
+      description: null,
+      position: { x: 16, y: 32 },
+      mode: 'linear',
+      dataset_id: 'dataset-1',
+      links: [],
+      filters: [],
+      order_by: [{ variable_id: variables[0]!.id, direction: 'asc' }],
+      no_match: 'error',
+      multiple_rows: 'error',
+      exists: null,
+      outputs: [
+        { variable_id: variables[0]!.id, name: 'loja' },
+        { variable_id: variables[1]!.id, name: 'meta' },
+      ],
+    });
+  });
+
+  it('um nome de variável que o workflow já usa ganha um sufixo livre, em vez de repetir', () => {
+    const block = newSourceBlock(exampleDefinition(), 'dataset-1', [{ id: 'a', name: 'pontos' }, { id: 'b', name: 'pontos' }], { x: 0, y: 0 });
+    expect(block?.type === 'source' && block.mode === 'linear' ? block.outputs.map((output) => output.name) : []).toEqual(['pontos_2', 'pontos_3']);
+  });
+
+  it('o id e o nome do bloco saem livres entre todos os nós, e um dataset sem variáveis não gera bloco', () => {
+    const first = newSourceBlock(exampleDefinition(), 'dataset-1', variables, { x: 0, y: 0 })!;
+    const second = newSourceBlock(addBlock(exampleDefinition(), first), 'dataset-1', variables, { x: 0, y: 0 })!;
+    expect([second.id, second.name]).toEqual(['src_2', 'Fonte 2']);
+    expect(newSourceBlock(exampleDefinition(), 'dataset-1', [], { x: 0, y: 0 })).toBeNull();
+  });
+
+  it('traz no máximo 100 variáveis, o limite do contrato', () => {
+    const many = Array.from({ length: 120 }, (_, index) => ({ id: `v${index}`, name: `col_${index}` }));
+    const block = newSourceBlock(exampleDefinition(), 'dataset-1', many, { x: 0, y: 0 });
+    expect(block?.type === 'source' && block.mode === 'linear' ? block.outputs : []).toHaveLength(100);
   });
 });

@@ -47,7 +47,7 @@ function problemsText(count: number): string {
  */
 function treeRows(definition: WorkflowDefinition, counts: ProblemCounts): Row[] {
   const rows: Row[] = [];
-  const { inputs, nodes, output } = definition.root;
+  const { inputs, nodes, output, batch_source: batchSource } = definition.root;
   const top = 2 + nodes.length;
   const inputsItem: EditorItem = { type: 'inputs' };
   const outputItem: EditorItem = { type: 'output' };
@@ -57,14 +57,30 @@ function treeRows(definition: WorkflowDefinition, counts: ProblemCounts): Row[] 
     level: 1,
     parent: null,
     kind: 'inputs',
-    label: 'Entradas',
+    // With a batch source, the bar of the canvas is the Fonte do lote and brings the variables it names (E5-17).
+    label: batchSource ? 'Fonte do lote' : 'Entradas',
     item: inputsItem,
     own: true,
     problems: counts.inputs,
-    hasChildren: inputs.length > 0,
+    hasChildren: batchSource ? batchSource.outputs.length > 0 : inputs.length > 0,
     position: 1,
     siblings: top,
   });
+  batchSource?.outputs.forEach((variable, index) =>
+    rows.push({
+      key: `input:${index}`,
+      level: 2,
+      parent: 'inputs',
+      kind: 'input',
+      label: variable.name,
+      item: inputsItem,
+      own: false,
+      problems: 0,
+      hasChildren: false,
+      position: index + 1,
+      siblings: batchSource.outputs.length,
+    }),
+  );
   inputs.forEach((input, index) => {
     const key = `input:${index}`;
     rows.push({

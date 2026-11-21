@@ -1,5 +1,6 @@
 // Sub-vertical "properties" of the "editor" vertical (ADR 0003): the Propriedades panel, with the form of the selected item
-// (workflow settings, declared inputs, output fields and Calculation). Every change goes to the draft through
+// (workflow settings, declared inputs, output fields and Calculation; the Fonte, group, Decision Table and batch source forms
+// come in by the panel's render props, from their own sub-verticals). Every change goes to the draft through
 // useDraftEditor().change (ADR 0042); each problem shows beside its field, by `path`.
 export { PropertiesPanel } from './PropertiesPanel';
 export type { PropertiesPanelProps } from './PropertiesPanel';
@@ -32,3 +33,4 @@ export {
   NAME_TOOLTIP,
 } from './labels';
 export { NAME_PATTERN, withType } from './definition';
+export type { DecisionTableNode, DefinitionNode, GroupNode, SourceBlockNode } from './definition';

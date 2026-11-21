@@ -6,6 +6,7 @@ import {
   NODE_NAME_MAX,
   DESCRIPTION_MAX,
   NAME_PATTERN,
+  locateNode,
   updateCalculation,
   variableNameCounts,
   withType,
@@ -35,7 +36,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
   const path = (field: string) => (at === null ? null : `${at}.${field}`);
   const fieldProblems = (field: string) => problemsAt(problems, path(field));
 
-  const analyzedNode = analyzedDefinition.root.nodes.find((candidate) => candidate.id === node.id);
+  const analyzedNode = locateNode(analyzedDefinition, node.id)?.node;
   const analyzedExpression = analyzedNode?.type === 'calculation' ? analyzedNode.expression : undefined;
 
   const { settings } = definition;

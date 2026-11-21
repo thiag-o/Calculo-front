@@ -136,3 +136,43 @@ describe('readersOf', () => {
     expect(readersOf('td_elegibilidade', definition, EXAMPLE_SYMBOLS, dependencies)).toBe(1);
   });
 });
+
+describe('canvasGraph com a fonte do lote', () => {
+  const symbols = [
+    { name: 'valor_item', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'batch_source', node_id: null, group_id: null },
+    { name: 'pontos', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_pontos', group_id: null },
+  ] as const;
+
+  function withBatchSource(): WorkflowDefinition {
+    const base = exampleDefinition();
+    const nodes = base.root.nodes.filter((node) => node.id === 'calc_pontos');
+    return {
+      ...base,
+      schema_version: 2,
+      root: {
+        ...base.root,
+        inputs: [],
+        nodes,
+        batch_source: {
+          dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',
+          key: ['valor_item'],
+          filters: [],
+          order_by: [{ variable: 'valor_item', direction: 'asc' }],
+          outputs: [{ variable_id: '9d2f5e3b-1a4c-4b6d-9e7f-2a3b4c5d6e03', name: 'valor_item' }],
+        },
+      },
+    };
+  }
+
+  it('a barra da esquerda tem as variáveis da fonte do lote, com o tipo da análise, e as ligações saem dela', () => {
+    const graph = canvasGraph(withBatchSource(), symbols, [{ node_id: 'calc_pontos', reads: ['valor_item'] }]);
+    expect(graph.inputs).toEqual([{ kind: 'linear', handle: 'var:valor_item', label: 'valor_item', type: 'decimal(2)' }]);
+    expect(graph.links.map((link) => `${link.source}.${link.name} -> ${link.target}`)).toContain(`${INPUTS_ID}.valor_item -> calc_pontos`);
+  });
+
+  it('sem a análise, a variável da fonte do lote aparece sem tipo e sem ligação', () => {
+    const graph = canvasGraph(withBatchSource(), [], []);
+    expect(graph.inputs).toEqual([{ kind: 'linear', handle: 'var:valor_item', label: 'valor_item', type: null }]);
+    expect(graph.links.map((link) => link.source)).not.toContain(INPUTS_ID);
+  });
+});

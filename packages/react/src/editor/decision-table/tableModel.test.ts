@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { definitionWith, table } from './decision-table.test-support';
 import { freeResultName } from '../draft';
+import { nestedDraft } from '../groups/groups.test-support';
 import {
   MAX_RULES,
   addCondition,
   addResult,
+  findTable,
   insertRule,
   moveRule,
   removeColumn,
@@ -88,5 +90,32 @@ describe('tableModel', () => {
     const next = updateTable(definition, 'td_elegibilidade', (node) => ({ ...node, name: 'Outra' }));
     expect(next.root.nodes[0]).toBe(definition.root.nodes[0]);
     expect(next.root.nodes[1]!.name).toBe('Outra');
+  });
+});
+
+describe('tableModel, Tabela dentro de grupos', () => {
+  const inner = () => nestedDraft().definition;
+
+  it('acha a Tabela em qualquer nível de grupo, e só ela (um Cálculo com o mesmo id não conta)', () => {
+    expect(findTable(inner(), 'td_elegibilidade')?.node.name).toBe('Elegibilidade');
+    expect(findTable(inner(), 'calc_pontos')).toBeNull();
+    expect(findTable(inner(), 'nao_existe')).toBeNull();
+  });
+
+  it('edita a Tabela de dentro de dois grupos, recriando só os grupos em volta', () => {
+    const definition = inner();
+    const outer = definition.root.nodes[0]!;
+    const bonus = definition.root.nodes[1]!;
+    const next = updateTable(definition, 'td_elegibilidade', (node) => ({ ...node, name: 'Elegível' }));
+    expect(findTable(next, 'td_elegibilidade')?.node.name).toBe('Elegível');
+    expect(next.root.nodes[1]).toBe(bonus);
+    expect(next.root.nodes[0]).not.toBe(outer);
+    const pontos = (d: typeof definition) => {
+      const campanha = d.root.nodes[0]!;
+      const grupo = campanha.type === 'group' ? campanha.nodes[0]! : null;
+      return grupo?.type === 'group' ? grupo.nodes[1] : null;
+    };
+    expect(pontos(next)).toBe(pontos(definition));
+    expect(updateTable(definition, 'td_elegibilidade', (node) => node)).toBe(definition);
   });
 });

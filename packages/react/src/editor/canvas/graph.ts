@@ -181,6 +181,22 @@ function inputRows(inputs: readonly DeclaredInput[]): InputRow[] {
   return rows;
 }
 
+/**
+ * The rows of the Fonte do lote bar, which takes the place of the Entradas bar (E5-17): one per variable brought, with the
+ * type the analysis gives it. They hand each name on through `var:<name>`, like a declared input.
+ */
+function batchSourceRows(source: NonNullable<WorkflowDefinition['root']['batch_source']>, byName: ReadonlyMap<string, DraftSymbol>): InputRow[] {
+  return source.outputs.map((output) => {
+    const symbol = byName.get(output.name);
+    return {
+      kind: 'linear',
+      handle: inputHandle(output.name),
+      label: output.name,
+      type: symbol?.type ? typeCode(symbol.type, symbol.scale) : null,
+    };
+  });
+}
+
 /** The first symbol of each name (a repeated name is already a problem; the first one wins, as in the analysis). */
 function symbolsByName(symbols: readonly DraftSymbol[]): Map<string, DraftSymbol> {
   const byName = new Map<string, DraftSymbol>();
@@ -336,7 +352,8 @@ export function canvasGraph(
     entries.map((entry) => entry.node.id),
     Object.is,
   );
-  const inputs = keepList(previous?.inputs, inputRows(definition.root.inputs), sameInputRow);
+  const batchSource = definition.root.batch_source;
+  const inputs = keepList(previous?.inputs, batchSource ? batchSourceRows(batchSource, byName) : inputRows(definition.root.inputs), sameInputRow);
   const output = keepList(
     previous?.output,
     definition.root.output.fields.map((field, index) => {
