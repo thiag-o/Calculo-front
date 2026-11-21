@@ -5,51 +5,10 @@
 // - the sidebar: names beside the icons from 1180 px, icons only below it.
 // The captures are overwritten on each run (no pixel comparison: the dates and ids vary); they are read by eye against
 // estilos.md §12 to §16.
-import { mkdirSync } from 'node:fs';
-import path from 'node:path';
-import type { Page } from '@playwright/test';
 import { mainNavigation } from '../epic-2/support/screens';
 import { SAMPLE_WORKFLOW } from '../epic-4/support/simulation';
 import { signIn } from '../support/screens';
-import {
-  FULL_MENU_WIDTH,
-  MIN_TEXT_CONTRAST,
-  THEMES,
-  VIEWPORT_HEIGHT,
-  WIDTHS,
-  contrastFailures,
-  expect,
-  horizontalOverflow,
-  menuState,
-  test,
-  type Theme,
-} from './support';
-
-const SCREENSHOTS = path.join(import.meta.dirname, '__screenshots__');
-
-/** Saves the capture and runs the checks on what is on screen. */
-async function inspect(page: Page, name: string, theme: Theme, width: number, options: { menu?: boolean } = {}): Promise<void> {
-  const label = `${name} · ${theme} · ${width}px`;
-  mkdirSync(SCREENSHOTS, { recursive: true });
-  await page.screenshot({ path: path.join(SCREENSHOTS, `${name}-${theme}-${width}.png`) });
-
-  expect.soft(await horizontalOverflow(page), `${label}: barra de rolagem horizontal`).toBe(0);
-  const contrast = await contrastFailures(page, MIN_TEXT_CONTRAST);
-  expect.soft(contrast.failures, `${label}: contraste de texto abaixo de ${MIN_TEXT_CONTRAST}:1`).toEqual([]);
-  for (const item of contrast.tertiary) {
-    test.info().annotations.push({ type: `terciário · ${label}`, description: `${item.where}: "${item.text}" (${item.ratio}:1)` });
-  }
-  if (options.menu) {
-    const menu = await menuState(page);
-    if (width < FULL_MENU_WIDTH) {
-      expect.soft(menu.sidebarWidth, `${label}: menu só com ícones (64 px)`).toBeLessThanOrEqual(64);
-      expect.soft(menu.visibleLabels, `${label}: nomes do menu visíveis abaixo de ${FULL_MENU_WIDTH}px`).toEqual([]);
-    } else {
-      expect.soft(menu.sidebarWidth, `${label}: menu com nomes (240 px)`).toBeGreaterThanOrEqual(240);
-      expect.soft(menu.visibleLabels.length, `${label}: nomes do menu a partir de ${FULL_MENU_WIDTH}px`).toBeGreaterThan(0);
-    }
-  }
-}
+import { THEMES, VIEWPORT_HEIGHT, WIDTHS, expect, inspect, test } from './support';
 
 for (const theme of THEMES) {
   for (const width of WIDTHS) {

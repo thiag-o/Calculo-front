@@ -1,9 +1,11 @@
 // Visual proof support (project `visual`): the three automatic checks, run inside the page, and the simulated fixture.
+import { mkdirSync } from 'node:fs';
+import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { Epic2Simulation, type InitialAccount } from '../epic-2/support/simulation';
 import { CatalogSimulation, type SampleDatabase } from '../epic-3/support/simulation';
 import { WorkflowSimulation } from '../epic-4/support/simulation';
-import { test as base, type E2EApi } from '../support/fixtures';
+import { expect, test as base, type E2EApi } from '../support/fixtures';
 
 /** Minimum text contrast (estilos.md §14): WCAG 2.2 AA, 4.5:1 for text. */
 export const MIN_TEXT_CONTRAST = 4.5;
@@ -228,4 +230,30 @@ export const test = base.extend<{ simulations: void }>({
   ],
 });
 
-export { expect } from '../support/fixtures';
+const SCREENSHOTS = path.join(import.meta.dirname, '__screenshots__');
+
+/** Saves the capture and runs the checks on what is on screen. */
+export async function inspect(page: Page, name: string, theme: Theme, width: number, options: { menu?: boolean } = {}): Promise<void> {
+  const label = `${name} · ${theme} · ${width}px`;
+  mkdirSync(SCREENSHOTS, { recursive: true });
+  await page.screenshot({ path: path.join(SCREENSHOTS, `${name}-${theme}-${width}.png`) });
+
+  expect.soft(await horizontalOverflow(page), `${label}: barra de rolagem horizontal`).toBe(0);
+  const contrast = await contrastFailures(page, MIN_TEXT_CONTRAST);
+  expect.soft(contrast.failures, `${label}: contraste de texto abaixo de ${MIN_TEXT_CONTRAST}:1`).toEqual([]);
+  for (const item of contrast.tertiary) {
+    test.info().annotations.push({ type: `terciário · ${label}`, description: `${item.where}: "${item.text}" (${item.ratio}:1)` });
+  }
+  if (options.menu) {
+    const menu = await menuState(page);
+    if (width < FULL_MENU_WIDTH) {
+      expect.soft(menu.sidebarWidth, `${label}: menu só com ícones (64 px)`).toBeLessThanOrEqual(64);
+      expect.soft(menu.visibleLabels, `${label}: nomes do menu visíveis abaixo de ${FULL_MENU_WIDTH}px`).toEqual([]);
+    } else {
+      expect.soft(menu.sidebarWidth, `${label}: menu com nomes (240 px)`).toBeGreaterThanOrEqual(240);
+      expect.soft(menu.visibleLabels.length, `${label}: nomes do menu a partir de ${FULL_MENU_WIDTH}px`).toBeGreaterThan(0);
+    }
+  }
+}
+
+export { expect };

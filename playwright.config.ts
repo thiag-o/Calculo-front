@@ -1,7 +1,7 @@
 // Playwright (repository root). Two projects that use the same test files in e2e/:
 // - simulated: API simulated by a fixture (page.route); runs at the front gate.
 // - real: real backend (E2E_API_URL) + shell; runs in the checkpoint integration test.
-// - visual: the screens of epics 1 to 4 in both themes and three widths (e2e/visual/), simulated; `pnpm e2e:visual`, outside
+// - visual: the screens of epics 1 to 5 in both themes and three widths (e2e/visual/), simulated; `pnpm e2e:visual`, outside
 //   `pnpm e2e` and run at every epic's gate.
 // `pnpm e2e:real` runs with 2 workers (in the package.json script): on this machine, 6 browsers, the Vite dev server and the API
 // together saturate CPU and memory, and the sign-ins time out (global session decision, F39, measured before F35 served the
