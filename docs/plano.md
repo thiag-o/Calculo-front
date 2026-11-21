@@ -1282,9 +1282,9 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - Aceite: testes de escolher pela amostra e pela chave digitada, de cada status, do trace aninhado, de `record_not_found` e do formulário do épico 4 intacto (os testes da F55 seguem verdes).
 
 **F68 · Editor: valores no canvas**
-- dep: F65, F67
+- dep: F65, F67, F94
 - modelo: opus
-- arquivos: `packages/react/src/editor/canvas/run-values/`, `packages/react/src/editor/canvas/nodes/`
+- arquivos: `packages/react/src/editor/canvas/run-values/`, e (D27) `packages/react/src/editor/canvas/nodes.tsx`, `packages/react/src/editor/canvas/WorkflowCanvas.tsx`, `packages/react/src/editor/groups/GroupBoxNode.tsx`, e no `packages/react/src/editor/unit-run/` só o store em memória do último trace com o `useLastUnitRun` exportado pelo `index.ts` (padrão das ADRs 0045 e 0056; o canvas depende do unit-run, nunca o contrário)
 - Fazer (E5-21): depois de um Calcular, os valores do trace no canvas:
   - as cores por status;
   - a "Regra N" na Tabela;
