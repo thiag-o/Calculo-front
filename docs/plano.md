@@ -1613,9 +1613,9 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - dep: B154, F102, F103
 - modelo: sonnet
 - arquivos: `packages/react/src/executions/detail/`, `packages/react/src/executions/records/`, `packages/react/src/executions/api/`, `packages/react/src/editor/unit-run/` (só para deixar opcionais as props que só o editor usa, como a seleção no canvas), `packages/react/src/api/generated/`, `e2e/support/contract.ts`
-- Fazer: a gaveta do trace do painel da execução lê a definição congelada (`GET /v1/executions/{id}/definition`, B154) e mostra o trace com o nome dos blocos e os números no padrão brasileiro, como o Calcular do editor. A ligação continua pela render prop da F102, ligada no `module/` pela F104 (ADR 0062). Os erros sem nó filtram com `node_id=none`, e o nome do CSV vem do `Content-Disposition`.
+- Fazer: a gaveta do trace do painel da execução lê a definição congelada (`GET /v1/executions/{id}/definition`, B154) e mostra o trace com o nome dos blocos e os números no padrão brasileiro, como o Calcular do editor. A ligação continua pela render prop da F102, ligada no `module/` pela F104 (ADR 0062). Os erros sem nó filtram com `without_node=true`, e o nome do CSV vem do `Content-Disposition`.
 - Também (pendências da F102): o `UnitRunResult` passa a importar o próprio `unit-run.css`, para a gaveta fora do editor ter os estilos; e o painel mostra a hora da próxima tentativa no `awaiting_source` pelo `next_retry_at` (B154).
-- Aceite: testes da gaveta com a definição congelada (nomes e números no padrão brasileiro), do grupo de erro sem nó filtrando por `node_id=none` e do nome do arquivo; o editor continua igual (os testes do unit-run passam).
+- Aceite: testes da gaveta com a definição congelada (nomes e números no padrão brasileiro), do grupo de erro sem nó filtrando por `without_node=true` e do nome do arquivo; o editor continua igual (os testes do unit-run passam).
 
 **F119 · Manutenção: espelho dos exemplos de rascunho na v3 da B153**
 - dep: B153, F116
