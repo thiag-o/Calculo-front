@@ -29,6 +29,8 @@ export async function submitSignIn(page: Page, { email, password: password }: Lo
 /** Opens `/sign-in`, signs in successfully and waits for the module. Returns the created session. */
 export async function signIn(page: Page, credentials: LoginCredentials): Promise<Session> {
   await page.goto('/sign-in');
+  // The first load of the shell is slow when the machine is busy: wait for the form to show (the state), not for the 5 s default.
+  await expect(signInButton(page)).toBeVisible({ timeout: 30_000 });
   const response = await submitSignIn(page, credentials);
   expect(response.status(), 'o login deveria dar certo').toBe(200);
   const session = (await response.json()) as Session;

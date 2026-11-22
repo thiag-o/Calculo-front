@@ -6,7 +6,8 @@
 // `pnpm e2e:real` runs with 2 workers (in the package.json script): on this machine, 6 browsers, the Vite dev server and the API
 // together saturate CPU and memory, and the sign-ins time out (global session decision, F39, measured before F35 served the
 // shell built instead of through the dev server). The API alone
-// serves 6 parallel sign-ins in under 1.5 s. `pnpm e2e` (simulated) keeps the default parallelism.
+// serves 6 parallel sign-ins in under 1.5 s. `pnpm e2e` (simulated) runs with E2E_WORKERS workers (default 4, F111): the
+// default of half the cores (6 here) saturated the CPU on the first load of the shell, with two worktrees running at once.
 import { defineConfig, devices } from '@playwright/test';
 import { e2ePorts } from './scripts/e2e-ports.mjs';
 
@@ -24,6 +25,8 @@ const isolationId = process.env.FLUXO_TEST_ISOLATION_ID?.trim().replace(/[^A-Za-
 const SHELL_E2E_DIR = isolationId
   ? `../../node_modules/.cache/e2e-shell-${isolationId}`
   : '../../node_modules/.cache/e2e-shell';
+// Workers of the simulated mode. `--workers` on the command line (as in `e2e:real`) still wins over this.
+const workers = Number.parseInt(process.env.E2E_WORKERS ?? '', 10) || 4;
 const outputDir = isolationId ? `test-results/${isolationId}` : 'test-results';
 
 // The "host app" of the embedding tests: the shell's embed test page (apps/shell/vite.embed.config.ts), on an
@@ -47,6 +50,7 @@ export default defineConfig({
   // Opens the shell once, out of the tests' timeout, without calling the API (e2e/support/global-setup.ts).
   globalSetup: './e2e/support/global-setup.ts',
   fullyParallel: true,
+  workers,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
