@@ -66,12 +66,12 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0044](0044-edicoes-mantem-a-identidade-do-que-nao-mudou.md) | Edições da definição mantêm os mesmos objetos do que não mudou, para a marca de problema acompanhar a regra (segue a 0042) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0045](0045-memoria-da-tela-em-weakmap-por-query-client.md) | Lembrar na tela sem persistir: `WeakMap` por `QueryClient`, com chave de pessoa, tenant e item (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0046](0046-texto-invalido-fica-no-campo-e-nao-vai-ao-rascunho.md) | Texto que daria erro de forma fica no campo, com o erro, e não vai ao rascunho (segue a 0043) | aceita, revisar no checkpoint | 2026-11-20 |
-| [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md) | Outras sub-verticais do editor podem importar peças de `properties/index.ts` (complementa 0042) | aceita, revisar no checkpoint (complementada por 0052) | 2026-11-20 |
+| [0047](0047-pecas-de-propriedades-exportadas-para-outras-sub-verticais.md) | Outras sub-verticais do editor podem importar peças de `properties/index.ts` (complementa 0042) | aceita, revisar no checkpoint (complementada por 0052 e 0068) | 2026-11-20 |
 | [0048](0048-limpeza-unica-da-sessao-e-telas-remontadas.md) | Limpar a sessão num lugar só (`clearSessionData`, `replaceSessionInCache`, `onSessionDataCleared`) e remontar as telas por geração (complementa 0015 e 0019, corrige 0045) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0049](0049-marca-da-sessao-antes-de-gravar-no-cache.md) | Resposta que grava no cache confere a marca da sessão (`sessionDataMark`/`isSameSessionData`) (complementa 0015 e 0019) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0050](0050-workflows-recebe-o-editor-por-render-props.md) | `<Workflows>` recebe o editor por `renderEditor`; editor em rota irmã de tela cheia (segue a 0003) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0051](0051-plugin-troca-react-compiler-runtime-por-esm.md) | Plugin do Vite troca o `react-compiler-runtime` do React Flow por ESM (complementa 0037) | aceita, revisar no checkpoint | 2026-11-20 |
-| [0052](0052-properties-workflow-importa-sources-batch-source.md) | `properties/workflow` importa `sources/batch-source/index.ts`, com ciclo permitido entre as duas (complementa 0047) | aceita, revisar no checkpoint (complementada por 0059) | 2026-11-21 |
+| [0052](0052-properties-workflow-importa-sources-batch-source.md) | `properties/workflow` importa `sources/batch-source/index.ts`, com ciclo permitido entre as duas (complementa 0047) | aceita, revisar no checkpoint (complementada por 0059 e 0068) | 2026-11-21 |
 | [0053](0053-use-draft-editor-expoe-groups.md) | `useDraftEditor()` expõe `groups`, o Input derivado da análise (complementa 0042) | aceita, revisar no checkpoint | 2026-11-21 |
 | [0054](0054-posicao-do-no-dentro-do-grupo-relativa-ao-conteudo.md) | Posição de um nó dentro de um grupo é relativa à área de conteúdo do grupo | aceita, revisar no checkpoint | 2026-11-21 |
 | [0055](0055-editor-le-o-catalogo-por-catalog-index.md) | O editor lê datasets e variáveis do catálogo por `catalog/index.ts` (segue a 0003, 0033 e 0034) | aceita, revisar no checkpoint | 2026-11-21 |
@@ -87,6 +87,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0065](0065-formula-exporta-leituras-de-parametro-e-lista-de-sugestoes.md) | `formula/index.ts` exporta as leituras de parâmetro e a lista de sugestões, e `editor/sources/filters` as usa; regra de nome num lugar só (segue a 0003 e a 0055) | aceita, revisar no checkpoint | 2026-11-22 |
 | [0066](0066-painel-da-execucao-chaves-de-registros-e-render-prop-do-trace.md) | Painel da execução: chaves dos registros sob `['executions', id]` e trace por render prop `renderRecordTrace` (complementa 0062 e 0063) | aceita, revisar no checkpoint | 2026-11-22 |
 | [0067](0067-consulta-com-refetch-interval-para-no-erro.md) | Consulta com `refetchInterval` para no erro; a tela mostra Notice com "Tentar de novo" | aceita, revisar no checkpoint | 2026-11-22 |
+| [0068](0068-properties-workflow-importa-editor-parameters.md) | `properties/workflow` importa `editor/parameters/index.ts`, com ciclo permitido entre as duas, mesma regra da 0052 (complementa 0047 e 0052) | aceita, revisar no checkpoint | 2026-11-22 |
 
 ## Pendentes (sem ADR ainda)
 

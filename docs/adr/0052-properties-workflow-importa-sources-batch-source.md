@@ -1,6 +1,6 @@
 # 0052. `properties/workflow` pode importar `sources/batch-source/index.ts`, com ciclo permitido entre as duas
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0059](0059-canvas-importa-sources-batch-source-e-propriedades-por-render-props.md): o canvas também importa `sources/batch-source`, e o painel recebe o resto por render props)
+- **Status:** aceita, revisar no checkpoint (complementada por [0059](0059-canvas-importa-sources-batch-source-e-propriedades-por-render-props.md): o canvas também importa `sources/batch-source`, e o painel recebe o resto por render props; e pela [0068](0068-properties-workflow-importa-editor-parameters.md): mesmo ciclo com `editor/parameters`)
 - **Data:** 2026-11-21
 - **Quem decidiu:** orquestração (tarefa F63)
 - **Relacionadas:** ADRs 0003, 0009, 0042, 0047; `packages/react/src/editor/properties/workflow/`, `packages/react/src/editor/sources/batch-source/`

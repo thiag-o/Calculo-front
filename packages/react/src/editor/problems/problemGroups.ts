@@ -5,11 +5,11 @@ import { useDraftEditor, type EditorItem, type WorkflowDefinition, type Workflow
 export type ProblemOwnerKind = 'calculation' | 'decision_table' | 'inputs' | 'output' | 'workflow';
 
 export interface ProblemGroup {
-  /** Stable key of the group (`node:calc_pontos`, `inputs`…). */
+  /** Stable key of the group (`node:calc_pontos`, `inputs`, `parameter:1`…). */
   key: string;
   item: EditorItem;
   kind: ProblemOwnerKind;
-  /** The block name, or "Entradas", "Saída" and "Workflow". */
+  /** The block name, or "Entradas", "Saída", "Workflow" and "Parâmetro periodo". */
   title: string;
   problems: WorkflowProblem[];
 }
@@ -71,8 +71,25 @@ function itemKey(item: EditorItem): string {
   return item.type === 'node' ? `node:${item.id}` : item.type;
 }
 
+/** `parameters[1]` and anything under it (`parameters[1].default`, `parameters[1].allowed_values[0]`). */
+const PARAMETER_PATH = /^parameters\[(\d+)\](?:$|[.[])/;
+
 /**
- * The problems grouped by block (and inputs, output, workflow), in the order the API sends them (by `path`). The owner of
+ * The parameter a problem belongs to, by the index of its `path` in the definition the problem was found in, or `null`. A
+ * parameter has no item of its own in the selection: it is part of the workflow panel (F98), which focuses the field of
+ * the `path`; in the Problems tab its problems get a group of their own, named after it.
+ */
+function problemParameter(problem: WorkflowProblem, definition: WorkflowDefinition): { index: number; name: string } | null {
+  if (problem.node_id) return null;
+  const match = PARAMETER_PATH.exec(problem.path ?? '');
+  if (!match) return null;
+  const index = Number(match[1]);
+  const parameter = definition.parameters?.[index];
+  return parameter ? { index, name: parameter.name } : null;
+}
+
+/**
+ * The problems grouped by block (and inputs, output, workflow, and each run parameter on its own), in the order the API sends them (by `path`). The owner of
  * each problem comes from `analyzedDefinition` (where it was found); the block name and type, from `currentDefinition`
  * when the block is still there.
  */
@@ -84,10 +101,12 @@ export function groupProblems(
   const groups = new Map<string, ProblemGroup>();
   for (const problem of problems) {
     const item = problemItem(problem, analyzedDefinition);
-    const key = itemKey(item);
+    const parameter = item.type === 'workflow' ? problemParameter(problem, analyzedDefinition) : null;
+    const key = parameter ? `parameter:${parameter.index}` : itemKey(item);
     let group = groups.get(key);
     if (!group) {
-      group = { key, item, ...owner(item, currentDefinition, analyzedDefinition), problems: [] };
+      const named = parameter ? { kind: 'workflow' as const, title: `Parâmetro ${parameter.name}` } : owner(item, currentDefinition, analyzedDefinition);
+      group = { key, item, ...named, problems: [] };
       groups.set(key, group);
     }
     group.problems.push(problem);

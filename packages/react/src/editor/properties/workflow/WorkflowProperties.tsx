@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button, Dialog, DialogClose, Text } from '../../../design-system';
 import { useDraftEditor } from '../../draft';
+import { ExecutionSection, ParametersSection } from '../../parameters';
 import {
   BATCH_SOURCE_NOTE,
   BatchSourceFields,
@@ -23,7 +24,11 @@ import './workflow.css';
 const ERROR_POLICY_PATH = `${SETTINGS_PATH}.error_policy`;
 const SCALE_PATH = `${SETTINGS_PATH}.rounding.scale`;
 const MODE_PATH = `${SETTINGS_PATH}.rounding.mode`;
-const SHOWN = new Set([ERROR_POLICY_PATH, SCALE_PATH, MODE_PATH]);
+// The run settings, in the Execução section of the "parameters" sub-vertical, which shows their problems itself. Written
+// here, not imported: neither side of the cycle with "parameters" uses the other while the module loads (ADR 0052).
+const ERROR_LIMIT_PATH = `${SETTINGS_PATH}.error_limit_percent`;
+const TRACE_LEVEL_PATH = `${SETTINGS_PATH}.trace_level`;
+const SHOWN = new Set([ERROR_POLICY_PATH, SCALE_PATH, MODE_PATH, ERROR_LIMIT_PATH, TRACE_LEVEL_PATH]);
 
 /** Where the values of each record come from (E5-2, E5-17). */
 type RecordsOrigin = 'declared' | 'batch';
@@ -38,7 +43,8 @@ export type WorkflowPropertiesProps = Pick<BatchSourceFieldsProps, 'renderFilter
 /**
  * The workflow settings, shown when nothing is selected: the error policy and the default rounding (places and mode) that
  * the blocks inherit, and where the records come from (E5-17): Entradas declaradas (values typed in "Calcular") or Fonte
- * do lote (each row of a catalog dataset is a record), with the batch source properties right below.
+ * do lote (each row of a catalog dataset is a record), with the batch source properties right below. Then the run
+ * parameters and the run settings (error limit and trace level), from the "parameters" sub-vertical (E6-17).
  *
  * Switching asks for a confirmation that says what is lost. To the batch source, the declared inputs only leave when the
  * dataset is chosen (one change, one undo step); before that, nothing changed in the draft.
@@ -148,6 +154,8 @@ export function WorkflowProperties({ renderFilters }: WorkflowPropertiesProps) {
           />
         ) : null}
       </fieldset>
+      <ParametersSection />
+      <ExecutionSection />
       <Dialog
         open={confirming !== null}
         onOpenChange={(open) => {

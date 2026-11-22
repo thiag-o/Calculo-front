@@ -1,6 +1,6 @@
 # 0047. Outras sub-verticais do editor podem importar peças de `properties/index.ts`
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0052](0052-properties-workflow-importa-sources-batch-source.md))
+- **Status:** aceita, revisar no checkpoint (complementada por [0052](0052-properties-workflow-importa-sources-batch-source.md) e [0068](0068-properties-workflow-importa-editor-parameters.md))
 - **Data:** 2026-11-20
 - **Quem decidiu:** orquestração (tarefa F53)
 - **Relacionadas:** ADRs 0003, 0009, 0042; `packages/react/src/editor/properties/index.ts`

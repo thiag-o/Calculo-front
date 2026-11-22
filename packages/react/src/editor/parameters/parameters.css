@@ -1,0 +1,45 @@
+/*
+ * Editor › parameters (estilos.md §3, §4 and §7.2): the Parâmetros and Execução sections of the workflow panel, inside the
+ * properties' frame (its fc-properties-* classes). Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+/* Numbers and moments: mono-13, like the other values of the panel. */
+.fc-parameters-mono .fc-field-input {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+}
+
+/* An empty list or section: label-12 in the secondary text (it says what is missing, so it is not tertiary, estilos §3). */
+.fc-parameters-note {
+  margin: 0;
+}
+
+/* Lista and Obrigatório side by side, wrapping in the 300px panel. */
+.fc-parameters-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8) var(--fc-space-24);
+}
+
+/* The values of a list, indented by 12px under a 1px line, like the fields of a Múltiplo. */
+.fc-parameters-values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  margin: 0;
+  padding: 0 0 0 var(--fc-space-12);
+  list-style: none;
+  border-left: 1px solid var(--fc-border);
+}
+
+/* A value and its "Remover" button, aligned with the input (below the label). */
+.fc-parameters-value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--fc-space-4);
+  align-items: start;
+}
+
+.fc-parameters-remove-value {
+  margin-top: 22px;
+}

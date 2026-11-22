@@ -125,3 +125,41 @@ describe('Problemas: blocos dentro de grupos e fonte do lote', () => {
     expect(problemItem({ ...problem('missing_order_by', null), node_id: 'calc_pontos' }, withSource)).toEqual({ type: 'node', id: 'calc_pontos' });
   });
 });
+
+describe('Problemas: parâmetros de execução', () => {
+  const parameter = (name: string) => ({
+    name,
+    type: 'text' as const,
+    required: false,
+    list: false,
+    scale: null,
+    default: null,
+    allowed_values: null,
+    description: null,
+  });
+  const withParameters = { ...definition, parameters: [parameter('periodo'), parameter('categorias')] };
+  const coded = (code: WorkflowProblem['code'], path: string): WorkflowProblem => ({ ...at(path), code });
+
+  it('o problema com path parameters[i] cai no item do parâmetro, no painel do workflow', () => {
+    const problems = [
+      coded('invalid_parameter_default', 'parameters[0].default'),
+      coded('invalid_allowed_value', 'parameters[1].allowed_values[1]'),
+      coded('invalid_parameter_default', 'parameters[1].default.value[0]'),
+      at('settings.error_limit_percent'),
+    ];
+    const groups = groupProblems(problems, withParameters);
+    expect(groups.map((group) => [group.key, group.title, group.problems.length])).toEqual([
+      ['parameter:0', 'Parâmetro periodo', 1],
+      ['parameter:1', 'Parâmetro categorias', 2],
+      ['workflow', 'Workflow', 1],
+    ]);
+    // The selection is the workflow panel, which focuses the field of the path.
+    expect(groups.every((group) => group.item.type === 'workflow')).toBe(true);
+    expect(countProblems(problems, withParameters).workflow).toBe(4);
+  });
+
+  it('um índice que não é de parâmetro nenhum fica no grupo do workflow', () => {
+    const groups = groupProblems([at('parameters[5].name'), at('parameters')], withParameters);
+    expect(groups.map((group) => group.key)).toEqual(['workflow']);
+  });
+});
