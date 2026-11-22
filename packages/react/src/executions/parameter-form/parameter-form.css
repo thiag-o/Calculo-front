@@ -1,0 +1,131 @@
+/* The form of the parameters of a run (E6-17). Only fc- classes and --fc-* tokens (estilos.md). */
+
+.fc-parameter-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+}
+
+.fc-parameter-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fc-space-4);
+}
+
+.fc-parameter-field > .fc-field,
+.fc-parameter-field > .fc-parameter-tags {
+  align-self: stretch;
+}
+
+.fc-parameter-name {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  padding: 0;
+}
+
+/* Fieldsets: period and multiple choice. No browser border or margin. */
+.fc-parameter-period,
+.fc-parameter-choices {
+  align-self: stretch;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+}
+
+.fc-parameter-period-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fc-space-12);
+}
+
+.fc-parameter-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+/* A period with the start after the end: a warning, not an error (the back has the last word). */
+.fc-parameter-warning {
+  margin: 0;
+  padding: var(--fc-space-6) var(--fc-space-8);
+  border-radius: 6px;
+  background: var(--fc-amber-100);
+  color: var(--fc-amber-900);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* The relative default, shown by its label. */
+.fc-parameter-relative {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+}
+
+.fc-parameter-relative-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-12);
+  min-height: 32px;
+  padding: 0 var(--fc-space-12);
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+}
+
+.fc-parameter-relative-value {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* A list as tags. */
+.fc-parameter-tags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+.fc-parameter-tags-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fc-space-8);
+}
+
+.fc-parameter-tags-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fc-parameter-tags-entry > button,
+.fc-parameter-tags-entry > .fc-button-with-reason {
+  /* Aligned with the input, below its label. */
+  margin-top: 26px;
+}
+
+.fc-parameter-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-parameter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-4);
+  padding: 0 var(--fc-space-2) 0 var(--fc-space-8);
+  border: 1px solid var(--fc-border);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
