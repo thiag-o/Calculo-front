@@ -7,6 +7,7 @@ import { contractResponses } from './contract-schema';
 
 const UNIT_RUNS = '/v1/workflows/7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c99/draft/unit-runs';
 const PREVIEWS = '/v1/workflows/7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c99/draft/previews';
+const DRAFT = '/v1/workflows/7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c99/draft';
 const JSON_TYPE = 'application/json';
 
 const contract = contractResponses();
@@ -44,6 +45,23 @@ test.describe('respostas da API simulada conferidas contra o esquema do contrato
     expect(contract.violations('POST', PREVIEWS, 200, JSON_TYPE, preview)).not.toEqual([]);
     expect(contract.violations('POST', PREVIEWS, 418, JSON_TYPE, {})).toHaveLength(1);
     expect(contract.violations('POST', UNIT_RUNS, 200, 'text/plain', 'ok')).toHaveLength(1);
+  });
+
+  test('o rascunho do GET e do PUT em versão 3 passa; uma definição fora da versão 3 é recusada', () => {
+    for (const method of ['GET', 'PUT']) {
+      for (const draft of [EXAMPLES.DraftEmpty, EXAMPLES.Draft, EXAMPLES.DraftWithSources]) {
+        expect(contract.violations(method, DRAFT, 200, JSON_TYPE, draft), `${method} ${draft.revision}`).toEqual([]);
+      }
+      const old = clone(EXAMPLES.DraftEmpty) as { definition: { schema_version: number; parameters?: unknown; settings: Record<string, unknown> } };
+      old.definition.schema_version = 2;
+      expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
+      old.definition.schema_version = 3;
+      delete old.definition.parameters;
+      expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
+      old.definition.parameters = [];
+      delete old.definition.settings.trace_level;
+      expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
+    }
   });
 
   test('outras rotas não são conferidas', () => {

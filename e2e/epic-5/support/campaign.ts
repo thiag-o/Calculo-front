@@ -260,11 +260,11 @@ export const MULTIPLIER_RULES = [
   { when: ['-', '-', '-'], then: ['verdadeiro', '1.00'] },
 ] as const;
 
-/** The workflow of the campaign (docs/campanha-de-referencia.md, "As regras"), in the contract's shape (schema 2). */
+/** The workflow of the campaign (docs/campanha-de-referencia.md, "As regras"), in the contract's shape (schema 3). */
 export const CAMPAIGN_DEFINITION: Definition = {
-  schema_version: 2,
+  schema_version: 3,
   kind: 'batch',
-  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
+  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
   // The API always sends `parameters` (the drafts of versions 1 and 2 are read as 3): the filter values read them (F99).
   parameters: [],
   root: {

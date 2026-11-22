@@ -10,9 +10,31 @@ import { fileURLToPath } from 'node:url';
 
 /** The routes whose answers are checked: method and the contract's path. */
 const VALIDATED_ROUTES: ReadonlyArray<{ method: string; path: string }> = [
+  { method: 'GET', path: '/v1/workflows/{id}/draft' },
+  { method: 'PUT', path: '/v1/workflows/{id}/draft' },
   { method: 'POST', path: '/v1/workflows/{id}/draft/previews' },
   { method: 'POST', path: '/v1/workflows/{id}/draft/unit-runs' },
 ];
+
+/**
+ * The routes that answer with a draft (`Draft`): the backend reads a definition of version 1 or 2 as 3 and answers
+ * always in 3, with `parameters` and the two new `settings` fields. The schema accepts the three versions (it also types
+ * what the editor sends), so the answer of these routes is held to the current one here.
+ */
+const DRAFT_ROUTES: ReadonlySet<string> = new Set(['GET /v1/workflows/{id}/draft', 'PUT /v1/workflows/{id}/draft']);
+
+/** What a draft answer's definition lacks to be in version 3 (empty: it is in 3). */
+function versionViolations(name: string, body: unknown): string[] {
+  const definition = isObject(body) && isObject(body.definition) ? body.definition : undefined;
+  if (!definition) return [];
+  const settings = isObject(definition.settings) ? definition.settings : {};
+  const problems: string[] = [];
+  if (definition.schema_version !== 3) problems.push(`${name}: /definition/schema_version deve ser 3, e não ${String(definition.schema_version)}`);
+  if (!Array.isArray(definition.parameters)) problems.push(`${name}: /definition/parameters deve vir sempre (a gravação o escreve)`);
+  if (typeof settings.error_limit_percent !== 'string') problems.push(`${name}: /definition/settings/error_limit_percent deve vir sempre na versão 3`);
+  if (typeof settings.trace_level !== 'string') problems.push(`${name}: /definition/settings/trace_level deve vir sempre na versão 3`);
+  return problems;
+}
 
 const BACKEND_DIR = process.env.FLUXO_BACKEND_DIR;
 const CONTRACT = resolve(
@@ -131,8 +153,10 @@ function load(): ContractResponses {
       const content = isObject(response.content) ? follow(contract, response.content[media]) : undefined;
       if (!isObject(content) || content.schema === undefined) return [`${name}: o contrato não declara o tipo ${media || '(nenhum)'}.`];
       const validate = validatorOf(route.path, String(status), media, content.schema);
-      if (validate(body)) return [];
-      return (validate.errors ?? []).map((error) => `${name}: ${error.instancePath || '(corpo)'} ${error.message ?? 'inválido'}`);
+      const violations = validate(body)
+        ? []
+        : (validate.errors ?? []).map((error) => `${name}: ${error.instancePath || '(corpo)'} ${error.message ?? 'inválido'}`);
+      return status === 200 && DRAFT_ROUTES.has(`${method} ${route.path}`) ? [...violations, ...versionViolations(name, body)] : violations;
     },
   };
 }

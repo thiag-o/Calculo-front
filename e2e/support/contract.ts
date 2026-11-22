@@ -849,7 +849,7 @@ export const EXAMPLES = {
     workflow_id: '3c9d1e2f-7a8b-4c5d-9e0f-1a2b3c4d5e6f',
     revision: 3,
     definition: {
-      schema_version: 1,
+      schema_version: 3,
       kind: 'batch',
       settings: {
         error_policy: 'error',
@@ -857,7 +857,10 @@ export const EXAMPLES = {
           scale: 2,
           mode: 'half_up',
         },
+        error_limit_percent: '5',
+        trace_level: 'standard',
       },
+      parameters: [],
       root: {
         inputs: [
           {
@@ -1163,7 +1166,7 @@ export const EXAMPLES = {
     workflow_id: '3c9d1e2f-7a8b-4c5d-9e0f-1a2b3c4d5e6f',
     revision: 1,
     definition: {
-      schema_version: 1,
+      schema_version: 3,
       kind: 'batch',
       settings: {
         error_policy: 'error',
@@ -1171,7 +1174,10 @@ export const EXAMPLES = {
           scale: 2,
           mode: 'half_up',
         },
+        error_limit_percent: '5',
+        trace_level: 'standard',
       },
+      parameters: [],
       root: {
         inputs: [],
         nodes: [],
@@ -1194,7 +1200,7 @@ export const EXAMPLES = {
   DraftUpdate: {
     revision: 2,
     definition: {
-      schema_version: 1,
+      schema_version: 3,
       kind: 'batch',
       settings: {
         error_policy: 'error',
@@ -1202,7 +1208,10 @@ export const EXAMPLES = {
           scale: 2,
           mode: 'half_up',
         },
+        error_limit_percent: '5',
+        trace_level: 'standard',
       },
+      parameters: [],
       root: {
         inputs: [
           {
@@ -2110,7 +2119,7 @@ export const EXAMPLES = {
     workflow_id: '4d0e2f3a-8b9c-4d5e-8f1a-2b3c4d5e6f70',
     revision: 4,
     definition: {
-      schema_version: 2,
+      schema_version: 3,
       kind: 'batch',
       settings: {
         error_policy: 'error',
@@ -2118,7 +2127,10 @@ export const EXAMPLES = {
           scale: 2,
           mode: 'half_up',
         },
+        error_limit_percent: '5',
+        trace_level: 'standard',
       },
+      parameters: [],
       root: {
         batch_source: {
           dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',
@@ -2502,7 +2514,7 @@ export const EXAMPLES = {
   DraftUpdateWithSources: {
     revision: 3,
     definition: {
-      schema_version: 2,
+      schema_version: 3,
       kind: 'batch',
       settings: {
         error_policy: 'error',
@@ -2510,7 +2522,10 @@ export const EXAMPLES = {
           scale: 2,
           mode: 'half_up',
         },
+        error_limit_percent: '5',
+        trace_level: 'standard',
       },
+      parameters: [],
       root: {
         batch_source: {
           dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',
@@ -2731,7 +2746,7 @@ export const EXAMPLES = {
     workflow_id: '4d0e2f3a-8b9c-4d5e-8f1a-2b3c4d5e6f70',
     revision: 4,
     definition: {
-      schema_version: 2,
+      schema_version: 3,
       kind: 'batch',
       settings: {
         error_policy: 'error',
@@ -2739,7 +2754,10 @@ export const EXAMPLES = {
           scale: 2,
           mode: 'half_up',
         },
+        error_limit_percent: '5',
+        trace_level: 'standard',
       },
+      parameters: [],
       root: {
         batch_source: {
           dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c01',

@@ -279,7 +279,8 @@ export class WorkflowSimulation {
       return problem({ ...ERRORS.DraftConflict, current_revision: workflow.draft.revision });
     }
     const now = this.now();
-    workflow.draft = { revision: workflow.draft.revision + 1, definition, analysis: analyze(definition), updatedAt: now, updatedBy: caller.user };
+    const saved = toVersion3(definition);
+    workflow.draft = { revision: workflow.draft.revision + 1, definition: saved, analysis: analyze(saved), updatedAt: now, updatedBy: caller.user };
     workflow.updatedAt = now;
     workflow.updatedBy = caller.user;
     return json(200, this.draftBody(workflow));
@@ -363,12 +364,25 @@ function isDefinition(value: unknown): value is Definition {
   if (value === null || typeof value !== 'object') return false;
   const definition = value as Partial<Definition>;
   return (
-    definition.schema_version === 1 &&
+    (definition.schema_version === 1 || definition.schema_version === 2 || definition.schema_version === 3) &&
     definition.kind === 'batch' &&
     Array.isArray(definition.root?.inputs) &&
     Array.isArray(definition.root?.nodes) &&
     Array.isArray(definition.root?.output?.fields)
   );
+}
+
+/**
+ * What the backend stores: the drafts of versions 1 and 2 are read as 3, with `parameters` always present and the two new
+ * `settings` fields at their defaults (the error limit of 5 % and the standard trace); what the draft already has is kept.
+ */
+function toVersion3(definition: Definition): Definition {
+  return {
+    ...definition,
+    schema_version: 3,
+    settings: { error_limit_percent: '5', trace_level: 'standard', ...definition.settings },
+    parameters: Array.isArray(definition.parameters) ? definition.parameters : [],
+  };
 }
 
 const iso = (instant: number) => new Date(instant).toISOString();
