@@ -158,8 +158,14 @@ describe('WorkflowCanvas', () => {
     fireEvent.mouseMove(document, { button: 0, clientX: 140, clientY: 132 });
     fireEvent.mouseMove(document, { button: 0, clientX: 180, clientY: 164 });
     fireEvent.mouseUp(document, { button: 0, clientX: 180, clientY: 164 });
-    // The first move only passes the drag threshold; the second one moves the block by (40, 32).
-    await waitFor(() => expect(blockOf(probe.definition, 'calc_pontos')!.position).toEqual({ x: 280, y: 32 }));
+    // The first move only passes the drag threshold; the second one moves the block by (40, 32) on screen, that is, by
+    // (40, 32) divided by the zoom of the first fit in the canvas.
+    const zoom = Number(/scale\(([\d.]+)\)/.exec(document.querySelector<HTMLElement>('.react-flow__viewport')!.style.transform)?.[1] ?? 1);
+    await waitFor(() => {
+      const { x, y } = blockOf(probe.definition, 'calc_pontos')!.position;
+      expect(x).toBeCloseTo(240 + 40 / zoom, 0);
+      expect(y).toBeCloseTo(32 / zoom, 0);
+    });
     expect(blockOf(probe.definition, 'td_elegibilidade')!.position).toEqual({ x: 0, y: 0 });
     expect(probe.selection.item).toEqual({ type: 'node', id: 'calc_pontos' });
   });

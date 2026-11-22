@@ -6,6 +6,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  useReactFlowStoreApi,
   type Edge,
   type OnNodesChange,
   type OnNodeDrag,
@@ -59,6 +60,8 @@ import { BlocksIcon, FitIcon, ZoomInIcon, ZoomOutIcon } from './icons';
 import { BLOCK_KEYS_HELP, BLOCK_KEYS_HELP_READ_ONLY, blockAddedText, blockLabel, linkLabel, movedText } from './messages';
 import { NODE_TYPES, type CanvasNode } from './nodes';
 import { NewSourceDialog } from './NewSourceDialog';
+import { FIT_MIN_ZOOM, FIT_VIEW, MIN_ZOOM, fitViewport } from './fitView';
+import { useFitOnResize } from './useFitOnResize';
 import { NodeMenu, NodeMenuContext, type NodeMenuState } from './NodeMenu';
 import { CanvasToolbar } from './CanvasToolbar';
 import { RUN_CLEARED_TEXT, RUN_SHOWN_TEXT, withRunStatus } from './run-values/messages';
@@ -75,9 +78,6 @@ const ARROWS: Readonly<Record<string, Position>> = {
   ArrowLeft: { x: -1, y: 0 },
   ArrowRight: { x: 1, y: 0 },
 };
-
-/** How "Ajustar à tela" (and the first view) fits the blocks. */
-const FIT_VIEW = { padding: 0.2, maxZoom: 1 };
 
 /** A node inside a group stays in the group's content area while it is dragged. */
 const INSIDE_GROUP: [[number, number], [number, number]] = [
@@ -182,8 +182,22 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
   const { definition, symbols, dependencies, groups, problems, selection, select, change, readOnly } = useDraftEditor();
   const counts = useProblemCounts();
   const flow = useReactFlow();
+  const store = useReactFlowStoreApi();
   const frame = useRef<HTMLDivElement>(null);
+  // Fits the whole graph in the area. The navigation limit (MIN_ZOOM) is not lowered: only while the fit runs, the zoom
+  // floor goes down to FIT_MIN_ZOOM, because a wide graph in a narrow area needs less than MIN_ZOOM to show whole.
+  const fitWhole = () => {
+    const nodes = flow.getNodes();
+    const area = frame.current?.getBoundingClientRect();
+    if (nodes.length === 0 || !area || area.width === 0 || area.height === 0) return;
+    const { setMinZoom } = store.optionsStore.getState();
+    const view = fitViewport(flow.getNodesBounds(nodes), area);
+    setMinZoom(FIT_MIN_ZOOM);
+    void flow.setViewport(view).finally(() => setMinZoom(MIN_ZOOM));
+  };
   const compact = usePanelWidths(frame) === 'narrow';
+  // The area may reach its final size after the first fit (panels, window): fits again until the person moves the view.
+  const onMoveStart = useFitOnResize(frame, fitWhole);
   const [measured, setMeasured] = useState<ReadonlyMap<string, Size>>(() => new Map());
   const [dragged, setDragged] = useState<ReadonlyMap<string, Position>>(() => new Map());
   const [announcement, setAnnouncement] = useAnnouncement();
@@ -780,7 +794,8 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
           zoomOnDoubleClick={false}
           fitView
           fitViewOptions={FIT_VIEW}
-          minZoom={0.25}
+          onMoveStart={onMoveStart}
+          minZoom={MIN_ZOOM}
           maxZoom={2}
           ariaLabelConfig={ariaLabelConfig}
         >
@@ -795,7 +810,7 @@ function Canvas({ onOpenProperties }: WorkflowCanvasProps) {
                 iconOnly
                 label="Ajustar à tela"
                 icon={<FitIcon size={14} />}
-                onClick={() => void flow.fitView(FIT_VIEW)}
+                onClick={fitWhole}
               />
             </div>
           </Panel>
