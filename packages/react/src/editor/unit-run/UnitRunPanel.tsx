@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Button, EmptyState, Loading, Notice, Skeleton, Text } from '../../design-system';
+import { ParameterForm, parameterErrorsFrom, type ParameterValue } from '../../executions';
 import { useDraftEditor } from '../draft';
+import { parametersChanged, useRunParameters } from '../preview';
 import { useProblemCounts } from '../problems';
 import { CalculatorIcon } from './icons';
 import { useRememberedValues } from './memory';
@@ -61,6 +63,10 @@ function InputsRunPanel() {
   const counts = useProblemCounts();
   const [values, setValues] = useRememberedValues(workflowId);
   const inputs = definition.root.inputs;
+  const parameters = definition.parameters;
+  const parameterForm = useRunParameters(workflowId, parameters);
+  // The parameters read on "Calcular", kept while the draft saves (the form is locked meanwhile).
+  const readParameters = useRef<Record<string, ParameterValue>>({});
 
   const prefix = useId();
   const fieldId = useCallback((path: string) => `${prefix}-${path}`, [prefix]);
@@ -87,12 +93,20 @@ function InputsRunPanel() {
   const serverErrors = invalidInputs(run.error);
   const conflict = isConflict(run.error) && request !== null && revision === request.revision;
   // A conflict already solved by "Recarregar rascunho" (the revision changed) is no longer shown.
-  const showError = run.isError && (conflict || !isConflict(run.error));
+  // A refused parameter is said at its field of the form (E6-22), not in the result area.
+  const showError = run.isError && parameterErrorsFrom(run.error) === null && (conflict || !isConflict(run.error));
+  const { applyError } = parameterForm;
+  useEffect(() => {
+    applyError(run.error);
+  }, [run.error, applyError]);
 
   const reading = useMemo(() => readForm(inputs, values, incomplete), [inputs, values, incomplete]);
   const typing = useMemo<FieldErrors>(() => (reading.ok ? {} : reading.errors), [reading]);
   // The values changed after "Calcular": the result is of the values before.
-  const stale = request !== null && (!reading.ok || !sameInputs(reading.inputs, request.inputs ?? {}));
+  // The parameters changed after "Calcular" too (D42): the result is of the values used.
+  const stale =
+    request !== null &&
+    (!reading.ok || !sameInputs(reading.inputs, request.inputs ?? {}) || parametersChanged(parameters, parameterForm.formProps.values, request.parameters));
   const errorAt = useCallback(
     (path: string): string | null => {
       const server = serverErrors?.[path];
@@ -209,6 +223,7 @@ function InputsRunPanel() {
       id: runs.current,
       revision: saved.revision,
       inputs: after.inputs,
+      parameters: readParameters.current,
       definition: latest.current.definition,
       symbols: latest.current.symbols,
     });
@@ -224,10 +239,12 @@ function InputsRunPanel() {
     event.preventDefault();
     if (disabledReason || running || busy.current) return;
     const before = readScreen();
-    if (!before.ok) {
-      refuse(before.errors);
+    const parameterReading = parameterForm.read();
+    if (!before.ok || !parameterReading.ok) {
+      if (!before.ok) refuse(before.errors);
       return;
     }
+    readParameters.current = parameterReading.parameters;
     setSubmitted(false);
     setSaveFailed(false);
     // E4-23: the run is of the saved draft, so what is pending is saved first. Read-only has nothing to save. The values
@@ -294,6 +311,14 @@ function InputsRunPanel() {
             )}
           </fieldset>
         )}
+        {parameters.length > 0 ? (
+          <div className="fc-unit-run-parameters">
+            <span className="fc-unit-run-subtitle" aria-hidden="true">
+              Parâmetros
+            </span>
+            <ParameterForm {...parameterForm.formProps} disabled={running} />
+          </div>
+        ) : null}
       </div>
 
       <div className="fc-unit-run-output">

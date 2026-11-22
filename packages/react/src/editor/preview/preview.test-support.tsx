@@ -168,6 +168,19 @@ export const DRAFT_WITHOUT_BATCH_SOURCE: Schemas['Draft'] = {
   definition: { ...DRAFT.definition, root: { ...DRAFT.definition.root, batch_source: null } },
 };
 
+
+/** The parameters declared by the draft with parameters: a required integer and an optional text, both without default. */
+const DECLARED_PARAMETERS: Schemas['WorkflowParameter'][] = [
+  { name: 'meta', type: 'integer', required: true, list: false, scale: null, default: null, allowed_values: null, description: null },
+  { name: 'regiao', type: 'text', required: false, list: false, scale: null, default: null, allowed_values: null, description: null },
+];
+
+/** The same draft with declared parameters (E6-22). */
+export const DRAFT_WITH_PARAMETERS: Schemas['Draft'] = {
+  ...DRAFT,
+  definition: { ...DRAFT.definition, schema_version: 3, parameters: DECLARED_PARAMETERS },
+};
+
 export const PROBLEM: Schemas['WorkflowProblem'] = {
   code: 'type_mismatch',
   message: 'Esperava um número, mas categoria é um texto.',

@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, EmptyState, Loading, Notice, Skeleton, Text } from '../../design-system';
+import { ParameterForm, parameterErrorsFrom } from '../../executions';
 import { useDraftEditor } from '../draft';
 import { useProblemCounts } from '../problems';
 import { TableIcon } from './icons';
@@ -14,6 +15,7 @@ import {
   previewErrorMessage,
   problemsReason,
 } from './messages';
+import { parametersChanged, useRunParameters } from './parameters';
 import { PreviewResult } from './PreviewResult';
 import { useLastPreview, usePreview, type PreviewRequest } from './queries';
 import { formatCount } from './values';
@@ -29,6 +31,8 @@ export function PreviewPanel() {
   const { workflowId, definition, symbols, readOnly, flush, save, revision, select, reload, reloadState } = useDraftEditor();
   const counts = useProblemCounts();
   const last = useLastPreview(workflowId);
+  const parameters = definition.parameters;
+  const parameterForm = useRunParameters(workflowId, parameters);
 
   const [request, setRequest] = useState<PreviewRequest | null>(null);
   const [saving, setSaving] = useState(false);
@@ -43,9 +47,22 @@ export function PreviewPanel() {
   const running = saving || run.isFetching;
   const conflict = isConflict(run.error) && request !== null && revision === request.revision;
   // A conflict already solved by "Recarregar rascunho" (the revision changed) is no longer shown.
-  const showError = run.isError && (conflict || !isConflict(run.error));
+  // A refused parameter is said at its field of the form (E6-22), not in the result area.
+  const parameterError = parameterErrorsFrom(run.error) !== null;
+  const showError = run.isError && !parameterError && (conflict || !isConflict(run.error));
+  const { applyError } = parameterForm;
+  useEffect(() => {
+    applyError(run.error);
+  }, [run.error, applyError]);
   // The draft changed after the preview: its counts are of the definition before.
-  const stale = useMemo(() => last !== null && JSON.stringify(last.definition) !== JSON.stringify(definition), [last, definition]);
+  // The parameters changed after the preview (D42): its counts are of the values used.
+  const { values: parameterValues } = parameterForm.formProps;
+  const draftChanged = useMemo(() => last !== null && JSON.stringify(last.definition) !== JSON.stringify(definition), [last, definition]);
+  const parametersOutdated = useMemo(
+    () => last !== null && parametersChanged(parameters, parameterValues, last.parameters),
+    [last, parameters, parameterValues],
+  );
+  const stale = draftChanged || parametersOutdated;
 
   let disabledReason: string | undefined;
   if (counts.total > 0) disabledReason = problemsReason(counts.total);
@@ -54,6 +71,9 @@ export function PreviewPanel() {
 
   async function runPreview() {
     if (disabledReason || running || busy.current) return;
+    // A parameter that cannot be read stops here, with the error at its field: nothing is saved or sent.
+    const reading = parameterForm.read();
+    if (!reading.ok) return;
     setSaveFailed(false);
     // What is saved now is what is on screen now: it names the blocks of the result.
     const snapshot = latest.current;
@@ -74,7 +94,7 @@ export function PreviewPanel() {
       return;
     }
     runs.current += 1;
-    setRequest({ id: runs.current, revision: saved, definition: snapshot });
+    setRequest({ id: runs.current, revision: saved, definition: snapshot, parameters: reading.parameters });
   }
 
   let content;
@@ -94,7 +114,9 @@ export function PreviewPanel() {
       <>
         {stale ? (
           <Text as="p" variant="label-13" emphasis="secondary" className="fc-preview-stale">
-            Prévia de uma versão anterior do rascunho. Rode a prévia de novo para ver a atual.
+            {draftChanged
+              ? 'Prévia de uma versão anterior do rascunho. Rode a prévia de novo para ver a atual.'
+              : 'Prévia de parâmetros anteriores. Rode a prévia de novo para ver a dos parâmetros atuais.'}
           </Text>
         ) : null}
         <PreviewResult
@@ -129,6 +151,14 @@ export function PreviewPanel() {
           {RUN_PREVIEW_LABEL}
         </Button>
       </div>
+      {parameters.length > 0 ? (
+        <div className="fc-preview-parameters">
+          <span className="fc-preview-subtitle" aria-hidden="true">
+            Parâmetros
+          </span>
+          <ParameterForm {...parameterForm.formProps} disabled={running} />
+        </div>
+      ) : null}
       <div className="fc-preview-body">{content}</div>
       <span className="fc-visually-hidden" role="status">
         {running ? '' : run.data && request ? `Prévia pronta: ${formatCount(run.data.counted_records)} registros contados` : ''}

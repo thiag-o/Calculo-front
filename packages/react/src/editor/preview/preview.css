@@ -34,6 +34,22 @@
   letter-spacing: -0.28px;
 }
 
+/* The parameters form of the run (E6-22), between the title and the result. */
+.fc-preview-parameters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-preview-subtitle {
+  color: var(--fc-text-tertiary);
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
 .fc-preview-body,
 .fc-preview-result {
   display: flex;

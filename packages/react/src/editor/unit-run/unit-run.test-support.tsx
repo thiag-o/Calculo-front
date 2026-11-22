@@ -327,6 +327,8 @@ export interface TabScreen {
   user: UserEvent;
   queryClient: QueryClient;
   unmount: () => void;
+  /** Mounts the tab again (as the bottom panel does when its tab opens again). */
+  remount: () => void;
 }
 
 /** Renders the "Calcular" tab inside the draft context, with the API (cookie mode) and the module root. */
@@ -340,19 +342,21 @@ export function renderTab(
   const user = userEvent.setup({ delay: null });
   // The editor screen opens only after the session (EditorScreen): the tab never starts without it.
   if (queryClient.getQueryData(['session']) === undefined) queryClient.setQueryData(['session'], session());
-  const { unmount } = render(
+  const tree = (key: number) => (
     <FluxoRoot theme="light">
       <ApiProvider apiUrl={API}>
         <QueryClientProvider client={queryClient}>
           <DraftEditorProvider draft={draft} readOnly={readOnly}>
             <EditorProbe />
-            <UnitRunPanel />
+            <UnitRunPanel key={key} />
           </DraftEditorProvider>
         </QueryClientProvider>
       </ApiProvider>
-    </FluxoRoot>,
+    </FluxoRoot>
   );
-  return { user, queryClient, unmount };
+  let mounts = 0;
+  const { unmount, rerender } = render(tree(mounts));
+  return { user, queryClient, unmount, remount: () => rerender(tree(++mounts)) };
 }
 
 // Epic 5: a workflow with a batch source (the contract's DraftWithSources, shortened), its preview and its traces.
@@ -364,6 +368,19 @@ function batchSymbol(name: string, type: Schemas['DataType'], origin: Schemas['S
 }
 
 /** A workflow whose records come from "Itens NF" (key nf_id + item_seq), with a Source block and a group. */
+
+/** The parameters declared by the draft with parameters: a required integer and an optional text, both without default. */
+const DECLARED_PARAMETERS: Schemas['WorkflowParameter'][] = [
+  { name: 'meta', type: 'integer', required: true, list: false, scale: null, default: null, allowed_values: null, description: null },
+  { name: 'regiao', type: 'text', required: false, list: false, scale: null, default: null, allowed_values: null, description: null },
+];
+
+/** The draft of epic 4 (declared inputs) with declared parameters (E6-22). */
+export const DRAFT_WITH_PARAMETERS: Schemas['Draft'] = {
+  ...DRAFT,
+  definition: { ...DRAFT.definition, schema_version: 3, parameters: DECLARED_PARAMETERS },
+};
+
 export const DRAFT_WITH_SOURCES: Schemas['Draft'] = {
   ...DRAFT,
   revision: 4,

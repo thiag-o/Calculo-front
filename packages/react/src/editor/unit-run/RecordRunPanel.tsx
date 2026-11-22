@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Button, EmptyState, Loading, Notice, Skeleton, Status, Text } from '../../design-system';
+import { ParameterForm, parameterErrorsFrom, type ParameterValue } from '../../executions';
 import { useDraftEditor } from '../draft';
-import { useLastPreview, type PreviewRecord } from '../preview';
+import { parametersChanged, useLastPreview, useRunParameters, type PreviewRecord } from '../preview';
 import { useProblemCounts } from '../problems';
 import { CalculatorIcon } from './icons';
 import { useRememberedValues } from './memory';
@@ -49,6 +50,10 @@ export function RecordRunPanel() {
   const counts = useProblemCounts();
   const [values, setValues] = useRememberedValues(workflowId, 'record_key');
   const fields = useMemo(() => keyFields(definition, symbols), [definition, symbols]);
+  const parameters = definition.parameters;
+  const parameterForm = useRunParameters(workflowId, parameters);
+  // The parameters read on "Calcular", kept while the draft saves (the form is locked meanwhile).
+  const readParameters = useRef<Record<string, ParameterValue>>({});
   // The sample of the last preview (D25): the records of the root group (`node_id` null), from the "Prévia" tab's memory.
   const lastPreview = useLastPreview(workflowId);
   // A sample from before the key changed cannot be chosen: its keys have other variables.
@@ -78,13 +83,21 @@ export function RecordRunPanel() {
   const run = useUnitRun(workflowId, request);
   const running = saving || run.isFetching;
   const conflict = isConflict(run.error) && request !== null && revision === request.revision;
-  const showError = run.isError && (conflict || !isConflict(run.error));
+  // A refused parameter is said at its field of the form (E6-22), not in the result area.
+  const showError = run.isError && parameterErrorsFrom(run.error) === null && (conflict || !isConflict(run.error));
+  const { applyError } = parameterForm;
+  useEffect(() => {
+    applyError(run.error);
+  }, [run.error, applyError]);
   const notFound = isRecordNotFound(run.error) && !editedAfterRun;
 
   const reading = useMemo(() => readRecordKey(fields, values, incomplete), [fields, values, incomplete]);
   const typing = useMemo<FieldErrors>(() => (reading.ok ? {} : reading.errors), [reading]);
   // The key changed after "Calcular": the result is of another record.
-  const stale = request?.recordKey !== undefined && (!reading.ok || !sameKey(reading.key, request.recordKey));
+  const otherRecord = request?.recordKey !== undefined && (!reading.ok || !sameKey(reading.key, request.recordKey));
+  // The parameters changed after "Calcular" (D42): the result is of the values used.
+  const otherParameters = request?.recordKey !== undefined && parametersChanged(parameters, parameterForm.formProps.values, request.parameters);
+  const stale = otherRecord || otherParameters;
   const firstField = fields[0]?.name;
 
   function errorAt(name: string): string | null {
@@ -178,6 +191,7 @@ export function RecordRunPanel() {
       id: runs.current,
       revision: saved.revision,
       recordKey: after.key,
+      parameters: readParameters.current,
       definition: latest.current.definition,
       symbols: latest.current.symbols,
     });
@@ -193,10 +207,12 @@ export function RecordRunPanel() {
     event.preventDefault();
     if (disabledReason || running || busy.current) return;
     const before = readScreen();
-    if (!before.ok) {
-      refuse(before.errors);
+    const parameterReading = parameterForm.read();
+    if (!before.ok || !parameterReading.ok) {
+      if (!before.ok) refuse(before.errors);
       return;
     }
+    readParameters.current = parameterReading.parameters;
     setSubmitted(false);
     setSaveFailed(false);
     if (readOnly) {
@@ -259,6 +275,14 @@ export function RecordRunPanel() {
             </div>
           )}
         </fieldset>
+        {parameters.length > 0 ? (
+          <div className="fc-unit-run-parameters">
+            <span className="fc-unit-run-subtitle" aria-hidden="true">
+              Parâmetros
+            </span>
+            <ParameterForm {...parameterForm.formProps} disabled={running} />
+          </div>
+        ) : null}
       </div>
 
       <div className="fc-unit-run-output">
@@ -285,7 +309,9 @@ export function RecordRunPanel() {
           <>
             {stale ? (
               <Text as="p" variant="label-13" emphasis="secondary" className="fc-unit-run-stale">
-                Resultado de outro registro. Calcule de novo para ver o do registro escolhido.
+                {otherRecord
+                  ? 'Resultado de outro registro. Calcule de novo para ver o do registro escolhido.'
+                  : 'Resultado de parâmetros anteriores. Calcule de novo para ver o dos parâmetros atuais.'}
               </Text>
             ) : null}
             <UnitRunResult

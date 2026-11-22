@@ -3,6 +3,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { dataOrError, useApiClient, type Schemas } from '../../api';
 import { isSameSessionData, onSessionDataCleared, sessionDataMark, useSession } from '../../session';
 import { workflowDraftKey } from '../../workflows';
+import type { ParameterValue } from '../../executions';
 import type { WorkflowDefinition } from '../draft';
 
 /** The preview of the saved draft (generated from the contract). */
@@ -20,6 +21,8 @@ export interface PreviewRequest {
   id: number;
   revision: number;
   definition: WorkflowDefinition;
+  /** The `parameters` of the run, read from the parameters form (E6-22). */
+  parameters: Record<string, ParameterValue>;
 }
 
 /** The last preview of a workflow, kept while the module is open (the "Calcular" tab chooses a record from its sample). */
@@ -27,6 +30,8 @@ export interface LastPreview {
   revision: number;
   /** The definition that ran: the names of the blocks and groups are read from it. */
   definition: WorkflowDefinition;
+  /** The `parameters` the preview ran with: a change only in the form makes the result out of date (D42). */
+  parameters: Record<string, ParameterValue>;
   preview: Preview;
 }
 
@@ -87,7 +92,7 @@ export function useLastPreview(workflowId: string): LastPreview | null {
  * Runs the preview of the saved draft (`POST /v1/workflows/{id}/draft/previews`, E5-11). Nothing is saved on the server,
  * so it is a query (ADR 0025): the key carries the run number and the result leaves the cache as soon as nobody reads it
  * (`gcTime: 0`); the answer is kept as the workflow's last preview (`useLastPreview`). Errors are `ApiError`:
- * `409 draft_conflict`, `draft_has_problems`, `no_batch_source`, `connection_credential_unreadable` and the `422` of the
+ * `409 draft_conflict`, `draft_has_problems`, the `422` of a parameter (`missing_parameter`, `invalid_parameter`), `no_batch_source`, `connection_credential_unreadable` and the `422` of the
  * connection. A read error (`schema_drift`, `source_read_denied`, `parameter_table_rows`) is a `200` with `error`.
  */
 export function usePreview(workflowId: string, request: PreviewRequest | null) {
@@ -101,12 +106,12 @@ export function usePreview(workflowId: string, request: PreviewRequest | null) {
       const preview = await dataOrError(
         client.POST('/v1/workflows/{id}/draft/previews', {
           params: { path: { id: workflowId } },
-          body: { revision: request!.revision, sample_size: PREVIEW_SAMPLE_SIZE, parameters: {} },
+          body: { revision: request!.revision, sample_size: PREVIEW_SAMPLE_SIZE, parameters: request!.parameters },
           signal,
         }),
       );
       // An answer of the previous person or tenant is never kept for the next one.
-      if (isSameSessionData(queryClient, mark)) keep(storeOf(queryClient), key, { revision: request!.revision, definition: request!.definition, preview });
+      if (isSameSessionData(queryClient, mark)) keep(storeOf(queryClient), key, { revision: request!.revision, definition: request!.definition, parameters: request!.parameters, preview });
       return preview;
     },
     enabled: request !== null,

@@ -7,6 +7,8 @@ export { PreviewResult } from './PreviewResult';
 export type { PreviewResultProps } from './PreviewResult';
 export { PREVIEW_LABEL, RUN_PREVIEW_LABEL, COUNT_NOTE } from './messages';
 export { useLastPreview, PREVIEW_SAMPLE_SIZE } from './queries';
+// The parameters form of a run with the last values of the workflow (E6-22); "Calcular" uses it too (unit-run -> preview, D25).
+export { parametersChanged, useRunParameters } from './parameters';
 export type { LastPreview, Preview, PreviewGroup, PreviewRecord, PreviewSource } from './queries';
 
 /** The value of the "Prévia" tab of the bottom panel (`bottomTabs` of the editor screen), between Problemas and Calcular. */

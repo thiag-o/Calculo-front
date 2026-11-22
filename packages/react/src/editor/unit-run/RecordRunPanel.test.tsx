@@ -27,7 +27,10 @@ import {
 
 // The last preview of each workflow comes from the "Prévia" tab (useLastPreview, D25); here it is set by the test.
 const lastPreviews = vi.hoisted(() => new Map<string, unknown>());
-vi.mock('../preview', () => ({ useLastPreview: (workflowId: string) => lastPreviews.get(workflowId) ?? null }));
+vi.mock('../preview', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../preview')>()),
+  useLastPreview: (workflowId: string) => lastPreviews.get(workflowId) ?? null,
+}));
 
 /** The "Prévia" tab ran a preview of the workflow (the definition that ran is the draft's). */
 function previewRan(preview: Schemas['Preview'], workflowId = WORKFLOW_ID) {

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dataOrError, useApiClient, type Schemas } from '../../api';
 import { isSameSessionData, sessionDataMark } from '../../session';
 import { workflowDraftKey } from '../../workflows';
+import type { ParameterValue } from '../../executions';
 import type { DraftSymbol, WorkflowDefinition } from '../draft';
 import { keepLastUnitRun } from './lastRun';
 import type { RecordKey } from './recordKey';
@@ -16,6 +17,8 @@ interface RequestBase {
   id: number;
   revision: number;
   definition: WorkflowDefinition;
+  /** The `parameters` of the run, read from the parameters form (E6-22). */
+  parameters: Record<string, ParameterValue>;
   /** The symbols of the analysis when it ran: the types of the variables of the batch source and of the Source blocks. */
   symbols?: readonly DraftSymbol[];
 }
@@ -30,7 +33,7 @@ export type UnitRunRequest = RequestBase & ({ inputs: Record<string, Value>; rec
  * Runs the saved draft for one record (`POST /v1/workflows/{id}/draft/unit-runs`, E4-14). Nothing is saved, so it is a
  * query (ADR 0025): the key carries the run number, not the values, and the result leaves the cache as soon as nobody
  * reads it (`gcTime: 0`). Errors are `ApiError`: `409 draft_conflict`, `422 draft_has_problems` (with `problems`) and
- * `422 invalid_inputs` (with `fields` by input); with a record key, `404 record_not_found`. The answer is kept as the
+ * `422 invalid_inputs` (with `fields` by input); `422 missing_parameter` and `invalid_parameter` (with `fields` by parameter); with a record key, `404 record_not_found`. The answer is kept as the
  * workflow's last run (`useLastUnitRun`).
  */
 export function useUnitRun(workflowId: string, request: UnitRunRequest | null) {
@@ -44,8 +47,8 @@ export function useUnitRun(workflowId: string, request: UnitRunRequest | null) {
         client.POST('/v1/workflows/{id}/draft/unit-runs', {
           params: { path: { id: workflowId } },
           body: request!.recordKey
-            ? { revision: request!.revision, record_key: request!.recordKey, parameters: {} }
-            : { revision: request!.revision, inputs: request!.inputs ?? {}, parameters: {} },
+            ? { revision: request!.revision, record_key: request!.recordKey, parameters: request!.parameters }
+            : { revision: request!.revision, inputs: request!.inputs ?? {}, parameters: request!.parameters },
           signal,
         }),
       );
