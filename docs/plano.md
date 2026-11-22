@@ -1490,6 +1490,14 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Fazer: o modo simulado do e2e roda com menos workers (o número sai de uma variável, com um padrão que não sature a CPU no primeiro carregamento do shell), e os testes que estouraram o tempo sob carga (`configurator-and-reset-link.spec.ts:24`, `sign-out.spec.ts:6`, `draft-autosave.spec.ts:54`) esperam pelo estado da tela, nunca por tempo fixo.
 - Aceite: três rodadas seguidas do `pnpm e2e` com duas worktrees rodando ao mesmo tempo, sem estouro de tempo.
 
+**F114 · Manutenção: lista do Select acompanha o campo quando o painel cresce (F113)**
+- dep: —
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/design-system/form/Select.tsx`, `packages/react/src/design-system/form/Select.test.tsx`
+- Fazer: o `Select` usa `position="popper"` sem `updatePositionStrategy="always"`. Quando o painel cresce embaixo de uma lista aberta, a lista fica para trás e sai da janela. A lista passa a se reposicionar sempre que o campo se move, sem mudar mais nada no componente.
+- Aceite: um teste que move o campo com a lista aberta e confere a lista acompanhando; os testes do design system e o `pnpm e2e:visual` verdes.
+
 **F97 · Tipos da API do épico 6**
 - tipo: contrato
 - dep: B132
@@ -1576,6 +1584,6 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
