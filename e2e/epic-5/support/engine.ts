@@ -581,7 +581,8 @@ function runSource(run: Run, node: SourceNode): TraceNode {
     warn(run, node.id, message, linked);
   }
   const values: Record<string, Value> = {};
-  const rowKey = Object.fromEntries(Object.entries(linked).map(([name, value]) => [name, keyTextOf(value)]));
+  // A block with no link (a parameters table) reads a row without key: `row_key` null (TraceOrigin), as the backend.
+  const rowKey = node.links.length > 0 ? Object.fromEntries(Object.entries(linked).map(([name, value]) => [name, keyTextOf(value)])) : null;
   for (const { output, column } of outputs) {
     const value = column ? apiOf(first[column.name] ?? null, column) : null;
     values[output.name] = value;

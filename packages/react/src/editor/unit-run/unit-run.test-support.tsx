@@ -479,7 +479,7 @@ export const PREVIEW: Schemas['Preview'] = {
   error: null,
 };
 
-function origin(column: string, connection: string | null = 'ERP', dataset = 'Itens NF', rowKey: Record<string, string> = ORIGIN_ROW) {
+function origin(column: string, connection: string | null = 'ERP', dataset = 'Itens NF', rowKey: Record<string, string> | null = ORIGIN_ROW) {
   return { connection, dataset, column, row_key: rowKey };
 }
 
@@ -491,7 +491,7 @@ export const TRACE_OK: Schemas['UnitRunTrace'] = {
     { variable: 'nf_id', value: '10', origin: origin('nf_id') },
     { variable: 'valor_item', value: '1500.00', origin: origin('vl_itm') },
     { variable: 'categoria', value: 'A', origin: origin('categoria', 'Cadastro', 'Produtos', { cod_prod: 'P-001' }) },
-    { variable: 'cotacao', value: '5.10', origin: origin('cotacao', null, 'Cotações.xlsx', {}) },
+    { variable: 'cotacao', value: '5.10', origin: origin('cotacao', null, 'Cotações.xlsx', null) },
   ],
   nodes: [
     { type: 'source', node_id: 'produto', status: 'ok', values: { categoria: 'A' }, rows_found: 1, warnings: [], error: null },
@@ -606,4 +606,16 @@ export const TRACE_ERROR: Schemas['UnitRunTrace'] = {
   outputs: {},
   output_hash: null,
   error: { node_id: 'td_elegibilidade', code: 'no_rule_matched', message: 'Nenhuma regra casou com os valores do registro.', values: { categoria: 'Z' } },
+};
+
+/**
+ * The trace of the reference campaign as the real backend answers it (CK5): a Source block over a parameters table, with no
+ * link, reads its row with `row_key` null (`TraceOrigin`), and the group has `inputs`, `outputs` and `nodes`, no `values`.
+ */
+export const TRACE_CAMPAIGN: Schemas['UnitRunTrace'] = {
+  ...TRACE_OK,
+  inputs: [
+    ...TRACE_OK.inputs,
+    { variable: 'teto_pontos_item', value: '150.00', origin: { connection: 'ERP', dataset: 'Parâmetros', column: 'teto_pontos_item', row_key: null } },
+  ],
 };

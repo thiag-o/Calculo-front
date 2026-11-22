@@ -135,6 +135,19 @@ describe('valores do último cálculo no canvas', () => {
     expect(bonus.querySelector('.fc-canvas-block')).toHaveAttribute('data-run-status', 'error');
   });
 
+  it('trace como o da campanha real: a tabela de parâmetros sem chave da linha e o grupo sem values mostram os valores', async () => {
+    const campaign: Trace = {
+      ...trace(),
+      inputs: [
+        ...trace().inputs,
+        { variable: 'teto', value: '150.00', origin: { connection: 'ERP', dataset: 'Parâmetros', column: 'teto_pontos_item', row_key: null } },
+      ],
+    };
+    await renderAndCalculate(campaign);
+    expect(within(node(/^Pontos, Cálculo/)).getByRole('list', { name: 'Valores de Pontos' })).toHaveTextContent('pontos225,00');
+    expect(node('Pontuação, Grupo, 2 blocos, com avisos no último cálculo')).toBeInTheDocument();
+  });
+
   it('o bloco que não rodou fica cinza, com "não rodado" no nome acessível', async () => {
     const notRun: FormulaNode = { ...BONUS_ERROR, status: 'not_run', error: null };
     await renderAndCalculate(trace(notRun));

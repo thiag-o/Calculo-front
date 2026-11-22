@@ -2396,45 +2396,11 @@ export interface components {
             revision: number;
             record_key: components["schemas"]["RecordKey"];
         };
-        /** @description Um valor com o nome da variável ou do campo de saída. */
-        NamedValue: {
-            name: string;
-            value: components["schemas"]["Value"];
-        };
         /** @description Uma falha ou um aviso de um nó. */
         Message: {
             code: components["schemas"]["FailureCode"];
             /** @description Em pt-BR; o aviso diz o que foi feito. */
             message: string;
-        };
-        /** @description A falha que encerrou o registro. */
-        UnitRunError: {
-            node_id: string;
-            code: components["schemas"]["FailureCode"];
-            message: string;
-        };
-        /** @description O resultado de um nó, na ordem de execução. */
-        UnitRunNode: {
-            node_id: string;
-            status: components["schemas"]["NodeRunStatus"];
-            /** @description As saídas do nó, com as casas do tipo declarado. */
-            values: components["schemas"]["NamedValue"][];
-            /** @description Na Tabela de Decisão, a regra que casou (a partir de 1). */
-            matched_rule: number | null;
-            warnings: components["schemas"]["Message"][];
-            error: components["schemas"]["Message"] | null;
-        };
-        /**
-         * @description O resultado da execução unitária do épico 4 (nada é guardado). A rota
-         *     passa a responder o `UnitRunTrace` (B97); este esquema fica só até lá
-         *     (ADR 0094).
-         */
-        UnitRun: {
-            status: components["schemas"]["UnitRunStatus"];
-            /** @description Os campos de saída do workflow. Com `status` `error`, vem vazia. */
-            outputs: components["schemas"]["NamedValue"][];
-            nodes: components["schemas"]["UnitRunNode"][];
-            error: components["schemas"]["UnitRunError"] | null;
         };
         /** @description O `Problem` do `409 draft_conflict`, com a revisão atual do rascunho. */
         DraftConflictProblem: {
@@ -2474,6 +2440,25 @@ export interface components {
             };
             /** @description Os problemas do rascunho salvo. */
             problems?: components["schemas"]["WorkflowProblem"][];
+        };
+        /**
+         * @description O `Problem` do `422` da prévia. `fields` vem no `invalid_data` (o corpo
+         *     ou o `{id}` do caminho); não vem no `connection_failed` nem no
+         *     `connection_target_not_allowed`.
+         */
+        PreviewRejectedProblem: {
+            /** @default about:blank */
+            type: string;
+            title: string;
+            status: number;
+            /** @description Mensagem em pt-BR para o usuário final. */
+            detail: string;
+            /** @description Identificador estável do erro (slug). */
+            code: string;
+            /** @description Erro por campo do corpo (`{"<field>": "<error>"}`). */
+            fields?: {
+                [key: string]: string;
+            };
         };
         /**
          * @description Modo do bloco Fonte: `linear` (traz uma linha por registro, pelas
@@ -2868,7 +2853,11 @@ export interface components {
             dataset: string;
             /** @description A coluna na origem (no Excel, o cabeçalho da coluna). */
             column: string;
-            row_key: components["schemas"]["RecordKey"];
+            /**
+             * @description A chave da linha; nulo numa tabela de parâmetros, que não tem
+             *     ligação.
+             */
+            row_key: components["schemas"]["RecordKey"] | null;
         };
         /** @description Um Cálculo ou uma Tabela de Decisão no trace (o que o épico 4 já trazia). */
         TraceFormulaNode: {
@@ -2932,7 +2921,10 @@ export interface components {
             code: components["schemas"]["FailureCode"];
             /** @description Em pt-BR, com os nomes do caso. */
             message: string;
-            /** @description Os valores envolvidos, por nome (vazio quando não há). */
+            /**
+             * @description Os valores envolvidos, por nome: as variáveis que o nó lê, com o valor no momento da falha
+             *     (vazio quando não há).
+             */
             values: {
                 [key: string]: components["schemas"]["Value"];
             };
@@ -5476,7 +5468,10 @@ export interface operations {
             404: components["responses"]["NotFound"];
             /**
              * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
-             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
+             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`), ou
+             *       um dataset ou uma variável de uma fonte foi removido do catálogo
+             *       depois da análise e antes da leitura (`unknown_dataset` ou
+             *       `unknown_catalog_variable` no nó da fonte);
              *     - `no_batch_source`: o workflow não tem fonte do lote;
              *     - `connection_credential_unreadable`: a credencial guardada de uma
              *       conexão que a prévia lê não pôde ser lida; cadastre-a de novo (D44).
@@ -5501,7 +5496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["Problem"];
+                    "application/problem+json": components["schemas"]["PreviewRejectedProblem"];
                 };
             };
         };
@@ -5548,6 +5543,12 @@ export interface operations {
             /**
              * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
              *       nada é executado;
+             *     - `draft_has_problems`: um dataset ou uma variável de uma fonte foi
+             *       removido do catálogo depois que o rascunho foi analisado e antes da
+             *       leitura; o problema (`unknown_dataset` ou `unknown_catalog_variable`)
+             *       vem em `problems`, no nó da fonte (`node_id` nulo na fonte do lote; `path` aponta o `dataset_id` do bloco
+             *       quando é o dataset que sumiu),
+             *       como a análise o mostraria (nunca um `404`);
              *     - `connection_credential_unreadable`: a credencial guardada de uma
              *       conexão que a execução lê não pôde ser lida; cadastre-a de novo (D44).
              */

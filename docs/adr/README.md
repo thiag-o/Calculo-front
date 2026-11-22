@@ -48,7 +48,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0026](0026-dialogo-recebe-foco-ao-fechar.md) | `Dialogo` recebe `focoAoFechar` (referência ou função) para devolver o foco; substitui a 0022 | aceita, revisar no checkpoint | 2026-11-16 |
 | [0027](0027-telas-de-abas-controladas-e-secoes-do-menu.md) | Telas de abas controláveis pela rota (`aba`/`aoTrocarAba`) e seção do menu como um item só, no casca e no incorporado; componente `Tabs` (complementa 0006) | aceita, revisar no checkpoint (complementada por 0028; atualizada na F40) | 2026-11-16 |
 | [0028](0028-telas-avulsas-com-provedor-interno.md) | Telas avulsas funcionam sozinhas, com provedor interno do módulo (complementa 0027) | aceita, revisar no checkpoint | 2026-11-16 |
-| [0029](0029-e2e-apoio-por-epico-e-contrato-unico.md) | Testes e2e: `apoio/` por épico com fixture estendida e cópia única dos exemplos do contrato | aceita, revisar no checkpoint (complementada por 0030) | 2026-11-16 |
+| [0029](0029-e2e-apoio-por-epico-e-contrato-unico.md) | Testes e2e: `apoio/` por épico com fixture estendida e cópia única dos exemplos do contrato | aceita, revisar no checkpoint (complementada por 0030 e 0060) | 2026-11-16 |
 | [0030](0030-simulacao-e2e-intercepta-por-glob-com-fallback.md) | Simulação e2e intercepta a API por glob `**/v1/**` com `route.fallback()` (complementa 0029) | aceita, revisar no checkpoint (complementada por 0036) | 2026-11-16 |
 | [0031](0031-codigo-em-ingles.md) | Código do front em inglês, textos para pessoas em português (segue a 0047 do back; glossário em `docs/glossario.md`) | aceita, revisar no checkpoint | 2026-11-16 |
 | [0032](0032-segredo-digitado-fora-do-cache-de-mutacao.md) | Segredo digitado pela pessoa: mutação sem variáveis, corpo lido na chamada, `gcTime: 0` (complementa 0021) | aceita, revisar no checkpoint | 2026-11-17 |
@@ -79,6 +79,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0057](0057-editor-values-folha-e-sentido-canvas-unit-run-preview-values.md) | `editor/values/` é folha com os formatadores; sentido canvas → unit-run → preview → values (complementa 0056) | aceita, revisar no checkpoint (complementada por 0058 e 0059) | 2026-11-21 |
 | [0058](0058-ultimo-calculo-em-memoria-e-valores-no-canvas.md) | Último cálculo em memória por `QueryClient`, valores no canvas só para a definição que rodou, e grupo que recebe nós prontos (complementa 0057, segue a 0045) | aceita, revisar no checkpoint | 2026-11-21 |
 | [0059](0059-canvas-importa-sources-batch-source-e-propriedades-por-render-props.md) | O canvas importa `sources/batch-source`, e o `PropertiesPanel` recebe as peças de fontes e grupos por render props (complementa 0052 e 0057) | aceita, revisar no checkpoint | 2026-11-21 |
+| [0060](0060-e2e-simulado-valida-respostas-contra-o-contrato.md) | E2e simulado valida as respostas da API simulada (`VALIDATED_ROUTES`) contra o esquema do contrato, com o Ajv do openapi-typescript (complementa 0029) | aceita, revisar no checkpoint | 2026-11-22 |
 
 ## Pendentes (sem ADR ainda)
 

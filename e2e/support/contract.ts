@@ -315,6 +315,24 @@ export const EXAMPLES = {
     detail: 'O banco não aceitou uma conexão com TLS, que é obrigatória.',
     code: 'connection_without_tls'
   },
+  SourceRemovedFromCatalog: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Corrija os problemas do rascunho e tente de novo.',
+    code: 'draft_has_problems',
+    problems: [
+      {
+        node_id: 'produto',
+        path: 'root.nodes[0].dataset_id',
+        code: 'unknown_dataset',
+        message: 'O dataset de Produto não existe mais no catálogo.',
+        start: null,
+        end: null,
+        suggestion: null,
+      },
+    ],
+  },
   TargetNotAllowed: {
     type: 'about:blank',
     title: 'Destino não permitido',
@@ -1932,7 +1950,11 @@ export const EXAMPLES = {
         node_id: 'calc_pontos',
         code: 'null_result',
         message: 'O resultado de Pontos ficou nulo; o valor ficou nulo, como pede a política do nó.',
-        values: {},
+        values: {
+          fator: '0.1500',
+          pontos_historico: '0.00',
+          valor_item: null,
+        },
       },
     ],
   },
@@ -2008,6 +2030,8 @@ export const EXAMPLES = {
       code: 'null_result',
       message: 'O resultado de Pontos ficou nulo.',
       values: {
+        fator: '0.1500',
+        pontos_historico: '0.00',
         valor_item: null,
       },
     },

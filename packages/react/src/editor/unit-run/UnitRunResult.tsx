@@ -195,7 +195,8 @@ const TYPED_ORIGIN = 'Digitado';
 function InputLine({ input, type, onCopy }: { input: TraceInput; type: DataType | undefined; onCopy: Copy }) {
   const value = formatValue(input.value, type);
   const origin = input.origin ? originPath(input.origin) : TYPED_ORIGIN;
-  const rowKey = input.origin && Object.keys(input.origin.row_key).length > 0 ? keyText(input.origin.row_key) : null;
+  // `row_key` is null in a table with no link (a parameters table): the origin has no line key.
+  const rowKey = input.origin?.row_key ? keyText(input.origin.row_key) : null;
   return (
     <li className="fc-unit-run-trace-input">
       <div className="fc-unit-run-value">

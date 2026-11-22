@@ -9,6 +9,7 @@ import {
   PROBLEM,
   RUN_ROUTE,
   SAVE_ROUTE,
+  TRACE_CAMPAIGN,
   TRACE_ERROR,
   TRACE_FILTERED,
   TRACE_IGNORED,
@@ -228,6 +229,24 @@ describe('aba Calcular: o trace', () => {
     // An Excel dataset has no connection.
     expect(inputs[3]).toHaveTextContent('Cotações.xlsx › cotacao');
     expect(inputs[3]).not.toHaveTextContent('›  ›');
+  });
+
+  it('trace real da campanha: a tabela de parâmetros sem chave da linha e o grupo sem values desenham o resultado', async () => {
+    const { user } = await calculateTrace(TRACE_CAMPAIGN);
+    expect(screen.getByText('Resultado do cálculo: ok')).toBeInTheDocument();
+    const inputs = within(screen.getByRole('region', { name: 'Entradas' })).getAllByRole('listitem');
+    const parameters = inputs.at(-1)!;
+    expect(parameters).toHaveTextContent('teto_pontos_item');
+    // Not a symbol of this draft: the value goes as the API sent it.
+    expect(parameters).toHaveTextContent('150.00');
+    expect(parameters).toHaveTextContent('ERP › Parâmetros › teto_pontos_item');
+    expect(parameters).not.toHaveTextContent('chave da linha');
+    const write = vi.spyOn(navigator.clipboard, 'writeText');
+    await user.click(screen.getByRole('button', { name: 'Copiar teto_pontos_item' }));
+    expect(write).toHaveBeenCalledWith('teto_pontos_item = 150.00 · ERP › Parâmetros › teto_pontos_item');
+    // The group has Input, Output and the blocks inside, without values of its own.
+    expect(screen.getByLabelText('Output de Pontuação')).toHaveTextContent('pontos225,00');
+    expect(within(screen.getByRole('region', { name: 'Saídas' })).getByText('pontos').nextSibling).toHaveTextContent('225,00');
   });
 
   it('Entradas são copiáveis: o botão copia o valor com a origem', async () => {

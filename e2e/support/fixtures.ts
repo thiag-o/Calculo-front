@@ -2,7 +2,8 @@
 // - simulated (pnpm e2e): the simulated API (`SimulatedApi`) is turned on for every page, with the accounts below;
 // - real (pnpm e2e:real): the shell talks to the real backend at E2E_API_URL, with the `prepare-local` accounts.
 import { randomUUID } from 'node:crypto';
-import { test as base, expect, type TestInfo } from '@playwright/test';
+import { test as base, expect, type Page, type TestInfo } from '@playwright/test';
+import { contractResponses } from './contract-schema';
 import { SimulatedApi, type SimulatedAccount } from './simulated-api';
 
 export { expect };
@@ -80,6 +81,38 @@ function realApiUrl(): string {
   return variable('E2E_API_URL', 'endereço da API do back, sem o /v1; o playwright.config.ts o repassa ao casca como VITE_API_URL').replace(/\/+$/, '');
 }
 
+/**
+ * Checks every answer of the page to a validated route (contract-schema.ts) against the contract's schema, whatever
+ * simulation gave it. Returns the function that waits for the bodies read and gives the violations.
+ */
+function checkContractResponses(page: Page, shellOrigin: string): () => Promise<string[]> {
+  const contract = contractResponses();
+  if (!contract.checked) return async () => [];
+  const pending: Promise<string[]>[] = [];
+  page.on('response', (response) => {
+    const url = new URL(response.url());
+    const method = response.request().method();
+    if (url.origin === shellOrigin || !contract.covers(method, url.pathname)) return;
+    pending.push(
+      response
+        .body()
+        .then((body) => {
+          const text = body.toString('utf-8');
+          let json: unknown;
+          try {
+            json = JSON.parse(text);
+          } catch {
+            json = text;
+          }
+          return contract.violations(method, url.pathname, response.status(), response.headers()['content-type'] ?? '', json) ?? [];
+        })
+        // A body Playwright no longer holds (the page navigated away) is not checked.
+        .catch(() => []),
+    );
+  });
+  return async () => (await Promise.all(pending)).flat();
+}
+
 function emailWithoutAccount(): string {
   return `e2e-sem-conta-${randomUUID()}@e2e.local`;
 }
@@ -93,6 +126,7 @@ export const test = base.extend<{ api: E2EApi }>({
       if (mode === 'simulated') {
         const simulated = new SimulatedApi(Object.values(SIMULATED_ACCOUNTS));
         await simulated.install(page, shellOrigin);
+        const checks = checkContractResponses(page, shellOrigin);
         await use({
           mode,
           apiUrl: undefined,
@@ -101,6 +135,10 @@ export const test = base.extend<{ api: E2EApi }>({
         });
         if (simulated.unexpected.length > 0) {
           throw new Error(`O casca chamou rotas fora da API simulada: ${simulated.unexpected.join(', ')}.`);
+        }
+        const violations = await checks();
+        if (violations.length > 0) {
+          throw new Error(`A API simulada respondeu fora do contrato:\n${violations.join('\n')}`);
         }
         return;
       }
