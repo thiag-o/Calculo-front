@@ -1592,8 +1592,16 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - o `parameter-form.css` troca os px crus (fontes de 12 e 13 px, margem de 26 px, altura mínima de 32 px, raio de 6 px) pelos tokens do `estilos.md`.
 - Aceite: `git grep` acha uma definição só de cada formatador e de `RELATIVE_LABELS`; nenhum px cru no `parameter-form.css`; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
 
+**F116 · Manutenção: simulações do e2e do épico 4 no contrato v3 (D38)**
+- dep: F97
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/epic-4/support/`
+- Fazer: as definições simuladas do e2e do épico 4 passam à versão 3 do contrato (`schema_version: 3`, `parameters: []` e os campos novos de `settings`), conferidas contra o esquema como na ADR 0060, sem mudar o que os testes do épico 4 cobrem.
+- Aceite: `pnpm e2e e2e/epic-4` verde, com as respostas simuladas validadas contra o contrato.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
