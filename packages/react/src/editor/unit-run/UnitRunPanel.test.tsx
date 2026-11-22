@@ -79,6 +79,7 @@ describe('aba Calcular: formulário', () => {
           momento: new Date('2026-11-20T10:30:15').toISOString(),
           pontuacoes: [],
         },
+        parameters: {},
       },
     ]);
   });

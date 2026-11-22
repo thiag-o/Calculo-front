@@ -101,7 +101,7 @@ export function usePreview(workflowId: string, request: PreviewRequest | null) {
       const preview = await dataOrError(
         client.POST('/v1/workflows/{id}/draft/previews', {
           params: { path: { id: workflowId } },
-          body: { revision: request!.revision, sample_size: PREVIEW_SAMPLE_SIZE },
+          body: { revision: request!.revision, sample_size: PREVIEW_SAMPLE_SIZE, parameters: {} },
           signal,
         }),
       );

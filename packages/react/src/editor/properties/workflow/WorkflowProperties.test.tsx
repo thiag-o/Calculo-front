@@ -44,7 +44,7 @@ describe('Propriedades do workflow', () => {
     const scale = screen.getByRole('textbox', { name: 'Casas decimais' });
     await user.tripleClick(scale);
     await user.paste('4');
-    expect(currentDefinition().settings).toEqual({ error_policy: 'default_value', rounding: { scale: 4, mode: 'half_even' } });
+    expect(currentDefinition().settings).toEqual({ error_policy: 'default_value', rounding: { scale: 4, mode: 'half_even' }, error_limit_percent: '5', trace_level: 'standard' });
 
     await user.tripleClick(scale);
     await user.paste('x');

@@ -204,7 +204,7 @@ describe('aba Prévia: Rodar prévia', () => {
     await screen.findByText('Contagens sobre os primeiros 500 registros.');
     const routes = api.routes().filter((route) => route === SAVE_ROUTE || route === PREVIEW_ROUTE);
     expect(routes).toEqual([SAVE_ROUTE, PREVIEW_ROUTE]);
-    expect(api.bodiesTo(PREVIEW_ROUTE)).toEqual([{ revision: 4, sample_size: 20 }]);
+    expect(api.bodiesTo(PREVIEW_ROUTE)).toEqual([{ revision: 4, sample_size: 20, parameters: {} }]);
     // The block is named as it was saved.
     expect(screen.getByRole('button', { name: 'Produtos do ERP: selecionar no canvas' })).toBeInTheDocument();
   });
@@ -215,7 +215,7 @@ describe('aba Prévia: Rodar prévia', () => {
     await user.click(runButton());
     await screen.findByText('Contagens sobre os primeiros 500 registros.');
     expect(api.bodiesTo(SAVE_ROUTE)).toEqual([]);
-    expect(api.bodiesTo(PREVIEW_ROUTE)).toEqual([{ revision: 3, sample_size: 20 }]);
+    expect(api.bodiesTo(PREVIEW_ROUTE)).toEqual([{ revision: 3, sample_size: 20, parameters: {} }]);
   });
 
   it('se o rascunho não salvar, não roda e diz o porquê', async () => {

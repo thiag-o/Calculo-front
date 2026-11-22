@@ -44,8 +44,8 @@ export function useUnitRun(workflowId: string, request: UnitRunRequest | null) {
         client.POST('/v1/workflows/{id}/draft/unit-runs', {
           params: { path: { id: workflowId } },
           body: request!.recordKey
-            ? { revision: request!.revision, record_key: request!.recordKey }
-            : { revision: request!.revision, inputs: request!.inputs ?? {} },
+            ? { revision: request!.revision, record_key: request!.recordKey, parameters: {} }
+            : { revision: request!.revision, inputs: request!.inputs ?? {}, parameters: {} },
           signal,
         }),
       );

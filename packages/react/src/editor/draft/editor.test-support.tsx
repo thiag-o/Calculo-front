@@ -76,7 +76,8 @@ export const DRAFT: Schemas['Draft'] = {
   definition: {
     schema_version: 1,
     kind: 'batch',
-    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+    parameters: [],
     root: {
       batch_source: null,
       inputs: [

@@ -1188,6 +1188,10 @@ export interface paths {
          *       `sample_size` registros, com os valores de Input e de Output de cada
          *       um.
          *     - `sample_size` vai de 1 a 100 (padrão 20).
+         *     - `parameters` (épico 6): os valores dos parâmetros de execução, por
+         *       nome, como na execução em lote (`NewExecution`). O ausente usa o
+         *       padrão. Obrigatório sem valor nem padrão: `422 missing_parameter`;
+         *       valor recusado: `422 invalid_parameter`.
          *     - `revision` diferente da atual: `409 draft_conflict`, com
          *       `current_revision`.
          *     - Rascunho com problemas: `409 draft_has_problems`, com a lista em
@@ -1239,6 +1243,11 @@ export interface paths {
          *
          *     `inputs` e `record_key` juntos, `record_key` num workflow sem fonte do
          *     lote ou `inputs` num workflow com fonte do lote: `422 invalid_data`.
+         *
+         *     Nas duas formas, `parameters` (épico 6) traz os valores dos parâmetros
+         *     de execução, por nome, como na execução em lote (`NewExecution`). O
+         *     ausente usa o padrão. Obrigatório sem valor nem padrão:
+         *     `422 missing_parameter`; valor recusado: `422 invalid_parameter`.
          *     - `revision` diferente da atual: `409 draft_conflict`, com
          *       `current_revision`.
          *     - Credencial guardada de uma conexão ilegível:
@@ -1272,6 +1281,218 @@ export interface paths {
          *     trace.
          */
         post: operations["run_unit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dispara a execução em lote do rascunho salvo
+         * @description Roda em lote o rascunho **salvo** na `revision` informada (E6-1). Na
+         *     criação, a execução guarda uma cópia da definição e da revisão: uma
+         *     edição posterior do rascunho não muda nada nela. O `workflow_version`
+         *     fica `null` até o épico 10.
+         *
+         *     Os `parameters` chegam por nome, como texto (o `period` como
+         *     `{"start", "end"}`, a lista como lista de textos). O ausente usa o
+         *     padrão; o relativo é resolvido pelo "agora" do relógio, no fuso
+         *     `FLUXO_BUSINESS_TIMEZONE` (padrão `America/Sao_Paulo`). A execução
+         *     grava os valores **resolvidos** (`{"start": "2026-10-01", "end":
+         *     "2026-10-31"}`, nunca `previous_month`) e o "agora" usado (`now`).
+         *
+         *     Responde `202` com a `Execution` em `pending`; um worker a pega da fila
+         *     e a processa em chunks. Nada é lido das fontes nesta chamada.
+         *     - `revision` diferente da atual: `409 draft_conflict`, com
+         *       `current_revision`.
+         *     - Rascunho com problemas: `409 draft_has_problems`, com a lista em
+         *       `problems`.
+         *     - Workflow sem fonte do lote: `409 no_batch_source`.
+         *     - Parâmetro obrigatório sem valor nem padrão: `422 missing_parameter`;
+         *       valor fora do tipo, fora de `allowed_values`, nome desconhecido ou
+         *       `start` depois de `end`: `422 invalid_parameter`. Os dois trazem o
+         *       nome do parâmetro e o motivo em `fields`, sem ecoar o valor.
+         *     - Corpo acima de 1 MB: `413 definition_too_large`; outro `Content-Type`:
+         *       `415`.
+         */
+        post: operations["trigger_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista as execuções do tenant
+         * @description As execuções do tenant atual, paginadas, da mais nova para a mais velha:
+         *     por `created_at` decrescente e, no empate, por `id` decrescente.
+         *     - `workflow_id` filtra pelas execuções de um workflow;
+         *     - `status` aceita vários valores (`?status=completed&status=aborted`).
+         */
+        get: operations["list_executions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve uma execução
+         * @description A execução, com o estado, as contagens, os erros agrupados e o arquivo
+         *     entregue. O painel a consulta enquanto ela roda: `progress`, `totals` e
+         *     `error_groups` são atualizados no fim de cada chunk.
+         */
+        get: operations["get_execution"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancela uma execução
+         * @description Pede o cancelamento, sem corpo, e responde `202` com a `Execution`.
+         *     - Uma execução `pending` vira `cancelled` na hora.
+         *     - Nos outros estados não finais, o pedido fica em `cancel_requested_at`
+         *       e o worker para no fim do chunk em andamento; aí a execução vira
+         *       `cancelled`.
+         *     - Execução cancelada nunca entrega nada.
+         *     - Pedir de novo, antes de o worker parar, mantém o primeiro
+         *       `cancel_requested_at`.
+         *     - Execução já terminada (`completed`, `completed_with_errors`,
+         *       `aborted` ou `cancelled`): `409 execution_finished`.
+         */
+        post: operations["cancel_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions/{id}/output": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Baixa o CSV entregue pela execução
+         * @description O CSV da execução (E6-10), em streaming, com
+         *     `Content-Disposition: attachment`. Um arquivo por execução, só com os
+         *     registros `ok` e `ok_with_warnings`:
+         *     - UTF-8 sem BOM, separador `,`, aspas e quebra de linha pela RFC 4180
+         *       (`\r\n`, também depois da última linha);
+         *     - números como texto exato, com ponto; datas em ISO; booleano `true` ou
+         *       `false`; nulo como campo vazio;
+         *     - colunas, em ordem: `result_key`, `revision`, `run_id`,
+         *       `workflow_version` (vazio até o épico 10) e `status`; as variáveis da
+         *       chave do registro, com o nome no workflow; os campos de
+         *       `root.output.fields`, na ordem declarada; e `_warnings`, com os
+         *       códigos dos avisos separados por `|` (vazio sem aviso).
+         *     - `result_key` é o SHA-256 hexadecimal do JSON canônico
+         *       `[tenant_id, workflow_id, record_key]` (o mesmo JSON canônico dos
+         *       hashes do trace); `revision` é a última entregue daquele `result_key`
+         *       mais 1 (a primeira é 1).
+         *
+         *     O download vale por `FLUXO_OUTPUT_RETENTION_DAYS` dias (padrão 7, de 1
+         *     a 90), até o `output.expires_at` da execução. Depois disso:
+         *     `410 output_expired`. Execução sem arquivo (abortada, cancelada ou
+         *     ainda rodando): `404 output_not_available`.
+         */
+        get: operations["download_execution_output"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions/{id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os registros de uma execução
+         * @description Os registros calculados pela execução, lidos do trace guardado, 50 por
+         *     página, na ordem de leitura (chunk a chunk, e a ordem da fonte do lote
+         *     dentro do chunk). Vale em qualquer `trace_level`.
+         *     - `status` aceita vários valores (`?status=error&status=ok_with_warnings`);
+         *     - `node_id` filtra pelo nó do erro (`error_node_id`);
+         *     - `code` filtra pelo código do erro (`error_code`).
+         *
+         *     Os registros com erro de chave (`null_record_key` e
+         *     `duplicate_record_key`) aparecem na lista com `result_key` nulo: eles
+         *     não foram calculados e não têm trace próprio.
+         */
+        get: operations["list_execution_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions/{id}/records/{result_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve o trace guardado de um registro
+         * @description O registro e o seu trace, como a execução o guardou (E6-11), no nível
+         *     do `trace_level` dela: no `minimal`, `outputs` e `trace` vêm nulos; no
+         *     `standard` e no `full`, completos (o `full` é igual ao `standard` até o
+         *     épico 8). O `trace` tem o formato do `UnitRunTrace` da execução
+         *     unitária; os valores dos parâmetros são os da execução (`parameters`).
+         *     - `result_key` que não está na execução: `404 record_not_found`.
+         */
+        get: operations["get_execution_record"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1953,9 +2174,20 @@ export interface components {
          *     (B119) aponta, pelo `path`, um campo de uma definição guardada que o
          *     motor passou a recusar na forma: "Este campo não é mais aceito.
          *     Corrija-o e salve de novo.".
+         *
+         *     Do épico 6 (Contratos, "Parâmetro na definição"), no fim da lista:
+         *     `unknown_parameter` (com a sugestão por distância, como nas variáveis),
+         *     `parameter_type_mismatch` (o tipo do parâmetro não serve no filtro ou na
+         *     expressão), `period_without_part` (um `period` sem `.inicio` ou `.fim`),
+         *     `list_outside_in` (uma lista fora do `em` e do filtro `in`),
+         *     `invalid_parameter_default` e `invalid_allowed_value` (o literal não é
+         *     do tipo do parâmetro) e `output_field_conflicts_with_key` (um campo da
+         *     saída com o nome de uma variável da chave do registro: os dois viram
+         *     colunas do CSV). O `parameter_not_available` não sai mais no workflow
+         *     de lote; ele volta no workflow função (épico 12).
          * @enum {string}
          */
-        ProblemCode: "syntax_error" | "formula_empty" | "formula_too_long" | "formula_too_complex" | "unknown_variable" | "unknown_function" | "wrong_argument_count" | "type_mismatch" | "invalid_constant" | "operator_not_allowed" | "function_not_allowed_here" | "multiple_outside_aggregation" | "multiple_without_brackets" | "linear_with_brackets" | "more_than_one_list" | "nested_aggregation" | "aggregation_without_multiple" | "cycle" | "duplicate_name" | "duplicate_node_id" | "reserved_name" | "output_type_mismatch" | "multiple_in_output" | "missing_default_value" | "empty_decision_table" | "rule_width" | "inputs_with_batch_source" | "unknown_dataset" | "unknown_catalog_variable" | "variable_not_from_dataset" | "not_visible" | "link_to_calculated" | "link_type_mismatch" | "filter_outside_root" | "filter_type_mismatch" | "parameter_not_available" | "scale_above_engine_limit" | "group_too_deep" | "empty_group_output" | "missing_batch_source_key" | "missing_order_by" | "definition_invalid";
+        ProblemCode: "syntax_error" | "formula_empty" | "formula_too_long" | "formula_too_complex" | "unknown_variable" | "unknown_function" | "wrong_argument_count" | "type_mismatch" | "invalid_constant" | "operator_not_allowed" | "function_not_allowed_here" | "multiple_outside_aggregation" | "multiple_without_brackets" | "linear_with_brackets" | "more_than_one_list" | "nested_aggregation" | "aggregation_without_multiple" | "cycle" | "duplicate_name" | "duplicate_node_id" | "reserved_name" | "output_type_mismatch" | "multiple_in_output" | "missing_default_value" | "empty_decision_table" | "rule_width" | "inputs_with_batch_source" | "unknown_dataset" | "unknown_catalog_variable" | "variable_not_from_dataset" | "not_visible" | "link_to_calculated" | "link_type_mismatch" | "filter_outside_root" | "filter_type_mismatch" | "parameter_not_available" | "scale_above_engine_limit" | "group_too_deep" | "empty_group_output" | "missing_batch_source_key" | "missing_order_by" | "definition_invalid" | "unknown_parameter" | "parameter_type_mismatch" | "period_without_part" | "list_outside_in" | "invalid_parameter_default" | "invalid_allowed_value" | "output_field_conflicts_with_key";
         /**
          * @description Falhas de dado de um registro (Contratos, "Execução unitária"). O aviso de
          *     uma política tem o mesmo código da falha. `multiple_rules_matched` é
@@ -2082,24 +2314,44 @@ export interface components {
          *     {"error_policy": "error", "rounding": {"scale": 2, "mode": "half_up"}},
          *     "root": {"inputs": [], "nodes": [], "output": {"fields": []}}}`.
          *
-         *     Versão 2 (E5-1): a fonte do lote, o bloco Fonte e o grupo. Uma
-         *     definição na versão 1 é aceita e lida como 2, sem mudar nada (as
-         *     entradas declaradas continuam valendo); a gravação sai sempre na 2.
+         *     Versão 2 (E5-1): a fonte do lote, o bloco Fonte e o grupo.
+         *
+         *     Versão 3 (E6-2): os parâmetros de execução (`parameters`) e, em
+         *     `settings`, o limite de erro e o nível do trace. Definições nas versões
+         *     1 e 2 são aceitas e lidas como 3, sem mudar nada (sem parâmetros, com
+         *     os padrões dos dois campos novos); a gravação sai sempre na 3.
          */
         WorkflowDefinition: {
             /**
-             * @description `2` é a versão atual; `1` é lida como 2.
+             * @description `3` é a versão atual; `1` e `2` são lidas como 3.
              * @enum {integer}
              */
-            schema_version: 1 | 2;
+            schema_version: 1 | 2 | 3;
             kind: components["schemas"]["WorkflowKind"];
             settings: components["schemas"]["WorkflowSettings"];
+            /**
+             * @description Os parâmetros de execução (E6-3), de 0 a 20, com o nome único entre
+             *     eles. Opcional: uma definição nas versões 1 e 2 não o tem (a
+             *     gravação o escreve sempre).
+             * @default []
+             */
+            parameters: components["schemas"]["WorkflowParameter"][];
             root: components["schemas"]["WorkflowRoot"];
         };
         WorkflowSettings: {
             /** @default error */
             error_policy: components["schemas"]["ErrorPolicy"];
             rounding: components["schemas"]["RoundingSettings"];
+            /**
+             * @description O limite de erro (E6-9), em percentual, como texto: de `"0"` a
+             *     `"100"`, com até 2 casas (`"5"`, `"2.5"`). A execução aborta com
+             *     `error_limit_exceeded` quando `error` / (`read` − `ignored` −
+             *     `filtered`) passa dele. Opcional (padrão `"5"`).
+             * @default 5
+             */
+            error_limit_percent: string;
+            /** @default standard */
+            trace_level: components["schemas"]["TraceLevel"];
         };
         RoundingSettings: {
             /** @description Casas oferecidas ao declarar uma saída `decimal` nova (só o padrão da tela). */
@@ -2389,12 +2641,26 @@ export interface components {
             inputs: {
                 [key: string]: components["schemas"]["Value"];
             };
+            /**
+             * @description Os valores dos parâmetros de execução, por nome; o ausente usa o padrão.
+             * @default {}
+             */
+            parameters: {
+                [key: string]: components["schemas"]["ParameterValue"];
+            };
         };
         /** @description A execução unitária de um registro real, pela chave (workflow com fonte do lote). */
         NewUnitRunWithRecordKey: {
             /** @description A revisão do rascunho salvo que deve rodar. */
             revision: number;
             record_key: components["schemas"]["RecordKey"];
+            /**
+             * @description Os valores dos parâmetros de execução, por nome; o ausente usa o padrão.
+             * @default {}
+             */
+            parameters: {
+                [key: string]: components["schemas"]["ParameterValue"];
+            };
         };
         /** @description Uma falha ou um aviso de um nó. */
         Message: {
@@ -2702,6 +2968,13 @@ export interface components {
             revision: number;
             /** @default 20 */
             sample_size: number;
+            /**
+             * @description Os valores dos parâmetros de execução, por nome; o ausente usa o padrão.
+             * @default {}
+             */
+            parameters: {
+                [key: string]: components["schemas"]["ParameterValue"];
+            };
         };
         /**
          * @description A prévia sobre os primeiros 500 registros da fonte do lote (nada é
@@ -2928,6 +3201,354 @@ export interface components {
             values: {
                 [key: string]: components["schemas"]["Value"];
             };
+        };
+        /**
+         * @description Um parâmetro de execução (E6-3), usado como `@nome` nos `values` dos
+         *     filtros da fonte do lote e do bloco Fonte (como valor inteiro, por
+         *     exemplo `"@periodo.inicio"` ou `"@lojas"`), nas fórmulas do Cálculo e
+         *     nas células de condição e de resultado da Tabela de Decisão. É um
+         *     símbolo linear, do tipo do parâmetro, constante no lote inteiro.
+         *
+         *     Regras que o motor confere (erro de forma, `422 invalid_data`):
+         *     - `scale` é obrigatória no `decimal` (de 0 a 18) e proibida nos outros
+         *       tipos;
+         *     - `list: true` transforma o parâmetro numa lista do tipo, com 1 a 100
+         *       valores; o `period` e o `boolean` não aceitam lista. Uma lista só
+         *       entra do lado direito do `em` (`categoria em @categorias`) e no filtro
+         *       `in`;
+         *     - o `default` relativo precisa servir ao tipo (`RelativeDefault`); o
+         *       fixo é um literal da linguagem (uma lista de literais, se `list`; um
+         *       `PeriodLiteral`, se `period`);
+         *     - `allowed_values` só em `text`, `integer` e `date`, com 1 a 100
+         *       literais do tipo.
+         *
+         *     O `period` é um intervalo de datas fechado nas duas pontas, acessado
+         *     só pelas partes `.inicio` e `.fim` (como `@periodo.inicio` e `@periodo.fim`,
+         *     do tipo `date`); sem a parte, é o problema `period_without_part`. Um
+         *     literal que não é do tipo é problema (`invalid_parameter_default`,
+         *     `invalid_allowed_value`), não erro de forma.
+         */
+        WorkflowParameter: {
+            /**
+             * @description Segue a regra de nome de variável e é único entre os parâmetros.
+             *     Pode repetir o nome de uma variável: na fórmula o parâmetro sempre
+             *     aparece com `@`.
+             */
+            name: string;
+            type: components["schemas"]["ParameterType"];
+            /** @description Obrigatório sem valor nem padrão dá `422 missing_parameter`. */
+            required: boolean;
+            list: boolean;
+            /** @description As casas do `decimal`; nula nos outros tipos. */
+            scale: number | null;
+            /** @description O valor usado quando o pedido não traz o parâmetro; nulo sem padrão. */
+            default: components["schemas"]["ParameterDefault"] | null;
+            /**
+             * @description Lista fechada de literais da linguagem (`"\"A\""`, `"10"`,
+             *     `"DATA(2026, 10, 1)"`); nula sem restrição. A consulta a um dataset é
+             *     do épico 7.
+             */
+            allowed_values: string[] | null;
+            description: string | null;
+        };
+        /**
+         * @description Os tipos de valor (`DataType`) mais o `period`.
+         * @enum {string}
+         */
+        ParameterType: "text" | "integer" | "decimal" | "date" | "datetime" | "boolean" | "period";
+        /** @description O padrão de um parâmetro, fixo ou relativo, pelo `kind`. */
+        ParameterDefault: components["schemas"]["FixedParameterDefault"] | components["schemas"]["RelativeParameterDefault"];
+        /** @description Um padrão fixo, escrito como literal da linguagem de fórmula. */
+        FixedParameterDefault: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "fixed";
+            /**
+             * @description Um literal do tipo (`"1.5"`, `"\"A\""`, `"DATA(2026, 10, 1)"`); com
+             *     `list`, uma lista de 1 a 100 literais; no `period`, um
+             *     `PeriodLiteral`.
+             */
+            value: string | string[] | components["schemas"]["PeriodLiteral"];
+        };
+        /** @description O padrão fixo de um `period`, com as duas pontas como literal de data. */
+        PeriodLiteral: {
+            /** @description O início, como `DATA(2026, 10, 1)`. */
+            start: string;
+            /** @description O fim (incluído), como `DATA(2026, 10, 31)`. */
+            end: string;
+        };
+        /** @description Um padrão relativo ao "agora" da execução, por nome. */
+        RelativeParameterDefault: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "relative";
+            value: components["schemas"]["RelativeDefault"];
+        };
+        /**
+         * @description Os padrões relativos, resolvidos a partir do "agora" no fuso
+         *     `FLUXO_BUSINESS_TIMEZONE`. Cada um serve a um tipo só:
+         *     - `date`: `today`, `yesterday`, `first_day_of_current_month`,
+         *       `first_day_of_previous_month` e `last_day_of_previous_month`;
+         *     - `datetime`: `now`;
+         *     - `period`: `current_month`, `previous_month`, `last_7_days` e
+         *       `last_30_days`. Em `last_n_days`, o período vai de hoje menos n dias até ontem.
+         *
+         *     Nos outros tipos não há valor relativo. Um relativo que não serve ao
+         *     tipo (como `previous_month` num `date`) é erro de forma
+         *     (`422 invalid_data`).
+         * @enum {string}
+         */
+        RelativeDefault: "today" | "yesterday" | "first_day_of_current_month" | "first_day_of_previous_month" | "last_day_of_previous_month" | "now" | "current_month" | "previous_month" | "last_7_days" | "last_30_days";
+        /**
+         * @description O que a execução guarda do trace de cada registro (E6-11):
+         *     - `minimal`: tudo menos `outputs` e `trace`, que ficam nulos;
+         *     - `standard`: tudo (o padrão);
+         *     - `full`: igual ao `standard` até o épico 8, quando passa a guardar
+         *       também as linhas dos Múltiplos.
+         * @enum {string}
+         */
+        TraceLevel: "minimal" | "standard" | "full";
+        /**
+         * @description O valor de um parâmetro de execução, como as entradas (E4-14): texto
+         *     (`"1500.00"`, `"2026-10-05"`, `"A"`), booleano, o `period` como
+         *     `PeriodValue` ou a lista como lista de 1 a 100 textos. Número JSON e
+         *     `null` dão `422 invalid_data`. No pedido é o valor enviado; na
+         *     `Execution`, o valor resolvido e congelado.
+         */
+        ParameterValue: string | boolean | components["schemas"]["PeriodValue"] | string[];
+        /**
+         * @description O valor de um `period`: as duas pontas, incluídas, em `AAAA-MM-DD`.
+         *     `start` depois de `end` dá `422 invalid_parameter`.
+         */
+        PeriodValue: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+        };
+        /** @description Corpo do disparo da execução em lote. */
+        NewExecution: {
+            /** @description A revisão do rascunho salvo que deve rodar. */
+            revision: number;
+            /**
+             * @description Os valores dos parâmetros de execução, por nome; o ausente usa o padrão.
+             * @default {}
+             */
+            parameters: {
+                [key: string]: components["schemas"]["ParameterValue"];
+            };
+        };
+        /**
+         * @description O estado da execução (E6-8): `pending` → `loading` → `calculating` →
+         *     `delivering` → um dos finais (`completed`, `completed_with_errors`,
+         *     `aborted` ou `cancelled`).
+         *     - `loading`: confere o drift de todas as fontes e conta os registros do
+         *       lote (`total_records`);
+         *     - `calculating`: processa os chunks;
+         *     - `delivering`: gera o CSV e registra as entregas;
+         *     - `awaiting_source`: no lugar de `loading` ou de `calculating`, enquanto
+         *       uma fonte está fora do ar; a execução tenta de novo depois de 30 s,
+         *       2 min e 10 min e, na quarta falha, termina `aborted` com
+         *       `source_unavailable`.
+         *
+         *     Um estado final não muda mais.
+         * @enum {string}
+         */
+        ExecutionStatus: "pending" | "loading" | "awaiting_source" | "calculating" | "delivering" | "completed" | "completed_with_errors" | "aborted" | "cancelled";
+        /**
+         * @description Por que a execução abortou, com a mensagem fixa em pt-BR de cada um (a
+         *     `message` do `ExecutionAbort`):
+         *     - `error_limit_exceeded`: Os erros passaram do limite de erro do
+         *       workflow. Nada foi entregue.
+         *     - `source_unavailable`: Uma fonte ficou fora do ar depois de três novas
+         *       tentativas. Nada foi entregue.
+         *     - `schema_drift`: Uma coluna de uma fonte mudou ou não existe mais na
+         *       origem. Nada foi entregue.
+         *     - `source_read_denied`: O usuário de uma conexão não tem permissão de
+         *       leitura numa fonte. Nada foi entregue.
+         *     - `parameter_table_rows`: Uma tabela de parâmetros não tem exatamente
+         *       uma linha. Nada foi entregue.
+         *     - `internal_error`: A execução parou por um erro interno. Nada foi
+         *       entregue.
+         *
+         *     `schema_drift`, `source_read_denied` e `parameter_table_rows` abortam
+         *     na hora, sem nova tentativa. O `internal_error` nunca leva o texto da
+         *     exceção.
+         * @enum {string}
+         */
+        AbortReason: "error_limit_exceeded" | "source_unavailable" | "schema_drift" | "source_read_denied" | "parameter_table_rows" | "internal_error";
+        /** @description O motivo do aborto e a mensagem fixa dele. */
+        ExecutionAbort: {
+            code: components["schemas"]["AbortReason"];
+            /** @description A mensagem fixa do motivo, em pt-BR (lista em `AbortReason`). */
+            message: string;
+        };
+        /**
+         * @description O código do erro de um registro na execução em lote: as falhas de dado e
+         *     de leitura do motor (`FailureCode`) mais os dois erros de chave do lote
+         *     (D75, E6-9):
+         *     - `null_record_key`: alguma variável da chave do lote veio nula;
+         *     - `duplicate_record_key`: a chave se repetiu no lote; a primeira
+         *       ocorrência segue e as seguintes são erro, mesmo em chunks diferentes
+         *       e depois de uma retomada.
+         */
+        RecordFailureCode: components["schemas"]["FailureCode"] | ("duplicate_record_key" | "null_record_key");
+        /** @description O avanço, atualizado no fim de cada chunk confirmado. */
+        ExecutionProgress: {
+            chunks_done: number;
+            records_done: number;
+        };
+        /**
+         * @description As contagens dos registros lidos até agora, por status. `read` é a soma
+         *     dos outros cinco.
+         */
+        ExecutionTotals: {
+            read: number;
+            ok: number;
+            ok_with_warnings: number;
+            error: number;
+            ignored: number;
+            filtered: number;
+        };
+        /**
+         * @description Os erros dos registros somados por nó e código, no fim de cada chunk,
+         *     para o painel não consultar o trace a cada atualização.
+         */
+        ErrorGroup: {
+            /** @description O nó; nulo na fonte do lote e nos erros de chave. */
+            node_id: string | null;
+            /** @description O nome do nó na definição congelada; nulo quando `node_id` é nulo. */
+            node_name: string | null;
+            code: components["schemas"]["RecordFailureCode"];
+            count: number;
+        };
+        /** @description O CSV entregue pela execução. */
+        ExecutionOutput: {
+            /**
+             * @description `true` só em `completed` e `completed_with_errors`, até `expires_at`;
+             *     depois o download dá `410 output_expired`.
+             */
+            available: boolean;
+            /** @description Até quando o arquivo pode ser baixado; nulo sem arquivo. */
+            expires_at: string | null;
+            /** @description As linhas de dado do CSV (sem o cabeçalho); nulo sem arquivo. */
+            rows: number | null;
+        };
+        /**
+         * @description Uma execução em lote (E6-1, E6-6 a E6-10). Ela guarda uma cópia
+         *     congelada da definição na `draft_revision` e os valores resolvidos dos
+         *     parâmetros: quem disparou, quando e com quais parâmetros ficam aqui (não
+         *     há evento de auditoria novo).
+         */
+        Execution: {
+            /**
+             * Format: uuid
+             * @description O id da execução (o `run_id` do CSV).
+             */
+            id: string;
+            /** Format: uuid */
+            workflow_id: string;
+            /** @description O nome do workflow quando a execução foi criada. */
+            workflow_name: string;
+            /** @description A revisão do rascunho que roda (copiada na criação). */
+            draft_revision: number;
+            /** @description A versão publicada; `null` até o épico 10. */
+            workflow_version: number | null;
+            status: components["schemas"]["ExecutionStatus"];
+            /** @description Só em `aborted`. */
+            abort_reason: components["schemas"]["ExecutionAbort"] | null;
+            /** @description Quando o cancelamento foi pedido; nulo sem pedido. */
+            cancel_requested_at: string | null;
+            /**
+             * @description Os valores resolvidos e congelados de todos os parâmetros, por nome
+             *     (`{"periodo": {"start": "2026-10-01", "end": "2026-10-31"}}`, nunca
+             *     `previous_month`). O trace de cada registro aponta para eles.
+             */
+            parameters: {
+                [key: string]: components["schemas"]["ParameterValue"];
+            };
+            /**
+             * Format: date-time
+             * @description O "agora" usado para resolver os parâmetros relativos.
+             */
+            now: string;
+            trace_level: components["schemas"]["TraceLevel"];
+            /** @description O limite de erro da definição congelada. */
+            error_limit_percent: string;
+            triggered_by: components["schemas"]["UserRef"];
+            /** Format: date-time */
+            created_at: string;
+            /** @description Quando o worker pegou a execução; nulo em `pending`. */
+            started_at: string | null;
+            /** @description Quando a leitura das fontes começou (os dados são os desse instante); nulo antes. */
+            data_read_at: string | null;
+            /** @description Quando chegou a um estado final; nulo antes. */
+            finished_at: string | null;
+            /** @description Os registros do lote, contados no `loading`; nulo antes. */
+            total_records: number | null;
+            progress: components["schemas"]["ExecutionProgress"];
+            totals: components["schemas"]["ExecutionTotals"];
+            /** @description Os erros agrupados por nó e código, do maior para o menor `count`. */
+            error_groups: components["schemas"]["ErrorGroup"][];
+            output: components["schemas"]["ExecutionOutput"];
+        };
+        ExecutionList: {
+            items: components["schemas"]["Execution"][];
+            next_cursor: string | null;
+        };
+        /**
+         * @description A chave de um registro do lote, como em `RecordKey`, mas uma variável
+         *     pode vir nula: é o registro com o erro `null_record_key`.
+         */
+        ExecutionRecordKey: {
+            [key: string]: string | null;
+        };
+        /** @description Um registro da execução, na lista. */
+        ExecutionRecordSummary: {
+            /**
+             * @description O `result_key` do registro (o mesmo do CSV), que abre o trace em
+             *     `GET /v1/executions/{id}/records/{result_key}`. Nulo só nos erros de
+             *     chave (`null_record_key` e `duplicate_record_key`), que não foram
+             *     calculados e não têm trace.
+             */
+            result_key: string | null;
+            record_key: components["schemas"]["ExecutionRecordKey"];
+            status: components["schemas"]["UnitRunStatus"];
+            /** @description O nó do erro; nulo sem erro, na fonte do lote e nos erros de chave. */
+            error_node_id: string | null;
+            /** @description O código do erro; nulo sem erro. */
+            error_code: components["schemas"]["RecordFailureCode"] | null;
+        };
+        ExecutionRecordList: {
+            items: components["schemas"]["ExecutionRecordSummary"][];
+            next_cursor: string | null;
+        };
+        /**
+         * @description O registro como a execução o guardou (uma linha do trace). No
+         *     `minimal`, `outputs` e `trace` vêm nulos; no `standard` e no `full`,
+         *     `outputs` são os campos de saída (vazio sem saída, como no trace) e
+         *     `trace` é o `UnitRunTrace` do registro. Os hashes seguem a regra do
+         *     `UnitRunTrace`.
+         */
+        ExecutionRecord: {
+            /** Format: uuid */
+            execution_id: string;
+            trace_level: components["schemas"]["TraceLevel"];
+            record_key: components["schemas"]["RecordKey"];
+            status: components["schemas"]["UnitRunStatus"];
+            input_hash: string;
+            /** @description Nulo sem saída (`error`, `ignored`, `filtered`). */
+            output_hash: string | null;
+            /** @description Os campos de saída por nome; nulo no `minimal`. */
+            outputs: {
+                [key: string]: components["schemas"]["Value"];
+            } | null;
+            /** @description O trace do registro; nulo no `minimal`. */
+            trace: components["schemas"]["UnitRunTrace"] | null;
         };
     };
     responses: {
@@ -3496,6 +4117,11 @@ export interface components {
          *     `retry_after_seconds` do corpo (de 1 a 60).
          */
         RetryAfter: number;
+        /**
+         * @description `attachment; filename="execution-<id>.csv"`: o navegador baixa o arquivo,
+         *     com o id da execução no nome.
+         */
+        ContentDispositionOutput: string;
     };
     pathItems: never;
 }
@@ -5488,6 +6114,10 @@ export interface operations {
             415: components["responses"]["InvalidBodyContentType"];
             /**
              * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+             *     - `missing_parameter`: um parâmetro obrigatório ficou sem valor e sem
+             *       padrão (o nome em `fields`);
+             *     - `invalid_parameter`: um valor de parâmetro foi recusado (o nome e o
+             *       motivo em `fields`, sem o valor);
              *     - `connection_target_not_allowed`: o `host` de uma conexão resolve para uma rede bloqueada;
              *     - `connection_failed`: a conexão com o banco do cliente falhou.
              */
@@ -5566,6 +6196,10 @@ export interface operations {
              * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
              *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
              *     - `invalid_inputs`: alguma entrada foi recusada (`fields` por entrada);
+             *     - `missing_parameter`: um parâmetro obrigatório ficou sem valor e sem
+             *       padrão (o nome em `fields`);
+             *     - `invalid_parameter`: um valor de parâmetro foi recusado (o nome e o
+             *       motivo em `fields`, sem o valor);
              *     - `connection_target_not_allowed`: o `host` de uma conexão resolve para uma rede bloqueada;
              *     - `connection_failed`: a conexão com o banco do cliente falhou.
              */
@@ -5575,6 +6209,321 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["UnitRunRejectedProblem"];
+                };
+            };
+        };
+    };
+    trigger_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewExecution"];
+            };
+        };
+        responses: {
+            /** @description A execução criada, na fila (`pending`). */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
+             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
+             *     - `no_batch_source`: o workflow não tem fonte do lote.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                };
+            };
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
+            /**
+             * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+             *     - `missing_parameter`: um parâmetro obrigatório ficou sem valor e sem
+             *       padrão (o nome em `fields`);
+             *     - `invalid_parameter`: um valor de parâmetro foi recusado (o nome e o
+             *       motivo em `fields`, sem o valor).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_executions: {
+        parameters: {
+            query?: {
+                /** @description Só as execuções deste workflow. */
+                workflow_id?: string | null;
+                /** @description Só as execuções nestes estados (repita o parâmetro para mais de um). */
+                status?: components["schemas"]["ExecutionStatus"][] | null;
+                /** @description Quantos itens por página (1 a 200). */
+                limit?: components["parameters"]["Limit"];
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de execuções. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `invalid_data`: `limit` fora de 1..200, `workflow_id` que não é UUID
+             *       ou `status` fora da lista (`fields.<parameter>`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A execução. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    cancel_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O pedido aceito; a execução como ficou. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /** @description `execution_finished`: a execução já terminou. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    download_execution_output: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O arquivo CSV. */
+            200: {
+                headers: {
+                    "Content-Disposition": components["headers"]["ContentDispositionOutput"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `not_found`: a execução não existe (ou não é do tenant atual);
+             *     - `output_not_available`: a execução não tem arquivo (abortada,
+             *       cancelada ou ainda rodando).
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description `output_expired`: o prazo de download passou e o arquivo foi apagado. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    list_execution_records: {
+        parameters: {
+            query?: {
+                /** @description Só os registros nestes status (repita o parâmetro para mais de um). */
+                status?: components["schemas"]["UnitRunStatus"][] | null;
+                /** @description Só os registros com erro neste nó. */
+                node_id?: string | null;
+                /** @description Só os registros com este código de erro. */
+                code?: components["schemas"]["RecordFailureCode"] | null;
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de registros. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionRecordList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `invalid_data`: o `{id}` do caminho não é UUID, ou `status`,
+             *       `node_id` ou `code` fora da forma (`fields.<parameter>`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_execution_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+                /**
+                 * @description O `result_key` do registro (SHA-256 hexadecimal). Fora dessa forma:
+                 *     `422 invalid_data` com `fields.result_key`.
+                 */
+                result_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro e o trace. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionRecord"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `not_found`: a execução não existe (ou não é do tenant atual);
+             *     - `record_not_found`: a execução não tem registro com esse `result_key`.
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description `invalid_data`: o `{id}` não é UUID ou o `result_key` não tem a forma (`fields`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["InvalidDataProblem"];
                 };
             };
         };

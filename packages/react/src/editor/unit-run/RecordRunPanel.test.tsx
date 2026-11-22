@@ -86,7 +86,7 @@ describe('aba Calcular com fonte do lote: escolher registro', () => {
 
   it('pela chave digitada: envia a chave do registro, como texto, e mostra o registro no resultado', async () => {
     await calculateTrace(TRACE_OK);
-    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 4, record_key: { nf_id: '10', item_seq: '1' } }]);
+    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 4, record_key: { nf_id: '10', item_seq: '1' }, parameters: {} }]);
     expect(screen.getByText('nf_id 10 · item_seq 1', { selector: '.fc-unit-run-record .fc-unit-run-name' })).toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('aba Calcular com fonte do lote: escolher registro', () => {
     await typeKey(user, '10', '1.500');
     await user.click(calculate());
     await screen.findByRole('heading', { name: 'Resultado' });
-    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 4, record_key: { nf_id: '10', item_seq: '1500' } }]);
+    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 4, record_key: { nf_id: '10', item_seq: '1500' }, parameters: {} }]);
   });
 
   it('chave incompleta: não envia e diz no campo o que falta', async () => {
@@ -129,7 +129,7 @@ describe('aba Calcular com fonte do lote: escolher registro', () => {
 
     await user.click(calculate());
     await screen.findByRole('heading', { name: 'Resultado' });
-    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 4, record_key: { nf_id: '10', item_seq: '1500' } }]);
+    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 4, record_key: { nf_id: '10', item_seq: '1500' }, parameters: {} }]);
   });
 
   it('a amostra de uma prévia com outra chave não é oferecida', async () => {
@@ -179,7 +179,7 @@ describe('aba Calcular com fonte do lote: escolher registro', () => {
     await user.click(calculate());
     await screen.findByRole('heading', { name: 'Resultado' });
     expect(api.routes().filter((route) => route === SAVE_ROUTE)).toHaveLength(1);
-    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 5, record_key: { nf_id: '10', item_seq: '1' } }]);
+    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: 5, record_key: { nf_id: '10', item_seq: '1' }, parameters: {} }]);
   });
 
   it('fica desabilitado com o motivo enquanto houver problema', () => {

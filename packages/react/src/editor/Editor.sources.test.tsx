@@ -224,7 +224,7 @@ describe('Editor, por papel, com a fonte do lote', () => {
     await user.click(within(editor).getByRole('tab', { name: 'Prévia' }));
     await user.click(await within(editor).findByRole('button', { name: 'Rodar prévia' }, SLOW));
     expect(await within(editor).findByText('Contagens sobre os primeiros 500 registros.', undefined, SLOW)).toBeInTheDocument();
-    expect(api.bodiesTo(PREVIEW_ROUTE)).toEqual([{ revision: CAMPAIGN.revision, sample_size: 20 }]);
+    expect(api.bodiesTo(PREVIEW_ROUTE)).toEqual([{ revision: CAMPAIGN.revision, sample_size: 20, parameters: {} }]);
     expect(api.bodiesTo(SAVE_ROUTE)).toEqual([]);
 
     // Calcular: with the batch source it asks for the record's key, not the values.
@@ -264,7 +264,7 @@ describe('Editor, por papel, com a fonte do lote', () => {
 
     expect(await screen.findByRole('region', { name: 'Valores do último cálculo' }, SLOW)).toBeInTheDocument();
     expect(await screen.findByRole('group', { name: /^Pontos, Cálculo, ok no último cálculo/ }, SLOW)).toBeInTheDocument();
-    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: CAMPAIGN.revision, record_key: { nf_id: '10', item_seq: '1' } }]);
+    expect(api.bodiesTo(RUN_ROUTE)).toEqual([{ revision: CAMPAIGN.revision, record_key: { nf_id: '10', item_seq: '1' }, parameters: {} }]);
 
     // Read only: the properties of the group, of the batch source and of the Fonte are disabled, never edited.
     fireEvent.click(await node(/^Pontuação, Grupo/));
