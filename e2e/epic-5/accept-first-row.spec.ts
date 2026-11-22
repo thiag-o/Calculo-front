@@ -29,6 +29,9 @@ test('aceitar a primeira linha pede a confirmação da auditoria e só então va
   await openWorkflowEditor(page, name);
   await layers(page).getByRole('treeitem', { name: new RegExp(`^${escape(BLOCKS.product)} ,`) }).click();
   const policy = properties(page).getByRole('combobox', { name: `Mais de uma linha (${BLOCKS.product})`, exact: true });
+  // The panel grows when the dataset's variables arrive (ordering, filters, outputs), and a Radix list opened before that stays
+  // where the trigger was, outside the window: wait for the block to be complete before opening any list (F113).
+  await expect(properties(page).getByRole('combobox', { name: /^Direção \(critério 1\)/ })).toBeVisible();
 
   // The campaign accepts the first line; back to "Gerar erro" first (no confirmation to go back).
   const toError = draftSaved(page, (definition) => productPolicy(definition) === 'error');

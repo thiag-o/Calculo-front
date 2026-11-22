@@ -7,6 +7,7 @@
 //   E2E_APPROVER_*, E2E_AUDITOR_*), its workflow "Campanha de referência" and the campaign data of the backend (B98, B100).
 import { Epic2Simulation, type InitialAccount } from '../../epic-2/support/simulation';
 import { expect, test as base, type E2EMode, type LoginCredentials } from '../../support/fixtures';
+import { deleteCreatedWorkflows } from './created-workflows';
 import { CampaignSimulation, type ReceivedCall } from './simulation';
 
 export { expect };
@@ -66,6 +67,12 @@ export const test = base.extend<{ epic5: Epic5 }>({
         },
         calls: () => campaign?.calls ?? null,
       });
+
+      // Real mode keeps what a run leaves in the database: the copies of the campaign the test created are deleted here.
+      if (!simulated) {
+        const left = await deleteCreatedWorkflows(page);
+        if (left.length > 0) throw new Error(`Não foi possível apagar os workflows criados pelo teste: ${left.join('; ')}.`);
+      }
 
       const unexpected = [...(session?.unexpected ?? []), ...(campaign?.unexpected ?? [])];
       if (unexpected.length > 0) throw new Error(`O módulo chamou rotas fora da API simulada: ${unexpected.join(', ')}.`);

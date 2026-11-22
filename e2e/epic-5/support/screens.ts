@@ -5,6 +5,7 @@ import { callApi } from '../../epic-2/support/screens';
 import { editorOf, layers, openOverview } from '../../epic-4/support/screens';
 import type { Schemas } from '../../support/contract';
 import { CAMPAIGN_WORKFLOW } from './campaign';
+import { trackCreatedWorkflow } from './created-workflows';
 import { expect } from './fixtures';
 
 /** The block kinds as the canvas names them beside the block name. */
@@ -123,7 +124,8 @@ export function escape(text: string): string {
 
 /**
  * A copy of the "Campanha de referência" (its saved draft, read through the API) in a new workflow `name`: the flows that
- * edit work on it, so the shared workflow of `prepare-local` stays as it is (in real mode, the database keeps the copies).
+ * edit work on it, so the shared workflow of `prepare-local` stays as it is. In real mode, the epic 5 fixture deletes the copy
+ * when the test ends (created-workflows.ts).
  */
 export async function copyCampaign(page: Page, apiOrigin: string, name: string): Promise<void> {
   const list = await callApi(page, apiOrigin, 'GET', `/v1/workflows?name=${encodeURIComponent(CAMPAIGN_WORKFLOW)}`);
@@ -134,6 +136,7 @@ export async function copyCampaign(page: Page, apiOrigin: string, name: string):
   const created = await callApi(page, apiOrigin, 'POST', '/v1/workflows', { name } satisfies Schemas['NewWorkflow']);
   expect(created.status, `criar o workflow pela API (${String(created.code)})`).toBe(201);
   const workflow = created.body as Schemas['Workflow'];
+  trackCreatedWorkflow(page, apiOrigin, workflow.id);
   const body: Schemas['DraftUpdate'] = { revision: workflow.draft.revision, definition: (draft.body as Schemas['Draft']).definition };
   const saved = await callApi(page, apiOrigin, 'PUT', `/v1/workflows/${workflow.id}/draft`, body);
   expect(saved.status, `gravar o rascunho da campanha pela API (${String(saved.code)})`).toBe(200);
