@@ -1594,7 +1594,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: `git grep` acha uma definição só de cada formatador e de `RELATIVE_LABELS`; nenhum px cru no `parameter-form.css`; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
 
 **F116 · Manutenção: todo o simulado do e2e no contrato v3 (D38, reprovação da F98)**
-- dep: F97, B153
+- dep: F97
 - modelo: sonnet
 - revisão: não
 - arquivos: `e2e/support/contract.ts` (só os exemplos de rascunho e de definição), `e2e/epic-4/support/`, `e2e/epic-5/support/`
@@ -1602,7 +1602,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: `pnpm e2e` de `e2e/epic-4` e `e2e/epic-5` verde no modo simulado, com as respostas validadas contra o contrato; a F98 (tentativa 2) passa no e2e em cima dela.
 
 **F117 · Correção: o editor grava a definição sempre na versão 3 (achado da F116)**
-- dep: F97
+- dep: F97, F116
 - modelo: sonnet
 - revisão: não
 - arquivos: `packages/react/src/editor/sources/batch-source/batchSource.ts`, `packages/react/src/editor/sources/batch-source/batchSource.test.ts`, `packages/react/src/editor/draft/`
@@ -1616,8 +1616,16 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Fazer: a gaveta do trace do painel da execução lê a definição congelada (`GET /v1/executions/{id}/definition`, B154) e mostra o trace com o nome dos blocos e os números no padrão brasileiro, como o Calcular do editor. A ligação continua pela render prop da F102, ligada no `module/` pela F104 (ADR 0062). Os erros sem nó filtram com `node_id=none`, e o nome do CSV vem do `Content-Disposition`.
 - Aceite: testes da gaveta com a definição congelada (nomes e números no padrão brasileiro), do grupo de erro sem nó filtrando por `node_id=none` e do nome do arquivo; o editor continua igual (os testes do unit-run passam).
 
+**F119 · Manutenção: espelho dos exemplos de rascunho na v3 da B153**
+- dep: B153, F116
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/support/contract.ts` (só os exemplos de rascunho e de definição)
+- Fazer: depois que a B153 levar os exemplos do contrato à v3, o espelho do `e2e/support/contract.ts` passa a ser igual a eles, sem a conversão que a F116 fez no simulado para esses exemplos.
+- Aceite: o `contract-examples.spec.ts` com `FLUXO_BACKEND_DIR` fica verde; o `pnpm e2e` simulado continua verde.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
