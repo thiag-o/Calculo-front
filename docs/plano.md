@@ -1582,8 +1582,18 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - **No modo real**, usar o workflow "Campanha de referência" do `prepare-local` com um worker no ar, os valores esperados de `backend/tests/reference_campaign/` e o workflow de defeitos. A queda do worker no meio é do roteiro manual e do teste do back (B144), não do e2e.
 - Aceite: `pnpm e2e` e `pnpm e2e:visual` passam. O modo real é exercitado no teste de integração do CK6.
 
+**F115 · Manutenção: formatadores num lugar só e tokens no formulário de parâmetros (revisão da F100)**
+- dep: F98, F100
+- modelo: sonnet
+- arquivos: `packages/react/src/design-system/format/` (nova), `packages/react/src/design-system/index.ts`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/index.ts`, `packages/react/src/editor/values/`, `packages/react/src/editor/parameters/`, `docs/adr/`
+- Fazer:
+  - a leitura e a formatação de número e data no padrão brasileiro (`readBrazilianNumber`, `formatApiNumber`, `formatDate`) ficam só em `design-system/format/`, que qualquer vertical pode usar (uma ADR curta); o `editor/values/` e o `executions/parameter-form/` passam a importar de lá, sem cópia;
+  - os rótulos dos padrões relativos (`RELATIVE_LABELS`) ficam só em `executions/`, exportados pelo `executions/index.ts`, e a seção Parâmetros do editor (F98) os importa por ali (sentido editor → executions, E6-16);
+  - o `parameter-form.css` troca os px crus (fontes de 12 e 13 px, margem de 26 px, altura mínima de 32 px, raio de 6 px) pelos tokens do `estilos.md`.
+- Aceite: `git grep` acha uma definição só de cada formatador e de `RELATIVE_LABELS`; nenhum px cru no `parameter-form.css`; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
