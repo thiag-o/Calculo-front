@@ -84,6 +84,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0062](0062-editor-usa-o-formulario-de-parametros-de-executions.md) | O editor usa o formulário de parâmetros de `executions/index.ts`; `executions` não importa o editor (segue a 0003 e a E6-16) | aceita, revisar no checkpoint (complementada por 0063) | 2026-11-22 |
 | [0063](0063-executions-le-workflows-pela-api-e-chaves-proprias.md) | `executions` lê workflows direto pela API com chaves próprias sob `['executions', …]`; `executions/api/` é a peça comum das sub-verticais (complementa 0062) | aceita, revisar no checkpoint | 2026-11-22 |
 | [0064](0064-dialogo-de-envio-fica-travado-ate-a-resposta.md) | Diálogo de envio fica travado até a resposta, para a ação não sair duas vezes | aceita, revisar no checkpoint | 2026-11-22 |
+| [0065](0065-formula-exporta-leituras-de-parametro-e-lista-de-sugestoes.md) | `formula/index.ts` exporta as leituras de parâmetro e a lista de sugestões, e `editor/sources/filters` as usa; regra de nome num lugar só (segue a 0003 e a 0055) | aceita, revisar no checkpoint | 2026-11-22 |
 
 ## Pendentes (sem ADR ainda)
 

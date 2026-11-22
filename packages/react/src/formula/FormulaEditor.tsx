@@ -1,11 +1,19 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Loading, Notice, Skeleton, useFluxoPortal } from '../design-system';
 import { AlertIcon } from './icons';
-import { markerRange } from './language';
+import { markedText, markerRange } from './language';
 import { loadMonaco, type Monaco } from './loadMonaco';
 import { MonacoField, type FormulaCodeEditor } from './MonacoField';
-import { replaceCodePoints } from './positions';
-import { useFormulaLanguage, type FormulaContext, type FormulaSymbol, type WorkflowProblem } from './queries';
+import { fixLabel, fixText } from './parameters';
+import { PlainField } from './PlainField';
+import { codePointToUtf16, replaceCodePoints } from './positions';
+import {
+  useFormulaLanguage,
+  type FormulaContext,
+  type FormulaSymbol,
+  type WorkflowParameter,
+  type WorkflowProblem,
+} from './queries';
 import './formula.css';
 
 export interface FormulaEditorProps {
@@ -26,6 +34,8 @@ export interface FormulaEditorProps {
   analyzedValue?: string;
   /** The variables the autocomplete offers (the `symbols` of the analysis). */
   symbols?: readonly FormulaSymbol[];
+  /** The run parameters of the draft (`definition.parameters`): `@` offers them, and `@nome` is highlighted (E6-18). */
+  parameters?: readonly WorkflowParameter[];
   /** Where the formula is: the autocomplete offers only the functions allowed there. */
   context: FormulaContext;
   /** Without edit permission: the text can be read and selected, not changed. */
@@ -37,6 +47,7 @@ export interface FormulaEditorProps {
 
 const NO_PROBLEMS: readonly WorkflowProblem[] = [];
 const NO_SYMBOLS: readonly FormulaSymbol[] = [];
+const NO_PARAMETERS: readonly WorkflowParameter[] = [];
 
 type MonacoStatus = { status: 'loading' } | { status: 'ready'; monaco: Monaco } | { status: 'failed' };
 
@@ -51,6 +62,7 @@ export function FormulaEditor({
   problems = NO_PROBLEMS,
   analyzedValue,
   symbols = NO_SYMBOLS,
+  parameters = NO_PARAMETERS,
   context,
   readOnly = false,
   'aria-label': ariaLabel,
@@ -87,13 +99,15 @@ export function FormulaEditor({
     const editor = editorRef.current;
     const model = editor?.getModel();
     const range = model && model.getValue() === value ? markerRange(model, problem) : null;
-    if (editor && range) {
-      editor.executeEdits('fc-formula-fix', [{ range, text: problem.suggestion }]);
+    if (editor && range && model) {
+      editor.executeEdits('fc-formula-fix', [{ range, text: fixText(problem.code, markedText(model, range), problem.suggestion) }]);
       // The button leaves the focus on itself; the person goes on editing the formula.
       editor.focus();
       return;
     }
-    onChange(replaceCodePoints(value, problem.start, problem.end ?? problem.start, problem.suggestion));
+    const end = problem.end ?? problem.start;
+    const marked = value.slice(codePointToUtf16(value, problem.start), codePointToUtf16(value, end));
+    onChange(replaceCodePoints(value, problem.start, end, fixText(problem.code, marked, problem.suggestion)));
     plainRef.current?.focus();
   };
 
@@ -103,19 +117,15 @@ export function FormulaEditor({
     field = (
       <div className="fc-formula-plain-block">
         <Notice type="warning">O editor de fórmula não carregou. Edite a fórmula neste campo de texto; os problemas aparecem embaixo.</Notice>
-        <textarea
-          ref={plainRef}
-          className="fc-formula-plain"
-          aria-label={ariaLabel}
-          aria-describedby={describedBy}
-          aria-invalid={problems.length > 0 || undefined}
+        <PlainField
+          fieldRef={plainRef}
           value={value}
+          onChange={onChange}
+          parameters={parameters}
           readOnly={readOnly}
-          spellCheck={false}
-          autoCapitalize="off"
-          autoComplete="off"
-          rows={3}
-          onChange={(event) => onChange(event.target.value)}
+          ariaLabel={ariaLabel}
+          describedBy={describedBy}
+          invalid={problems.length > 0}
         />
       </div>
     );
@@ -138,6 +148,7 @@ export function FormulaEditor({
         problems={current ? problems : NO_PROBLEMS}
         invalid={problems.length > 0}
         symbols={symbols}
+        parameters={parameters}
         context={context}
         readOnly={readOnly}
         ariaLabel={ariaLabel}
@@ -160,7 +171,7 @@ export function FormulaEditor({
                 <span>{problem.message}</span>
                 {current && problem.suggestion !== null && problem.start !== null && !readOnly ? (
                   <Button size="small" onClick={() => fix(problem)}>
-                    Trocar por {problem.suggestion}
+                    Trocar por {fixLabel(problem.code, problem.suggestion)}
                   </Button>
                 ) : null}
               </li>

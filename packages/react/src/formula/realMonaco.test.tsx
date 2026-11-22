@@ -118,6 +118,27 @@ describe('FormulaEditor com o Monaco de verdade', () => {
     expect(LANGUAGE.keywords).toContain('e');
   }, LOAD_TIMEOUT);
 
+  it('realça o @nome e a parte do período como parâmetro, e não dentro de texto', async () => {
+    renderWithProviders(<Field initial="" />);
+    await screen.findByRole('textbox', { name: 'Fórmula do Cálculo' }, { timeout: 30_000 });
+    expect(tokens('data >= @periodo.inicio e loja em @lojas')).toEqual([
+      ['data', 'variable'],
+      ['>=', 'operator'],
+      ['@periodo.inicio', 'parameter'],
+      ['e', 'keyword'],
+      ['loja', 'variable'],
+      ['em', 'keyword'],
+      ['@lojas', 'parameter'],
+    ]);
+    // A name glued to the `@` is not a reference, as in the autocomplete and the plain field.
+    expect(tokens('email@lojas')).toEqual([['email@lojas', 'variable']]);
+    expect(tokens('"@x"')).toEqual([
+      ['"', 'string.quote'],
+      ['@x', 'string'],
+      ['"', 'string.quote'],
+    ]);
+  }, LOAD_TIMEOUT);
+
   it('marca o problema na posição certa com acento antes do trecho', async () => {
     const text = '"preço" + valor_iten';
     const start = [...'"preço" + '].length;

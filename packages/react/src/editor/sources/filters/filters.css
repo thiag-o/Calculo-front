@@ -37,7 +37,35 @@
   min-width: 0;
 }
 
-/* Numbers and literals: mono-13, with tabular figures (estilos §3). */
+/* The field and, in a date or a boolean, "Usar parâmetro" beside it (D35). */
+.fc-filters-value-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--fc-space-4);
+  align-items: start;
+}
+
+.fc-filters-value-row > :only-child {
+  grid-column: 1 / -1;
+}
+
+/* The container of the parameter list, which opens under the input (SuggestionList, formula.css). */
+.fc-filters-value-field {
+  position: relative;
+  min-width: 0;
+}
+
+/* Beside the 32px input, below its label (label-13: 16px, then the 6px gap of the field), centred on it. */
+.fc-filters-parameter-button {
+  margin-top: calc(16px + var(--fc-space-6) + var(--fc-space-2));
+}
+
+/* The help of a parameter that would not serve: label-12, secondary, since it tells why (estilos §3). */
+.fc-filters-parameter-hint {
+  margin: 0;
+}
+
+/* Numbers, literals and parameters: mono-13, with tabular figures (estilos §3). */
 .fc-filters-mono .fc-field-input {
   font-family: var(--fc-font-mono);
   font-size: 13px;

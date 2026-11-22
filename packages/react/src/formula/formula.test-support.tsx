@@ -1,5 +1,5 @@
 // Support for the formula editor tests (not a test and not shipped in the package): the language and the symbols of the
-// contract example, a simulated Monaco (only what the editor uses) and the providers the editor needs.
+// contract example, its run parameters, a simulated Monaco (only what the editor uses) and the providers the editor needs.
 import '@testing-library/jest-dom/vitest';
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 import { ApiProvider, createQueryClient } from '../api';
 import { FluxoRoot } from '../design-system';
 import type { Monaco } from './loadMonaco';
-import { FORMULA_LANGUAGE_KEY, type FormulaLanguage, type FormulaSymbol, type WorkflowProblem } from './queries';
+import { FORMULA_LANGUAGE_KEY, type FormulaLanguage, type FormulaSymbol, type WorkflowParameter, type WorkflowProblem } from './queries';
 
 export const API = 'https://api.teste';
 
@@ -37,6 +37,29 @@ export const SYMBOLS: FormulaSymbol[] = [
   { name: 'fator', type: 'decimal', scale: 4, cardinality: 'linear', list: null, origin: 'decision_table', node_id: 'td_elegibilidade', group_id: null },
   { name: 'pontos_historico', type: 'decimal', scale: 2, cardinality: 'linear', list: null, origin: 'calculation', node_id: 'calc_historico', group_id: null },
 ];
+
+function parameter(name: string, type: WorkflowParameter['type'], changes: Partial<WorkflowParameter> = {}): WorkflowParameter {
+  return { name, type, required: false, list: false, scale: null, default: null, allowed_values: null, description: null, ...changes };
+}
+
+/** The run parameters of the contract example draft: a period, a decimal and two lists. */
+export const PARAMETERS: WorkflowParameter[] = [
+  parameter('periodo', 'period', { required: true }),
+  parameter('meta_minima', 'decimal', { scale: 2 }),
+  parameter('categorias', 'text', { list: true }),
+  parameter('lojas', 'integer', { list: true }),
+];
+
+/** A problem of a parameter on `[start, end)` (code points), as the API marks it in a formula. */
+export function parameterProblem(
+  code: 'unknown_parameter' | 'period_without_part' | 'list_outside_in',
+  message: string,
+  start: number,
+  end: number,
+  suggestion: string | null = null,
+): WorkflowProblem {
+  return { code, message, path: 'root.nodes[0].expression', node_id: 'calc_pontos', start, end, suggestion };
+}
 
 /** An `unknown_variable` problem on `[start, end)` (code points), with the suggestion of the API. */
 export function unknownVariable(name: string, start: number, suggestion: string | null = 'valor_item'): WorkflowProblem {
@@ -258,10 +281,15 @@ class FakeRange implements RangeLike {
 }
 
 /** Monaco's numbers for the kinds the editor uses (`languages.CompletionItemKind`). */
-const COMPLETION_KIND = { Function: 1, Field: 3, Variable: 4, Constant: 14, EnumMember: 16 };
+const COMPLETION_KIND = { Function: 1, Field: 3, Variable: 4, Value: 13, Constant: 14, EnumMember: 16 };
 
 export interface CompletionProvider {
-  provideCompletionItems(model: FakeModel, position: Position): { suggestions: Record<string, unknown>[] };
+  triggerCharacters?: string[];
+  provideCompletionItems(
+    model: FakeModel,
+    position: Position,
+    context?: { triggerKind: number; triggerCharacter?: string },
+  ): { suggestions: Record<string, unknown>[] };
 }
 
 export interface CodeActionProvider {
@@ -328,11 +356,15 @@ export function createFakeMonaco() {
       if (!editor) throw new Error('nenhum editor foi criado');
       return editor;
     },
-    /** The autocomplete of the last editor, with the cursor at the end of the text. */
-    complete(): Record<string, unknown>[] {
+    /**
+     * The autocomplete of the last editor, with the cursor at the end of the text; `triggerCharacter` when a typed
+     * character opened it (`@`, `.`), as Monaco says in the context.
+     */
+    complete(triggerCharacter?: string): Record<string, unknown>[] {
       const editor = this.editor();
       const end = editor.model.getPositionAt(editor.model.getValue().length);
-      return state.completionProviders[0]!.provideCompletionItems(editor.model, end).suggestions;
+      const context = triggerCharacter ? { triggerKind: 1, triggerCharacter } : { triggerKind: 0 };
+      return state.completionProviders[0]!.provideCompletionItems(editor.model, end, context).suggestions;
     },
     /** The markers of the last editor's model. */
     markers() {

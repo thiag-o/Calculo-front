@@ -1,6 +1,7 @@
 import { DATA_TYPE_LABELS } from '../../../catalog';
 import { Button, FieldMessage, type SelectOption } from '../../../design-system';
-import { READ_ONLY_REASON, type WorkflowProblem } from '../../draft';
+import type { ParameterReference } from '../../../formula';
+import { READ_ONLY_REASON, useDraftEditor, type WorkflowProblem } from '../../draft';
 import { PathSelect, problemsAt, useFieldsState } from '../../properties';
 import {
   BOOLEAN_LITERALS,
@@ -16,6 +17,8 @@ import {
 } from './filterRules';
 import { PlusIcon, TrashIcon } from './icons';
 import { LiteralField } from './LiteralField';
+import { ParameterButton } from './ParameterButton';
+import { servingReferences } from './parameterHints';
 import { fieldPath, rowProblems, scopedName } from './paths';
 import './filters.css';
 
@@ -69,7 +72,8 @@ export function newFilter(variables: readonly FilterVariable[]): FilterEntry | n
 /**
  * The filters of a source (E5-18; design §6): one row per filter, with the variable, the operator the variable's type
  * takes (a text only `=`, `≠`, `EM` and the null ones) and the value: none in `É NULO`, two in `ENTRE`, a list in `EM`.
- * Each problem shows beside its field, by `path`. Used by the Source block and by the batch source (F63).
+ * A value can be a run parameter of the draft (`@lojas`, `@periodo.inicio`, E6-18). Each problem shows beside its field,
+ * by `path`. Used by the Source block and by the batch source (F63).
  */
 export function FilterList({
   filters,
@@ -168,6 +172,15 @@ function FilterRow({ filter, number, at, variableField, variables, problems, mer
     onChange({ ...filter, values }, `${mergeKey}.values[${index}]`);
   }
 
+  /** In `ENTRE`, the start of a period picked in "De" fills "Até" with its end (D35); both stay editable. */
+  function pickParameter(index: number, reference: ParameterReference) {
+    if (filter.operator === 'between' && index === 0 && reference.part === 'inicio') {
+      onChange({ ...filter, values: [reference.text, `@${reference.parameter.name}.fim`] });
+      return;
+    }
+    setValue(index, reference.text);
+  }
+
   function valueField(label: string, index: number) {
     return (
       <ValueInput
@@ -175,10 +188,12 @@ function FilterRow({ filter, number, at, variableField, variables, problems, mer
         scope={scope}
         type={type ?? 'text'}
         scale={variable?.scale ?? null}
+        operator={filter.operator}
         literal={filter.values[index] ?? ''}
         path={valuePath(index)}
         problems={problemsAt(problems, valuePath(index))}
         onCommit={(literal) => setValue(index, literal)}
+        onPickParameter={(reference) => pickParameter(index, reference)}
       />
     );
   }
@@ -288,10 +303,12 @@ interface ValueInputProps {
   scope: string;
   type: DataType;
   scale: number | null;
+  operator: FilterOperator;
   literal: string;
   path: string | null;
   problems: readonly WorkflowProblem[];
   onCommit: (literal: string) => void;
+  onPickParameter: (reference: ParameterReference) => void;
 }
 
 const BOOLEAN_OPTIONS: readonly SelectOption[] = [
@@ -299,23 +316,47 @@ const BOOLEAN_OPTIONS: readonly SelectOption[] = [
   { value: BOOLEAN_LITERALS.false, label: 'Falso' },
 ];
 
-/** A boolean is chosen (Verdadeiro or Falso); the other types are typed. */
-function ValueInput({ label, scope, type, scale, literal, path, problems, onCommit }: ValueInputProps) {
+/**
+ * A boolean is chosen (Verdadeiro or Falso), with "Usar parâmetro" beside it; the other types are typed. A boolean holding a
+ * parameter is typed too, and emptying it brings the select back.
+ */
+function ValueInput({ label, scope, type, scale, operator, literal, path, problems, onCommit, onPickParameter }: ValueInputProps) {
+  const { definition } = useDraftEditor();
   const lower = literal.toLowerCase();
   if (type === 'boolean' && (literal === '' || lower === BOOLEAN_LITERALS.true || lower === BOOLEAN_LITERALS.false)) {
     return (
-      <PathSelect
-        label={label}
-        scope={scope}
-        value={lower}
-        options={BOOLEAN_OPTIONS}
-        path={path}
-        problems={problems}
-        onChange={onCommit}
-      />
+      <div className="fc-filters-value-row">
+        <PathSelect
+          label={label}
+          scope={scope}
+          value={lower}
+          options={BOOLEAN_OPTIONS}
+          path={path}
+          problems={problems}
+          onChange={onCommit}
+        />
+        <ParameterButton
+          fieldLabel={label}
+          scope={scope}
+          references={servingReferences(definition.parameters, type, operator)}
+          hasParameters={definition.parameters.length > 0}
+          onPick={onPickParameter}
+        />
+      </div>
     );
   }
   return (
-    <LiteralField label={label} scope={scope} type={type} scale={scale} literal={literal} path={path} problems={problems} onCommit={onCommit} />
+    <LiteralField
+      label={label}
+      scope={scope}
+      type={type}
+      scale={scale}
+      operator={operator}
+      literal={literal}
+      path={path}
+      problems={problems}
+      onCommit={onCommit}
+      onPickParameter={onPickParameter}
+    />
   );
 }

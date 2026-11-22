@@ -92,6 +92,7 @@ export function CalculationProperties({ node }: CalculationPropertiesProps) {
           analyzedValue={analyzedExpression}
           problems={fieldProblems('expression')}
           symbols={symbols}
+          parameters={definition.parameters}
           context="calculation"
           readOnly={readOnly}
           aria-label={`Fórmula de ${node.name}`}

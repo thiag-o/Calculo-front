@@ -45,6 +45,12 @@
   outline: none;
 }
 
+/* A run parameter (`@nome`, `.inicio`, `.fim`): the text colour with weight 500, no category colour (estilos.md §2.4, D35).
+   The theme marks only the parameter token as bold (theme.ts), and Monaco draws bold with the `mtkb` class. */
+.fc-formula-monaco .monaco-editor .mtkb {
+  font-weight: 500;
+}
+
 /* Plain field when Monaco does not load (E4-21): the same look, as a monospaced textarea. */
 .fc-formula-plain-block {
   display: flex;
@@ -53,8 +59,48 @@
   min-width: 0;
 }
 
+/*
+ * The highlight of the plain field: a copy of the text, with the same font, padding and wrapping, drawn under the textarea,
+ * whose own text is transparent (the caret and the selection stay visible). Both layers keep the gutter of a vertical
+ * scrollbar (`scrollbar-gutter: stable`), so a long formula that gives the textarea a scrollbar wraps at the same width in
+ * the copy; the textarea never scrolls sideways (`pre-wrap`), and its scroll is copied to the highlight.
+ */
+.fc-formula-plain-field {
+  position: relative;
+  min-width: 0;
+  border-radius: 6px;
+  background-color: var(--fc-background-200);
+}
+
+.fc-formula-plain-highlight {
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 6px 12px;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  border-radius: 6px;
+  color: var(--fc-text);
+  /* mono-13, as the textarea */
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+
+.fc-formula-parameter {
+  color: var(--fc-text);
+  font-weight: 500;
+}
+
 .fc-formula-plain {
   box-sizing: border-box;
+  position: relative;
   display: block;
   width: 100%;
   min-width: 0;
@@ -63,8 +109,14 @@
   padding: 6px 12px;
   border: 0;
   border-radius: 6px;
-  background-color: var(--fc-background-200);
-  color: var(--fc-text);
+  background-color: transparent;
+  color: transparent;
+  caret-color: var(--fc-text);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   box-shadow: 0 0 0 1px var(--fc-border);
   /* mono-13 */
   font-family: var(--fc-font-mono);
@@ -76,6 +128,17 @@
   outline: 2px solid transparent;
   outline-offset: 2px;
   transition: box-shadow 150ms ease-out;
+}
+
+/* Forced colours paint the textarea text in the system colour: the copy under it would double the text, so it goes away. */
+@media (forced-colors: active) {
+  .fc-formula-plain-highlight {
+    display: none;
+  }
+
+  .fc-formula-plain {
+    color: CanvasText;
+  }
 }
 
 .fc-formula-plain:focus-visible {
@@ -171,6 +234,11 @@
   background-color: var(--fc-cat-decision);
 }
 
+/* A run parameter has no block category: its item (the `Value` kind, language.ts) has no square and no Monaco icon. */
+.fc-formula-widgets .suggest-widget .codicon-symbol-value::before {
+  content: '';
+}
+
 /* The floating widgets use the module fonts: Geist in the hover and the quick fix, Geist Mono in the autocomplete. */
 .fc-formula-widgets .monaco-hover {
   font-family: var(--fc-font-sans);
@@ -179,4 +247,78 @@
 
 .fc-formula-widgets .suggest-widget {
   font-family: var(--fc-font-mono);
+}
+
+/*
+ * The autocomplete list of a text field (the plain formula field and the filter values, SuggestionList.tsx): under the
+ * field, inside its container (no portal: it stays in the module root), with the menu look (estilos.md §4 and §7.7):
+ * background-100, 12px radius, the menu shadow and 32px items with 6px radius and --fc-hover on the active one. The name is
+ * a parameter: text colour with weight 500 (§2.4).
+ */
+.fc-suggestions {
+  box-sizing: border-box;
+  position: absolute;
+  top: calc(100% + var(--fc-space-4));
+  left: 0;
+  z-index: 10;
+  min-width: min(240px, 100%);
+  max-width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--fc-space-4);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: var(--fc-shadow-menu);
+  list-style: none;
+  animation: fc-suggestions-appear 200ms ease-out;
+}
+
+.fc-suggestions-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fc-space-8);
+  min-height: 32px;
+  padding: var(--fc-space-6) var(--fc-space-8);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fc-suggestions-item-active {
+  background-color: var(--fc-hover);
+}
+
+.fc-suggestions-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.fc-suggestions-detail {
+  flex: none;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+@keyframes fc-suggestions-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-suggestions {
+    animation: none;
+  }
 }

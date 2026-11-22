@@ -1,11 +1,12 @@
 // The `fluxo-formula` language in Monaco (E4-21): highlighting, autocomplete and the quick fix. The functions and reserved
-// words come from `GET /v1/formula-language`; types and problems come from the API (`symbols`, `problems`). Nothing here
-// re-implements the engine rules.
+// words come from `GET /v1/formula-language`; types and problems come from the API (`symbols`, `problems`); the run
+// parameters (`@nome`, E6-18) come from the draft. Nothing here re-implements the engine rules.
 import type * as MonacoApi from 'monaco-editor/editor/editor.api';
 import { buildCompletions, type SymbolCategory } from './completions';
 import type { Monaco } from './loadMonaco';
+import { fixLabel, fixText, NAME_CHAR_CLASS, NAME_SOURCE, parameterCompletionAt, PARAMETER_PATTERN } from './parameters';
 import { codePointToUtf16 } from './positions';
-import type { FormulaContext, FormulaLanguage, FormulaSymbol, WorkflowProblem } from './queries';
+import type { FormulaContext, FormulaLanguage, FormulaSymbol, WorkflowParameter, WorkflowProblem } from './queries';
 
 export const LANGUAGE_ID = 'fluxo-formula';
 
@@ -13,12 +14,16 @@ export const LANGUAGE_ID = 'fluxo-formula';
 export const MARKER_OWNER = 'fluxo-formula';
 
 /** A name: a letter (with or without accent) or `_`, then letters, digits and `_`. Functions are accepted with accent (`MÍN`). */
-const NAME = /[A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_]*/;
+const NAME = new RegExp(NAME_SOURCE);
+
+/** A name or number glued to an `@` (`a@b`): not a reference, as in the autocomplete and the plain field's highlight. */
+const GLUED_AT = new RegExp(`${NAME_CHAR_CLASS}+@${NAME_SOURCE}`);
 
 /**
- * Monarch tokenizer (`IMonarchLanguage`). Token classes: `function` (a known function name, or alias, before `(`), `number`,
- * `keyword` (reserved words), `string`, `variable` (other names, with the optional `[]`), `operator` and `delimiter`.
- * Function names and reserved words do not distinguish case, like the language.
+ * Monarch tokenizer (`IMonarchLanguage`). Token classes: `parameter` (`@nome`, with the `.inicio` or `.fim` of a period),
+ * `function` (a known function name, or alias, before `(`), `number`, `keyword` (reserved words), `string`, `variable`
+ * (other names, with the optional `[]`), `operator` and `delimiter`. Function names and reserved words do not distinguish
+ * case, like the language.
  */
 export function monarchLanguage(language: FormulaLanguage): MonacoApi.languages.IMonarchLanguage {
   const functions = [...new Set(language.functions.flatMap((fn) => [fn.name, ...fn.aliases]))];
@@ -30,6 +35,9 @@ export function monarchLanguage(language: FormulaLanguage): MonacoApi.languages.
     tokenizer: {
       root: [
         [/\s+/, 'white'],
+        // Before the names: `@periodo.inicio` is one token. Monarch only expands `@` followed by a word, and here `[` follows.
+        [GLUED_AT, 'variable'],
+        [PARAMETER_PATTERN, 'parameter'],
         [/\d+(\.\d+)?/, 'number'],
         [/"/, { token: 'string.quote', next: '@string' }],
         [new RegExp(`${NAME.source}(?=\\s*\\()`), { cases: { '@functions': 'function', '@keywords': 'keyword', '@default': 'variable' } }],
@@ -50,6 +58,8 @@ export function monarchLanguage(language: FormulaLanguage): MonacoApi.languages.
 /** What each model (one per field) offers to the providers, registered once per language. */
 export interface ModelState {
   symbols: readonly FormulaSymbol[];
+  /** The run parameters of the draft, offered after `@`. */
+  parameters: readonly WorkflowParameter[];
   context: FormulaContext;
   language: FormulaLanguage;
   problems: readonly WorkflowProblem[];
@@ -73,6 +83,38 @@ export function setModelState(uri: string, state: ModelState | null): void {
 export function completionKind(monaco: Monaco, category: SymbolCategory): MonacoApi.languages.CompletionItemKind {
   const kinds = monaco.languages.CompletionItemKind;
   return { source: kinds.Variable, multi: kinds.Field, calc: kinds.Constant, decision: kinds.EnumMember }[category];
+}
+
+/**
+ * The `@` autocomplete at the cursor, or `null` outside a reference: the parameters after `@` (a period completes with the
+ * dot and opens its parts) and `inicio` and `fim` after the dot of a period. A parameter has no block category: its icon is
+ * the `Value` kind, which formula.css leaves blank (estilos.md §2.4, D35).
+ */
+export function parameterItems(
+  monaco: Monaco,
+  state: ModelState,
+  textBefore: string,
+  position: MonacoApi.IPosition,
+): MonacoApi.languages.CompletionItem[] | null {
+  const at = parameterCompletionAt(textBefore, state.parameters);
+  if (!at) return null;
+  const lineStart = textBefore.lastIndexOf('\n') + 1;
+  const range = {
+    startLineNumber: position.lineNumber,
+    endLineNumber: position.lineNumber,
+    startColumn: at.from - lineStart + 1,
+    endColumn: position.column,
+  };
+  return at.items.map((item, index) => ({
+    label: { label: item.label, detail: ` ${item.typeLabel}`, description: item.description },
+    kind: monaco.languages.CompletionItemKind.Value,
+    detail: `${item.typeLabel} · ${item.description}`,
+    filterText: item.label,
+    insertText: item.insertText,
+    range,
+    sortText: String(index).padStart(4, '0'),
+    ...(item.reopens ? { command: { id: 'editor.action.triggerSuggest', title: 'Partes do período' } } : {}),
+  }));
 }
 
 /** The autocomplete items of a model at `range`: symbols (name, type, origin) and the functions of the context. */
@@ -118,8 +160,9 @@ export function quickFixes(
       (candidate) => candidate.suggestion !== null && candidate.code === marker.code && sameRange(model, candidate, marker),
     );
     if (!problem?.suggestion) continue;
+    const range = new monaco.Range(marker.startLineNumber, marker.startColumn, marker.endLineNumber, marker.endColumn);
     actions.push({
-      title: `Trocar por ${problem.suggestion}`,
+      title: `Trocar por ${fixLabel(problem.code, problem.suggestion)}`,
       kind: 'quickfix',
       diagnostics: [marker],
       isPreferred: true,
@@ -128,16 +171,20 @@ export function quickFixes(
           {
             resource: model.uri,
             versionId: model.getVersionId(),
-            textEdit: {
-              range: new monaco.Range(marker.startLineNumber, marker.startColumn, marker.endLineNumber, marker.endColumn),
-              text: problem.suggestion,
-            },
+            textEdit: { range, text: fixText(problem.code, markedText(model, range), problem.suggestion) },
           },
         ],
       },
     });
   }
   return actions;
+}
+
+/** The text of the model in `range`. */
+export function markedText(model: MonacoApi.editor.ITextModel, range: MonacoApi.IRange): string {
+  const start = model.getOffsetAt({ lineNumber: range.startLineNumber, column: range.startColumn });
+  const end = model.getOffsetAt({ lineNumber: range.endLineNumber, column: range.endColumn });
+  return model.getValue().slice(start, end);
 }
 
 /** Whether the marker is the one made from `problem` (markers keep only the range, not the problem). */
@@ -196,9 +243,16 @@ export function installLanguage(monaco: Monaco, language: FormulaLanguage): void
       ],
     });
     monaco.languages.registerCompletionItemProvider(LANGUAGE_ID, {
-      provideCompletionItems(model, position) {
+      // `@` opens the parameters and the dot of a period its parts (E6-18).
+      triggerCharacters: ['@', '.'],
+      provideCompletionItems(model, position, context) {
         const state = models.get(model.uri.toString());
         if (!state || state.readOnly) return { suggestions: [] };
+        const textBefore = model.getValue().slice(0, model.getOffsetAt(position));
+        const parameters = parameterItems(monaco, state, textBefore, position);
+        if (parameters) return { suggestions: parameters };
+        // A dot outside a reference (`1.5`) opens nothing.
+        if (context?.triggerCharacter === '.' || context?.triggerCharacter === '@') return { suggestions: [] };
         const word = model.getWordUntilPosition(position);
         const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
         return { suggestions: completionItems(monaco, state, range) };

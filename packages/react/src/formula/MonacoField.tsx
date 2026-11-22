@@ -2,7 +2,7 @@ import { useEffect, useRef, type MutableRefObject } from 'react';
 import type * as MonacoApi from 'monaco-editor/editor/editor.api';
 import { installLanguage, LANGUAGE_ID, MARKER_OWNER, problemMarkers, setModelState } from './language';
 import type { Monaco } from './loadMonaco';
-import type { FormulaContext, FormulaLanguage, FormulaSymbol, WorkflowProblem } from './queries';
+import type { FormulaContext, FormulaLanguage, FormulaSymbol, WorkflowParameter, WorkflowProblem } from './queries';
 import { readColors, themeData, themeName } from './theme';
 
 export type FormulaCodeEditor = MonacoApi.editor.IStandaloneCodeEditor;
@@ -17,6 +17,7 @@ interface MonacoFieldProps {
   /** Whether the formula has problems (`aria-invalid`), even when their positions are outdated. */
   invalid: boolean;
   symbols: readonly FormulaSymbol[];
+  parameters: readonly WorkflowParameter[];
   context: FormulaContext;
   readOnly: boolean;
   ariaLabel: string;
@@ -71,6 +72,7 @@ export function MonacoField({
   problems,
   invalid,
   symbols,
+  parameters,
   context,
   readOnly,
   ariaLabel,
@@ -202,8 +204,8 @@ export function MonacoField({
     const model = modelRef.current;
     if (!model) return;
     // `text`: the quick fix is only offered while the model still has the text the problems were marked on.
-    setModelState(model.uri.toString(), { symbols, context, language, problems, readOnly, text: value });
-  }, [monaco, language, symbols, context, problems, readOnly, value]);
+    setModelState(model.uri.toString(), { symbols, parameters, context, language, problems, readOnly, text: value });
+  }, [monaco, language, symbols, parameters, context, problems, readOnly, value]);
 
   // The problems are marked on the text they came from: with every new list and with every new text.
   useEffect(() => {

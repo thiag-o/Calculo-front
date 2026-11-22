@@ -33,6 +33,8 @@ const EMPTY_DEFINITION: Definition = {
   schema_version: 2,
   kind: 'batch',
   settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
+  // The API always sends `parameters` (the drafts of versions 1 and 2 are read as 3): the filter values read them (F99).
+  parameters: [],
   root: { batch_source: null, inputs: [], nodes: [], output: { fields: [] } },
 };
 

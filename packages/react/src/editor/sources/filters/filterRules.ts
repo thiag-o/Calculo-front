@@ -75,12 +75,10 @@ export function withVariableType(
   return { operator, values: valuesFor(operator, kept) };
 }
 
-/** A value that starts with `@` is a run parameter, which only comes in epic 6 (the problem `parameter_not_available`). */
+/** A value that starts with `@` is a run parameter (`@lojas`, `@periodo.inicio`, E6-18): it goes as typed. */
 export function isParameter(text: string): boolean {
   return text.trimStart().startsWith('@');
 }
-
-export const PARAMETER_NOTICE = 'Parâmetros chegam no épico 6';
 
 /** The literal of a typed value, or why it cannot be written. */
 export type LiteralReading = { ok: true; value: string } | { ok: false; message: string };

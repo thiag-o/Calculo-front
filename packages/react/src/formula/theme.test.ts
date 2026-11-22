@@ -37,6 +37,11 @@ describe('tema do editor pelos tokens', () => {
     );
   });
 
+  it('parâmetro (@nome) no texto primário com peso, sem cor de categoria, nos dois temas', () => {
+    expect(themeData(LIGHT).rules).toContainEqual({ token: 'parameter', foreground: '171717', fontStyle: 'bold' });
+    expect(themeData(DARK).rules).toContainEqual({ token: 'parameter', foreground: 'ededed', fontStyle: 'bold' });
+  });
+
   it('fundo background-200, números de linha gray-600 e sublinhado red-700', () => {
     const colors = themeData(LIGHT).colors;
     expect(colors['editor.background']).toBe('#fafafa');

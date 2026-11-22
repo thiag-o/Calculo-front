@@ -11,6 +11,8 @@ export type FormulaContext = Schemas['FormulaContext'];
 export type WorkflowProblem = Schemas['WorkflowProblem'];
 /** A variable the definition offers (generated from the contract). */
 export type FormulaSymbol = Schemas['Symbol'];
+/** A run parameter of the draft, used as `@nome` (generated from the contract). */
+export type WorkflowParameter = Schemas['WorkflowParameter'];
 
 /** Cache key (Contracts of the plan, "Chaves de cache"). The language does not change while the module is open. */
 export const FORMULA_LANGUAGE_KEY = ['formula-language'] as const;

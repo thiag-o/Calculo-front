@@ -12,14 +12,13 @@ export type { SourceNode, NodePlace } from './source-block/sourceNode';
 export { defaultOutputs, defaultOrder, toLinearMode } from './source-block/sourceNode';
 
 // The filters of a source, also used by the batch source (F63): operator by the variable's type, value in the Brazilian
-// pattern, ENTRE with two fields, EM with a list and `@` with the epic 6 notice.
+// pattern, ENTRE with two fields, EM with a list and the run parameters (`@`, with the list of the ones that serve).
 export { FilterList, newFilter, variableOptionLabel } from './filters/FilterList';
 export type { FilterListProps, FilterEntry, FilterVariable } from './filters/FilterList';
 export {
   FILTER_OPERATORS,
   FILTERS_MAX,
   OPERATOR_LABELS,
-  PARAMETER_NOTICE,
   operatorsFor,
   valuesFor,
   toLiteral,

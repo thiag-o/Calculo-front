@@ -136,14 +136,14 @@ describe('filtros da fonte', () => {
     expect(screen.queryByRole('textbox', { name: /filtro 1/ })).not.toBeInTheDocument();
   });
 
-  it('com @, guarda o parâmetro como digitado e avisa que parâmetros chegam no épico 6', async () => {
+  it('com @, guarda o parâmetro como digitado, sem o aviso do épico 6 (FilterList.parameters.test.tsx tem o resto)', async () => {
     simulateApi();
     const { user } = renderSource({ draft: withFilters([{ variable_id: variableId(PRODUTOS, 'preco'), operator: '>', values: [''] }]) });
     const value = await screen.findByRole('textbox', { name: 'Valor (filtro 1)' });
 
     await user.type(value, '@preco_minimo');
     expect(filters()[0]?.values).toEqual(['@preco_minimo']);
-    expect(screen.getByText('Parâmetros chegam no épico 6')).toBeInTheDocument();
+    expect(screen.queryByText('Parâmetros chegam no épico 6')).not.toBeInTheDocument();
   });
 
   it('usa o calendário na data e guarda DATA(a, m, d)', async () => {

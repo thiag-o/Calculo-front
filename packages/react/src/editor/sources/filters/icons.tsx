@@ -46,6 +46,16 @@ export function PlusIcon({ size }: IconProps) {
   );
 }
 
+/** Lucide "at-sign": "Usar parâmetro". */
+export function AtSignIcon({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" />
+    </Svg>
+  );
+}
+
 /** Lucide "trash-2": "Remover". */
 export function TrashIcon({ size }: IconProps) {
   return (

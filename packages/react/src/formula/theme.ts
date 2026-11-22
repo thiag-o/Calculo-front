@@ -78,7 +78,8 @@ export function isDark(colors: FormulaColors): boolean {
 export interface FormulaThemeData {
   base: 'vs' | 'vs-dark';
   inherit: boolean;
-  rules: { token: string; foreground: string }[];
+  /** `fontStyle: 'bold'` makes Monaco's `mtkb` class, which formula.css turns into weight 500. */
+  rules: { token: string; foreground: string; fontStyle?: string }[];
   colors: Record<string, string>;
 }
 
@@ -86,7 +87,8 @@ const bare = (hex: string) => hex.slice(1);
 
 /**
  * The theme: functions in `cat-source`, numbers in `cat-calc`, keywords in `cat-decision` (estilos.md §8), the rest in the
- * text colour; `background-200` background, line numbers in `gray-600` and the wavy underline in `red-700`.
+ * text colour; a run parameter (`@nome`, `.inicio`, `.fim`) in the text colour with weight 500, with no category colour
+ * (estilos.md §2.4, D35); `background-200` background, line numbers in `gray-600` and the wavy underline in `red-700`.
  */
 export function themeData(colors: FormulaColors): FormulaThemeData {
   return {
@@ -97,6 +99,7 @@ export function themeData(colors: FormulaColors): FormulaThemeData {
       { token: 'function', foreground: bare(colors.catSource) },
       { token: 'number', foreground: bare(colors.catCalc) },
       { token: 'keyword', foreground: bare(colors.catDecision) },
+      { token: 'parameter', foreground: bare(colors.text), fontStyle: 'bold' },
       { token: 'variable', foreground: bare(colors.text) },
       { token: 'identifier', foreground: bare(colors.text) },
       { token: 'string', foreground: bare(colors.text) },

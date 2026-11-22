@@ -26,8 +26,10 @@ import {
 // and Agrupar buttons, the Prévia tab, Calcular by record and the values on the canvas. The draft is the reference campaign
 // (batch source of the invoice items, three Fonte blocks and the "Pontuação" group with a Calculation inside).
 
-// The Monaco editor has its own tests (F52); here a plain field stands for it.
-vi.mock('../formula', () => ({
+// The Monaco editor has its own tests (F52); here a plain field stands for it. The rest of the vertical stays (the filter
+// values read the run parameters through it, F99).
+vi.mock('../formula', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../formula')>()),
   FormulaEditor: ({ value, onChange, readOnly, 'aria-label': label }: FormulaEditorProps) => (
     <textarea aria-label={label} value={value} readOnly={readOnly} onChange={(event) => onChange(event.target.value)} />
   ),
