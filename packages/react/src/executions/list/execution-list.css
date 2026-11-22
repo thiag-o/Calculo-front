@@ -1,0 +1,104 @@
+/*
+ * Execuções › list (estilos.md §3, §4, §7.3, §7.6, §9, §14 and §15). Spaces and widths only through the --fc-* tokens; no
+ * global reset and no full-window measurement (ADR 0002): the narrow layout comes from the module width.
+ */
+
+.fc-executions {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-executions-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-executions-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-executions-title h1,
+.fc-executions-title p {
+  margin: 0;
+}
+
+/* Filters on one line, which wraps when width runs out (the host app decides the width, estilos.md §15). */
+.fc-executions-filters {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12) var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-executions-filter {
+  flex: 0 1 var(--fc-field-width-select);
+}
+
+/* Holds the table; aria-busy while the rows of the previous filter stay on screen. */
+.fc-executions-results {
+  min-width: 0;
+}
+
+/* Two lines: the workflow name and the short id in mono (estilos.md §7.6). */
+.fc-executions-what {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+/* The workflow name opens the panel: a link (estilos.md §3: --fc-link, no underline, underline on hover). */
+.fc-executions-link {
+  box-sizing: border-box;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-executions-link:hover {
+  text-decoration: underline;
+}
+
+.fc-executions-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-executions-number {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fc-executions-nowrap {
+  white-space: nowrap;
+}
+
+.fc-executions-wrap {
+  overflow-wrap: anywhere;
+}
+
+.fc-executions-more {
+  display: flex;
+  justify-content: center;
+}
