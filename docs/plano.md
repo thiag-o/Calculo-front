@@ -1465,7 +1465,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - **ações:** **Baixar CSV**, desabilitado com o motivo (rodando, abortada, cancelada ou expirada), e **Cancelar**, com confirmação, enquanto não termina;
   - **atualização:** a cada 2 s até um estado final.
   - Motivo: design §15 ("painel por execução (totais, alertas, erros agrupados)"); a tela de debug com o canvas é do épico 11.
-- **E6-22, Prévia e Calcular com parâmetros:** com parâmetros declarados, a Prévia e o Calcular mostram o formulário de parâmetros acima do botão, com os padrões e lembrando os últimos valores usados na sessão.
+- **E6-22, Prévia e Calcular com parâmetros:** com parâmetros declarados, a Prévia e o Calcular mostram o formulário de parâmetros entre o cabeçalho (título e botão) e o resultado (D42), com os padrões e lembrando os últimos valores usados na sessão.
 
 **F109 · Manutenção: nomes e padrões do editor num lugar só (D32, itens 2 e 3 da F96)**
 - dep: —
@@ -1547,10 +1547,11 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: testes de cada estado (inclusive `awaiting_source` e cada `abort_reason`), do progresso, de clicar num grupo de erro e filtrar os registros, da gaveta no nível Padrão e no Mínimo, do download desabilitado em cada motivo, do cancelamento com confirmação, da atualização parando no estado final e da tabela de registros escondida sem `traces.view`.
 
 **F103 · Editor: Prévia e Calcular com parâmetros**
-- dep: F100
+- dep: F100, F116
 - modelo: sonnet
 - arquivos: `packages/react/src/editor/preview/`, `packages/react/src/editor/unit-run/`
 - Fazer (E6-22): o formulário de parâmetros na Prévia e no Calcular, enviado em `parameters`, lembrando os últimos valores na sessão.
+- D42 (2026-11-22): o aviso de resultado desatualizado também considera a mudança só nos parâmetros (o resultado é do cálculo com os valores usados).
 - Aceite: testes da Prévia e do Calcular com e sem parâmetros, do 422 no campo e dos valores lembrados ao trocar de aba.
 
 **F104 · Integração do épico 6: módulo, editor e interface pública**
