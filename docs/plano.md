@@ -1592,13 +1592,13 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - o `parameter-form.css` troca os px crus (fontes de 12 e 13 px, margem de 26 px, altura mínima de 32 px, raio de 6 px) pelos tokens do `estilos.md`.
 - Aceite: `git grep` acha uma definição só de cada formatador e de `RELATIVE_LABELS`; nenhum px cru no `parameter-form.css`; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
 
-**F116 · Manutenção: simulações do e2e do épico 4 no contrato v3 (D38)**
+**F116 · Manutenção: todo o simulado do e2e no contrato v3 (D38, reprovação da F98)**
 - dep: F97
 - modelo: sonnet
 - revisão: não
-- arquivos: `e2e/epic-4/support/`
-- Fazer: as definições simuladas do e2e do épico 4 passam à versão 3 do contrato (`schema_version: 3`, `parameters: []` e os campos novos de `settings`), conferidas contra o esquema como na ADR 0060, sem mudar o que os testes do épico 4 cobrem.
-- Aceite: `pnpm e2e e2e/epic-4` verde, com as respostas simuladas validadas contra o contrato.
+- arquivos: `e2e/support/contract.ts` (só os exemplos de rascunho e de definição), `e2e/epic-4/support/`, `e2e/epic-5/support/`
+- Fazer: todas as definições servidas pela API simulada passam à versão 3 do contrato (`schema_version: 3`, `parameters: []` e os campos novos de `settings`): o `EXAMPLES.DraftEmpty` e os outros rascunhos do `contract.ts`, o `isDefinition` e as definições do `e2e/epic-4/support/simulation.ts` e o `e2e/epic-5/support/` (já com o que a F99 fez). Validadas contra o esquema (ADR 0060). Nada de mascarar no componente com `?? []`.
+- Aceite: `pnpm e2e` de `e2e/epic-4` e `e2e/epic-5` verde no modo simulado, com as respostas validadas contra o contrato; a F98 (tentativa 2) passa no e2e em cima dela.
 
 **F106 · Portão do épico 6**
 - tipo: portao
