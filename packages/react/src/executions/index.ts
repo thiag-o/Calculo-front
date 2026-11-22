@@ -23,6 +23,31 @@ export type { ExecutionListProps } from './list';
 export { TriggerExecution, TriggerExecutionDialog, TRIGGER_PERMISSION as EXECUTIONS_TRIGGER_PERMISSION } from './trigger';
 export type { TriggerExecutionProps, TriggerExecutionDialogProps } from './trigger';
 
-// The execution routes and their cache keys (`['executions', 'list', filter]` and `['executions', id]`).
-export { EXECUTIONS_KEY, EXECUTION_LISTS_KEY, executionKey, executionListKey, useExecutionList, useTriggerExecution } from './api';
-export type { Execution, ExecutionListFilter, ExecutionStatus, NewExecution } from './api';
+// The panel of one execution (E6-21), for `/executions/:id` (F104). The trace of a record comes by `renderRecordTrace`: the
+// module passes the trace component of the editor, because executions never imports the editor (ADR 0062).
+export { ExecutionPanel, TRACES_PERMISSION as EXECUTIONS_TRACES_PERMISSION } from './detail';
+export type { ExecutionPanelProps } from './detail';
+export type { RecordTraceRenderProps, RenderRecordTrace } from './records';
+
+// The execution routes and their cache keys (`['executions', 'list', filter]`, `['executions', id]` and, under it, the
+// records and the trace of each one).
+export {
+  EXECUTIONS_KEY,
+  EXECUTION_LISTS_KEY,
+  executionKey,
+  executionListKey,
+  executionRecordKey,
+  executionRecordListsKey,
+  executionRecordsKey,
+  useExecution,
+  useExecutionList,
+  useTriggerExecution,
+} from './api';
+export type {
+  Execution,
+  ExecutionListFilter,
+  ExecutionRecord,
+  ExecutionRecordTrace,
+  ExecutionStatus,
+  NewExecution,
+} from './api';

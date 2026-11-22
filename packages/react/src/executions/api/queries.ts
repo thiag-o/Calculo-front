@@ -54,7 +54,7 @@ export function buildListQuery(filter: ExecutionListFilter, cursor: string | nul
 /**
  * The tenant executions (`GET /v1/executions`), newest first, paginated by cursor: `fetchNextPage` brings the next
  * page. While an execution on the loaded pages runs, every page is fetched again every 5 s; it stops once all of them
- * reached a final state. While a new filter loads, the previous result stays on screen (`isPlaceholderData`).
+ * reached a final state, or once a fetch failed (the list says so and offers "Tentar de novo", which starts it again). While a new filter loads, the previous result stays on screen (`isPlaceholderData`).
  */
 export function useExecutionList(filter: ExecutionListFilter = {}) {
   const client = useApiClient();
@@ -68,6 +68,7 @@ export function useExecutionList(filter: ExecutionListFilter = {}) {
     select: (data) => data.pages.flatMap((page) => page.items),
     placeholderData: keepPreviousData,
     refetchInterval: (current) => {
+      if (current.state.status === 'error') return false;
       const pages = current.state.data?.pages ?? [];
       return pages.some((page) => page.items.some((execution) => isRunning(execution.status))) ? LIST_REFRESH_MS : false;
     },

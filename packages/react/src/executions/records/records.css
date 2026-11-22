@@ -1,0 +1,251 @@
+/*
+ * Execução › Registros and the trace drawer (estilos.md §3, §4, §5, §7.5, §7.6, §11 and §14). Only fc- classes and --fc-*
+ * variables; no global reset and nothing measured on the whole window (ADR 0002): the drawer lives in the module portal.
+ */
+
+.fc-records {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-records-top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+}
+
+.fc-records-top p,
+.fc-records-title {
+  margin: 0;
+}
+
+/* Gets the focus when an error group is chosen: the ring only shows from the keyboard. */
+.fc-records-title:focus {
+  outline: none;
+}
+
+.fc-records-title:focus-visible {
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-records-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12) var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-records-filter {
+  flex: 0 1 var(--fc-field-width-select);
+}
+
+/* The chosen error group, beside the filter, with the action that clears it. */
+.fc-records-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+  min-height: 32px;
+  min-width: 0;
+}
+
+.fc-records-what {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+/* The key opens the trace: a link in mono (estilos.md §3: --fc-link, underline on hover). */
+.fc-records-key {
+  box-sizing: border-box;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-records-key:hover {
+  text-decoration: underline;
+}
+
+.fc-records-key:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-records-nowrap {
+  white-space: nowrap;
+}
+
+.fc-records-wrap {
+  overflow-wrap: anywhere;
+}
+
+.fc-records-more {
+  display: flex;
+  justify-content: center;
+}
+
+/* Drawer: a panel on the right side of the module, full height (estilos.md §4: border, modal shadow). */
+.fc-record-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--fc-overlay);
+  animation: fc-record-drawer-fade 200ms ease-out;
+}
+
+.fc-record-drawer {
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: var(--fc-shadow-modal);
+  font-family: var(--fc-font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  animation: fc-record-drawer-enter 200ms ease-out;
+}
+
+.fc-record-drawer:focus {
+  outline: none;
+}
+
+.fc-record-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-12);
+  padding: var(--fc-space-16) var(--fc-space-24);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-record-drawer-header h2 {
+  margin: 0;
+}
+
+.fc-record-drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-height: 0;
+  padding: var(--fc-space-24);
+  overflow-y: auto;
+}
+
+.fc-record-drawer-record {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12);
+}
+
+.fc-record-drawer-key {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-record-drawer-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  margin: 0;
+}
+
+.fc-record-drawer-note p {
+  margin: 0;
+}
+
+.fc-record-drawer-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+.fc-record-drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+.fc-record-drawer-section h3 {
+  margin: 0;
+}
+
+.fc-record-drawer-values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  margin: 0;
+}
+
+.fc-record-drawer-value {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  gap: var(--fc-space-12);
+}
+
+.fc-record-drawer-value dt {
+  color: var(--fc-text-secondary);
+  font-size: 13px;
+}
+
+.fc-record-drawer-value dd {
+  margin: 0;
+}
+
+.fc-record-drawer-mono {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.fc-record-drawer-hash {
+  word-break: break-all;
+}
+
+@keyframes fc-record-drawer-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fc-record-drawer-enter {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-record-drawer-backdrop,
+  .fc-record-drawer {
+    animation: none;
+  }
+}

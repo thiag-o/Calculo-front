@@ -1,6 +1,6 @@
 # 0063. `executions` lê workflows direto pela API, com chaves próprias, e `executions/api/` é a peça comum das sub-verticais
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0066](0066-painel-da-execucao-chaves-de-registros-e-render-prop-do-trace.md))
 - **Data:** 2026-11-22
 - **Quem decidiu:** orquestração (tarefa F101), com aprovação da sessão global
 - **Relacionadas:** ADRs 0003, 0020, 0033, 0038, 0062 (complementa a 0062)

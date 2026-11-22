@@ -1,0 +1,318 @@
+/*
+ * Execução › panel (estilos.md §3, §4, §7.3, §7.6, §7.7, §9, §14 and §15). Only fc- classes and --fc-* variables; no
+ * global reset and nothing measured on the whole window (ADR 0002): sections wrap with the module width.
+ */
+
+.fc-execution {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-24);
+  min-width: 0;
+}
+
+.fc-execution-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+.fc-execution-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-execution-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+.fc-execution-title h1 {
+  margin: 0;
+}
+
+.fc-execution-subtitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12);
+}
+
+.fc-execution-actions {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+}
+
+.fc-execution-download {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--fc-space-4);
+  max-width: 100%;
+}
+
+.fc-execution-download-summary {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-execution-download-error {
+  max-width: 420px;
+}
+
+/* Box of a section (estilos.md §7.6): background-100, 1px border, 12px radius, no shadow. */
+.fc-execution-box {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+  padding: var(--fc-space-16);
+  border: 1px solid var(--fc-border);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+}
+
+.fc-execution-box h2,
+.fc-execution-box p {
+  margin: 0;
+}
+
+/* Carga → Cálculo → Entrega. */
+.fc-execution-phases {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-execution-phase {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-6);
+  color: var(--fc-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.fc-execution-phase-arrow {
+  display: inline-flex;
+  margin-right: var(--fc-space-2);
+  color: var(--fc-text-tertiary);
+}
+
+.fc-execution-phase-state {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.fc-execution-phase-done {
+  color: var(--fc-text);
+}
+
+.fc-execution-phase-current .fc-execution-phase-label,
+.fc-execution-phase-waiting .fc-execution-phase-label,
+.fc-execution-phase-stopped .fc-execution-phase-label {
+  color: var(--fc-text);
+  font-weight: 500;
+}
+
+.fc-execution-phase-waiting .fc-execution-phase-state {
+  color: var(--fc-amber-900);
+}
+
+.fc-execution-phase-stopped .fc-execution-phase-state {
+  color: var(--fc-danger-text);
+}
+
+/* Meter (estilos.md §7.7): 4px bar, gray-200 track, gray-1000 fill. */
+.fc-execution-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+}
+
+.fc-execution-meter {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background-color: var(--fc-gray-200);
+}
+
+.fc-execution-meter-fill {
+  display: block;
+  height: 100%;
+  background-color: var(--fc-gray-1000);
+  transition: width 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-execution-meter-fill {
+    transition: none;
+  }
+}
+
+/* Label / value pairs (estilos.md §7.6: label-13 secondary label). */
+.fc-execution-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--fc-space-12) var(--fc-space-32);
+}
+
+.fc-execution-pairs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  margin: 0;
+}
+
+.fc-execution-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+  gap: var(--fc-space-12);
+}
+
+.fc-execution-pair dt {
+  color: var(--fc-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.fc-execution-pair dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.fc-execution-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: var(--fc-space-12) var(--fc-space-16);
+  margin: 0;
+}
+
+.fc-execution-total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+}
+
+.fc-execution-total dt {
+  color: var(--fc-text-secondary);
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.fc-execution-total dd {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.fc-execution-number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Error groups: a list with 1px dividers; each line can filter the records. */
+.fc-execution-groups {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-execution-group + .fc-execution-group {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-execution-group-button,
+.fc-execution-group-line {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-12);
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: var(--fc-space-8);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--fc-text);
+  font: inherit;
+  text-align: left;
+}
+
+.fc-execution-group-button {
+  cursor: pointer;
+  outline: 2px solid transparent;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-execution-group-button:hover {
+  background-color: var(--fc-hover);
+}
+
+.fc-execution-group-button[aria-pressed='true'] {
+  background-color: var(--fc-active);
+}
+
+.fc-execution-group-button:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-execution-group-what {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+  min-width: 0;
+}
+
+.fc-execution-group-name {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.fc-execution-code {
+  font-family: var(--fc-font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+}
+
+.fc-execution-group-what .fc-execution-code {
+  color: var(--fc-text-secondary);
+}
+
+.fc-execution-group-count {
+  flex: none;
+  color: var(--fc-text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-execution-wrap {
+  overflow-wrap: anywhere;
+}

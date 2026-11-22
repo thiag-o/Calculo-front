@@ -10,3 +10,7 @@ export type { EditorProps } from './Editor';
 // The note of a change the editor could not save on close, for the screens that follow it (F74).
 export { UnsavedChangesNotice } from './draft';
 export type { UnsavedChangesNoticeProps } from './draft';
+
+// The trace of one record (the result of "Calcular"), for the trace drawer of the execution panel (E6-16, F102): the
+// module passes it to `ExecutionPanel` by `renderRecordTrace` (executions never imports the editor, ADR 0062).
+export { UnitRunResult, type UnitRunResultProps } from './unit-run/UnitRunResult';

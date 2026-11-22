@@ -346,6 +346,38 @@ describe('Execuções: atualização', () => {
     });
     expect(api.callsTo(LIST)).toHaveLength(1);
   });
+
+  const failures: [string, () => Response | Promise<Response>, RegExp][] = [
+    ['403 no_permission', () => problem(403, 'no_permission'), /Você não tem permissão para ver as execuções neste tenant/],
+    ['404 not_found', () => problem(404, 'not_found'), /Texto do servidor para not_found/],
+    ['falha de rede', () => Promise.reject(new TypeError('Failed to fetch')), /Não foi possível falar com o servidor/],
+  ];
+
+  it.each(failures)('%s no meio da atualização: avisa, mantém a lista e para de pedir', async (_name, failure, message) => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const running = execution({ id: '6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c99', status: 'calculating', started_at: localIso(21, 15, 0) });
+    api.respond(LIST, page([running]), failure, page([completed({ id: running.id })]));
+    const { user } = renderScreen(<ExecutionList />);
+    await screen.findByText('Calculando');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    expect(await screen.findByText('Não foi possível atualizar a lista')).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    // The last list stays on screen.
+    expect(screen.getByText('Calculando')).toBeInTheDocument();
+    expect(api.callsTo(LIST)).toHaveLength(2);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(api.callsTo(LIST)).toHaveLength(2);
+
+    await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByText('Entregue')).toBeInTheDocument();
+    expect(screen.queryByText('Não foi possível atualizar a lista')).not.toBeInTheDocument();
+  });
 });
 
 describe('Execuções: erros', () => {
