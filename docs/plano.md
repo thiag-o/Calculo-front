@@ -1446,7 +1446,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - **E6-18, `@` na fórmula e nos filtros:**
   - no Monaco, `@` abre o autocomplete dos parâmetros e, depois do ponto, de `inicio` e `fim` no Período; o `@nome` tem realce próprio;
   - nos filtros, o valor aceita `@` com a mesma lista, e o aviso "Parâmetros chegam no épico 6" sai.
-- **E6-19, disparo:** o botão **Executar** fica no cabeçalho do editor, na Visão geral do workflow e na lista de execuções do workflow (com `executions.trigger`). Ele abre um diálogo com:
+- **E6-19, disparo:** o botão **Executar lote** (estilos.md §13, D37) fica no cabeçalho do editor, na Visão geral do workflow e na lista de execuções do workflow (com `executions.trigger`). Ele abre um diálogo com:
   - o formulário de parâmetros, já com os padrões (o relativo aparece pelo rótulo, "Mês anterior");
   - a nota "Executa o rascunho salvo (revisão N). Mudanças feitas depois não entram nesta execução.";
   - com problemas no rascunho, o botão desabilitado com o motivo e o link para a aba Problemas.
