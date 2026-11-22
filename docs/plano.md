@@ -1608,8 +1608,15 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Fazer: o `BATCH_SOURCE_SCHEMA_VERSION = 2` some. O editor lê rascunhos nas versões 1, 2 e 3 e grava sempre `schema_version: 3`, com `parameters` (vazio se não houver) e os campos novos de `settings` com os padrões do contrato. Uma constante só para a versão gravada, no lugar onde o rascunho é salvo. No back real, uma definição v2 com `parameters` é recusada, então nada pode sair na v2.
 - Aceite: começa por um teste que salva um rascunho aberto na v2 e falha antes (grava 2) e passa depois (grava 3, com `parameters: []`); `git grep` não acha outra versão gravada fixa no editor.
 
+**F118 · Execuções: gaveta do trace com a definição congelada (D40)**
+- dep: B154, F102, F103
+- modelo: sonnet
+- arquivos: `packages/react/src/executions/records/`, `packages/react/src/executions/api/`, `packages/react/src/editor/unit-run/` (só para deixar opcionais as props que só o editor usa, como a seleção no canvas), `packages/react/src/api/generated/`, `e2e/support/contract.ts`
+- Fazer: a gaveta do trace do painel da execução lê a definição congelada (`GET /v1/executions/{id}/definition`, B154) e mostra o trace com o nome dos blocos e os números no padrão brasileiro, como o Calcular do editor. A ligação continua pela render prop da F102, ligada no `module/` pela F104 (ADR 0062). Os erros sem nó filtram com `node_id=none`, e o nome do CSV vem do `Content-Disposition`.
+- Aceite: testes da gaveta com a definição congelada (nomes e números no padrão brasileiro), do grupo de erro sem nó filtrando por `node_id=none` e do nome do arquivo; o editor continua igual (os testes do unit-run passam).
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
