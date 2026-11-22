@@ -194,8 +194,9 @@ function StatusNotes({ execution }: { execution: Execution }) {
   if (execution.status === 'awaiting_source') {
     return (
       <Notice type="warning" title="Aguardando a fonte">
-        Uma fonte está fora do ar. A execução tenta de novo sozinha depois de 30 s, 2 min e 10 min; se a quarta tentativa
-        falhar, ela é abortada e nada é entregue.
+        {execution.next_retry_at ? `Uma fonte está fora do ar. A próxima tentativa é em ${dateTime(execution.next_retry_at)}. ` : 'Uma fonte está fora do ar. '}
+        A execução tenta de novo sozinha depois de 30 s, 2 min e 10 min; se a quarta tentativa falhar, ela é abortada e nada
+        é entregue.
       </Notice>
     );
   }

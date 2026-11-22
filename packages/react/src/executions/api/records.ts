@@ -21,6 +21,8 @@ export interface ExecutionRecordFilter {
   statuses?: readonly RecordStatus[];
   /** Only the records with the error in this node. */
   nodeId?: string;
+  /** Only the records with the error without a node (batch source and key errors). Never together with `nodeId`. */
+  withoutNode?: boolean;
   /** Only the records with this error code. */
   code?: RecordFailureCode;
 }
@@ -30,7 +32,8 @@ function normalizedFilter(filter: ExecutionRecordFilter): ExecutionRecordFilter 
   const statuses = [...new Set(filter.statuses ?? [])].sort();
   return {
     ...(statuses.length > 0 ? { statuses } : {}),
-    ...(filter.nodeId ? { nodeId: filter.nodeId } : {}),
+    // `node_id` with `without_node=true` is a `422 invalid_data`: the node wins, so the filter is never contradictory.
+    ...(filter.nodeId ? { nodeId: filter.nodeId } : filter.withoutNode ? { withoutNode: true } : {}),
     ...(filter.code ? { code: filter.code } : {}),
   };
 }
@@ -54,6 +57,7 @@ export function buildRecordsQuery(filter: ExecutionRecordFilter, cursor: string 
   const query: RecordListQuery = {};
   if (filter.statuses && filter.statuses.length > 0) query.status = [...filter.statuses];
   if (filter.nodeId) query.node_id = filter.nodeId;
+  else if (filter.withoutNode) query.without_node = true;
   if (filter.code) query.code = filter.code;
   if (cursor) query.cursor = cursor;
   return query;

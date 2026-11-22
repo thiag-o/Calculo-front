@@ -58,14 +58,14 @@ export interface ExecutionOutputFile {
   fileName: string;
 }
 
-/** The name the back uses (`execution-<id>.csv`), when `Content-Disposition` cannot be read (D40: embedded, until the B154). */
+/** The name the back uses (`execution-<id>.csv`), when the `Content-Disposition` header is missing or has no name. */
 export function fallbackFileName(id: string): string {
   return `execution-${id}.csv`;
 }
 
 /**
  * The file name of `Content-Disposition` (`attachment; filename="execution-<id>.csv"`, or `filename*=UTF-8''…`), without
- * any folder in it. Without the header (cross origin, when the back does not expose it) or without a name: the fallback.
+ * any folder in it. The back exposes the header to the browser (B154), so the embedded app reads it too. Without the header or without a name: the fallback.
  */
 export function outputFileName(header: string | null, id: string): string {
   if (header) {

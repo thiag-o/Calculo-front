@@ -28,7 +28,7 @@ const STATUS_OPTIONS: readonly SelectOption[] = [
 
 /** An error group chosen in the panel: the records with the error in that node and code. */
 export interface ErrorGroupFilter {
-  /** The node; `null` in the batch source and in the key errors (then only the code filters, D40). */
+  /** The node; `null` in the batch source and in the key errors (then `without_node=true` filters). */
   nodeId: string | null;
   code: RecordFailureCode;
   /** How the group reads ("calc_pontos" or "Fonte do lote"). */
@@ -43,11 +43,11 @@ export interface RecordsFilter {
 
 export const NO_RECORDS_FILTER: RecordsFilter = { status: null, group: null };
 
-/** The API filter of the table filter. A group without a node filters only by the code until the B154 (D40). */
+/** The API filter of the table filter. A group without a node filters with `without_node=true` (B154) and the code. */
 export function apiRecordFilter(filter: RecordsFilter): ExecutionRecordFilter {
   return {
     ...(filter.status ? { statuses: [filter.status] } : {}),
-    ...(filter.group?.nodeId ? { nodeId: filter.group.nodeId } : {}),
+    ...(filter.group ? (filter.group.nodeId ? { nodeId: filter.group.nodeId } : { withoutNode: true }) : {}),
     ...(filter.group ? { code: filter.group.code } : {}),
   };
 }

@@ -29,3 +29,13 @@ O painel da execução (F102) lê a execução, os registros (lista paginada com
 - **Bom:** um prefixo só; `executions` continua sem depender do editor; a F118 troca a gaveta sem mexer no painel.
 - **Ruim:** invalidar `executionKey(id)` sem `exact` também recarrega registros. Até a F118, o trace mostra ids em vez de nomes, e fora do editor falta o CSS do unit-run.
 - **A fazer:** F104 liga a render prop; F118 passa a definição congelada e importa o CSS no `UnitRunResult`.
+
+## Atualização (F118)
+
+Quem decidiu: orquestração (tarefa F118). A gaveta provisória acabou.
+
+- **Chave nova** (complemento da 0063): definição congelada em `['executions', id, 'definition']`, via `useExecutionDefinition` (`executions/api/definition.ts`), com `staleTime: Infinity` (a definição congelada não muda). Segue o prefixo único da 0063 e a regra do `exact` acima.
+- **Gaveta definitiva:** o painel lê a definição (`GET /v1/executions/{id}/definition`) e chama `renderRecordTrace({ trace, record, definition })`. `definition` é o tipo gerado `ExecutionDefinition['definition']`. A nota provisória saiu, e há carregando e erro com "Tentar de novo". Sem a render prop, continua a gaveta crua. `executions` segue sem importar o editor (0062).
+- **Ligação na F104:** `renderRecordTrace={({ trace, definition }) => <UnitRunResult run={trace} definition={definition} />}`.
+- **CSS:** o `UnitRunResult` importa o próprio `unit-run.css`, para funcionar fora do editor. `currentDefinition` e `onSelectNode` ficam opcionais. Isso é detalhe do componente, não decisão separada.
+- **Consequência:** a trace depende de uma segunda consulta por execução; a falha dela bloqueia a gaveta até "Tentar de novo".

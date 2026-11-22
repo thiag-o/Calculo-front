@@ -1,5 +1,4 @@
 // How a record reads in the panel (estilos.md §7.5): the status as dot + word, the key and where the error happened.
-// Until the frozen definition arrives (B154, F118), blocks are told by their id (D40).
 import type { Schemas } from '../../api';
 import type { StatusTone } from '../../design-system';
 import type { RecordFailureCode, RecordStatus } from '../api';

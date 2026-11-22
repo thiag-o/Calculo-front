@@ -22,6 +22,7 @@ const OUTPUT = `GET /v1/executions/${ID}/output`;
 const RECORDS = `GET /v1/executions/${ID}/records`;
 const RESULT_KEY = 'a'.repeat(64);
 const RECORD = `GET /v1/executions/${ID}/records/${RESULT_KEY}`;
+const DEFINITION_ROUTE = `GET /v1/executions/${ID}/definition`;
 
 /** The Operator who also sees the trace (the Auditor's `traces.view`). */
 const TRACE_PERMISSIONS = [...OPERATOR_PERMISSIONS, 'traces.view'];
@@ -71,6 +72,36 @@ const TRACE: Schemas['UnitRunTrace'] = {
   output_hash: 'sha256:1c2d3e4f5a6b7c',
   error: null,
   warnings: [],
+};
+
+/** The definition the execution ran, frozen: it names the block of the trace. */
+const FROZEN: Schemas['ExecutionDefinition'] = {
+  draft_revision: 5,
+  definition: {
+    schema_version: 3,
+    kind: 'batch',
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+    parameters: [],
+    root: {
+      batch_source: null,
+      inputs: [],
+      nodes: [
+        {
+          id: 'calc_pontos',
+          type: 'calculation',
+          name: 'Pontos do item',
+          description: null,
+          position: { x: 0, y: 0 },
+          expression: 'valor * 1,5',
+          output: { name: 'pontos', type: 'decimal', scale: 2 },
+          rounding_mode: null,
+          error_policy: null,
+          default_value: null,
+        },
+      ],
+      output: { fields: [{ name: 'pontos', variable: 'pontos' }] },
+    },
+  },
 };
 
 function storedRecord(level: Schemas['TraceLevel']): Schemas['ExecutionRecord'] {
@@ -139,9 +170,18 @@ describe('Painel da execução: estados', () => {
 
     const note = await screen.findByText('Aguardando a fonte');
     expect(note.closest('[role="status"]')).toHaveTextContent('tenta de novo sozinha depois de 30 s, 2 min e 10 min');
+    expect(note.closest('[role="status"]')).not.toHaveTextContent('A próxima tentativa é em');
     const phases = screen.getByRole('region', { name: 'Fases' });
     const current = within(phases).getAllByRole('listitem').find((item) => item.getAttribute('aria-current') === 'step');
     expect(current).toHaveTextContent('Cálculoaguardando a fonte');
+  });
+
+  it('awaiting_source com next_retry_at: o aviso diz a hora da próxima tentativa', async () => {
+    api.respond(GET, json(withId({ status: 'awaiting_source', started_at: '2026-11-21T15:30:01Z', next_retry_at: '2026-11-21T15:30:34Z' })));
+    renderPanel();
+
+    const note = await screen.findByText('Aguardando a fonte');
+    expect(note.closest('[role="status"]')).toHaveTextContent(`A próxima tentativa é em ${dateTime('2026-11-21T15:30:34Z')}.`);
   });
 
   it('awaiting_source antes de contar o lote: a fase de Carga espera e nenhuma barra aparece', async () => {
@@ -264,6 +304,7 @@ describe('Painel da execução: erros agrupados e registros', () => {
     const last = api.callsTo(RECORDS).at(-1)!;
     expect(queryOf(last).get('node_id')).toBe('calc_pontos');
     expect(queryOf(last).get('code')).toBe('division_by_zero');
+    expect(queryOf(last).has('without_node')).toBe(false);
     expect(group).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('heading', { level: 2, name: 'Registros' })).toHaveFocus();
     expect(screen.getByRole('group', { name: 'Filtros dos registros' })).toHaveTextContent('Pontos do item');
@@ -273,7 +314,7 @@ describe('Painel da execução: erros agrupados e registros', () => {
     expect(group).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('grupo sem nó (chave do lote) filtra só pelo código, e o registro sem trace não abre a gaveta', async () => {
+  it('grupo sem nó (chave do lote) filtra com without_node=true e pelo código, e o registro sem trace não abre a gaveta', async () => {
     api.respond(GET, json(finished({ status: 'completed_with_errors', error_groups: groups })));
     api.respond(
       RECORDS,
@@ -283,6 +324,7 @@ describe('Painel da execução: erros agrupados e registros', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Chave do lote, duplicate_record_key: 3 registros. Filtrar os registros' }));
     await waitFor(() => expect(queryOf(api.callsTo(RECORDS).at(-1)!).get('code')).toBe('duplicate_record_key'));
+    expect(queryOf(api.callsTo(RECORDS).at(-1)!).get('without_node')).toBe('true');
     expect(queryOf(api.callsTo(RECORDS).at(-1)!).has('node_id')).toBe(false);
 
     const table = screen.getByRole('table', { name: 'Registros da execução' });
@@ -352,21 +394,25 @@ describe('Painel da execução: erros agrupados e registros', () => {
 });
 
 describe('Painel da execução: gaveta do trace', () => {
-  it('no nível Padrão, a gaveta passa o trace guardado ao componente do trace, com a nota da definição', async () => {
+  it('no nível Padrão, a gaveta passa o trace guardado e a definição congelada ao componente do trace', async () => {
     api.respond(GET, json(finished()));
     api.respond(RECORDS, json({ items: [summary()], next_cursor: null }));
     api.respond(RECORD, json(storedRecord('standard')));
-    const renderRecordTrace = vi.fn(({ trace }: { trace: Schemas['UnitRunTrace'] }) => <p>{`trace com ${Object.keys(trace.outputs).join(', ')}`}</p>);
+    api.respond(DEFINITION_ROUTE, json(FROZEN));
+    const renderRecordTrace = vi.fn(({ trace, definition }: { trace: Schemas['UnitRunTrace']; definition: Schemas['WorkflowDefinition'] }) => (
+      <p>{`trace com ${Object.keys(trace.outputs).join(', ')} de ${definition.root.nodes.map((node) => node.name).join(', ')}`}</p>
+    ));
     const { user } = renderPanel({ renderRecordTrace });
 
     const open = await screen.findByRole('button', { name: 'Abrir o trace de nf_id 10 · item_seq 1' });
     await user.click(open);
 
     const drawer = await screen.findByRole('dialog', { name: 'Trace do registro' });
-    expect(await within(drawer).findByText('trace com pontos')).toBeInTheDocument();
-    expect(within(drawer).getByText('Nomes e formatação chegam com a definição congelada')).toBeInTheDocument();
+    expect(await within(drawer).findByText('trace com pontos de Pontos do item')).toBeInTheDocument();
+    expect(within(drawer).queryByText(/Nomes e formatação chegam/)).not.toBeInTheDocument();
     expect(within(drawer).getByText('ok')).toBeInTheDocument();
-    expect(renderRecordTrace).toHaveBeenCalledWith(expect.objectContaining({ trace: TRACE }));
+    expect(renderRecordTrace).toHaveBeenCalledWith(expect.objectContaining({ trace: TRACE, definition: FROZEN.definition }));
+    expect(api.callsTo(DEFINITION_ROUTE)).toHaveLength(1);
     expect(within(drawer).queryByText('Esta execução guardou o trace mínimo.')).not.toBeInTheDocument();
 
     await user.keyboard('{Escape}');
@@ -400,7 +446,23 @@ describe('Painel da execução: gaveta do trace', () => {
     expect(hashes).toHaveTextContent('Hash das entradassha256:77b0db21bf50aa');
     expect(hashes).toHaveTextContent('Hash da saídasha256:1c2d3e4f5a6b7c');
     expect(renderRecordTrace).not.toHaveBeenCalled();
-    expect(within(drawer).queryByText('Nomes e formatação chegam com a definição congelada')).not.toBeInTheDocument();
+    expect(api.callsTo(DEFINITION_ROUTE)).toHaveLength(0);
+  });
+
+  it('a definição congelada que falha: a gaveta avisa e o Tentar de novo a lê de novo', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(RECORDS, json({ items: [summary()], next_cursor: null }));
+    api.respond(RECORD, json(storedRecord('standard')));
+    api.respond(DEFINITION_ROUTE, problem(500, 'internal_error'), json(FROZEN));
+    const renderRecordTrace = vi.fn(({ definition }: { definition: Schemas['WorkflowDefinition'] }) => <p>{`blocos: ${definition.root.nodes.length}`}</p>);
+    const { user } = renderPanel({ renderRecordTrace });
+
+    await user.click(await screen.findByRole('button', { name: 'Abrir o trace de nf_id 10 · item_seq 1' }));
+    const drawer = await screen.findByRole('dialog', { name: 'Trace do registro' });
+    expect(await within(drawer).findByText('Não foi possível carregar a definição da execução')).toBeInTheDocument();
+    expect(renderRecordTrace).not.toHaveBeenCalled();
+    await user.click(within(drawer).getByRole('button', { name: 'Tentar de novo' }));
+    expect(await within(drawer).findByText('blocos: 1')).toBeInTheDocument();
   });
 
   it('registro que não existe mais: a gaveta explica o record_not_found', async () => {

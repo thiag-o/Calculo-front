@@ -8,6 +8,7 @@ import { keyText } from './recordKey';
 import { NO_VALUE } from '../values';
 import { allNodes, formatValue, variableTypes } from '../values';
 import type { DataType, Value } from './values';
+import './unit-run.css';
 
 /** The record status (estilos.md §7.5): dot + word. */
 export const recordStatus: Record<UnitRun['status'], { tone: StatusTone; word: string }> = {
@@ -49,10 +50,10 @@ export interface UnitRunResultProps {
   definition: WorkflowDefinition;
   /** The symbols of the analysis when it ran: the types of the variables read from the catalog. */
   symbols?: readonly DraftSymbol[];
-  /** The definition being edited: a block removed since the run can no longer be selected. */
-  currentDefinition: WorkflowDefinition;
-  /** Selects the block in the canvas. */
-  onSelectNode: (nodeId: string) => void;
+  /** The definition being edited: a block removed since the run can no longer be selected. Without it (outside the editor), no block can be selected. */
+  currentDefinition?: WorkflowDefinition;
+  /** Selects the block in the canvas. Without it (outside the editor), the block names are plain text. */
+  onSelectNode?: (nodeId: string) => void;
 }
 
 /** A hash shortened on screen (`sha256:77b0db21bf50…`); the whole one is copied. */
@@ -83,7 +84,8 @@ export function UnitRunResult({ run, definition, symbols, currentDefinition, onS
     [definition, types],
   );
   const names = useMemo(() => new Map(allNodes(definition).map((node) => [node.id, node.name])), [definition]);
-  const current = useMemo(() => new Set(allNodes(currentDefinition).map((node) => node.id)), [currentDefinition]);
+  // Outside the editor there is no canvas: no block is selectable.
+  const current = useMemo(() => new Set(currentDefinition && onSelectNode ? allNodes(currentDefinition).map((node) => node.id) : []), [currentDefinition, onSelectNode]);
   const traced = useMemo(() => tracedIds(run.nodes), [run.nodes]);
   const status = recordStatus[run.status];
   const [copied, setCopied] = useState<CopyState>(null);
@@ -296,7 +298,7 @@ interface NodeContext {
   names: ReadonlyMap<string, string>;
   current: ReadonlySet<string>;
   types: ReadonlyMap<string, DataType>;
-  onSelectNode: (nodeId: string) => void;
+  onSelectNode: ((nodeId: string) => void) | undefined;
 }
 
 function NodeList({ nodes, context, label }: { nodes: readonly TraceNode[]; context: NodeContext; label?: string }) {
@@ -334,7 +336,7 @@ function NodeItem({ node, context }: { node: TraceNode; context: NodeContext }) 
         <Status tone={tone} className="fc-unit-run-node-status">
           {word}
         </Status>
-        {current.has(node.node_id) ? (
+        {onSelectNode && current.has(node.node_id) ? (
           <button type="button" className="fc-unit-run-node-name" aria-label={`${name}: selecionar no canvas`} onClick={() => onSelectNode(node.node_id)}>
             {name}
           </button>

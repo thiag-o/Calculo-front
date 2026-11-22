@@ -12,7 +12,7 @@ export type Problem = Schemas['Problem'];
 export type ErrorBody = Problem | Schemas['LoginLockedProblem'] | Schemas['InvalidDataProblem'];
 
 /** Literal copy of the contract's `components.examples` (example name → `value`). */
-export const EXAMPLES = {
+const EXAMPLES_BASE = {
   NoSession: {
     type: 'about:blank',
     title: 'Sem sessão',
@@ -4254,6 +4254,7 @@ export const EXAMPLES = {
     started_at: null,
     data_read_at: null,
     finished_at: null,
+    next_retry_at: null,
     total_records: null,
     progress: {
       chunks_done: 0,
@@ -4302,6 +4303,7 @@ export const EXAMPLES = {
     started_at: '2026-11-21T12:00:02Z',
     data_read_at: '2026-11-21T12:00:03Z',
     finished_at: '2026-11-21T12:00:05Z',
+    next_retry_at: null,
     total_records: 2,
     progress: {
       chunks_done: 1,
@@ -4350,6 +4352,7 @@ export const EXAMPLES = {
     started_at: '2026-11-21T13:00:01Z',
     data_read_at: '2026-11-21T13:00:02Z',
     finished_at: '2026-11-21T13:10:40Z',
+    next_retry_at: null,
     total_records: 1200,
     progress: {
       chunks_done: 2,
@@ -4414,6 +4417,7 @@ export const EXAMPLES = {
     started_at: '2026-11-21T13:30:01Z',
     data_read_at: '2026-11-21T13:30:02Z',
     finished_at: '2026-11-21T13:35:12Z',
+    next_retry_at: null,
     total_records: 1200,
     progress: {
       chunks_done: 1,
@@ -4469,6 +4473,7 @@ export const EXAMPLES = {
     started_at: null,
     data_read_at: null,
     finished_at: '2026-11-21T14:00:01Z',
+    next_retry_at: null,
     total_records: null,
     progress: {
       chunks_done: 0,
@@ -4517,6 +4522,7 @@ export const EXAMPLES = {
     started_at: '2026-11-21T14:30:01Z',
     data_read_at: '2026-11-21T14:30:02Z',
     finished_at: null,
+    next_retry_at: null,
     total_records: 1200,
     progress: {
       chunks_done: 1,
@@ -4572,6 +4578,7 @@ export const EXAMPLES = {
     started_at: '2026-11-21T14:30:01Z',
     data_read_at: '2026-11-21T14:30:02Z',
     finished_at: null,
+    next_retry_at: null,
     total_records: 1200,
     progress: {
       chunks_done: 1,
@@ -4593,6 +4600,58 @@ export const EXAMPLES = {
         count: 1,
       },
     ],
+    output: {
+      available: false,
+      expires_at: null,
+      rows: null,
+    },
+  },
+  ExecutionAwaitingSource: {
+    id: '6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c08',
+    workflow_id: '4d0e2f3a-8b9c-4d5e-8f1a-2b3c4d5e6f70',
+    workflow_name: 'Pontuação de exemplo',
+    draft_revision: 5,
+    workflow_version: null,
+    status: 'awaiting_source',
+    abort_reason: null,
+    cancel_requested_at: null,
+    parameters: {
+      periodo: {
+        start: '2026-10-01',
+        end: '2026-10-31',
+      },
+      categorias: [
+        'A',
+        'B',
+      ],
+      meta_minima: '100.00',
+    },
+    now: '2026-11-21T15:30:00Z',
+    trace_level: 'standard',
+    error_limit_percent: '5',
+    triggered_by: {
+      id: '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b',
+      name: 'Ana Souza',
+    },
+    created_at: '2026-11-21T15:30:00Z',
+    started_at: '2026-11-21T15:30:01Z',
+    data_read_at: null,
+    finished_at: null,
+    next_retry_at: '2026-11-21T15:30:34Z',
+    total_records: null,
+    progress: {
+      chunks_done: 0,
+      records_done: 0,
+    },
+    totals: {
+      read: 0,
+      ok: 0,
+      ok_with_warnings: 0,
+      error: 0,
+      ignored: 0,
+      filtered: 0,
+    },
+    error_groups: [],
     output: {
       available: false,
       expires_at: null,
@@ -4629,6 +4688,7 @@ export const EXAMPLES = {
         started_at: '2026-11-21T14:30:01Z',
         data_read_at: '2026-11-21T14:30:02Z',
         finished_at: null,
+        next_retry_at: null,
         total_records: 1200,
         progress: {
           chunks_done: 1,
@@ -4684,6 +4744,7 @@ export const EXAMPLES = {
         started_at: '2026-11-21T12:00:02Z',
         data_read_at: '2026-11-21T12:00:03Z',
         finished_at: '2026-11-21T12:00:05Z',
+        next_retry_at: null,
         total_records: 2,
         progress: {
           chunks_done: 1,
@@ -4948,6 +5009,37 @@ export const EXAMPLES = {
     outputs: null,
     trace: null,
   },
+  ExecutionRecordListWithoutNode: {
+    items: [
+      {
+        result_key: null,
+        record_key: {
+          nf_id: null,
+          item_seq: '1',
+        },
+        status: 'error',
+        error_node_id: null,
+        error_code: 'null_record_key',
+      },
+      {
+        result_key: null,
+        record_key: {
+          nf_id: '11',
+          item_seq: '1',
+        },
+        status: 'error',
+        error_node_id: null,
+        error_code: 'duplicate_record_key',
+      },
+    ],
+    next_cursor: null,
+  },
+} satisfies Record<string, unknown>;
+
+/** The frozen definition of an execution is the draft definition of `DraftUpdateWithParameters` (a YAML anchor in the contract). */
+export const EXAMPLES = {
+  ...EXAMPLES_BASE,
+  ExecutionDefinition: { draft_revision: 5, definition: EXAMPLES_BASE.DraftUpdateWithParameters.definition },
 } satisfies Record<string, unknown>;
 
 export type ExampleName = keyof typeof EXAMPLES;

@@ -1,7 +1,7 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { useRef, type ReactNode } from 'react';
 import { Button, Loading, Notice, Skeleton, Status, Text, useFluxoPortal } from '../../design-system';
-import { useExecutionRecord, type ExecutionRecord, type ExecutionRecordTrace } from '../api';
+import { useExecutionDefinition, useExecutionRecord, type ExecutionDefinition, type ExecutionRecord, type ExecutionRecordTrace } from '../api';
 import { CloseIcon } from './icons';
 import { RECORD_STATUS, recordKeyText } from './labels';
 import { traceErrorMessage } from './messages';
@@ -12,6 +12,8 @@ export interface RecordTraceRenderProps {
   trace: ExecutionRecordTrace;
   /** The record as the execution kept it (status, key, hashes, outputs). */
   record: ExecutionRecord;
+  /** The definition the execution ran, frozen: it names the blocks and gives the types of the values (B154). */
+  definition: ExecutionDefinition['definition'];
 }
 
 /** Renders the trace of a record (blocks, values, rule, warnings, outputs and hashes). */
@@ -19,8 +21,6 @@ export type RenderRecordTrace = (props: RecordTraceRenderProps) => ReactNode;
 
 /** The note of the minimal level (E6-21). */
 export const MINIMAL_TRACE_NOTE = 'Esta execução guardou o trace mínimo.';
-/** Until the frozen definition arrives (B154, F118), the blocks go by their id and the numbers as the API sends them (D40). */
-export const NO_DEFINITION_NOTE = 'Nomes e formatação chegam com a definição congelada';
 
 export interface RecordTraceDrawerProps {
   executionId: string;
@@ -141,11 +141,8 @@ function DrawerContent({ executionId, resultKey, renderRecordTrace }: { executio
         </>
       ) : (
         <>
-          <Text as="p" variant="label-13" emphasis="secondary" className="fc-record-drawer-note">
-            {NO_DEFINITION_NOTE}
-          </Text>
           {renderRecordTrace ? (
-            renderRecordTrace({ trace: record.trace, record })
+            <FrozenTrace executionId={executionId} record={record} trace={record.trace} renderRecordTrace={renderRecordTrace} />
           ) : (
             <>
               <Outputs record={record} />
@@ -158,7 +155,49 @@ function DrawerContent({ executionId, resultKey, renderRecordTrace }: { executio
   );
 }
 
-/** The output fields as the API sends them (D40: the types arrive with the frozen definition). */
+/** The trace of a record with the frozen definition of the execution (names of the blocks and types of the values). */
+function FrozenTrace({
+  executionId,
+  record,
+  trace,
+  renderRecordTrace,
+}: {
+  executionId: string;
+  record: ExecutionRecord;
+  trace: ExecutionRecordTrace;
+  renderRecordTrace: RenderRecordTrace;
+}) {
+  const query = useExecutionDefinition(executionId);
+  if (query.isPending) {
+    return (
+      <Loading label="Carregando a definição da execução">
+        <div className="fc-record-drawer-skeleton">
+          <Skeleton width="60%" />
+          <Skeleton width="90%" />
+          <Skeleton width="100%" />
+        </div>
+      </Loading>
+    );
+  }
+  if (!query.data) {
+    return (
+      <Notice
+        type="error"
+        title="Não foi possível carregar a definição da execução"
+        actions={
+          <Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>
+            Tentar de novo
+          </Button>
+        }
+      >
+        {traceErrorMessage(query.error)}
+      </Notice>
+    );
+  }
+  return <>{renderRecordTrace({ trace, record, definition: query.data.definition })}</>;
+}
+
+/** The output fields as the API sends them (when no component renders the trace). */
 function Outputs({ record }: { record: ExecutionRecord }) {
   const entries = Object.entries(record.outputs ?? {});
   return (

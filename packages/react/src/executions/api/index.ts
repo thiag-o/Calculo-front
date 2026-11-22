@@ -40,3 +40,6 @@ export type {
   RecordFailureCode,
   RecordStatus,
 } from './records';
+// The frozen definition of an execution, for the names and types in the trace (F118, `traces.view`).
+export { executionDefinitionKey, useExecutionDefinition } from './definition';
+export type { ExecutionDefinition } from './definition';

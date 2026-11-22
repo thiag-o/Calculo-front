@@ -1376,6 +1376,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/executions/{id}/definition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve a definição congelada da execução
+         * @description A cópia congelada da definição que a execução rodou, com a
+         *     `draft_revision` dela (E6-1). O painel a usa para mostrar o trace com o
+         *     nome e o tipo dos blocos, mesmo que o rascunho tenha mudado depois.
+         *     Vale em qualquer estado da execução e em qualquer `trace_level`.
+         */
+        get: operations["get_execution_definition"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/executions/{id}/cancel": {
         parameters: {
             query?: never;
@@ -1415,7 +1438,9 @@ export interface paths {
         /**
          * Baixa o CSV entregue pela execução
          * @description O CSV da execução (E6-10), em streaming, com
-         *     `Content-Disposition: attachment`. Um arquivo por execução, só com os
+         *     `Content-Disposition: attachment`, exposto ao navegador por
+         *     `Access-Control-Expose-Headers` (o incorporado lê o nome do arquivo
+         *     nele). Um arquivo por execução, só com os
          *     registros `ok` e `ok_with_warnings`:
          *     - UTF-8 sem BOM, separador `,`, aspas e quebra de linha pela RFC 4180
          *       (`\r\n`, também depois da última linha);
@@ -1458,7 +1483,9 @@ export interface paths {
          *     página, na ordem de leitura (chunk a chunk, e a ordem da fonte do lote
          *     dentro do chunk). Vale em qualquer `trace_level`.
          *     - `status` aceita vários valores (`?status=error&status=ok_with_warnings`);
-         *     - `node_id` filtra pelo nó do erro (`error_node_id`);
+         *     - `node_id` filtra pelo nó do erro (`error_node_id`); `without_node=true`
+         *       traz só os registros com erro sem nó (veja o parâmetro; não vale
+         *       junto com `node_id`);
          *     - `code` filtra pelo código do erro (`error_code`).
          *
          *     Os registros com erro de chave (`null_record_key` e
@@ -2310,7 +2337,7 @@ export interface components {
          *     forma: voltam em `problems`, e o rascunho é salvo mesmo assim. O corpo
          *     que a leva tem até 1 MB (`413 definition_too_large`).
          *
-         *     O workflow novo é `{"schema_version": 1, "kind": "batch", "settings":
+         *     O workflow novo é `{"schema_version": 3, "kind": "batch", "settings":
          *     {"error_policy": "error", "rounding": {"scale": 2, "mode": "half_up"}},
          *     "root": {"inputs": [], "nodes": [], "output": {"fields": []}}}`.
          *
@@ -3488,6 +3515,11 @@ export interface components {
             data_read_at: string | null;
             /** @description Quando chegou a um estado final; nulo antes. */
             finished_at: string | null;
+            /**
+             * @description A hora da próxima tentativa da fonte; só em `awaiting_source`, nulo
+             *     nos outros estados.
+             */
+            next_retry_at: string | null;
             /** @description Os registros do lote, contados no `loading`; nulo antes. */
             total_records: number | null;
             progress: components["schemas"]["ExecutionProgress"];
@@ -3495,6 +3527,15 @@ export interface components {
             /** @description Os erros agrupados por nó e código, do maior para o menor `count`. */
             error_groups: components["schemas"]["ErrorGroup"][];
             output: components["schemas"]["ExecutionOutput"];
+        };
+        /**
+         * @description A definição congelada de uma execução (E6-1): a cópia do rascunho que
+         *     ela rodou, na versão em que foi guardada, e a revisão dele.
+         */
+        ExecutionDefinition: {
+            /** @description A revisão do rascunho de onde a definição foi copiada. */
+            draft_revision: number;
+            definition: components["schemas"]["WorkflowDefinition"];
         };
         ExecutionList: {
             items: components["schemas"]["Execution"][];
@@ -4119,7 +4160,9 @@ export interface components {
         RetryAfter: number;
         /**
          * @description `attachment; filename="execution-<id>.csv"`: o navegador baixa o arquivo,
-         *     com o id da execução no nome.
+         *     com o id da execução no nome. O cabeçalho é exposto ao navegador
+         *     (`Access-Control-Expose-Headers: Content-Disposition`), para o app
+         *     incorporado ler o nome do arquivo numa chamada entre origens.
          */
         ContentDispositionOutput: string;
     };
@@ -6344,6 +6387,33 @@ export interface operations {
             422: components["responses"]["InvalidId"];
         };
     };
+    get_execution_definition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A definição congelada e a revisão do rascunho de onde ela veio. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionDefinition"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
     cancel_execution: {
         parameters: {
             query?: never;
@@ -6434,8 +6504,19 @@ export interface operations {
             query?: {
                 /** @description Só os registros nestes status (repita o parâmetro para mais de um). */
                 status?: components["schemas"]["UnitRunStatus"][] | null;
-                /** @description Só os registros com erro neste nó. */
+                /**
+                 * @description Só os registros com erro neste nó. Não vale junto com
+                 *     `without_node=true`.
+                 */
                 node_id?: string | null;
+                /**
+                 * @description Com `true`, a lista traz só os registros com erro sem nó
+                 *     (`error_node_id` nulo): os erros da fonte do lote e os erros de
+                 *     chave (`null_record_key` e `duplicate_record_key`). Com `false` ou
+                 *     ausente, não filtra. Junto com `node_id`: `422 invalid_data` com
+                 *     `fields.without_node`.
+                 */
+                without_node?: boolean | null;
                 /** @description Só os registros com este código de erro. */
                 code?: components["schemas"]["RecordFailureCode"] | null;
                 /** @description O `next_cursor` da página anterior; ausente na primeira página. */
@@ -6464,7 +6545,9 @@ export interface operations {
             404: components["responses"]["NotFound"];
             /**
              * @description - `invalid_data`: o `{id}` do caminho não é UUID, ou `status`,
-             *       `node_id` ou `code` fora da forma (`fields.<parameter>`);
+             *       `node_id`, `without_node` ou `code` fora da forma
+             *       (`fields.<parameter>`), ou `node_id` junto com
+             *       `without_node=true` (`fields.without_node`);
              *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
              */
             422: {
