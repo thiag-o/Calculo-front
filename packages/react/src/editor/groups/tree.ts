@@ -1,10 +1,11 @@
 // The nodes of a definition as a tree (E5-5): a group holds nodes with the same shape as the root's, groups inside groups
 // up to 5 levels. Pure functions over the whole tree, that keep the same objects for everything that did not change
 // (ADR 0044), so the canvas and the layers draw again only what an edit touched.
+import { declaredVariableNames, producedNames, type DefinitionNode, type GroupNode } from '../definition';
 import type { WorkflowDefinition } from '../draft';
 
-export type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
-export type GroupNode = Extract<DefinitionNode, { type: 'group' }>;
+export { producedNames };
+export type { DefinitionNode, GroupNode };
 
 /** One node of the tree, with where it sits. */
 export interface TreeEntry {
@@ -145,34 +146,13 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
   return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
-/** The names a node produces: a Calculation's output, a Decision Table's results, a Fonte's outputs, a group's Output. */
-export function producedNames(node: DefinitionNode): string[] {
-  switch (node.type) {
-    case 'calculation':
-      return [node.output.name];
-    case 'decision_table':
-      return node.results.map((result) => result.name);
-    case 'source':
-      return (node.mode === 'linear' ? node.outputs : []).map((output) => output.name);
-    case 'group':
-      return [...node.outputs];
-  }
-}
-
 /**
  * Every variable name the definition already declares, at any depth (E4-10: one name, one variable): the declared
  * inputs and their fields, the fields of the batch source, and what each Calculation, Decision Table and Fonte
  * produces. A group's Output repeats names declared inside it, so it adds nothing.
  */
 export function declaredNames(definition: WorkflowDefinition): Set<string> {
-  const names = new Set<string>();
-  for (const input of definition.root.inputs) {
-    names.add(input.name);
-    if (input.cardinality === 'multiple') for (const field of input.fields) names.add(field.name);
-  }
-  for (const output of definition.root.batch_source?.outputs ?? []) names.add(output.name);
-  for (const { node } of treeEntries(definition)) if (!isGroup(node)) for (const name of producedNames(node)) names.add(name);
-  return names;
+  return new Set(declaredVariableNames(definition));
 }
 
 /** The first `<prefix>_N` (N from 1) not in `used`, with its number. */

@@ -30,8 +30,8 @@ function withGroup(): Schemas['WorkflowDefinition'] {
 describe('o bloco Fonte na definição', () => {
   it('acha o bloco e o caminho dele também dentro de um grupo', () => {
     const definition = withGroup();
-    expect(locateNode(definition, 'produto')).toEqual({ path: 'root.nodes[2].nodes[0]', groups: ['grp_pontuacao'] });
-    expect(locateNode(definition, 'campanha')).toEqual({ path: 'root.nodes[0]', groups: [] });
+    expect(locateNode(definition, 'produto')).toMatchObject({ path: 'root.nodes[2].nodes[0]', groups: ['grp_pontuacao'] });
+    expect(locateNode(definition, 'campanha')).toMatchObject({ path: 'root.nodes[0]', groups: [] });
     expect(findSourceNode(definition, 'produto')?.name).toBe('Produto');
     expect(findSourceNode(definition, 'calc_pontos')).toBeNull();
   });

@@ -34,26 +34,9 @@ export const DESCRIPTION_MAX = 500;
 // The variable name rule (Contratos, "Nomes de variável"; E3-10), one copy: the one of the properties.
 export { NAME_PATTERN } from '../../properties';
 
-/** Where a node is: its `path` (`root.nodes[2]`, `root.nodes[1].nodes[0]`) and the groups around it, outermost first. */
-export interface NodePlace {
-  path: string;
-  groups: string[];
-}
-
-export function locateNode(definition: WorkflowDefinition, id: string): NodePlace | null {
-  function search(nodes: readonly WorkflowNode[], prefix: string, groups: string[]): NodePlace | null {
-    for (const [index, node] of nodes.entries()) {
-      const path = `${prefix}.nodes[${index}]`;
-      if (node.id === id) return { path, groups };
-      if (node.type === 'group') {
-        const found = search(node.nodes, path, [...groups, node.id]);
-        if (found) return found;
-      }
-    }
-    return null;
-  }
-  return search(definition.root.nodes, 'root', []);
-}
+// Where a node is and how many times a name is used are reads of the definition, one copy: the one of `../../definition`.
+export { locateNode, variableNameCounts } from '../../definition';
+export type { NodePlace } from '../../definition';
 
 /** The Source block `id`, wherever it is (also inside groups), or `null`. */
 export function findSourceNode(definition: WorkflowDefinition, id: string): SourceNode | null {
@@ -96,12 +79,12 @@ export function updateSourceNode(definition: WorkflowDefinition, id: string, upd
 }
 
 /** The outputs a Linear gets by default: the dataset variables (up to 100), each with its name in the catalog. */
-export function defaultOutputs(variables: readonly CatalogVariable[]): SourceOutput[] {
+export function defaultOutputs(variables: readonly Pick<CatalogVariable, 'id' | 'name'>[]): SourceOutput[] {
   return variables.slice(0, OUTPUTS_MAX).map((variable) => ({ variable_id: variable.id, name: variable.name }));
 }
 
 /** The ordering a Linear gets by default: the first variable of the dataset, ascending. */
-export function defaultOrder(variables: readonly CatalogVariable[]): SourceOrder[] {
+export function defaultOrder(variables: readonly Pick<CatalogVariable, 'id'>[]): SourceOrder[] {
   const first = variables[0];
   return first ? [{ variable_id: first.id, direction: 'asc' }] : [];
 }
@@ -137,7 +120,7 @@ export function asLinear(node: SourceNode | null): LinearSourceNode | null {
  * default (`defaultOrder`, `defaultOutputs`), "Gerar erro" in both policies and no `exists`. `null` when the dataset has
  * no variables (a Linear needs an output).
  */
-export function toLinearMode(node: SourceNode, variables: readonly CatalogVariable[]): LinearSourceNode | null {
+export function toLinearMode(node: SourceNode, variables: readonly Pick<CatalogVariable, 'id' | 'name'>[]): LinearSourceNode | null {
   if (variables.length === 0) return null;
   return {
     id: node.id,
@@ -261,28 +244,4 @@ export function linkCandidates(symbols: readonly DraftSymbol[], nodeId: string, 
       symbol.node_id !== nodeId &&
       (symbol.group_id === null || around.has(symbol.group_id)),
   );
-}
-
-/**
- * How many times each variable name is used in the workflow (E4-10): inputs and their fields, the batch source, the
- * outputs of Calculations, Decision Tables and Source blocks, also inside groups. More than once is a duplicate.
- */
-export function variableNameCounts(definition: WorkflowDefinition): Map<string, number> {
-  const counts = new Map<string, number>();
-  const add = (name: string) => counts.set(name, (counts.get(name) ?? 0) + 1);
-  for (const input of definition.root.inputs) {
-    add(input.name);
-    if (input.cardinality === 'multiple') for (const field of input.fields) add(field.name);
-  }
-  for (const output of definition.root.batch_source?.outputs ?? []) add(output.name);
-  function visit(nodes: readonly WorkflowNode[]) {
-    for (const node of nodes) {
-      if (node.type === 'calculation') add(node.output.name);
-      else if (node.type === 'decision_table') for (const result of node.results) add(result.name);
-      else if (node.type === 'source') for (const output of node.mode === 'linear' ? node.outputs : []) add(output.name);
-      else visit(node.nodes);
-    }
-  }
-  visit(definition.root.nodes);
-  return counts;
 }

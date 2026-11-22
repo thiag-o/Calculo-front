@@ -3,6 +3,7 @@
 // them while the analysis of the edit is on the way.
 import type { WorkflowDefinition } from '../draft';
 import { clampInside, declaredNames, findEntry, firstFree, freeNodeId, removeNode, treeEntries, updateNodes } from '../groups';
+import { defaultOutputs, toLinearMode } from '../sources';
 import { BLOCK_WIDTH, type Block, type NewBlockKind } from './graph';
 
 export interface Position {
@@ -64,14 +65,12 @@ export function newBlock(definition: WorkflowDefinition, kind: NewBlockKind, pos
   };
 }
 
-/** The most variables a Linear Fonte brings (the contract's limit). */
-const SOURCE_OUTPUTS_MAX = 100;
-
 /**
  * A new Linear Fonte block over a catalog dataset, at `position`: it brings the variables of the dataset (up to 100, each
  * with its catalog name, or a free one when the name is already a variable of the workflow), orders by the first one,
- * has no link (a parameter table) and "Gerar erro" in both policies. The shape the contract asks (an output and an
- * ordering at least), so the draft is never saved with a shape error (ADR 0046). `null` when the dataset has no variable.
+ * has no link (a parameter table) and "Gerar erro" in both policies (the defaults of `sources`). The shape the contract
+ * asks (an output and an ordering at least), so the draft is never saved with a shape error (ADR 0046). `null` when the
+ * dataset has no variable.
  */
 export function newSourceBlock(
   definition: WorkflowDefinition,
@@ -79,33 +78,31 @@ export function newSourceBlock(
   variables: readonly { id: string; name: string }[],
   position: Position,
 ): Block | null {
-  const brought = variables.slice(0, SOURCE_OUTPUTS_MAX);
-  const first = brought[0];
-  if (!first) return null;
   const id = freeNodeId(definition, 'src');
+  const linear = toLinearMode(
+    {
+      id: id.name,
+      type: 'source',
+      name: `Fonte ${id.number}`,
+      description: null,
+      position: { x: position.x, y: position.y },
+      mode: 'filter',
+      dataset_id: datasetId,
+      links: [],
+      filters: [],
+      exists: true,
+    },
+    variables,
+  );
+  if (!linear) return null;
   const taken = declaredNames(definition);
-  const outputs = brought.map((variable) => {
-    let name = variable.name;
-    for (let number = 2; taken.has(name); number++) name = `${variable.name}_${number}`;
+  const outputs = defaultOutputs(variables).map((output) => {
+    let name = output.name;
+    for (let number = 2; taken.has(name); number++) name = `${output.name}_${number}`;
     taken.add(name);
-    return { variable_id: variable.id, name };
+    return { ...output, name };
   });
-  return {
-    id: id.name,
-    type: 'source',
-    name: `Fonte ${id.number}`,
-    description: null,
-    position: { x: position.x, y: position.y },
-    mode: 'linear',
-    dataset_id: datasetId,
-    links: [],
-    filters: [],
-    order_by: [{ variable_id: first.id, direction: 'asc' }],
-    no_match: 'error',
-    multiple_rows: 'error',
-    exists: null,
-    outputs,
-  };
+  return { ...linear, outputs };
 }
 
 /** The definition with the block at the end of `root.nodes`. */

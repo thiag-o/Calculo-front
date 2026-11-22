@@ -1,6 +1,6 @@
 # 0057. `editor/values/` é uma folha com os formatadores, e o sentido é canvas → unit-run → preview → values
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0058](0058-ultimo-calculo-em-memoria-e-valores-no-canvas.md): o canvas lê o `unit-run` pelo último cálculo; e por [0059](0059-canvas-importa-sources-batch-source-e-propriedades-por-render-props.md): o canvas também importa `sources/batch-source`)
+- **Status:** aceita, revisar no checkpoint (complementada por [0058](0058-ultimo-calculo-em-memoria-e-valores-no-canvas.md): o canvas lê o `unit-run` pelo último cálculo; e por [0059](0059-canvas-importa-sources-batch-source-e-propriedades-por-render-props.md): o canvas também importa `sources/batch-source`; e por [0061](0061-editor-definition-folha-com-leituras-puras-da-definicao.md): `values/` também importa de `definition/`)
 - **Data:** 2026-11-21
 - **Quem decidiu:** orquestração (tarefa F94, D25 e D27)
 - **Relacionadas:** ADRs 0042, 0056 (complementa); `packages/react/src/editor/values/`, `preview/`, `unit-run/`, `sources/filters/`

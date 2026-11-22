@@ -7,6 +7,9 @@ export { SourceBlockProperties } from './source-block/SourceBlockProperties';
 export type { SourceBlockPropertiesProps } from './source-block/SourceBlockProperties';
 export { findSourceNode, locateNode, updateSourceNode } from './source-block/sourceNode';
 export type { SourceNode, NodePlace } from './source-block/sourceNode';
+// The defaults of a new Linear Fonte (the first variable as the ordering, the dataset variables as the outputs, "Gerar erro"
+// in both policies), used by the canvas to include a block (ADR 0059).
+export { defaultOutputs, defaultOrder, toLinearMode } from './source-block/sourceNode';
 
 // The filters of a source, also used by the batch source (F63): operator by the variable's type, value in the Brazilian
 // pattern, ENTRE with two fields, EM with a list and `@` with the epic 6 notice.

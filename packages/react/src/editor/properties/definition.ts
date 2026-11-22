@@ -1,4 +1,5 @@
 import type { Schemas } from '../../api';
+import { declaredVariableNames, type DefinitionNode } from '../definition';
 import type { WorkflowDefinition } from '../draft';
 import { indexOfItem, replaced } from './itemIdentity';
 
@@ -13,9 +14,7 @@ export type InputField = Schemas['InputField'];
 export type CalculationNode = Schemas['CalculationNode'];
 export type DecisionTableNode = Schemas['DecisionTableNode'];
 export type WorkflowNode = CalculationNode | DecisionTableNode;
-/** Any node of the definition, at any depth: a Calculation, a Decision Table, a Fonte or a group. */
-export type DefinitionNode = WorkflowDefinition['root']['nodes'][number];
-export type GroupNode = Extract<DefinitionNode, { type: 'group' }>;
+export type { DefinitionNode, GroupNode } from '../definition';
 export type SourceBlockNode = Extract<DefinitionNode, { type: 'source' }>;
 export type OutputField = Schemas['OutputField'];
 export type NodeOutput = Schemas['NodeOutput'];
@@ -47,65 +46,12 @@ export function withType<T extends Typed>(item: T, type: DataType, defaultScale:
   return { ...rest, type, scale: typeof scale === 'number' ? scale : defaultScale } as T;
 }
 
-/** The names a node produces: a Calculation's output, a table's results, a linear Fonte's outputs; a group has none of its own. */
-function producedNames(node: DefinitionNode): string[] {
-  if (node.type === 'calculation') return [node.output.name];
-  if (node.type === 'decision_table') return node.results.map((result) => result.name);
-  if (node.type === 'source') return node.mode === 'linear' ? node.outputs.map((output) => output.name) : [];
-  return [];
-}
-
-/** Every node of the definition, at any depth, in the order of the tree. */
-export function allNodes(definition: WorkflowDefinition): DefinitionNode[] {
-  const found: DefinitionNode[] = [];
-  const visit = (nodes: readonly DefinitionNode[]) => {
-    for (const node of nodes) {
-      found.push(node);
-      if (node.type === 'group') visit(node.nodes);
-    }
-  };
-  visit(definition.root.nodes);
-  return found;
-}
-
-/** Each name that is a variable of the workflow (E4-10), once per use: inputs, list fields, the batch source and node outputs, in groups too. */
-function declaredVariableNames(definition: WorkflowDefinition): string[] {
-  const names: string[] = [];
-  for (const input of definition.root.inputs) {
-    names.push(input.name);
-    if (input.cardinality === 'multiple') for (const field of input.fields) names.push(field.name);
-  }
-  for (const output of definition.root.batch_source?.outputs ?? []) names.push(output.name);
-  for (const node of allNodes(definition)) names.push(...producedNames(node));
-  return names;
-}
+// Reads of the definition shared with the other sub-verticals live in `../definition`; re-exported for the forms here.
+export { allNodes, locateNode, variableNameCounts } from '../definition';
 
 /** The names that are variables of the workflow (E4-10): inputs, list fields, batch source variables and block outputs. */
 export function variableNames(definition: WorkflowDefinition): Set<string> {
   return new Set(declaredVariableNames(definition));
-}
-
-/** How many times each variable name is used (inputs, list fields and block outputs): more than once is a duplicate. */
-export function variableNameCounts(definition: WorkflowDefinition): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const name of declaredVariableNames(definition)) counts.set(name, (counts.get(name) ?? 0) + 1);
-  return counts;
-}
-
-/** Where a node is, at any depth: the node and its `path` in the definition (`root.nodes[2].nodes[0]`). `null` when it is not there. */
-export function locateNode(definition: WorkflowDefinition, id: string): { node: DefinitionNode; path: string } | null {
-  const search = (nodes: readonly DefinitionNode[], prefix: string): { node: DefinitionNode; path: string } | null => {
-    for (const [index, node] of nodes.entries()) {
-      const path = `${prefix}[${index}]`;
-      if (node.id === id) return { node, path };
-      if (node.type === 'group') {
-        const found = search(node.nodes, `${path}.nodes`);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-  return search(definition.root.nodes, 'root.nodes');
 }
 
 /** `prefix_1`, `prefix_2`…: the first one not in `taken`. */

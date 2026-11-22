@@ -1,24 +1,14 @@
 // The types of the variables of a workflow, for showing their values (the preview, the "Calcular" result and the canvas).
-// Only the API types are used here: this sub-vertical is a leaf and imports nothing from the rest of the editor (ADR 0057).
+// Only the API types and the pure reads of `../definition` (a leaf too) are used here: this sub-vertical imports nothing else
+// from the rest of the editor (ADR 0057).
 import type { Schemas } from '../../api';
+import { allNodes } from '../definition';
+
+export { allNodes };
 
 type DataType = Schemas['DataType'];
 type Definition = Schemas['Draft']['definition'];
-type DefinitionNode = Definition['root']['nodes'][number];
 type Symbol = Schemas['Draft']['symbols'][number];
-
-/** Every node of the definition, the ones inside groups too, in the order of the definition. */
-export function allNodes(definition: Definition): DefinitionNode[] {
-  const nodes: DefinitionNode[] = [];
-  const visit = (list: readonly DefinitionNode[]) => {
-    for (const node of list) {
-      nodes.push(node);
-      if (node.type === 'group') visit(node.nodes);
-    }
-  };
-  visit(definition.root.nodes);
-  return nodes;
-}
 
 /**
  * The type of each linear variable: from the symbols of the analysis (the batch source and the Source blocks, whose types
