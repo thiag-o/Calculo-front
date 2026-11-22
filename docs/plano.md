@@ -1507,7 +1507,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: `pnpm typecheck` e o `contract-examples` verdes; os tipos da execução, dos registros e dos parâmetros aparecem no gerado.
 
 **F98 · Editor: parâmetros e configurações de execução do workflow**
-- dep: F97
+- dep: F97, F116
 - modelo: opus
 - arquivos: `packages/react/src/editor/parameters/` (nova), `packages/react/src/editor/properties/workflow/`
 - Fazer (E6-17): a seção Parâmetros e a seção Execução do painel do workflow, com os problemas de cada campo pelo `path` e o modo só leitura.
