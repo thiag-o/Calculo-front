@@ -1591,6 +1591,8 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - a leitura e a formatação de número e data no padrão brasileiro (`readBrazilianNumber`, `formatApiNumber`, `formatDate`) ficam só em `design-system/format/`, que qualquer vertical pode usar (uma ADR curta); o `editor/values/` e o `executions/parameter-form/` passam a importar de lá, sem cópia;
   - os rótulos dos padrões relativos (`RELATIVE_LABELS`) ficam só em `executions/`, exportados pelo `executions/index.ts`, e a seção Parâmetros do editor (F98) os importa por ali (sentido editor → executions, E6-16);
   - o `parameter-form.css` troca os px crus (fontes de 12 e 13 px, margem de 26 px, altura mínima de 32 px, raio de 6 px) pelos tokens do `estilos.md`.
+  - (revisão da F98) o `fromLiteral` de `date` em `parameterRules.ts` confere o calendário (`isCalendarDate`) e devolve nulo para `DATA(2026, 2, 30)` ou `DATA(2026, 13, 1)`, com o campo caindo no modo texto e na dica, com teste;
+  - (revisão da F98) o `LiteralList.tsx` limpa a marca `focusAfterRemove` também quando a mudança não altera a lista, para nenhum render depois roubar o foco, com teste.
 - Aceite: `git grep` acha uma definição só de cada formatador e de `RELATIVE_LABELS`; nenhum px cru no `parameter-form.css`; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
 
 **F116 · Manutenção: todo o simulado do e2e no contrato v3 (D38, reprovação da F98)**
