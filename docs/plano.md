@@ -1412,14 +1412,14 @@ As decisões E5-1 a E5-15, o esquema na versão 2, a prévia e o trace estão no
 - Aceite: o e2e do Aprovador confere o texto; `git grep` acha uma definição só de `formatValue` e de `variableTypes` no editor; testes e e2e verdes.
 
 **F112 · Correção da integração do épico 5: Calcular quebra com o trace real**
-- dep: F71
+- dep: F69
 - modelo: opus
 - arquivos: `packages/react/src/editor/unit-run/`, `packages/react/src/editor/values/`, `packages/react/src/editor/canvas/`, `e2e/epic-4/support/engine.ts`, `e2e/epic-4/support/simulation.ts`, `e2e/support/`
 - Fazer: no modo real, o painel do Calcular quebra com "TypeError: Cannot convert undefined or null to object" num `Object.keys`, logo depois do `POST /draft/unit-runs` 200, e fica como esqueleto de carregamento (relatório `.orquestracao/integracao/epico-5.md`). A resposta real segue o contrato: o nó `group` (`TraceGroupNode`) tem `inputs`, `outputs` e `nodes`, mas não tem `values`. O painel e os valores no canvas tratam cada tipo de nó pelo esquema do contrato, sem supor campos que ele não tem. A API simulada do e2e passa a devolver o trace exatamente como o contrato (conferido contra o esquema em `contract-examples`), para o modo simulado não esconder mais esse tipo de divergência.
 - Aceite: começa por um teste que reproduz a falha, renderizando o `UnitRunResult` e os valores no canvas com o trace real da campanha (grupo sem `values`), que falha antes e passa depois; a API simulada valida as respostas de `unit-runs` e `previews` contra o esquema; `pnpm e2e:real e2e/epic-5/preview-and-calculate.spec.ts` passa.
 
 **F113 · Correção da integração do épico 5: "Gerar erro" em "Mais de uma linha" não salva**
-- dep: F71
+- dep: F69
 - modelo: sonnet
 - arquivos: `packages/react/src/editor/sources/source-block/`, `e2e/epic-5/accept-first-row.spec.ts`, `e2e/epic-5/support/`, `e2e/support/`
 - Fazer: no modo real, ao escolher "Gerar erro" na lista "Mais de uma linha" de um bloco Fonte que estava em "Aceitar a primeira linha", a lista continua aberta e nenhum `PUT /draft` sai (relatório `.orquestracao/integracao/epico-5.md`). Descobrir se a causa é o componente de seleção, o localizador do teste (opção cortada no painel de propriedades) ou o autosave, e corrigir a causa no lugar certo. Os workflows criados pelos testes do modo real ("Campanha aceite e2e ...", "Campanha valores e2e ...") são apagados no fim de cada teste.
