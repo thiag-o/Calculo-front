@@ -88,7 +88,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
         </RadixSelect.Trigger>
         {portal && (
           <RadixSelect.Portal container={portal}>
-            <RadixSelect.Content className="fc-select-content" position="popper" sideOffset={4} collisionPadding={8}>
+            <RadixSelect.Content className="fc-select-content" position="popper" updatePositionStrategy="always" sideOffset={4} collisionPadding={8}>
               <RadixSelect.Viewport className="fc-select-list">
                 {options.map((option) => (
                   <RadixSelect.Item key={option.value} value={option.value} disabled={option.disabled} className="fc-select-item">

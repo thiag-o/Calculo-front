@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import './jsdom.test-support';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -149,6 +149,25 @@ describe('Selecao', () => {
     expect(screen.getByRole('button', { name: 'Depois' })).toHaveFocus();
     await user.click(trigger());
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('a lista acompanha o campo quando ele se move com a lista aberta', async () => {
+    const user = userEvent.setup({ delay: null });
+    let top = 100;
+    const rect = () => ({ x: 20, y: top, left: 20, top, right: 220, bottom: top + 36, width: 200, height: 36, toJSON: () => ({}) });
+    renderScreen();
+    vi.spyOn(trigger(), 'getBoundingClientRect').mockImplementation(rect as () => DOMRect);
+    await user.click(trigger());
+    const list = await screen.findByRole('listbox');
+    const wrapper = list.closest<HTMLElement>('[data-radix-popper-content-wrapper]');
+    expect(wrapper).not.toBeNull();
+    await waitFor(() => expect(wrapper?.style.transform).toContain('translate(20px'));
+    const before = wrapper?.style.transform;
+    // The field moves (e.g. a panel grows above it) with no scroll or resize event.
+    top = 300;
+    await waitFor(() => expect(wrapper?.style.transform).not.toBe(before));
+    const y = (value?: string) => Number(/,\s*(-?[\d.]+)px/.exec(value ?? '')?.[1]);
+    expect(y(wrapper?.style.transform)).toBeGreaterThan(y(before));
   });
 
   it('repassa a ref ao gatilho, para o formulário focar o campo com erro', () => {
