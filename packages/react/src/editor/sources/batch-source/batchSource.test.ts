@@ -52,10 +52,10 @@ function definition(batch: BatchSource | null = null): WorkflowDefinition {
 }
 
 describe('fonte do lote na definição', () => {
-  it('com a fonte do lote, as entradas declaradas saem e a definição passa à versão 2', () => {
+  it('com a fonte do lote, as entradas declaradas saem e a versão fica como está (quem salva grava a 3)', () => {
     const before = definition();
     const after = withBatchSource(before, DATASET);
-    expect(after.schema_version).toBe(2);
+    expect(after.schema_version).toBe(before.schema_version);
     expect(after.root.inputs).toEqual([]);
     expect(after.root.batch_source).toEqual({ dataset_id: DATASET, key: [], filters: [], order_by: [], outputs: [] });
     expect(after.root.output).toBe(before.root.output);

@@ -22,9 +22,6 @@ export const OUTPUTS_PATH = `${BATCH_SOURCE_PATH}.outputs`;
 /** The declared inputs: `inputs_with_batch_source` points here. */
 export const INPUTS_PATH = 'root.inputs';
 
-/** The version of the schema with the batch source (E5-1): a definition that has one is always written in it. */
-export const BATCH_SOURCE_SCHEMA_VERSION = 2;
-
 /** The batch source of a dataset, still without variables, key, filters or order. */
 export function emptyBatchSource(datasetId: string): BatchSource {
   return { dataset_id: datasetId, key: [], filters: [], order_by: [], outputs: [] };
@@ -32,12 +29,11 @@ export function emptyBatchSource(datasetId: string): BatchSource {
 
 /**
  * The workflow fed by the batch source of `datasetId` (E5-2): the declared inputs leave (with the batch source, `inputs`
- * must be empty) and the definition goes to the version 2.
+ * must be empty). The version written is the one of the save (`saveDraft`), not of this edit.
  */
 export function withBatchSource(definition: WorkflowDefinition, datasetId: string): WorkflowDefinition {
   return {
     ...definition,
-    schema_version: BATCH_SOURCE_SCHEMA_VERSION,
     root: { ...definition.root, inputs: [], batch_source: emptyBatchSource(datasetId) },
   };
 }

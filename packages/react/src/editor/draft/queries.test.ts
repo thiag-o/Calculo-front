@@ -54,6 +54,46 @@ function save(queryClient: QueryClient) {
 const draftKeyInCache = (queryClient: QueryClient) =>
   queryClient.getQueryCache().find({ queryKey: workflowDraftKey(DRAFT.workflow_id), exact: true }) !== undefined;
 
+describe('versão gravada da definição', () => {
+  it.each([1, 2] as const)('um rascunho aberto na versão %i é salvo na versão 3, com parameters vazio e os settings padrão', async (version) => {
+    setCsrfCookie('csrf-123');
+    const api = simulateApi();
+    api.respond(SAVE_ROUTE, json(SAVED));
+    const { queryClient } = moduleWithSession();
+    // A draft read in an older version: no `parameters` and the old settings.
+    const opened: Record<string, unknown> = { ...SAVED.definition, schema_version: version, settings: { ...SAVED.definition.settings } };
+    delete opened.parameters;
+    delete (opened.settings as Record<string, unknown>).error_limit_percent;
+    delete (opened.settings as Record<string, unknown>).trace_level;
+
+    await saveDraft(queryClient, createApiClient({ apiUrl: API }), DRAFT.workflow_id, { revision: 3,
+      definition: opened as unknown as Schemas['WorkflowDefinition'],
+    });
+
+    const [body] = api.bodiesTo(SAVE_ROUTE) as Schemas['DraftUpdate'][];
+    expect(body!.definition.schema_version).toBe(3);
+    expect(body!.definition.parameters).toEqual([]);
+    expect(body!.definition.settings).toEqual({ ...SAVED.definition.settings, error_limit_percent: '5', trace_level: 'standard' });
+    expect(body!.definition.root).toEqual(SAVED.definition.root);
+  });
+
+  it('uma definição já na versão 3 segue como está, com os parâmetros e os settings que tem', async () => {
+    setCsrfCookie('csrf-123');
+    const api = simulateApi();
+    api.respond(SAVE_ROUTE, json(SAVED));
+    const { queryClient } = moduleWithSession();
+    const definition: Schemas['WorkflowDefinition'] = {
+      ...SAVED.definition,
+      schema_version: 3,
+      settings: { ...SAVED.definition.settings, error_limit_percent: '2.5', trace_level: 'minimal' },
+    };
+
+    await saveDraft(queryClient, createApiClient({ apiUrl: API }), DRAFT.workflow_id, { revision: 3, definition });
+
+    expect(api.bodiesTo(SAVE_ROUTE)).toEqual([{ revision: 3, definition }]);
+  });
+});
+
 describe('resposta que chega depois de a sessão sair do módulo', () => {
   it('um salvamento em voo na troca de tenant responde depois e não grava o rascunho no cache do tenant novo', async () => {
     setCsrfCookie('csrf-123');

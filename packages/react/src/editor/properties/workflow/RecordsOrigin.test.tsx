@@ -60,7 +60,8 @@ describe('Origem dos valores no painel do workflow', () => {
     await user.click(within(datasets).getByRole('button', { name: 'Itens de nota fiscal Tabela ou view' }));
 
     const definition = currentDefinition();
-    expect(definition.schema_version).toBe(2);
+    // The version written (3) is the save's (draft/queries.test.ts); the edit leaves the one the draft was opened in.
+    expect(definition.schema_version).toBe(before.schema_version);
     expect(definition.root.inputs).toEqual([]);
     expect(definition.root.batch_source).toEqual({ dataset_id: ITEMS_DATASET.id, key: [], filters: [], order_by: [], outputs: [] });
     expect(definition.root.nodes).toEqual(before.root.nodes);

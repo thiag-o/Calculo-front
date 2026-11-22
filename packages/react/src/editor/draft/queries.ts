@@ -116,8 +116,30 @@ export function prefetchDraft(queryClient: QueryClient, client: ApiClient, workf
   });
 }
 
+/** The only version of the schema the editor writes: it reads 1, 2 and 3, and the API refuses a 2 that has `parameters`. */
+export const DEFINITION_SCHEMA_VERSION = 3;
+
+/** The settings added by the version 3, with the defaults of the contract. */
+const DEFAULT_ERROR_LIMIT_PERCENT = '5';
+const DEFAULT_TRACE_LEVEL = 'standard';
+
 /**
- * Saves the draft over `revision` (`PUT /v1/workflows/{id}/draft`). It is not a `useMutation`: the editor saves by itself,
+ * The definition as it is written: in the current version, with `parameters` (empty when the draft had none) and the
+ * settings of the version 3 at their defaults. What is already set stays the same object (ADR 0044).
+ */
+export function toWrittenDefinition(definition: WorkflowDefinition): WorkflowDefinition {
+  // A draft opened in an older version lacks these fields at runtime, whatever the generated type says.
+  const older: Partial<Pick<WorkflowDefinition, 'parameters'>> & { settings: Partial<WorkflowDefinition['settings']> } = definition;
+  const settings = {
+    ...definition.settings,
+    error_limit_percent: older.settings.error_limit_percent ?? DEFAULT_ERROR_LIMIT_PERCENT,
+    trace_level: older.settings.trace_level ?? DEFAULT_TRACE_LEVEL,
+  };
+  return { ...definition, schema_version: DEFINITION_SCHEMA_VERSION, settings, parameters: older.parameters ?? [] };
+}
+
+/**
+ * Saves the draft over `revision` (`PUT /v1/workflows/{id}/draft`), always in the version 3 of the definition. It is not a `useMutation`: the editor saves by itself,
  * one save at a time, and also when it closes, after the screen is gone. On success the draft goes to the cache, the
  * workflow (its draft summary) and the lists are fetched again when someone shows them. Errors are `ApiError`, such as
  * `409 draft_conflict` (with `current_revision`), `422 invalid_data` and `413 definition_too_large`. A save that answers
@@ -131,7 +153,8 @@ export async function saveDraft(
   body: Schemas['DraftUpdate'],
 ): Promise<Draft> {
   const mark = sessionDataMark(queryClient);
-  const draft = await dataOrError(client.PUT('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, body }));
+  const draft = await dataOrError(client.PUT('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, body: { ...body, definition: toWrittenDefinition(body.definition) } }),
+  );
   if (!isSameSessionData(queryClient, mark)) return draft;
   queryClient.setQueryData(workflowDraftKey(workflowId), draft);
   // `exact`: only the workflow itself, not the draft just written under it.
