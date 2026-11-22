@@ -1554,7 +1554,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: testes da Prévia e do Calcular com e sem parâmetros, do 422 no campo e dos valores lembrados ao trocar de aba.
 
 **F104 · Integração do épico 6: módulo, editor e interface pública**
-- dep: F98, F99, F101, F102, F103
+- dep: F98, F99, F101, F102, F103, F117
 - modelo: sonnet
 - arquivos: `packages/react/src/module/`, `packages/react/src/workflows/overview/`, `packages/react/src/editor/Editor.tsx`, `packages/react/src/editor/layout/`, `packages/react/src/editor/properties/PropertiesPanel.tsx`, `packages/react/src/editor/index.ts`, `docs/glossario.md`, `README.md`, `.changeset/`
 - Fazer:
@@ -1600,8 +1600,16 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Fazer: todas as definições servidas pela API simulada passam à versão 3 do contrato (`schema_version: 3`, `parameters: []` e os campos novos de `settings`): o `EXAMPLES.DraftEmpty` e os outros rascunhos do `contract.ts`, o `isDefinition` e as definições do `e2e/epic-4/support/simulation.ts` e o `e2e/epic-5/support/` (já com o que a F99 fez). Validadas contra o esquema (ADR 0060). Nada de mascarar no componente com `?? []`.
 - Aceite: `pnpm e2e` de `e2e/epic-4` e `e2e/epic-5` verde no modo simulado, com as respostas validadas contra o contrato; a F98 (tentativa 2) passa no e2e em cima dela.
 
+**F117 · Correção: o editor grava a definição sempre na versão 3 (achado da F116)**
+- dep: F97
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/editor/sources/batch-source/batchSource.ts`, `packages/react/src/editor/sources/batch-source/batchSource.test.ts`, `packages/react/src/editor/draft/`
+- Fazer: o `BATCH_SOURCE_SCHEMA_VERSION = 2` some. O editor lê rascunhos nas versões 1, 2 e 3 e grava sempre `schema_version: 3`, com `parameters` (vazio se não houver) e os campos novos de `settings` com os padrões do contrato. Uma constante só para a versão gravada, no lugar onde o rascunho é salvo. No back real, uma definição v2 com `parameters` é recusada, então nada pode sair na v2.
+- Aceite: começa por um teste que salva um rascunho aberto na v2 e falha antes (grava 2) e passa depois (grava 3, com `parameters: []`); `git grep` não acha outra versão gravada fixa no editor.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
