@@ -1468,7 +1468,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - **E6-22, Prévia e Calcular com parâmetros:** com parâmetros declarados, a Prévia e o Calcular mostram o formulário de parâmetros acima do botão, com os padrões e lembrando os últimos valores usados na sessão.
 
 **F109 · Manutenção: nomes e padrões do editor num lugar só (D32, itens 2 e 3 da F96)**
-- dep: F97
+- dep: —
 - modelo: sonnet
 - arquivos: `packages/react/src/editor/properties/index.ts`, `packages/react/src/editor/groups/tree.ts`, `packages/react/src/editor/unit-run/values.ts`, `packages/react/src/editor/sources/index.ts`, `packages/react/src/editor/canvas/blocks.ts`, `packages/react/src/editor/shared/` (nova), `docs/adr/`
 - Fazer:
@@ -1477,14 +1477,14 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: `git grep` acha uma definição só de cada função; lint das fronteiras verde; testes e build verdes.
 
 **F110 · Manutenção: canvas a 900 px abre com o grafo cortado (portão F71)**
-- dep: F97
+- dep: —
 - modelo: sonnet
 - arquivos: `packages/react/src/editor/canvas/`
 - Fazer: na abertura do editor e depois de redimensionar a janela, o canvas enquadra o grafo inteiro (o ajuste de vista roda depois que a área tem o tamanho final), em todas as faixas de largura do estilos §15.
 - Aceite: teste do ajuste de vista com a área mudando de tamanho; o `pnpm e2e:visual` a 900 px mostra o grafo inteiro.
 
 **F111 · Manutenção: e2e estável sob carga (portão F71)**
-- dep: F97
+- dep: —
 - modelo: sonnet
 - arquivos: `playwright.config.ts`, `e2e/support/`, `README.md`
 - Fazer: o modo simulado do e2e roda com menos workers (o número sai de uma variável, com um padrão que não sature a CPU no primeiro carregamento do shell), e os testes que estouraram o tempo sob carga (`configurator-and-reset-link.spec.ts:24`, `sign-out.spec.ts:6`, `draft-autosave.spec.ts:54`) esperam pelo estado da tela, nunca por tempo fixo.
