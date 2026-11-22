@@ -1593,7 +1593,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: `git grep` acha uma definição só de cada formatador e de `RELATIVE_LABELS`; nenhum px cru no `parameter-form.css`; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
 
 **F116 · Manutenção: todo o simulado do e2e no contrato v3 (D38, reprovação da F98)**
-- dep: F97
+- dep: F97, B153
 - modelo: sonnet
 - revisão: não
 - arquivos: `e2e/support/contract.ts` (só os exemplos de rascunho e de definição), `e2e/epic-4/support/`, `e2e/epic-5/support/`
