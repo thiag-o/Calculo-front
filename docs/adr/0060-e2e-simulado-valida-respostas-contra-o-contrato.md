@@ -28,3 +28,7 @@ A API simulada dos e2e devolvia `row_key: {}` num trace, o que o contrato proíb
 - **Bom:** simulação fora do contrato é pega no e2e simulado, antes do modo real.
 - **Ruim:** o e2e simulado passa a precisar do `openapi.yaml` do back; acoplamento ao Ajv transitivo do gerador (uma troca dele pede ajuste aqui).
 - **A fazer:** ao incluir uma rota em `VALIDATED_ROUTES`, corrigir as simulações dos épicos que a usam.
+
+## Atualização (F105)
+
+Pedida pela sessão global. A lista da Decisão (só prévia e Calcular) ficou defasada. Hoje `e2e/support/contract-schema.ts` confere também as 8 rotas de execução do épico 6 e o `GET` e o `PUT` de `/draft` (F116), seguindo a regra "rota nova entra na lista na tarefa que a criar". A decisão, as alternativas e o Ajv transitivo não mudam. A lista vigente é a de `VALIDATED_ROUTES`, não a deste texto.

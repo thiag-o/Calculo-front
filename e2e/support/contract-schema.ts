@@ -14,6 +14,15 @@ const VALIDATED_ROUTES: ReadonlyArray<{ method: string; path: string }> = [
   { method: 'PUT', path: '/v1/workflows/{id}/draft' },
   { method: 'POST', path: '/v1/workflows/{id}/draft/previews' },
   { method: 'POST', path: '/v1/workflows/{id}/draft/unit-runs' },
+  // Epic 6 (F105): the trigger and every execution route the panel, the list and the trace drawer read.
+  { method: 'POST', path: '/v1/workflows/{id}/executions' },
+  { method: 'GET', path: '/v1/executions' },
+  { method: 'GET', path: '/v1/executions/{id}' },
+  { method: 'GET', path: '/v1/executions/{id}/definition' },
+  { method: 'POST', path: '/v1/executions/{id}/cancel' },
+  { method: 'GET', path: '/v1/executions/{id}/output' },
+  { method: 'GET', path: '/v1/executions/{id}/records' },
+  { method: 'GET', path: '/v1/executions/{id}/records/{result_key}' },
 ];
 
 /**

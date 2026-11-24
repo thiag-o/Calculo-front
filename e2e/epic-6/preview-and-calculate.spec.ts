@@ -1,0 +1,66 @@
+// Epic 6 · the preview and "Calcular" with the parameter (fluxo 2 and roteiro 2 and 3), on the "Campanha de referência"
+// of `prepare-local`: the workflow panel shows `periodo` and the filter of the batch source with `@periodo`; the preview
+// with the default "Mês anterior" counts the whole data month and, with a fixed period, only its first days; "Calcular"
+// shares the values with the preview, so a record out of the period comes back filtered, and back to the default it is
+// calculated (both modes; nothing is saved, so the shared workflow is used as it is).
+import { layers, properties } from '../epic-4/support/screens';
+import { COUNTED_RECORDS } from '../epic-5/support/expected';
+import { calculate, openBottomTab, openWorkflowEditor, previewPanel, runPreview, shownValue, typeRecordKey, unitRunForm } from '../epic-5/support/screens';
+import { signIn } from '../support/screens';
+import { CAMPAIGN_WORKFLOW } from './support/campaign';
+import { FIRST_DAYS, FIRST_DAYS_TOTALS } from './support/expected';
+import { expect, test } from './support/fixtures';
+import { declaredParameter, fixPeriod, parametersSection } from './support/screens';
+
+test('a prévia e o Calcular usam o periodo: o padrão lê o mês inteiro e um período fixo só os primeiros dias', async ({ page, epic6 }) => {
+  await signIn(page, epic6.account('admin'));
+  await openWorkflowEditor(page, CAMPAIGN_WORKFLOW);
+
+  await test.step('o painel do workflow mostra o periodo e o filtro da fonte do lote com @periodo', async () => {
+    await expect(declaredParameter(page, 'periodo')).toBeVisible();
+    await expect(declaredParameter(page, 'periodo').getByRole('combobox', { name: 'Tipo (periodo)', exact: true })).toContainText('Período');
+    await expect(declaredParameter(page, 'periodo').getByRole('combobox', { name: 'Valor relativo (periodo)', exact: true })).toContainText('Mês anterior');
+    await expect(parametersSection(page)).toBeVisible();
+    await layers(page).getByRole('treeitem', { name: /^Fonte do lote/ }).click();
+    const filters = properties(page).getByRole('region', { name: 'Fonte do lote', exact: true }).getByRole('group', { name: 'Filtros', exact: true }).last();
+    await expect(filters.getByRole('textbox', { name: 'De (filtro 2)', exact: true })).toHaveValue('@periodo.inicio');
+    await expect(filters.getByRole('textbox', { name: 'Até (filtro 2)', exact: true })).toHaveValue('@periodo.fim');
+  });
+
+  const panel = previewPanel(page);
+  await test.step('a prévia com o padrão Mês anterior', async () => {
+    await openBottomTab(page, 'Prévia');
+    await expect(panel.getByRole('group', { name: 'periodo', exact: true })).toContainText('Mês anterior');
+    const response = await runPreview(page);
+    expect(response.status(), 'rodar a prévia').toBe(200);
+    // The default goes by name: the execution resolves it.
+    expect(response.request().postDataJSON()).toMatchObject({ parameters: {} });
+    await expect(panel.getByRole('status')).toHaveText(`Prévia pronta: ${COUNTED_RECORDS} registros contados`);
+  });
+
+  await test.step('a prévia com um período fixo conta menos registros', async () => {
+    await fixPeriod(panel, 'periodo', FIRST_DAYS);
+    const response = await runPreview(page);
+    expect(response.status(), 'rodar a prévia').toBe(200);
+    expect(response.request().postDataJSON()).toMatchObject({ parameters: { periodo: FIRST_DAYS } });
+    await expect(panel.getByRole('status')).toHaveText(`Prévia pronta: ${FIRST_DAYS_TOTALS.read} registros contados`);
+  });
+
+  await test.step('o Calcular usa os mesmos valores: 20/3 fica fora do período, e com o padrão é calculado', async () => {
+    await openBottomTab(page, 'Calcular');
+    const form = unitRunForm(page);
+    const period = form.getByRole('group', { name: 'periodo', exact: true });
+    await expect(period.getByLabel('Início', { exact: true })).toHaveValue(FIRST_DAYS.start);
+    await typeRecordKey(form, { nota_id: '20', item_seq: '3' });
+    const outside = await calculate(page, form);
+    expect(outside.status(), 'calcular').toBe(200);
+    expect(outside.request().postDataJSON()).toMatchObject({ parameters: { periodo: FIRST_DAYS } });
+    await expect(form.getByRole('status')).toHaveText('Resultado do cálculo: filtrado');
+
+    await form.getByRole('button', { name: 'Voltar ao padrão (Mês anterior)', exact: true }).click();
+    const inside = await calculate(page, form);
+    expect(inside.status(), 'calcular').toBe(200);
+    await expect(form.getByRole('status')).toHaveText('Resultado do cálculo: ok');
+    await expect(shownValue(form.getByRole('region', { name: 'Saídas', exact: true }), 'pontos')).toHaveText('150,00');
+  });
+});

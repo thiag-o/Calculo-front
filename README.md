@@ -81,9 +81,9 @@ pnpm dev
 | `pnpm test` | Testes (Vitest) |
 | `pnpm changeset` | Registra uma mudança do pacote para a próxima versão |
 | `pnpm generate:api` | Gera os tipos da API a partir do OpenAPI do backend (ADR 0005), em `packages/react/src/api/generated/` |
-| `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** (no épico 5, com a campanha de referência: catálogo, prévia e Calcular por registro, em `e2e/epic-5/support/`) |
+| `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** (no épico 5, com a campanha de referência: catálogo, prévia e Calcular por registro, em `e2e/epic-5/support/`; no épico 6, com os parâmetros e as execuções em lote, em `e2e/epic-6/support/`) |
 | `pnpm e2e:real` | Os mesmos testes contra o back de verdade (veja abaixo) |
-| `pnpm e2e:visual` | Prova visual das telas dos épicos 1 a 4, nos dois temas e em 1440, 1180 e 900 px, contra a API simulada (veja abaixo) |
+| `pnpm e2e:visual` | Prova visual das telas dos épicos 1 a 6, nos dois temas e em 1440, 1180 e 900 px, contra a API simulada (veja abaixo) |
 
 ## Testes em paralelo (worktrees)
 
@@ -106,7 +106,7 @@ No PowerShell: `$env:FLUXO_TEST_ISOLATION_ID='F62'; pnpm e2e`.
 
 ## Prova visual das telas
 
-O `pnpm e2e:visual` roda o projeto `visual` do Playwright (`e2e/visual/`), **fora do `pnpm e2e`**, e entra no portão de cada épico. Ele usa a API simulada (a mesma do `pnpm e2e`, com a conta Admin, o catálogo e a "Pontuação de exemplo") e, para cada tema (`colorScheme` claro e escuro) e cada largura (1440, 1180 e 900 px), abre: entrar, Início, Administração, Catálogo (Conexões, Datasets e Arquivos), lista de workflows, Visão geral e o editor (canvas, propriedades, grade da Tabela de Decisão e Calcular com o resultado).
+O `pnpm e2e:visual` roda o projeto `visual` do Playwright (`e2e/visual/`), **fora do `pnpm e2e`**, e entra no portão de cada épico. Ele usa a API simulada (a mesma do `pnpm e2e`, com a conta Admin, o catálogo e a "Pontuação de exemplo") e, para cada tema (`colorScheme` claro e escuro) e cada largura (1440, 1180 e 900 px), abre: entrar, Início, Administração, Catálogo (Conexões, Datasets e Arquivos), lista de workflows, Visão geral e o editor (canvas, propriedades, grade da Tabela de Decisão e Calcular com o resultado). Do épico 5, a campanha de referência no editor (`epic-5-screens.spec.ts`); do épico 6 (`epic-6-screens.spec.ts`), as seções Parâmetros e Execução do painel do workflow, o diálogo "Executar lote", o painel da execução calculando e terminado com erros, a gaveta do trace e a lista de execuções do tenant (com o menu lateral).
 
 - As capturas ficam em `e2e/visual/__screenshots__/<tela>-<tema>-<largura>.png` e são regravadas a cada execução; não há comparação de pixels (datas e ids variam). Quem verifica confere as imagens a olho contra o estilos §12 a §16.
 - Três checagens automáticas, em cada captura: nenhuma barra de rolagem horizontal; contraste de texto de pelo menos 4,5:1 (estilos §11) nas cores calculadas; e o menu lateral com nomes e 240 px a partir de 1180 px, só com ícones (64 px) abaixo disso (o menu só é conferido nas telas do casca).
@@ -151,6 +151,15 @@ uv run python -m fluxo.bootstrap api
    - `group-visibility-and-run-values.spec.ts` e `accept-first-row.spec.ts` trabalham numa cópia da campanha, criada pela API a partir do rascunho dela (o workflow do `prepare-local` fica como está; as cópias ficam no banco): uma variável de dentro do grupo usada fora vira "não é visível aqui" e é corrigida pelo Output; os valores do canvas somem ao editar; e "Aceitar a primeira linha" pede a confirmação e vai para o rascunho;
    - `roles.spec.ts` entra como o Aprovador (prévia e Calcular, nada salvo) e como o Auditor (só leitura), com as contas `aprovador@demo.local` e `auditor@demo.local` do `prepare-local`.
 
+   Desde o épico 6, o `prepare-local` acrescenta à "Campanha de referência" o parâmetro `periodo` (Período, padrão "Mês anterior", no filtro da data de emissão da fonte do lote) e cria a "Campanha de referência — defeitos" (B143 e B144). Os testes de `e2e/epic-6/` precisam de **um worker no ar** ao lado da API, com as mesmas variáveis dela (`uv run fluxo worker`, veja o `../backend/README.md`):
+   - `preview-and-calculate.spec.ts` confere o `periodo` e o filtro com `@periodo` no painel do workflow e roda a prévia e o Calcular com o padrão e com um período fixo (nada é salvo);
+   - `declare-parameter.spec.ts` declara o `periodo` e um parâmetro de fórmula numa cópia da campanha sem parâmetros, criada pela API;
+   - `trigger-and-download.spec.ts`, `errors-and-trace.spec.ts` e `defects-and-abort.spec.ts` disparam lotes (os dois últimos em cópias), esperam o worker chegar ao estado final e baixam o CSV;
+   - `roles.spec.ts` entra como o Operador (`operador@demo.local`), o Aprovador e o Auditor; os lotes que o Aprovador e o Auditor olham são disparados antes pelo Admin, pela API;
+   - `cancel.spec.ts` e `awaiting-source.spec.ts` só rodam no simulado, onde o teste move o worker passo a passo: o lote da campanha termina rápido demais para ser cancelado no meio, e derrubar uma fonte não cabe no ambiente compartilhado. A queda do worker no meio de um lote também fica fora do e2e: é do roteiro manual e do teste do back (B144).
+
+   No simulado, ninguém roda o worker sozinho: o teste avança cada execução (`epic6.worker` em `e2e/epic-6/support/fixtures.ts`), um passo por vez (carga, contagem, um chunk de 25 registros por passo, entrega), e o painel vê cada passo na atualização seguinte (a cada 2 s), sem tempo fixo. A simulação data as notas da campanha no mês anterior ao relógio do teste, no mesmo dia dos dados da B98, para o padrão "Mês anterior" ler a campanha inteira; os totais esperados estão em `e2e/epic-6/support/expected.ts`. No modo real, os totais e as linhas do CSV vêm dos dados da B143 e do aceite da B144 (`../backend/tests/reference_campaign/`); se o mês dos dados não for o anterior, ajuste as datas no teste de integração.
+
    O modo real precisa do SQL Server no ar (`docker compose --profile sqlserver up -d`), porque o bloco "Produto" lê dele. Os valores esperados estão em `e2e/epic-5/support/expected.ts`, calculados à mão a partir das regras (`../backend/docs/campanha-de-referencia.md`) e dos dados da B98; os mesmos registros estão no aceite da B100 (`../backend/tests/reference_campaign/`). Os nomes dos blocos que os testes procuram ("Nota", "Loja", "Produto na campanha", "Produto", "Parâmetros", "Pontuação", "Fator da categoria", "Multiplicador", "Pontos base" e "Pontos") são os títulos das regras do documento da campanha. Das contagens da prévia, o modo real confere só as que não dependem de como um registro já ignorado, filtrado ou com erro conta nos blocos seguintes (o contrato não fixa isso); as outras ficam para o simulado.
 
 2. Exporte o endereço da API (sem o `/v1`) e as contas que o `prepare-local` imprime (também em `../backend/docs/ambientes.md`):
@@ -164,6 +173,7 @@ export E2E_TWO_TENANTS_PASSWORD=demo-dois-tenants-local
 export E2E_AUDITOR_EMAIL=auditor@demo.local
 export E2E_AUDITOR_PASSWORD=demo-auditor-local
 export E2E_APPROVER_PASSWORD=demo-aprovador-local
+export E2E_OPERATOR_PASSWORD=demo-operador-local
 export E2E_SAMPLE_READ_PASSWORD=exemplo_leitura_local
 export E2E_SAMPLE_WRITE_PASSWORD=exemplo_escrita_local
 ```
@@ -180,6 +190,8 @@ No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
 | `E2E_AUDITOR_PASSWORD` | sim | Senha do Auditor de demonstração (`demo-auditor-local` no ambiente local). |
 | `E2E_APPROVER_EMAIL` | não (padrão `aprovador@demo.local`) | E-mail do Aprovador de demonstração (prévia e Calcular sem editar, épico 5). |
 | `E2E_APPROVER_PASSWORD` | sim | Senha do Aprovador de demonstração (`demo-aprovador-local` no ambiente local). |
+| `E2E_OPERATOR_EMAIL` | não (padrão `operador@demo.local`) | E-mail do Operador de demonstração (dispara e acompanha execuções, épico 6). |
+| `E2E_OPERATOR_PASSWORD` | sim | Senha do Operador de demonstração (`demo-operador-local` no ambiente local). |
 | `E2E_SHELL_URL` | não (padrão `http://localhost:5173`) | Endereço do casca que o Playwright abre. |
 | `E2E_SAMPLE_HOST` | não (padrão `127.0.0.1`) | Host do banco de exemplo (`postgres-sample`), visto pela **API** (é ela que conecta, não o navegador). |
 | `E2E_SAMPLE_PORT` | não (padrão `5434`) | Porta do banco de exemplo (`FLUXO_SAMPLE_POSTGRES_PORT` do back). |

@@ -1,5 +1,6 @@
 // Checks the checker of the simulated answers (contract-schema.ts): the contract's examples pass, and a trace or a preview
-// out of the contract is refused, as the fixture does for every answer of `unit-runs` and `previews` (F112).
+// out of the contract is refused, as the fixture does for every answer of `unit-runs` and `previews` (F112) and of the
+// execution routes (F105).
 // Without the backend next to it (the front CI), it is skipped, as contract-examples.spec.ts.
 import { expect, test } from '@playwright/test';
 import { EXAMPLES } from './contract';
@@ -62,6 +63,35 @@ test.describe('respostas da API simulada conferidas contra o esquema do contrato
       delete old.definition.settings.trace_level;
       expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
     }
+  });
+
+  test('os exemplos das execuções passam; uma execução ou um registro fora do esquema são recusados', () => {
+    const execution = '/v1/executions/6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c01';
+    const executions = [
+      EXAMPLES.ExecutionPending,
+      EXAMPLES.ExecutionCalculating,
+      EXAMPLES.ExecutionAwaitingSource,
+      EXAMPLES.ExecutionCompleted,
+      EXAMPLES.ExecutionCompletedWithErrors,
+      EXAMPLES.ExecutionAborted,
+      EXAMPLES.ExecutionCancelled,
+    ];
+    for (const example of executions) expect(contract.violations('GET', execution, 200, JSON_TYPE, example), example.status).toEqual([]);
+    expect(contract.violations('POST', '/v1/workflows/4d0e2f3a-8b9c-4d5e-8f1a-2b3c4d5e6f70/executions', 202, JSON_TYPE, EXAMPLES.ExecutionPending)).toEqual([]);
+    expect(contract.violations('POST', `${execution}/cancel`, 202, JSON_TYPE, EXAMPLES.ExecutionCancelRequested)).toEqual([]);
+    expect(contract.violations('GET', '/v1/executions', 200, JSON_TYPE, EXAMPLES.ExecutionList)).toEqual([]);
+    expect(contract.violations('GET', `${execution}/definition`, 200, JSON_TYPE, EXAMPLES.ExecutionDefinition)).toEqual([]);
+    expect(contract.violations('GET', `${execution}/records`, 200, JSON_TYPE, EXAMPLES.ExecutionRecordList)).toEqual([]);
+    expect(contract.violations('GET', `${execution}/records/${'a'.repeat(64)}`, 200, JSON_TYPE, EXAMPLES.ExecutionRecordStandard)).toEqual([]);
+    expect(contract.violations('GET', `${execution}/output`, 200, 'text/csv', EXAMPLES.ExecutionOutputCsv)).toEqual([]);
+    expect(contract.violations('GET', `${execution}/output`, 404, 'application/problem+json', EXAMPLES.OutputNotAvailable)).toEqual([]);
+
+    const partial = clone(EXAMPLES.ExecutionCompleted) as Record<string, unknown>;
+    delete partial.error_groups;
+    expect(contract.violations('GET', execution, 200, JSON_TYPE, partial)).not.toEqual([]);
+    const record = clone(EXAMPLES.ExecutionRecordList) as { items: Record<string, unknown>[] };
+    record.items[0]!.result_key = 'não é um hash';
+    expect(contract.violations('GET', `${execution}/records`, 200, JSON_TYPE, record)).not.toEqual([]);
   });
 
   test('outras rotas não são conferidas', () => {
