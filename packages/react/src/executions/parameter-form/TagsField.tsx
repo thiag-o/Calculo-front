@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '../../design-system';
+import { Button, textClasses } from '../../design-system';
 import { displayApiText, type ScalarType } from './literals';
 import { readScalar } from './values';
 import { ValueInput } from './ValueInput';
@@ -91,7 +91,7 @@ export function TagsField({ name, type, scale, help, items, onChange, error, dis
           {items.map((item) => {
             const shown = displayApiText(item, type);
             return (
-              <li key={item} className="fc-parameter-tag">
+              <li key={item} className={`fc-parameter-tag ${textClasses({ variant: 'label-13' })}`}>
                 <span className="fc-parameter-tag-text">{shown}</span>
                 <Button
                   type="button"

@@ -34,20 +34,6 @@ export const PARAMETER_TYPE_LABELS: Readonly<Record<ParameterType, string>> = { 
 
 export const PARAMETER_TYPE_OPTIONS: readonly SelectOption[] = PARAMETER_TYPES.map((value) => ({ value, label: PARAMETER_TYPE_LABELS[value] }));
 
-/** The relative defaults as the plan writes them (E6-17). */
-export const RELATIVE_LABELS: Readonly<Record<RelativeDefault, string>> = {
-  today: 'Hoje',
-  yesterday: 'Ontem',
-  first_day_of_current_month: 'Primeiro dia do mês atual',
-  first_day_of_previous_month: 'Primeiro dia do mês anterior',
-  last_day_of_previous_month: 'Último dia do mês anterior',
-  now: 'Agora',
-  current_month: 'Mês atual',
-  previous_month: 'Mês anterior',
-  last_7_days: 'Últimos 7 dias',
-  last_30_days: 'Últimos 30 dias',
-};
-
 /** Each relative default serves one type only (the contract's `RelativeDefault`); the other types have none. */
 const RELATIVES: Readonly<Record<ParameterType, readonly RelativeDefault[]>> = {
   text: [],
@@ -250,7 +236,7 @@ export function toLiteral(type: ValueType, scale: number | null, text: string): 
 
 /**
  * What the field shows for a literal of the definition, the inverse of `toLiteral`, or `null` when the literal does not
- * fit the field's picker (a date not written as `DATA(a, m, d)`, a boolean that is not `verdadeiro` nor `falso`): then the field
+ * fit the field's picker (a date not written as `DATA(a, m, d)` or not in the calendar, a boolean that is not `verdadeiro` nor `falso`): then the field
  * shows the literal as it is, in a text field.
  */
 export function fromLiteral(type: ValueType, literal: string): string | null {
@@ -266,6 +252,8 @@ export function fromLiteral(type: ValueType, literal: string): string | null {
     case 'date': {
       const match = DATE_LITERAL.exec(literal);
       if (!match) return null;
+      // A day the calendar does not have (`DATA(2026, 2, 30)`, `DATA(2026, 13, 1)`) fits no picker: the field shows the text.
+      if (!isCalendarDate(Number(match[1]), Number(match[2]), Number(match[3]))) return null;
       const [, year, month, day] = match;
       return `${year!.padStart(4, '0')}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}`;
     }

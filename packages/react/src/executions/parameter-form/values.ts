@@ -1,7 +1,7 @@
 // What is typed in the parameters form, how it goes to the API (`ParameterValue`) and how a parameter starts (E6-5, E4-24).
 import { ApiError, type Schemas } from '../../api';
-import { literalToApiText, formatApiNumber, type ScalarType } from './literals';
-import { readBrazilianNumber } from './numbers';
+import { literalToApiText, type ScalarType } from './literals';
+import { formatApiNumber, readBrazilianNumber } from '../../design-system';
 
 export type WorkflowParameter = Schemas['WorkflowParameter'];
 export type ParameterValue = Schemas['ParameterValue'];

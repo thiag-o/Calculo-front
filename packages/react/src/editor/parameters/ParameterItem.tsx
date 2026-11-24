@@ -13,6 +13,7 @@ import {
   useFieldsState,
   useFocusOnSelection,
 } from '../properties';
+import { RELATIVE_LABELS } from '../../executions';
 import { TrashIcon } from './icons';
 import { LiteralField } from './LiteralField';
 import { LiteralList } from './LiteralList';
@@ -22,7 +23,6 @@ import {
   DESCRIPTION_MAX,
   PARAMETER_NAME_TAKEN_MESSAGE,
   PARAMETER_TYPE_OPTIONS,
-  RELATIVE_LABELS,
   defaultKind,
   defaultOfKind,
   relativesFor,

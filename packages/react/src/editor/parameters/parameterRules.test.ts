@@ -50,6 +50,14 @@ describe('literais dos parâmetros (D86)', () => {
     expect(fromLiteral('date', 'hoje')).toBeNull();
     expect(fromLiteral('boolean', 'talvez')).toBeNull();
   });
+
+  it('uma data que não existe no calendário também aparece como está, no modo texto', () => {
+    expect(fromLiteral('date', 'DATA(2026, 2, 30)')).toBeNull();
+    expect(fromLiteral('date', 'DATA(2026, 13, 1)')).toBeNull();
+    expect(fromLiteral('date', 'DATA(2026, 0, 10)')).toBeNull();
+    expect(fromLiteral('date', 'DATA(2028, 2, 29)')).toBe('2028-02-29');
+    expect(fromLiteral('date', 'DATA(2026, 2, 29)')).toBeNull();
+  });
 });
 
 describe('regras do parâmetro', () => {

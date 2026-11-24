@@ -88,6 +88,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0066](0066-painel-da-execucao-chaves-de-registros-e-render-prop-do-trace.md) | Painel da execução: chaves dos registros sob `['executions', id]` e trace por render prop `renderRecordTrace` (complementa 0062 e 0063; atualizada na F118: chave `['executions', id, 'definition']` e gaveta com a definição congelada) | aceita, revisar no checkpoint (atualizada na F118) | 2026-11-22 |
 | [0067](0067-consulta-com-refetch-interval-para-no-erro.md) | Consulta com `refetchInterval` para no erro; a tela mostra Notice com "Tentar de novo" | aceita, revisar no checkpoint | 2026-11-22 |
 | [0068](0068-properties-workflow-importa-editor-parameters.md) | `properties/workflow` importa `editor/parameters/index.ts`, com ciclo permitido entre as duas, mesma regra da 0052 (complementa 0047 e 0052) | aceita, revisar no checkpoint | 2026-11-22 |
+| [0069](0069-formatadores-de-numero-e-data-no-design-system.md) | Formatadores de número e data no padrão brasileiro em `design-system/format/`, sem cópias (complementa 0056 e 0062) | aceita | 2026-11-22 |
 
 ## Pendentes (sem ADR ainda)
 

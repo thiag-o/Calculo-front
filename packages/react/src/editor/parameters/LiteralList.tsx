@@ -54,12 +54,17 @@ export function LiteralList({
   const { readOnly } = useFieldsState();
   const list = useRef<HTMLOListElement>(null);
   const box = useRef<HTMLFieldSetElement>(null);
-  // Where the focus goes after a value is removed, applied once the list is rendered without it.
-  const focusAfterRemove = useRef<number | null>(null);
+  // Where the focus goes after a value is removed, applied once the list is rendered without it. It keeps how many values
+  // the list had, to tell a removal that happened from one that did not change the list.
+  const focusAfterRemove = useRef<{ index: number; count: number } | null>(null);
   useEffect(() => {
-    const index = focusAfterRemove.current;
-    if (index === null) return;
+    const mark = focusAfterRemove.current;
+    if (mark === null) return;
+    // Cleared at the first render after the click, whether the list shrank or not (and by the click itself, if no render
+    // comes): a mark left behind would take the focus at a render much later.
     focusAfterRemove.current = null;
+    if (literals.length >= mark.count) return;
+    const { index } = mark;
     // The value that took the place of the removed one (or the one before it, if the removed was the last): its "Remover"
     // button, or its field when no more can be removed; with the list empty, the "Incluir" button.
     const items = list.current?.querySelectorAll<HTMLElement>(':scope > li') ?? [];
@@ -112,8 +117,13 @@ export function LiteralList({
                     icon={<TrashIcon size={14} />}
                     disabledReason={readOnly ? READ_ONLY_REASON : undefined}
                     onClick={() => {
-                      focusAfterRemove.current = index;
+                      focusAfterRemove.current = { index, count: literals.length };
                       onChange((current) => current.filter((_, at) => at !== index));
+                      // The change renders the list without the value within this frame. If no render came (the change left
+                      // the list as it was), the mark goes away anyway, so a later render does not take the focus.
+                      requestAnimationFrame(() => {
+                        focusAfterRemove.current = null;
+                      });
                     }}
                   />
                 ) : null}

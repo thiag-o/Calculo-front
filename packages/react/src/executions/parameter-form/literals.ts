@@ -2,6 +2,10 @@
 // (D86): `"A"`, `10`, `1.5`, `DATA(2026, 10, 1)`, `verdadeiro`. The form shows them in the Brazilian pattern and sends the
 // values as the API text (`"A"`, `"10"`, `"2026-10-01"`). Only text is handled: a number never becomes a `number`.
 import type { Schemas } from '../../api';
+import { formatApiNumber, formatDate, formatDateTime } from '../../design-system';
+
+// The formatters live in `design-system/format` (ADR 0069); re-exported for the list and the panel of executions.
+export { formatApiNumber, formatDate, formatDateTime };
 
 export type ParameterType = Schemas['ParameterType'];
 
@@ -41,29 +45,6 @@ export function literalToApiText(literal: string, type: ScalarType): string | nu
     default:
       return null;
   }
-}
-
-/** Shows an API number (`"1500.00"`, `"-3"`) in the Brazilian pattern (`1.500,00`, `-3`), keeping every decimal. */
-export function formatApiNumber(value: string): string {
-  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(value);
-  if (!match) return value;
-  const [, sign = '', whole = '', decimals] = match;
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `${sign}${grouped}${decimals === undefined ? '' : `,${decimals}`}`;
-}
-
-/** `2026-11-20` → `20/11/2026`, without going through a date (no time zone shift). */
-export function formatDate(value: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
-}
-
-/** ISO 8601 → `20/11/2026 10:30:00`, in the browser's time zone (the one the date was typed in). */
-export function formatDateTime(value: string): string {
-  const moment = new Date(value);
-  if (Number.isNaN(moment.getTime())) return value;
-  const date = `${two(moment.getDate())}/${two(moment.getMonth() + 1)}/${moment.getFullYear()}`;
-  return `${date} ${two(moment.getHours())}:${two(moment.getMinutes())}:${two(moment.getSeconds())}`;
 }
 
 /** An API text of a type, as shown to people: the number with comma, the date as dd/mm/aaaa, the boolean in words. */

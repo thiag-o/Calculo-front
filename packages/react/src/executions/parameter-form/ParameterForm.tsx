@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Checkbox, FieldMessage, Select, Text, TextField } from '../../design-system';
+import { Button, Checkbox, FieldMessage, Select, Text, TextField, textClasses } from '../../design-system';
 import { displayApiText, literalToApiText } from './literals';
 import { RELATIVE_LABELS, fieldHelp } from './labels';
 import { TagsField } from './TagsField';
@@ -186,11 +186,11 @@ interface RelativeDefaultProps {
 function RelativeDefault({ name, label, help, error, disabled, onReplace }: RelativeDefaultProps) {
   return (
     <div className="fc-parameter-relative" role="group" aria-label={name}>
-      <Text variant="label-14" className="fc-parameter-name">
+      <Text variant="mono-13" className="fc-parameter-name">
         {name}
       </Text>
       <div className="fc-parameter-relative-row">
-        <span className="fc-parameter-relative-value">{label}</span>
+        <span className={`fc-parameter-relative-value ${textClasses({ variant: 'label-14' })}`}>{label}</span>
         <Button
           type="button"
           variant="ghost"
@@ -226,7 +226,7 @@ function PeriodField({ name, help, state, error, disabled, onChange, onBlur }: P
   };
   return (
     <fieldset className="fc-parameter-period" disabled={disabled}>
-      <legend className="fc-parameter-name">{name}</legend>
+      <legend className={`fc-parameter-name ${textClasses({ variant: 'mono-13' })}`}>{name}</legend>
       <div className="fc-parameter-period-dates">
         <TextField
           type="date"
@@ -245,7 +245,7 @@ function PeriodField({ name, help, state, error, disabled, onChange, onBlur }: P
       </div>
       <FieldMessage type="tooltip">{help}</FieldMessage>
       {warning && !error ? (
-        <p role="status" className="fc-parameter-warning">
+        <p role="status" className={`fc-parameter-warning ${textClasses({ variant: 'label-12' })}`}>
           {warning}
         </p>
       ) : null}
@@ -275,7 +275,7 @@ function ChoiceList({ parameter, help, selected, error, disabled, onChange }: Ch
   const options = allowedOptions(parameter);
   return (
     <fieldset className="fc-parameter-choices" disabled={disabled}>
-      <legend className="fc-parameter-name">{parameter.name}</legend>
+      <legend className={`fc-parameter-name ${textClasses({ variant: 'mono-13' })}`}>{parameter.name}</legend>
       <div className="fc-parameter-choice-list">
         {options.map((option) => (
           <Checkbox
