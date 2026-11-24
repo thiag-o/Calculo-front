@@ -3,7 +3,7 @@
 import type { Schemas } from '../../api';
 import { isRunning, type Execution } from '../api';
 import { dateTime } from '../list/format';
-import { formatApiNumber, formatDate } from '../parameter-form/literals';
+import { formatApiNumber, formatDate } from '../../design-system';
 
 export type PhaseState = 'done' | 'current' | 'waiting' | 'stopped' | 'todo';
 

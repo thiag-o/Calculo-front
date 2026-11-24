@@ -13,7 +13,7 @@
 
 - A leitura e a formatação de número e data no padrão brasileiro (`readBrazilianNumber`, `formatApiNumber`, `formatDate`, `formatDateTime`) têm uma definição só, em `design-system/format/`, exportada por `design-system/index.ts`.
 - Só texto: um valor de cálculo nunca vira `number` (E4-4).
-- `editor/values/` e `executions/parameter-form/` importam de lá, sem cópia. Os dois `index.ts`/`literals.ts` reexportam os nomes só para não mexer nos imports dos vizinhos; não definem nada.
+- `editor/values/` e `executions/parameter-form/` importam de lá, sem cópia. Quem usa importa do `design-system`; `editor/values/index.ts` e `parameter-form/literals.ts` não reexportam os formatadores.
 - Os rótulos dos padrões relativos (`RELATIVE_LABELS`) ficam só em `executions/parameter-form/labels.ts`, exportados por `executions/index.ts`; o editor os importa por ali (sentido editor → executions, E6-16).
 
 ## Alternativas consideradas
@@ -26,4 +26,4 @@
 
 - **Bom:** uma regra só para o número e a data digitados e mostrados; qualquer vertical os usa.
 - **Ruim:** o `design-system` passa a ter lógica de texto, não só visual; deve ficar restrito a formatação pura.
-- **A fazer:** quando as tarefas vizinhas permitirem, trocar os imports dos reexports (`editor/values`, `parameter-form/literals`) pelo `design-system` e remover os reexports.
+- **Feito (F120):** os imports dos reexports passaram para o `design-system` e os reexports saíram.

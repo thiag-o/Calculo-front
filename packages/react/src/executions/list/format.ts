@@ -1,7 +1,7 @@
 // How an execution reads in the list (estilos.md §3 and §10): dates, duration, records and parameters in the Brazilian
 // pattern. The parameter values are the resolved ones the execution froze, without their declaration.
 import type { Execution } from '../api';
-import { formatApiNumber, formatDate } from '../parameter-form/literals';
+import { formatApiNumber, formatDate } from '../../design-system';
 
 const dateTimeFormat = new Intl.DateTimeFormat('pt-BR', {
   day: '2-digit',

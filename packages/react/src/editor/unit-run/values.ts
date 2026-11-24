@@ -2,7 +2,7 @@
 // screen), how it goes to the API (`Value`) and how the result values are shown.
 import type { Schemas } from '../../api';
 import type { WorkflowDefinition } from '../draft';
-import { readBrazilianNumber } from '../values';
+import { readBrazilianNumber } from '../../design-system';
 
 export type DataType = Schemas['DataType'];
 export type Value = Schemas['Value'];

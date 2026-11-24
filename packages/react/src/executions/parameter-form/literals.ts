@@ -4,9 +4,6 @@
 import type { Schemas } from '../../api';
 import { formatApiNumber, formatDate, formatDateTime } from '../../design-system';
 
-// The formatters live in `design-system/format` (ADR 0069); re-exported for the list and the panel of executions.
-export { formatApiNumber, formatDate, formatDateTime };
-
 export type ParameterType = Schemas['ParameterType'];
 
 /** The type of the elements of a parameter: `period` is not a scalar and has no literal of one piece. */

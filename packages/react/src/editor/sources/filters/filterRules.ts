@@ -2,7 +2,7 @@
 // takes, and how a typed value becomes a literal of the formula language (E4-3) and back. Numbers are typed in the
 // Brazilian pattern (E4-24) and go as text with a dot; nothing here becomes a floating-point `number` (E4-4).
 import type { Schemas } from '../../../api';
-import { formatApiNumber, readBrazilianNumber } from '../../values';
+import { formatApiNumber, readBrazilianNumber } from '../../../design-system';
 
 export type DataType = Schemas['DataType'];
 export type FilterOperator = Schemas['FilterOperator'];

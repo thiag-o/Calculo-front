@@ -5,9 +5,8 @@
 // handled: a value never becomes a floating-point `number` (E4-4).
 import type { Schemas } from '../../api';
 import { DATA_TYPE_LABELS } from '../../catalog';
-import type { SelectOption } from '../../design-system';
 import type { WorkflowDefinition } from '../draft';
-import { formatApiNumber, readBrazilianNumber } from '../values';
+import { formatApiNumber, readBrazilianNumber, type SelectOption } from '../../design-system';
 
 export type WorkflowParameter = Schemas['WorkflowParameter'];
 export type ParameterType = Schemas['ParameterType'];

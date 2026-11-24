@@ -90,6 +90,10 @@
   --fc-space-48: 48px;
   --fc-space-56: 56px;
 
+  /* 4 Radii (estilos.md §4): 6 buttons, fields, menu items, blocks; 12 content boxes and the floating bar. Same in both themes. */
+  --fc-radius-6: 6px;
+  --fc-radius-12: 12px;
+
   /* Layout widths: fields side by side in a filter bar (a date fits "dd/mm/aaaa" and the calendar icon; a select fits
      the longest option of a filter) and a short form (sign-in, new password). */
   --fc-field-width-date: 168px;
