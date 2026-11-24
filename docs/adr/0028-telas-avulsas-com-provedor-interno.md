@@ -1,6 +1,6 @@
 # 0028. Telas avulsas funcionam sozinhas, com provedor interno do módulo
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0070](0070-interface-publica-do-epico-de-execucoes.md))
 - **Data:** 2026-11-16
 - **Quem decidiu:** orquestração (tarefa F38), a partir da decisão da sessão global (opção A, problema levantado na F28)
 - **Relacionadas:** [0002](0002-pacote-react-sem-iframe.md), [0003](0003-codigo-por-verticais.md), [0006](0006-roteamento-interno-e-configuracao-do-modulo.md), [0015](0015-cache-na-troca-de-identidade-e-tenant.md), [0016](0016-isolar-roteador-do-modulo-com-contextos-unsafe.md), [0019](0019-encerramento-de-sessao-no-modulo.md), [0027](0027-telas-de-abas-controladas-e-secoes-do-menu.md) (complementa)

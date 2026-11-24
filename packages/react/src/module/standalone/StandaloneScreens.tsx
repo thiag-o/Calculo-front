@@ -4,7 +4,8 @@ import { Audit as AuditScreen } from '../../audit';
 import { Catalog as CatalogScreen, CATALOG_PERMISSION } from '../../catalog';
 import { Home as HomeScreen } from '../../home';
 import { useSession, useSessionGeneration } from '../../session';
-import { RoutedWorkflows, WORKFLOWS_VIEW_PERMISSION } from '../screens';
+import { EXECUTIONS_VIEW_PERMISSION } from '../../workflows';
+import { RoutedExecutions, WORKFLOWS_VIEW_PERMISSION, WorkflowsWithExecutions } from '../screens';
 import { ModuleLoading, ModuleError, NoAccess } from '../ModuleStates';
 import type { FluxoCalculoProps } from '../FluxoCalculo';
 import { ModuleProvider } from '../ModuleProvider';
@@ -21,6 +22,7 @@ export type AdminProps = StandaloneScreenProps;
 export type AuditProps = StandaloneScreenProps;
 export type CatalogProps = StandaloneScreenProps;
 export type WorkflowsProps = StandaloneScreenProps;
+export type ExecutionsProps = StandaloneScreenProps;
 
 interface StandaloneDefinition {
   /** Screen name: label of the region that wraps it. */
@@ -114,7 +116,17 @@ const WORKFLOWS_SCREEN: StandaloneDefinition = {
     allowed: (hasPermission) => hasPermission(WORKFLOWS_VIEW_PERMISSION),
     noAccess: 'Você não tem acesso a Workflows',
   },
-  content: <RoutedWorkflows />,
+  content: <WorkflowsWithExecutions />,
+};
+
+const EXECUTIONS_SCREEN: StandaloneDefinition = {
+  name: 'Execuções',
+  target: 'as Execuções',
+  access: {
+    allowed: (hasPermission) => hasPermission(EXECUTIONS_VIEW_PERMISSION),
+    noAccess: 'Você não tem acesso às Execuções',
+  },
+  content: <RoutedExecutions />,
 };
 
 const ADMIN_SCREEN: StandaloneDefinition = {
@@ -155,9 +167,17 @@ export function Catalog(props: CatalogProps) {
 }
 
 /**
- * The Workflows, on its own, outside `<FluxoCalculo>`: the list, the Overview and the editor, switched without touching the
- * URL. Requires `workflows.view`; without it, shows the "no access" state.
+ * The Workflows, on its own, outside `<FluxoCalculo>`: the list, the Overview, the workflow executions, the editor and the panel of
+ * an execution ("Executar lote" and "Ver execuções"), switched without touching the URL. Requires `workflows.view`; without it, shows the "no access" state.
  */
 export function Workflows(props: WorkflowsProps) {
   return <StandaloneScreen {...props} definition={WORKFLOWS_SCREEN} />;
+}
+
+/**
+ * The Executions, on its own, outside `<FluxoCalculo>`: the list and the panel of each one, switched without touching the URL.
+ * Requires `executions.view`; without it, shows the "no access" state.
+ */
+export function Executions(props: ExecutionsProps) {
+  return <StandaloneScreen {...props} definition={EXECUTIONS_SCREEN} />;
 }

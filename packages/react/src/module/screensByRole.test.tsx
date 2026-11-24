@@ -14,7 +14,7 @@ import {
   simulateWidth,
 } from './module.test-support';
 
-// The real <FluxoCalculo> screens (SCREENS): Início, Catálogo, Workflows, Auditoria and the Administração section (Usuários, Papéis, Integração and
+// The real <FluxoCalculo> screens (SCREENS): Início, Catálogo, Workflows, Execuções, Auditoria and the Administração section (Usuários, Papéis, Integração and
 // Segurança), each with its own permission. The section is a single item in the sidebar (shell) and a single tab (embedded
 // mode). In both, it opens <Admin>, with the internal tabs bound to the routes.
 
@@ -56,12 +56,12 @@ const adminTabNames = () => names(within(adminTabs()).getAllByRole('tab'));
 const initiallyOpen = () => screen.findByRole('heading', { level: 1, name: 'Início' });
 
 describe('telas por papel no casca', () => {
-  it('o Admin vê Início, Catálogo, Workflows, Auditoria e um item Administração; as áreas ficam só nas abas internas', async () => {
+  it('o Admin vê Início, Catálogo, Workflows, Execuções, Auditoria e um item Administração; as áreas ficam só nas abas internas', async () => {
     simulateApiWith(ADMIN_PERMISSIONS);
     renderScreen({ navigation: 'memory' });
 
     await initiallyOpen();
-    expect(names(within(mainNavigation()).getAllByRole('link'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Auditoria', 'Administração']);
+    expect(names(within(mainNavigation()).getAllByRole('link'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Execuções', 'Auditoria', 'Administração']);
     for (const area of ['Usuários', 'Papéis', 'Integração', 'Segurança']) {
       expect(within(mainNavigation()).queryByRole('link', { name: area })).not.toBeInTheDocument();
     }
@@ -74,7 +74,7 @@ describe('telas por papel no casca', () => {
     renderScreen({ navigation: 'url' });
 
     await initiallyOpen();
-    expect(names(within(mainNavigation()).getAllByRole('link'))).toEqual(['Início', 'Catálogo', 'Workflows']);
+    expect(names(within(mainNavigation()).getAllByRole('link'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Execuções']);
     expect(adminItem()).not.toBeInTheDocument();
     expect(screen.queryByText('Administração')).not.toBeInTheDocument();
     await waitFor(() => expect(window.location.pathname).toBe('/home'));
@@ -87,7 +87,7 @@ describe('telas por papel no casca', () => {
     const { user } = renderScreen({ navigation: 'memory' });
 
     await initiallyOpen();
-    expect(names(within(mainNavigation()).getAllByRole('link'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Auditoria']);
+    expect(names(within(mainNavigation()).getAllByRole('link'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Execuções', 'Auditoria']);
     expect(adminItem()).not.toBeInTheDocument();
 
     await user.click(within(mainNavigation()).getByRole('link', { name: 'Auditoria' }));
@@ -260,12 +260,12 @@ describe('a propriedade tela', () => {
 });
 
 describe('abas do modo incorporado', () => {
-  it('o Admin tem as abas Início, Catálogo, Workflows, Auditoria e Administração, os mesmos itens do menu', async () => {
+  it('o Admin tem as abas Início, Catálogo, Workflows, Execuções, Auditoria e Administração, os mesmos itens do menu', async () => {
     const api = simulateApiWith(ADMIN_PERMISSIONS);
     const { user } = renderScreen({ token: 'token' });
 
     await initiallyOpen();
-    expect(names(within(tabs()).getAllByRole('tab'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Auditoria', 'Administração']);
+    expect(names(within(tabs()).getAllByRole('tab'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Execuções', 'Auditoria', 'Administração']);
 
     await user.click(within(tabs()).getByRole('tab', { name: 'Administração' }));
     expect(await screen.findByRole('heading', { level: 2, name: 'Usuários' })).toBeInTheDocument();
@@ -304,7 +304,7 @@ describe('abas do modo incorporado', () => {
     renderScreen({ token: 'token' });
 
     await initiallyOpen();
-    expect(names(within(tabs()).getAllByRole('tab'))).toEqual(['Início', 'Catálogo', 'Workflows']);
+    expect(names(within(tabs()).getAllByRole('tab'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Execuções']);
     expect(screen.queryByText('Administração')).not.toBeInTheDocument();
   });
 
@@ -313,7 +313,7 @@ describe('abas do modo incorporado', () => {
     renderScreen({ token: 'token' });
 
     await initiallyOpen();
-    expect(names(within(tabs()).getAllByRole('tab'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Auditoria']);
+    expect(names(within(tabs()).getAllByRole('tab'))).toEqual(['Início', 'Catálogo', 'Workflows', 'Execuções', 'Auditoria']);
   });
 
   it('as abas internas da Administração seguem a permissão de cada área', async () => {

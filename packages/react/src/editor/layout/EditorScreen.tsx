@@ -33,6 +33,8 @@ export interface EditorScreenProps {
   onBack: () => void;
   /** Opens the workflow list (the "Workflows" of the path). */
   onOpenWorkflows?: () => void;
+  /** Opens the panel of an execution (`/executions/:id`). With it, the bar has "Executar lote" (E6-19). */
+  onOpenExecution?: (id: string) => void;
   /** The panels' content. Rendered inside the draft context: they read and change the draft with `useDraftEditor`. */
   layers?: ReactNode;
   canvas?: ReactNode;
@@ -142,6 +144,7 @@ function LoadedEditor({
   draft,
   onBack,
   onOpenWorkflows,
+  onOpenExecution,
   layers,
   canvas,
   properties,
@@ -187,9 +190,11 @@ function LoadedEditor({
       label={name ? `Editor de ${name}` : 'Editor'}
       bar={
         <EditorBar
+          workflowId={draft.workflow_id}
           workflowName={name}
           onBack={onBack}
           onOpenWorkflows={onOpenWorkflows}
+          onOpenExecution={onOpenExecution}
           readOnly={readOnly}
           onOpenProblems={() => {
             setTab(PROBLEMS_TAB);

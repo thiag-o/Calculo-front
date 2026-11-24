@@ -3,10 +3,13 @@ import { useLocation, useNavigate } from 'react-router';
 import { Admin, ADMIN_TAB_PERMISSIONS, type AdminTab } from '../admin';
 import { Audit } from '../audit';
 import { Catalog, CATALOG_PERMISSION, type CatalogLocation, type CatalogTab } from '../catalog';
-import { Editor, UnsavedChangesNotice } from '../editor';
+import { Button } from '../design-system';
+import { Editor, UnitRunResult, UnsavedChangesNotice } from '../editor';
+import { ExecutionList, ExecutionPanel, type RenderRecordTrace } from '../executions';
 import { Home } from '../home';
-import { Workflows, type WorkflowsLocation } from '../workflows';
-import { AdminIcon, AuditIcon, CatalogIcon, HomeIcon, WorkflowsIcon } from './icons';
+import { useSession } from '../session';
+import { EXECUTIONS_VIEW_PERMISSION, Workflows, type WorkflowsLocation } from '../workflows';
+import { AdminIcon, AuditIcon, CatalogIcon, ExecutionsIcon, HomeIcon, WorkflowsIcon } from './icons';
 
 /** Sidebar sections (estilos.md §9). Screens without a section stay at the top of the menu. */
 export type MenuSection = 'admin';
@@ -27,13 +30,14 @@ export const SECTIONS: Record<MenuSection, { label: string; path: string; icon: 
  * The screens `<FluxoCalculo>` can open through the `screen` prop. Each epic adds its own.
  * - `home`: Início, open to everyone;
  * - `catalog`: Catálogo (`connections.view`);
- * - `workflows`: Workflows, with the list, the Overview and the editor (`workflows.view`);
+ * - `workflows`: Workflows, with the list, the Overview, the workflow executions and the editor (`workflows.view`);
+ * - `executions`: Execuções, the tenant list and the panel of each one (`executions.view`);
  * - `audit`: Auditoria (`audit.view`);
  * - `admin`: Administração, on the first allowed area;
  * - `users`, `roles`, `integration` and `security`: Administração already on one area, each with its own permission.
  * Without the permission, the module opens on the first allowed screen.
  */
-export type FluxoScreen = 'home' | 'catalog' | 'workflows' | 'audit' | MenuSection | AdminTab;
+export type FluxoScreen = 'home' | 'catalog' | 'workflows' | 'executions' | 'audit' | MenuSection | AdminTab;
 
 /** A module screen: internal route and sidebar item (shell) or tab (embedded). */
 export interface ScreenDefinition {
@@ -115,38 +119,116 @@ export const WORKFLOWS_VIEW_PERMISSION = 'workflows.view';
 /** Route path of the workflow editor. */
 export const WORKFLOW_EDITOR_PATH = `${WORKFLOWS_PATH}/:id/${EDITOR_SEGMENT}`;
 
-/** Reads the Workflows location from the address: `/workflows`, `/workflows/:id` and `/workflows/:id/editor`. */
+const EXECUTIONS_SEGMENT = 'executions';
+const EXECUTIONS_PATH = 'executions';
+
+/**
+ * Reads the Workflows location from the address: `/workflows`, `/workflows/:id`, `/workflows/:id/executions` and
+ * `/workflows/:id/editor`.
+ */
 function workflowsLocation(pathname: string): WorkflowsLocation {
   const [, , id, segment] = pathname.split('/');
   if (!id) return { view: 'list' };
-  return segment === EDITOR_SEGMENT ? { view: 'editor', id: safeDecode(id) } : { view: 'overview', id: safeDecode(id) };
+  if (segment === EDITOR_SEGMENT) return { view: 'editor', id: safeDecode(id) };
+  return { view: segment === EXECUTIONS_SEGMENT ? 'executions' : 'overview', id: safeDecode(id) };
 }
 
 /** Route path of a Workflows location. */
 function workflowsPath(location: WorkflowsLocation): string {
   if (location.view === 'list') return `/${WORKFLOWS_PATH}`;
   const base = `/${WORKFLOWS_PATH}/${encodeURIComponent(location.id)}`;
-  return location.view === 'editor' ? `${base}/${EDITOR_SEGMENT}` : base;
+  if (location.view === 'editor') return `${base}/${EDITOR_SEGMENT}`;
+  return location.view === 'executions' ? `${base}/${EXECUTIONS_SEGMENT}` : base;
+}
+
+/** Route path of the panel of an execution. */
+function executionPath(id: string): string {
+  return `/${EXECUTIONS_PATH}/${encodeURIComponent(id)}`;
 }
 
 /**
- * The `<Workflows>` inside the module: the list, the Overview and the editor are the route. The editor fills the module
- * (the router mounts it outside the sidebar and the tabs) and the module hands it over, so `workflows` does not depend on `editor`.
+ * The `<Workflows>` inside the module: the list, the Overview, the workflow executions and the editor are the route. The
+ * editor fills the module (the router mounts it outside the sidebar and the tabs) and the module hands it over, so `workflows`
+ * does not depend on `editor`. With `executions`, the screens also trigger a batch ("Executar lote") and open the panel of the
+ * execution (`/executions/:id`); the standalone `<Workflows>` has no executions route and goes without.
  */
-export function RoutedWorkflows() {
+export function RoutedWorkflows({ executions = false }: { executions?: boolean }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  // The panel remembers where it was opened from, so the standalone screen can go back there.
+  const openExecution = executions ? (id: string) => void navigate(executionPath(id), { state: { from: pathname } }) : undefined;
   return (
     <Workflows
       location={workflowsLocation(pathname)}
       onLocationChange={(next) => void navigate(workflowsPath(next))}
+      onOpenExecution={openExecution}
       renderEditor={(props) => (
         <div className="fc-module-fill">
-          <Editor {...props} />
+          <Editor {...props} onOpenExecution={openExecution} />
         </div>
       )}
       renderUnsavedNotice={(props) => <UnsavedChangesNotice {...props} />}
     />
+  );
+}
+
+/**
+ * The trace of a stored record is the one of "Calcular", drawn by the editor with the definition the execution froze: the
+ * module hands it to the panel, because `executions` never imports `editor` (ADR 0062). Outside the editor no block is selected.
+ */
+const renderRecordTrace: RenderRecordTrace = ({ trace, definition }) => <UnitRunResult run={trace} definition={definition} />;
+
+/**
+ * The standalone `<Workflows>`: the workflow screens and, once a batch is opened, the panel of the execution, in the same
+ * in-memory router (`/executions/:id` is where "Executar lote" and the list take the person).
+ */
+export function WorkflowsWithExecutions() {
+  const { pathname } = useLocation();
+  const canViewExecutions = useSession().hasPermission(EXECUTIONS_VIEW_PERMISSION);
+  // The panel needs `executions.view`: without it the address does not open it and the workflow screens stay.
+  return pathname.startsWith(`/${EXECUTIONS_PATH}`) && canViewExecutions ? <RoutedExecutions standalone /> : <RoutedWorkflows executions />;
+}
+
+/** Where the panel was opened from (only inside the workflows: the standalone `<Workflows>` goes back there). */
+function panelOrigin(state: unknown): string | null {
+  const from = typeof state === 'object' && state !== null ? (state as { from?: unknown }).from : undefined;
+  return typeof from === 'string' && from.startsWith(`/${WORKFLOWS_PATH}`) ? from : null;
+}
+
+/** The "Voltar" of the standalone panel, by the screen it goes back to. */
+function originLabel(from: string): string {
+  if (from.endsWith(`/${EDITOR_SEGMENT}`)) return 'Voltar para o editor';
+  if (from.endsWith(`/${EXECUTIONS_SEGMENT}`)) return 'Voltar para as execuções do workflow';
+  return from === `/${WORKFLOWS_PATH}` ? 'Voltar para workflows' : 'Voltar para a visão geral';
+}
+
+/** Reads the open execution from the address: `/executions` (the list) and `/executions/:id` (the panel). */
+function executionId(pathname: string): string | null {
+  const [, , id] = pathname.split('/');
+  return id ? safeDecode(id) : null;
+}
+
+/**
+ * The Execuções inside the module: the tenant list at `/executions` and the panel of one at `/executions/:id`, with the trace
+ * of the record drawn by the editor. The workflow of each row and a new batch open the panel; the panel goes back to the list.
+ * In the standalone `<Workflows>` (`standalone`) there is no tenant list: the panel goes back to where it was opened from (the
+ * Overview, the workflow executions or the editor) or, without that, to the workflow list.
+ */
+export function RoutedExecutions({ standalone = false }: { standalone?: boolean }) {
+  const { pathname, state } = useLocation();
+  const navigate = useNavigate();
+  const id = executionId(pathname);
+  if (id === null) {
+    return <ExecutionList onOpenExecution={(opened) => void navigate(executionPath(opened))} />;
+  }
+  const origin = standalone ? (panelOrigin(state) ?? `/${WORKFLOWS_PATH}`) : `/${EXECUTIONS_PATH}`;
+  return (
+    <div className="fc-module-executions">
+      <Button variant="ghost" size="small" className="fc-module-executions-back" onClick={() => void navigate(origin)}>
+        {standalone ? originLabel(origin) : 'Voltar para execuções'}
+      </Button>
+      <ExecutionPanel key={id} executionId={id} renderRecordTrace={renderRecordTrace} />
+    </div>
   );
 }
 
@@ -174,9 +256,9 @@ function adminArea(id: AdminTab, label: string): ScreenDefinition & { id: FluxoS
 }
 
 /**
- * The module screens, in menu order (design.md §15): Início, Catálogo, Workflows and Auditoria; then the Administração section, with
- * Usuários, Papéis, Integração and Segurança, each with its area's permission. The sidebar items and the embedded mode
- * tabs are the same: Início, Catálogo, Workflows, Auditoria and Administração.
+ * The module screens, in menu order (design.md §15): Início, Catálogo, Workflows, Execuções and Auditoria; then the Administração
+ * section, with Usuários, Papéis, Integração and Segurança, each with its area's permission. The sidebar items and the
+ * embedded mode tabs are the same: Início, Catálogo, Workflows, Execuções, Auditoria and Administração.
  */
 export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
   { id: 'home', label: 'Início', path: 'home', icon: <HomeIcon />, content: <RoutedHome /> },
@@ -197,7 +279,16 @@ export const SCREENS: readonly (ScreenDefinition & { id: FluxoScreen })[] = [
     permission: WORKFLOWS_VIEW_PERMISSION,
     nested: true,
     fullScreenPath: WORKFLOW_EDITOR_PATH,
-    content: <RoutedWorkflows />,
+    content: <RoutedWorkflows executions />,
+  },
+  {
+    id: 'executions',
+    label: 'Execuções',
+    path: EXECUTIONS_PATH,
+    icon: <ExecutionsIcon />,
+    permission: EXECUTIONS_VIEW_PERMISSION,
+    nested: true,
+    content: <RoutedExecutions />,
   },
   {
     id: 'audit',

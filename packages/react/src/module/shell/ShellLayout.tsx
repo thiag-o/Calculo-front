@@ -2,7 +2,7 @@ import { useId, useRef, useState, type ReactNode } from 'react';
 import { Navigate, NavLink, Outlet, useMatch } from 'react-router';
 import { Notice, Button, Tooltip } from '../../design-system';
 import { useSessionGeneration, type Session } from '../../session';
-import { ExpandMenuIcon, CollapseMenuIcon, OverviewIcon } from '../icons';
+import { ExpandMenuIcon, CollapseMenuIcon, ExecutionsIcon, OverviewIcon } from '../icons';
 import { groupBySection, type ScreenDefinition } from '../screens';
 import { signOutErrorMessage, switchErrorMessage } from './messages';
 import { UserMenu } from './UserMenu';
@@ -35,21 +35,28 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
   const { unsectioned, sections } = groupBySection(screens);
   // A workflow is open (its Overview): the selector gets the "tenant › workflow" line and the menu is the workflow's (E4-25).
   const allowsWorkflows = screens.some((screen) => screen.id === 'workflows');
+  // The workflow menu also has Execuções (E6-20), for who can see the executions.
+  const allowsExecutions = screens.some((screen) => screen.id === 'executions');
   const matchedWorkflowId = useMatch('/workflows/:id/*')?.params.id;
+  const matchedExecutionId = useMatch('/executions/:id')?.params.id;
+  // What is open belongs to one tenant: a workflow (and its pages) or the panel of an execution.
+  const matchedItem = matchedWorkflowId ?? matchedExecutionId;
   // Switching tenant with a workflow open: the workflow belongs to the old tenant, so the bar stops showing it at once, the
   // screen is not rendered again under the old URL (that would fetch the old workflow in the new tenant) and the module goes
-  // to the list of the new tenant, or to the Início without access to Workflows (E4-25). State adjusted while rendering.
+  // to the list of the new tenant, or to the Início without access to Workflows (E4-25). The panel of an execution is the same:
+  // it goes to the executions of the new tenant (or the Início). State adjusted while rendering.
   const tenantId = session.current_tenant.id;
   const [seenTenant, setSeenTenant] = useState(tenantId);
   const [leaving, setLeaving] = useState(false);
   if (seenTenant !== tenantId) {
     setSeenTenant(tenantId);
-    setLeaving(matchedWorkflowId !== undefined);
-  } else if (leaving && matchedWorkflowId === undefined) {
+    setLeaving(matchedItem !== undefined);
+  } else if (leaving && matchedItem === undefined) {
     setLeaving(false);
   }
-  const redirecting = leaving && matchedWorkflowId !== undefined;
+  const redirecting = leaving && matchedItem !== undefined;
   const workflowId = redirecting || !allowsWorkflows ? undefined : matchedWorkflowId;
+  const destination = matchedWorkflowId !== undefined ? (allowsWorkflows ? '/workflows' : '/home') : allowsExecutions ? '/executions' : '/home';
   const classes = ['fc-shell', compact ? 'fc-shell-compact' : null, narrow ? 'fc-shell-narrow' : null]
     .filter(Boolean)
     .join(' ');
@@ -70,10 +77,23 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
 
         <nav id={navigationId} className="fc-sidebar-nav" aria-label="Navegação principal">
           {workflowId ? (
-            <SidebarItem
-              item={{ label: 'Visão geral', path: `workflows/${encodeURIComponent(workflowId)}`, icon: <OverviewIcon /> }}
-              compact={compact}
-            />
+            <>
+              <SidebarItem
+                item={{ label: 'Visão geral', path: `workflows/${encodeURIComponent(workflowId)}`, icon: <OverviewIcon /> }}
+                compact={compact}
+                end
+              />
+              {allowsExecutions ? (
+                <SidebarItem
+                  item={{
+                    label: 'Execuções',
+                    path: `workflows/${encodeURIComponent(workflowId)}/executions`,
+                    icon: <ExecutionsIcon />,
+                  }}
+                  compact={compact}
+                />
+              ) : null}
+            </>
           ) : (
             <>
               {unsectioned.map((screen) => (
@@ -124,7 +144,7 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
             </Notice>
           ) : null}
           {redirecting ? (
-            <Navigate to={allowsWorkflows ? '/workflows' : '/home'} replace />
+            <Navigate to={destination} replace />
           ) : (
             <Outlet key={generation} />
           )}
@@ -135,9 +155,18 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
 }
 
 /** A sidebar item: a screen, or a whole section, active on any of its screens. */
-function SidebarItem({ item, compact }: { item: { label: string; path: string; icon?: ReactNode }; compact: boolean }) {
+function SidebarItem({
+  item,
+  compact,
+  end,
+}: {
+  item: { label: string; path: string; icon?: ReactNode };
+  compact: boolean;
+  /** Active only on its own path: "Visão geral" is a prefix of the workflow's other pages. */
+  end?: boolean;
+}) {
   const link = (
-    <NavLink to={`/${item.path}`} className="fc-sidebar-item">
+    <NavLink to={`/${item.path}`} end={end} className="fc-sidebar-item">
       <span className="fc-sidebar-item-icon" aria-hidden="true">
         {item.icon}
       </span>

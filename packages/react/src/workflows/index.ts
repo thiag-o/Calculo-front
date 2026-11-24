@@ -22,7 +22,7 @@ export { WorkflowList, NewWorkflowDialog, EDIT_PERMISSION as WORKFLOWS_EDIT_PERM
 export type { WorkflowListProps, NewWorkflowDialogProps } from './list';
 
 // The Overview (`/workflows/:id`), with "Renomear" and "Remover workflow".
-export { WorkflowOverview } from './overview';
+export { WorkflowOverview, EXECUTIONS_VIEW_PERMISSION } from './overview';
 export type { WorkflowOverviewProps } from './overview';
 
 // The whole screen: list, Overview and editor, bound to the module routes. The module hands the editor in (see Workflows.tsx).

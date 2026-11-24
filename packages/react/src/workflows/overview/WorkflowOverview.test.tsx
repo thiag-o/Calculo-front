@@ -381,3 +381,47 @@ describe('Visão geral do workflow: erros', () => {
     expect(api.callsTo(DETAIL)).toHaveLength(2);
   });
 });
+
+describe('Visão geral do workflow: execuções', () => {
+  const OPERATOR = ['workflows.view', 'executions.view', 'executions.trigger'];
+
+  it('com o caminho para as execuções e executions.trigger, mostra Executar lote ao lado de Abrir editor', async () => {
+    api = simulateApi(OPERATOR);
+    api.respond(DETAIL, json(SCORING));
+    renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions: vi.fn() });
+
+    expect(await screen.findByRole('button', { name: 'Executar lote' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abrir editor' })).toHaveClass('fc-button-primary');
+  });
+
+  it('sem executions.trigger (o Aprovador e o Auditor), não mostra Executar lote, mas a seção leva à lista', async () => {
+    api = simulateApi(['workflows.view', 'executions.view']);
+    api.respond(DETAIL, json(SCORING));
+    const onOpenExecutions = vi.fn();
+    const { user } = renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions });
+    await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
+
+    expect(screen.queryByRole('button', { name: 'Executar lote' })).not.toBeInTheDocument();
+    await user.click(within(section('Execuções')).getByRole('button', { name: 'Ver execuções' }));
+    expect(onOpenExecutions).toHaveBeenCalledTimes(1);
+  });
+
+  it('sem executions.view, a seção não leva à lista', async () => {
+    api = simulateApi(['workflows.view']);
+    api.respond(DETAIL, json(SCORING));
+    renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions: vi.fn() });
+    await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
+
+    expect(within(section('Execuções')).queryByRole('button', { name: 'Ver execuções' })).not.toBeInTheDocument();
+  });
+
+  it('sem o caminho para as execuções (a tela avulsa), não há Executar lote nem Ver execuções', async () => {
+    api = simulateApi(OPERATOR);
+    api.respond(DETAIL, json(SCORING));
+    renderOverview();
+    await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
+
+    expect(screen.queryByRole('button', { name: 'Executar lote' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ver execuções' })).not.toBeInTheDocument();
+  });
+});

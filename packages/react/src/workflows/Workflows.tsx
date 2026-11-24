@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react';
 import { WorkflowList } from './list';
-import { WorkflowOverview } from './overview';
+import { useSession } from '../session';
+import { EXECUTIONS_VIEW_PERMISSION, WorkflowExecutions, WorkflowOverview } from './overview';
 
-/** Where the Workflows screen is: the list, a workflow Overview or its editor. */
-export type WorkflowsLocation = { view: 'list' } | { view: 'overview'; id: string } | { view: 'editor'; id: string };
+/** Where the Workflows screen is: the list, a workflow Overview, its executions or its editor. */
+export type WorkflowsLocation =
+  | { view: 'list' }
+  | { view: 'overview'; id: string }
+  | { view: 'executions'; id: string }
+  | { view: 'editor'; id: string };
 
 /** What `renderEditor` receives: the workflow to edit and the two ways out of the editor. */
 export interface WorkflowsEditorProps {
@@ -31,6 +36,11 @@ export interface WorkflowsProps {
   renderEditor: (props: WorkflowsEditorProps) => ReactNode;
   /** The note of a change the editor could not save on close (F74), shown on the screens that follow the editor. */
   renderUnsavedNotice?: (props: WorkflowsUnsavedNoticeProps) => ReactNode;
+  /**
+   * Opens the panel of an execution (`/executions/:id`, outside this screen: the module keeps that route). With it, the
+   * Overview offers "Executar lote" and the list of the workflow's executions; without it, the screen has no executions.
+   */
+  onOpenExecution?: (id: string) => void;
 }
 
 /**
@@ -38,9 +48,23 @@ export interface WorkflowsProps {
  * (`/workflows/:id/editor`), switched by the `location` the module keeps in the route. After the editor, the list and the
  * Overview tell about a change that could not be saved. Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot`.
  */
-export function Workflows({ location, onLocationChange, renderEditor, renderUnsavedNotice }: WorkflowsProps) {
+export function Workflows({ location, onLocationChange, renderEditor, renderUnsavedNotice, onOpenExecution }: WorkflowsProps) {
   const openEditor = (id: string) => onLocationChange({ view: 'editor', id });
   const openList = () => onLocationChange({ view: 'list' });
+  // Without `executions.view` the workflow executions route is not open: the address lands on the Overview.
+  const canViewExecutions = useSession().hasPermission(EXECUTIONS_VIEW_PERMISSION);
+
+  if (location.view === 'executions' && canViewExecutions) {
+    const { id } = location;
+    return (
+      <WorkflowExecutions
+        workflowId={id}
+        onOpenExecution={(executionId) => onOpenExecution?.(executionId)}
+        onBack={() => onLocationChange({ view: 'overview', id })}
+        onOpenProblems={() => openEditor(id)}
+      />
+    );
+  }
 
   if (location.view === 'editor') {
     return renderEditor({
@@ -50,11 +74,18 @@ export function Workflows({ location, onLocationChange, renderEditor, renderUnsa
     });
   }
 
-  if (location.view === 'overview') {
+  if (location.view === 'overview' || location.view === 'executions') {
     return (
       <>
         {renderUnsavedNotice?.({ onReturn: openEditor, workflowId: location.id })}
-        <WorkflowOverview workflowId={location.id} onOpenEditor={openEditor} onBack={openList} onDeleted={openList} />
+        <WorkflowOverview
+          workflowId={location.id}
+          onOpenEditor={openEditor}
+          onBack={openList}
+          onDeleted={openList}
+          onOpenExecution={onOpenExecution}
+          onOpenExecutions={onOpenExecution ? () => onLocationChange({ view: 'executions', id: location.id }) : undefined}
+        />
       </>
     );
   }

@@ -20,6 +20,8 @@ export interface EditorProps {
   onBack: () => void;
   /** The "Workflows" of the path in the bar: back to the list. */
   onOpenWorkflows?: () => void;
+  /** Opens the panel of an execution (`/executions/:id`). With it, the bar has "Executar lote" (E6-19). */
+  onOpenExecution?: (id: string) => void;
 }
 
 /**
@@ -32,7 +34,7 @@ export interface EditorProps {
  * canvas" and Esc close it. Without `workflows.edit` the draft opens read only. Needs the module root, the API and the
  * cache (`<FluxoCalculo>` and the standalone screens mount them).
  */
-export function Editor({ workflowId, onBack, onOpenWorkflows }: EditorProps) {
+export function Editor({ workflowId, onBack, onOpenWorkflows, onOpenExecution }: EditorProps) {
   const session = useSession();
   const canRun = canRunUnit(session.hasPermission);
   const canPreview = canRunPreview(session.hasPermission);
@@ -61,6 +63,7 @@ export function Editor({ workflowId, onBack, onOpenWorkflows }: EditorProps) {
       workflowId={workflowId}
       onBack={onBack}
       onOpenWorkflows={onOpenWorkflows}
+      onOpenExecution={onOpenExecution}
       layers={<Layers />}
       canvas={<CanvasArea openTable={openTable} onCloseTable={closeGrid} />}
       properties={

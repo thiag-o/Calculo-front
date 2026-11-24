@@ -77,6 +77,28 @@
   gap: var(--fc-space-8);
 }
 
+/* The executions of the workflow: "Voltar para a visão geral" above the list. */
+.fc-workflow-executions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-workflow-executions-back {
+  align-self: flex-start;
+}
+
+/* "Ver execuções" in the Execuções section of the Overview. */
+.fc-workflow-overview-executions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
 /* Loading: the title and the three boxes of the final screen. */
 .fc-workflow-overview-loading {
   display: flex;

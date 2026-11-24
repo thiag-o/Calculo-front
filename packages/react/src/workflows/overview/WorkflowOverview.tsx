@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { Badge, Button, Card, EmptyState, Loading, Menu, Notice, Skeleton, Text } from '../../design-system';
+import { TriggerExecution } from '../../executions';
 import { useSession } from '../../session';
 import { EDIT_PERMISSION, relativeTime } from '../list';
 import { useWorkflow, type Workflow } from '../queries';
@@ -21,14 +22,32 @@ export interface WorkflowOverviewProps {
    * left the cache. Without it, the screen says it was removed.
    */
   onDeleted?: () => void;
+  /**
+   * Opens the panel of an execution (`/executions/:id` in the module). With it, the Overview offers "Executar lote" (with
+   * `executions.trigger`) and opens the panel of the new execution. Without it, the screen has no executions (E6-19).
+   */
+  onOpenExecution?: (id: string) => void;
+  /** Opens the executions of this workflow (`/workflows/:id/executions`). With it and `executions.view`, the section shows "Ver execuções". */
+  onOpenExecutions?: () => void;
 }
 
+/** The permission to read the executions: the list of the workflow, the panel and the way to them (one place for the module). */
+export const EXECUTIONS_VIEW_PERMISSION = 'executions.view';
+
 /**
- * Workflow Overview (estilos.md §16, only what exists in epic 4): name and objective with "Abrir editor"; "Versão em
- * produção" and "Execuções" empty (versions and runs come in later epics); the draft in one row. With `workflows.edit`,
- * the "…" menu renames and removes. Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (menu and dialog portals).
+ * Workflow Overview (estilos.md §16): name and objective with "Abrir editor" and "Executar lote"; "Versão em produção"
+ * empty (versions come in a later epic); the draft in one row; "Execuções" with the way to the list of the workflow's
+ * runs. With `workflows.edit`, the "…" menu renames and removes. Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot`
+ * (menu and dialog portals).
  */
-export function WorkflowOverview({ workflowId, onOpenEditor, onBack, onDeleted }: WorkflowOverviewProps) {
+export function WorkflowOverview({
+  workflowId,
+  onOpenEditor,
+  onBack,
+  onDeleted,
+  onOpenExecution,
+  onOpenExecutions,
+}: WorkflowOverviewProps) {
   // Kept by id: another workflow on the same screen starts fresh.
   const [deletedId, setDeletedId] = useState<string | null>(null);
   const back = onBack ? (
@@ -52,6 +71,8 @@ export function WorkflowOverview({ workflowId, onOpenEditor, onBack, onDeleted }
       back={back}
       onBack={onBack}
       onOpenEditor={onOpenEditor}
+      onOpenExecution={onOpenExecution}
+      onOpenExecutions={onOpenExecutions}
       onDeleted={() => {
         setDeletedId(workflowId);
         onDeleted?.();
@@ -65,12 +86,16 @@ function OverviewContent({
   back,
   onBack,
   onOpenEditor,
+  onOpenExecution,
+  onOpenExecutions,
   onDeleted,
 }: {
   workflowId: string;
   back: ReactNode;
   onBack?: () => void;
   onOpenEditor: (id: string) => void;
+  onOpenExecution?: (id: string) => void;
+  onOpenExecutions?: () => void;
   onDeleted: () => void;
 }) {
   const session = useSession();
@@ -127,7 +152,10 @@ function OverviewContent({
       workflow={workflow}
       back={back}
       canEdit={session.hasPermission(EDIT_PERMISSION)}
+      canViewExecutions={session.hasPermission(EXECUTIONS_VIEW_PERMISSION)}
       onOpenEditor={onOpenEditor}
+      onOpenExecution={onOpenExecution}
+      onOpenExecutions={onOpenExecutions}
       onDeleted={onDeleted}
     />
   );
@@ -139,16 +167,24 @@ function LoadedOverview({
   workflow,
   back,
   canEdit,
+  canViewExecutions,
   onOpenEditor,
+  onOpenExecution,
+  onOpenExecutions,
   onDeleted,
 }: {
   workflow: Workflow;
   back: ReactNode;
   canEdit: boolean;
+  canViewExecutions: boolean;
   onOpenEditor: (id: string) => void;
+  onOpenExecution?: (id: string) => void;
+  onOpenExecutions?: () => void;
   onDeleted: () => void;
 }) {
   const [dialog, setDialog] = useState<OpenDialog>(null);
+  // A batch triggered by someone who cannot follow the executions: the screen stays and tells it was created.
+  const [created, setCreated] = useState(false);
   const moreButton = useRef<HTMLButtonElement>(null);
 
   return (
@@ -161,6 +197,14 @@ function LoadedOverview({
           <Button variant="primary" onClick={() => onOpenEditor(workflow.id)}>
             Abrir editor
           </Button>
+          {onOpenExecution ? (
+            // "Ver problemas" of the dialog goes to the editor, where the Problemas tab is.
+            <TriggerExecution
+              workflowId={workflow.id}
+              onOpenProblems={() => onOpenEditor(workflow.id)}
+              onTriggered={(execution) => (canViewExecutions ? onOpenExecution(execution.id) : setCreated(true))}
+            />
+          ) : null}
           {canEdit ? (
             <Menu
               trigger={
@@ -181,6 +225,10 @@ function LoadedOverview({
         </>
       }
     >
+      {created ? (
+        <Notice type="success">O lote foi criado. Você não tem permissão para acompanhar as execuções.</Notice>
+      ) : null}
+
       <Section title="Versão em produção">
         <Card>
           <EmptyState
@@ -197,11 +245,22 @@ function LoadedOverview({
 
       <Section title="Execuções">
         <Card>
-          <EmptyState
-            icon={<ExecutionIcon />}
-            title="Nenhuma execução ainda"
-            description="Publique uma versão e execute o primeiro lote."
-          />
+          {onOpenExecutions && canViewExecutions ? (
+            <div className="fc-workflow-overview-executions">
+              <Text as="p" variant="label-14" emphasis="secondary">
+                Os lotes deste workflow, do mais novo para o mais antigo, com o andamento de cada um.
+              </Text>
+              <Button size="small" onClick={onOpenExecutions}>
+                Ver execuções
+              </Button>
+            </div>
+          ) : (
+            <EmptyState
+              icon={<ExecutionIcon />}
+              title="Nenhuma execução ainda"
+              description="Publique uma versão e execute o primeiro lote."
+            />
+          )}
         </Card>
       </Section>
 

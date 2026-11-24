@@ -13,7 +13,7 @@ Para incorporar o módulo num sistema hospedeiro, veja o [guia de incorporação
 
 ```
 frontend/
-├── packages/react/   @fluxo/react: o produto, organizado por verticais (ADR 0003); exporta <FluxoCalculo> e as telas avulsas <Home>, <Catalog>, <Workflows>, <Audit> e <Admin>
+├── packages/react/   @fluxo/react: o produto, organizado por verticais (ADR 0003); exporta <FluxoCalculo> e as telas avulsas <Home>, <Catalog>, <Workflows>, <Executions>, <Audit> e <Admin>
 ├── apps/shell/       app casca (próprio): login + layout, usando o pacote (ADR 0002)
 ├── docs/
 │   ├── ambientes.md  local, homologação, produção e variáveis
@@ -23,6 +23,24 @@ frontend/
 ├── .changeset/       versões do pacote (Changesets)
 └── .github/workflows ci.yml · publicar.yml · deploy-casca.yml (desligado)
 ```
+
+## Telas e rotas do módulo
+
+`<FluxoCalculo>` monta estas telas (menu lateral no casca, abas no modo incorporado); cada item aparece só com a permissão dele. No modo `url`, as rotas internas são:
+
+| Tela | Rotas | Permissão |
+|---|---|---|
+| Início | `/home` | todos |
+| Catálogo | `/catalog`, `/catalog/<aba>/:id` | `connections.view` |
+| Workflows | `/workflows`, `/workflows/:id`, `/workflows/:id/executions`, `/workflows/:id/editor` | `workflows.view` |
+| Execuções | `/executions`, `/executions/:id` | `executions.view` |
+| Auditoria | `/audit` | `audit.view` |
+| Administração | `/admin/<área>` | uma permissão por área |
+
+- **Executar lote** fica no cabeçalho do editor, na Visão geral e na lista de execuções do workflow, só com `executions.trigger`; ao disparar, abre o painel da execução nova (sem `executions.view`, a pessoa fica onde está, com o aviso de que o lote foi criado, e `/workflows/:id/executions` cai na Visão geral). O Aprovador e o Auditor não têm o botão nem o "Cancelar execução".
+- O menu do workflow (com um workflow aberto) tem Visão geral e Execuções.
+- O trace de um registro, no painel da execução (com `traces.view`), é o mesmo componente do "Calcular" do editor; o módulo o entrega ao painel (as verticais `executions` e `editor` não se importam).
+- A prop `screen` aceita `'executions'`. Avulsas, cada uma funcionando sozinha: `<Executions>` (lista e painel, pede `executions.view`) e `<Workflows>` (lista, Visão geral, editor e execuções, com "Executar lote" e "Ver execuções" pelas permissões do papel).
 
 ## Ferramentas
 

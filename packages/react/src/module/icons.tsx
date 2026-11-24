@@ -66,6 +66,15 @@ export function OverviewIcon() {
   );
 }
 
+/** Lucide `play`: the Execuções item (main menu and workflow menu). */
+export function ExecutionsIcon() {
+  return (
+    <Svg>
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </Svg>
+  );
+}
+
 /** Lucide `scroll-text`. */
 export function AuditIcon() {
   return (

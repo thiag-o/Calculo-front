@@ -248,6 +248,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+.fc-editor-triggered {
+  flex: none;
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  color: var(--fc-text-secondary);
+}
+
 .fc-editor-save-failed {
   color: var(--fc-red-900);
 }

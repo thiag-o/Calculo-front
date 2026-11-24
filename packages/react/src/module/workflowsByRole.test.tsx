@@ -110,13 +110,13 @@ describe('Workflows no casca, por papel', () => {
     expect(window.location.pathname).toBe(`/workflows/${SCORING.id}`);
   });
 
-  it('com um workflow aberto, o seletor mostra tenant › workflow e o menu tem só a Visão geral', async () => {
+  it('com um workflow aberto, o seletor mostra tenant › workflow e o menu tem a Visão geral e as Execuções', async () => {
     window.history.replaceState(null, '', `/workflows/${SCORING.id}`);
     simulateApiWith(CONFIGURATOR_PERMISSIONS);
     const { user } = renderScreen({ navigation: 'url' });
 
     await screen.findByRole('heading', { level: 1, name: SCORING.name });
-    expect(menuLinks()).toEqual(['Visão geral']);
+    expect(menuLinks()).toEqual(['Visão geral', 'Execuções']);
     expect(within(mainNavigation()).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' })).toBeInTheDocument();
 
@@ -223,7 +223,7 @@ describe('Workflows no casca, por papel', () => {
     simulateApiWith(CONFIGURATOR_PERMISSIONS);
     const { user } = renderScreen({ navigation: 'url' });
     await screen.findByRole('heading', { level: 1, name: SCORING.name });
-    expect(menuLinks()).toEqual(['Visão geral']);
+    expect(menuLinks()).toEqual(['Visão geral', 'Execuções']);
 
     const home = screen.getByRole('link', { name: 'Início de Matriz' });
     home.focus();

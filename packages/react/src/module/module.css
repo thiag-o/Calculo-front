@@ -52,6 +52,18 @@
   flex: none;
 }
 
+/* The panel of an execution: "Voltar para execuções" above it, without stretching. */
+.fc-module-executions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-module-executions-back {
+  align-self: flex-start;
+}
+
 /* Text for the screen reader only. */
 .fc-module-hidden {
   position: absolute;

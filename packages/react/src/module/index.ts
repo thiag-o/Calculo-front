@@ -6,5 +6,5 @@ export { FluxoCalculo } from './FluxoCalculo';
 export type { FluxoEvent, FluxoCalculoProps } from './FluxoCalculo';
 export type { FluxoNavigation } from './router/ModuleRouter';
 export type { FluxoScreen } from './screens';
-export { Admin, Audit, Catalog, Home, Workflows } from './standalone/StandaloneScreens';
-export type { AdminProps, AuditProps, CatalogProps, HomeProps, StandaloneScreenProps, WorkflowsProps } from './standalone/StandaloneScreens';
+export { Admin, Audit, Catalog, Executions, Home, Workflows } from './standalone/StandaloneScreens';
+export type { AdminProps, AuditProps, CatalogProps, ExecutionsProps, HomeProps, StandaloneScreenProps, WorkflowsProps } from './standalone/StandaloneScreens';

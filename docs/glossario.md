@@ -176,7 +176,7 @@ Nomes nascidos já em inglês no épico 4, pelo vocabulário do back. A coluna d
 
 | Conceito | Nome no código |
 |---|---|
-| tela de Workflows (lista, Visão geral e editor) | `<Workflows>`, `WorkflowsProps`, `WorkflowsLocation` (`view`: `list`, `overview` ou `editor`; `id`); `<Workflows>` avulso do pacote com `WorkflowsProps` de `StandaloneScreenProps` |
+| tela de Workflows (lista, Visão geral e editor) | `<Workflows>`, `WorkflowsProps`, `WorkflowsLocation` (`view`: `list`, `overview`, `executions` ou `editor`; `id`); `<Workflows>` avulso do pacote com `WorkflowsProps` de `StandaloneScreenProps` |
 | editor do workflow | `<Editor>`, `EditorProps` (`workflowId`, `onBack`, `onOpenWorkflows`), vertical `editor` |
 | o módulo entrega o editor e o aviso ao `<Workflows>` | `renderEditor` (`WorkflowsEditorProps`), `renderUnsavedNotice` (`WorkflowsUnsavedNoticeProps`) |
 | Início com os workflows recentes | `HomeScreenProps` (`onOpenWorkflow`, `onOpenWorkflows`), `RECENT_WORKFLOWS` |
@@ -207,6 +207,31 @@ Nomes nascidos já em inglês no épico 5, pelo vocabulário do back (`backend/d
 | Calcular por registro (com fonte do lote) | `RecordRunPanel`, `record_key`, `useUnitRun`, `UnitRunTrace` |
 | último cálculo em memória e valores no canvas | `useLastUnitRun`, `canvas/run-values` (`useRunValues`, `RunBanner`) |
 | formatadores de valor (número e data) | `editor/values` (`formatApiNumber`, `readBrazilianNumber`, `formatDate`, `formatDateTime`) |
+
+## Execução em lote e entrega em CSV (épico 6, F97 a F104)
+
+Nomes nascidos já em inglês no épico 6, pelo vocabulário do back (`backend/docs/glossario.md`). A coluna da esquerda é o conceito. A vertical é `executions`, uma sub-vertical por tela (ADRs 0062 e 0063).
+
+| Conceito | Nome no código |
+|---|---|
+| sub-verticais do épico 6 | `executions/api`, `executions/parameter-form`, `executions/list`, `executions/trigger`, `executions/detail`, `executions/records`; no editor, `editor/parameters` |
+| execução em lote | `Execution` (`ExecutionStatus`, `NewExecution`), `useExecution`, `useExecutionList`, `useTriggerExecution` |
+| chaves de cache | `['executions']` (`EXECUTIONS_KEY`), `['executions', 'list', filter]` (`executionListKey`), `['executions', id]` (`executionKey`) e, sob ela, os registros e o trace de cada uma |
+| lista de execuções (do tenant e do workflow, o mesmo componente) | `<ExecutionList>` (`workflowId`, `onOpenExecution`, `onOpenProblems`), `<WorkflowExecutions>` (`workflows/overview`) |
+| Executar lote (botão e diálogo) | `<TriggerExecution>`, `<TriggerExecutionDialog>`, `EXECUTIONS_TRIGGER_PERMISSION` (`executions.trigger`) |
+| painel da execução | `<ExecutionPanel>` (`executionId`, `renderRecordTrace`), `EXECUTIONS_TRACES_PERMISSION` (`traces.view`) |
+| o trace de um registro vem do editor pelo módulo | `renderRecordTrace` (`RenderRecordTrace`, `RecordTraceRenderProps`), `UnitRunResult` (exportado por `editor/index.ts`) |
+| formulário dos parâmetros de uma execução | `<ParameterForm>`, `useParameterForm`, `readParameters`, `WorkflowParameter` |
+| abrir o painel de uma execução, da lista, do disparo, do editor e da Visão geral | `onOpenExecution` (`WorkflowsProps`, `EditorProps`, `WorkflowOverviewProps`, `EditorBarProps`) |
+| abrir a lista de execuções de um workflow | `onOpenExecutions` (`WorkflowOverviewProps`), `WorkflowsLocation` com `view: 'executions'` |
+| telas do módulo | `RoutedExecutions` (`standalone`), `RoutedWorkflows` (`executions`) (`module/screens.tsx`) |
+| permissão de ver as execuções (uma só, em `workflows/overview`) | `EXECUTIONS_VIEW_PERMISSION` (`executions.view`) |
+| lista e painel das execuções, avulsos | `<Executions>`, `ExecutionsProps` (`module/standalone`), pedem `executions.view` |
+| `<Workflows>` avulso ligado às execuções | `WorkflowsWithExecutions` (`module/screens.tsx`): o painel volta à origem (estado `from` da navegação), e sem `executions.view` não abre |
+| rotas da URL | `/executions`, `/executions/:id`, `/workflows/:id/executions` |
+| valor de `screen` | `executions` |
+| ícone do menu | `ExecutionsIcon` (`module/icons.tsx`) |
+| item Execuções do menu do workflow | `allowsExecutions` (`module/shell/ShellLayout.tsx`) |
 
 ## Chaves de cache (TanStack Query)
 
