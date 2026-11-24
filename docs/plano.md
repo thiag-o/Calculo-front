@@ -1638,13 +1638,14 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Aceite: nenhum token de espaço usado como raio; `git grep` não acha reexport dos formatadores; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
 
 **F121 · Manutenção: componentes avulsos de execuções no e2e e workflow com execuções (pendências da F105)**
-- dep: F105, B157, B144
+- dep: F105, B157, B144, B165
 - modelo: sonnet
 - revisão: não
 - arquivos: `apps/shell/src/embed-test.tsx`, `e2e/epic-6/`, `e2e/support/`, `packages/react/src/workflows/`
 - Fazer:
   - a página de teste de incorporação monta o `<Executions>` e o `<Workflows>` avulsos (ADR 0070), e o e2e cobre os dois sozinhos: listar, abrir o painel, Executar lote pelo workflow e voltar;
   - apagar um workflow que já tem execuções mostra a mensagem do `409 workflow_has_executions` (B157) no diálogo de excluir; a fixture do e2e real aceita o 409 nas cópias que executaram e as nomeia de um jeito reconhecível.
+  - (B165, D99-global) o `409 workflow_busy` mostra a mensagem da API no diálogo de excluir o workflow e no Executar lote, sem quebrar a tela; a F121 passa a depender também da B165.
   - (B144) o exemplo `ExecutionDraftHasProblems` de `e2e/support/contract.ts` passa a trazer o texto novo do `openapi.yaml` do back (o texto do motor, pela D53), validado contra o contrato (ADR 0060).
 - Aceite: `pnpm e2e` verde com os avulsos montados; teste do diálogo de excluir com o 409.
 
