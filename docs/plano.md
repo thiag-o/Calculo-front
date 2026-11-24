@@ -1627,8 +1627,18 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Fazer: depois que a B153 levar os exemplos do contrato à v3, o espelho do `e2e/support/contract.ts` passa a ser igual a eles, sem a conversão que a F116 fez no simulado para esses exemplos.
 - Aceite: o `contract-examples.spec.ts` com `FLUXO_BACKEND_DIR` fica verde; o `pnpm e2e` simulado continua verde.
 
+**F120 · Manutenção: tokens de raio e fim dos reexports dos formatadores (revisão da F115)**
+- dep: F115
+- modelo: sonnet
+- revisão: não
+- arquivos: `packages/react/src/design-system/tokens.css`, `packages/react/src/executions/parameter-form/`, `packages/react/src/editor/values/index.ts`, e os arquivos que importam os formatadores pelos reexports (só a troca do caminho para `design-system/format/`)
+- Fazer:
+  - o `tokens.css` ganha `--fc-radius-6` e `--fc-radius-12`, com os valores do `estilos.md`, e o `parameter-form.css` troca o `--fc-space-6` usado como raio por `--fc-radius-6`;
+  - os reexports dos formatadores em `editor/values/index.ts` e `executions/parameter-form/literals.ts` saem, e quem importava por eles passa a importar de `design-system/format/` (o "a fazer" da ADR 0069).
+- Aceite: nenhum token de espaço usado como raio; `git grep` não acha reexport dos formatadores; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
