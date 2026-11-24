@@ -1637,8 +1637,18 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - os reexports dos formatadores em `editor/values/index.ts` e `executions/parameter-form/literals.ts` saem, e quem importava por eles passa a importar de `design-system/format/` (o "a fazer" da ADR 0069).
 - Aceite: nenhum token de espaço usado como raio; `git grep` não acha reexport dos formatadores; lint das fronteiras, testes e `pnpm e2e:visual` verdes.
 
+**F121 · Manutenção: componentes avulsos de execuções no e2e e workflow com execuções (pendências da F105)**
+- dep: F105, B157
+- modelo: sonnet
+- revisão: não
+- arquivos: `apps/shell/src/embed-test.tsx`, `e2e/epic-6/`, `e2e/support/`, `packages/react/src/workflows/`
+- Fazer:
+  - a página de teste de incorporação monta o `<Executions>` e o `<Workflows>` avulsos (ADR 0070), e o e2e cobre os dois sozinhos: listar, abrir o painel, Executar lote pelo workflow e voltar;
+  - apagar um workflow que já tem execuções mostra a mensagem do `409 workflow_has_executions` (B157) no diálogo de excluir; a fixture do e2e real aceita o 409 nas cópias que executaram e as nomeia de um jeito reconhecível.
+- Aceite: `pnpm e2e` verde com os avulsos montados; teste do diálogo de excluir com o 409.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120, F121
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
