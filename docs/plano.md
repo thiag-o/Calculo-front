@@ -1645,7 +1645,7 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - Fazer:
   - a página de teste de incorporação monta o `<Executions>` e o `<Workflows>` avulsos (ADR 0070), e o e2e cobre os dois sozinhos: listar, abrir o painel, Executar lote pelo workflow e voltar;
   - apagar um workflow que já tem execuções mostra a mensagem do `409 workflow_has_executions` (B157) no diálogo de excluir; a fixture do e2e real aceita o 409 nas cópias que executaram e as nomeia de um jeito reconhecível.
-  - (B165, D99-global) o `409 workflow_busy` mostra a mensagem da API no diálogo de excluir o workflow e no Executar lote, sem quebrar a tela; a F121 passa a depender também da B165.
+  - (B165, D99-global) o `409 workflow_busy` mostra a mensagem da API no diálogo de excluir o workflow, no Executar lote e no renomear (B189), sem quebrar a tela; a F121 passa a depender também da B165.
   - (B144) o exemplo `ExecutionDraftHasProblems` de `e2e/support/contract.ts` passa a trazer o texto novo do `openapi.yaml` do back (o texto do motor, pela D53), validado contra o contrato (ADR 0060).
 - Aceite: `pnpm e2e` verde com os avulsos montados; teste do diálogo de excluir com o 409.
 
