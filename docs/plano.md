@@ -1654,3 +1654,168 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120, F121
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
+
+### Épico 7 — Pré-validação, agendamento e arquivo de referência
+
+As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobreposição, os agendamentos, o arquivo de referência, a comparação e o sino estão no plano do back (`../backend/docs/plano.md`, épico 7, e Contratos, "Pré-validação, agendamento e arquivo de referência"). O contrato é o da B166. Decisões do front, tomadas pela sessão global em 2026-11-24:
+- **E7-20, onde fica cada coisa:**
+  - `executions/`: a pré-validação e a decisão no painel (`detail/`), a sobreposição no disparo (`trigger/`), a comparação (`comparison/`, nova), os agendamentos (`schedules/`, nova) e o formulário de parâmetros com a busca e o modo agendamento (`parameter-form/`);
+  - `editor/parameters/`: os valores permitidos por consulta e o alerta da pré-validação;
+  - `test-cases/reference-files/`: o arquivo de referência, na tela Testes do workflow;
+  - `notifications/`: o sino;
+  - `module/`: rotas, menus, abas e a barra do conteúdo.
+  - Motivo: ADR 0003. As verticais `test-cases` ("casos de teste do workflow e arquivo de referência") e `notifications` ("sino") já existem vazias para isso; os agendamentos são uma aba da tela Execuções e usam o formulário de parâmetros.
+- **E7-21, estados e pré-validação no painel:**
+  - **rótulos:** `pre_validating` e `comparing` → "Calculando" (estilos §7.3, linha de PRÉ-VALIDANDO); `awaiting_decision` → "Aguardando decisão", ponto `amber-700` sem pulsar, como as esperas do §7.3 (decidido sem base no design); a simulação que termina sem erros → "Sem entrega" (§7.3);
+  - **fases:** Carga → Pré-validação → Cálculo → Entrega, ou → Comparação na simulação;
+  - **em `awaiting_decision`:** uma nota âmbar (estilos §7.7) "A pré-validação encontrou campos vazios acima do limite.", com a lista ("quantidade: 22,22% vazios, limite 1%"), o prazo ("Sem resposta até 25/11 às 14:30, a execução é cancelada.") e as ações **Prosseguir** (principal) e **Cancelar** (secundária, com a confirmação da E6-21). Sem a permissão do modo, a nota aparece sem os botões, com "Só quem executa lotes pode decidir." (ou "simulações", na simulação);
+  - **resumo da pré-validação:** registros, linhas vazias, chaves nulas, chaves repetidas (até 5 exemplos em mono) e vazios por variável;
+  - **seção Fontes:** as contagens por bloco Fonte, com ponto e palavra, como a aba Prévia (F66);
+  - **agendada:** "Agendada · Fechamento mensal" no lugar de quem disparou, na lista e no painel (estilos §7.6);
+  - **sobreposição confirmada:** "Executada de novo sobre a execução de 03/11 às 02:00", com link;
+  - **lista:** ganha o filtro de modo (Lotes, Simulações).
+  - Motivo: design §10 ("alerta → Prosseguir ou Cancelar") e estilos §7.3.
+- **E7-22, sobreposição no disparo:** o `409 scope_already_delivered` não fecha o diálogo de **Executar lote**. Ele mostra uma nota âmbar ("Este escopo já foi entregue. Executar de novo entrega tudo outra vez, com uma revisão nova. O reprocessamento só do que mudou chega depois.") com as execuções (status, quando, quem ou "Agendada", com link). O botão principal continua **Executar lote** e agora envia `confirm_overlap`. Mudar qualquer parâmetro tira a nota.
+  - Motivo: estilos §13 (um rótulo por ação); design §10 ("avisa").
+- **E7-23, valores permitidos por consulta:**
+  - **no editor:** "Valores permitidos" vira um controle segmentado Nenhum | Lista | Consulta (só em Texto, Inteiro e Data). Na Consulta: o dataset (a busca no catálogo da fonte do lote), a variável (só as do tipo do parâmetro) e os filtros (o componente da F64, sem `@`). Trocar de Lista para Consulta, ou o contrário, pede confirmação do que se perde;
+  - **no formulário:** o campo vira uma busca (combobox) com os valores da API, pedidos 300 ms depois da última tecla. Com `truncated`, a nota "Mostrando os primeiros 1.000. Digite para filtrar."; numa lista, várias escolhas, como etiquetas;
+  - **seção Execução do editor:** ganha "Alerta de campos vazios (%)", com a explicação "A pré-validação avisa quando uma variável da fonte do lote tem mais vazios que isso.".
+  - Motivo: design §10 ("lista fechada ou consulta a um dataset do catálogo") e E6-17.
+- **E7-24, agendamentos:**
+  - **onde:** a tela Execuções (a global e a do workflow) ganha as abas **Execuções** e **Agendamentos** (ADR 0027), com rota própria para a aba (`/executions/schedules` e `/workflows/:id/executions/schedules`). Não há item novo no menu: o design §15 não lista um;
+  - **lista:** nome, workflow (só na global), recorrência em texto ("Todo dia 1 às 02:00", "Toda segunda e quinta às 08:00", "Todo último dia do mês às 23:00"), parâmetros resumidos ("Período: Mês anterior"), próxima execução, último disparo (resultado com ponto e palavra e link para a execução) e um switch Ativo (com `executions.schedule`);
+  - **Novo agendamento** (com `executions.schedule`, só na aba do workflow): diálogo com o nome; a recorrência (Diária | Semanal | Mensal, o horário, os dias da semana ou o dia do mês, com "Último dia"); o fuso, só como texto ("Horário de America/Sao_Paulo"); o formulário de parâmetros no modo agendamento (cada parâmetro Fixo ou Relativo); e Ativo;
+  - **revisão:** a nota "Roda a revisão 42 do rascunho salvo."; quando o rascunho andou, "O rascunho está na revisão 57." e **Usar a revisão atual**;
+  - **apagar:** pelo menu "…", com confirmação;
+  - **Visão geral do workflow:** "Próxima execução: 01/12 às 02:00 · Fechamento mensal" (estilos §16).
+  - Motivo: design §10 ("o agendamento guarda valores fixos ou relativos") e estilos §16. O rótulo **Novo agendamento** segue o "Criar → Novo …" do estilos §13.
+- **E7-25, Testes e arquivo de referência:**
+  - o menu do workflow ganha **Testes** (rota `/workflows/:id/tests`, com `workflows.view`), com só a seção **Arquivo de referência** neste épico. Os testes em linha entram no épico 10;
+  - **envio** (com `test_cases.edit`): arrastar ou escolher um `.csv`, com a barra de progresso (ADR 0035), e a nota do formato ("As colunas da chave do registro e os campos da saída. Um CSV entregue serve."). O `422 invalid_reference_file` mostra a lista de erros por linha e coluna;
+  - **lista:** nome, registros, quem enviou e quando, SHA-256 encurtado com cópia, e a última comparação ("100% iguais", com link para a simulação);
+  - **Simular** (com `simulations.run`): diálogo com o formulário de parâmetros e a nota "Simula o rascunho salvo (revisão N) e compara com o arquivo. Nada é entregue."; ao confirmar, abre o painel da simulação. O `409 reference_file_mismatch` aparece no diálogo, com a mensagem da API;
+  - **apagar** (com `test_cases.edit`): pelo menu "…", com confirmação;
+  - vazio: "Nenhum arquivo de referência" · "Envie um CSV com os resultados que você já conhece." · **Enviar arquivo**.
+  - Motivo: design §15 ("Testes: … importação de arquivo de referência") e estilos §13 (**Simular** é o rótulo do lote sem entrega).
+- **E7-26, comparação no painel:** na simulação com arquivo, a seção **Comparação com o arquivo de referência** fica no topo do painel:
+  - **resumo:** "100% iguais · 58 de 58 registros" ou "98,27% iguais · 57 de 58 registros", com o percentual da API, nunca recalculado; e as contagens por resultado: iguais, diferentes, status diferente, fora do resultado, fora do arquivo e fora da comparação;
+  - **tabela** (com `simulations.run` ou `traces.view`): a chave, o resultado (ponto + palavra) e, para cada campo diferente, esperado × obtido em mono, com números no padrão brasileiro e o nulo como "vazio"; filtro por resultado; paginação por cursor;
+  - clicar num registro abre a gaveta do trace (F118);
+  - **Baixar CSV** fica desabilitado, com "A simulação não entrega arquivo.".
+  - Motivo: design §12 ("compara registro a registro, com o diff").
+- **E7-27, sino:**
+  - **onde:** na barra do conteúdo do casca (56 px, à direita, estilos §9), que nasce neste épico só com o sino (o caminho e a busca Ctrl K ficam para depois); no incorporado, no fim da linha das abas. Só com `executions.view`;
+  - **botão:** ícone de sino (só ícone, com `aria-label` "Alertas, 3 não lidos") e a contagem de não lidos num badge neutro (estilos §7.4, contagens);
+  - **lista** (popover Radix, dentro da raiz do módulo): ponto + título, o detalhe, quando ("há 2 h") e o link (abre a execução ou a aba Agendamentos); abrir um alerta o marca como lido; **Marcar todos como lidos**; vazio: "Nenhum alerta";
+  - **atualização:** a cada 30 s (ADR 0067).
+  - Motivo: design §15 ("Sino: alertas de pré-validação, execuções com erro ou abortadas") e estilos §9.
+
+**F122 · Tipos da API do épico 7**
+- tipo: contrato
+- dep: B166, F106
+- modelo: sonnet
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, `e2e/epic-4/support/`, `e2e/epic-5/support/`, `e2e/epic-6/support/`, `packages/react/src/editor/draft/` (só a versão gravada passar a 4, com `pre_validation_alert_percent`, como a F117), `packages/react/src/executions/api/` (só o ajuste mínimo de tipo: os estados novos com os rótulos da E7-21 e o `triggered_by` nulo)
+- Fazer: gerar os tipos do contrato da B166 (`pnpm generate:api`); acrescentar os exemplos do épico 7 ao contrato simulado do e2e; passar **todas** as definições do simulado (épicos 4 a 6) à versão 4, validadas contra o esquema (ADR 0060); o editor lê rascunhos nas versões 1 a 4 e grava sempre a 4, pela constante única da F117. Nada de mascarar no componente com `?? []`.
+- Aceite: `pnpm typecheck` e o `contract-examples` verdes; o `pnpm e2e` dos épicos 4 a 6 verde no simulado; um teste que abre um rascunho v3 e grava v4, com `pre_validation_alert_percent: "1"`; `git grep` não acha outra versão gravada fixa no editor.
+
+**F123 · Editor: valores permitidos por consulta e alerta da pré-validação**
+- dep: F122
+- modelo: opus
+- arquivos: `packages/react/src/editor/parameters/`, e (só se ainda faltar) a exportação do componente de filtros em `packages/react/src/editor/sources/index.ts`
+- Fazer (E7-23):
+  - em cada parâmetro de Texto, Inteiro ou Data, "Valores permitidos" com Nenhum | Lista | Consulta; na Consulta, o dataset, a variável (só as do tipo) e os filtros sem `@`;
+  - a seção Execução ganha "Alerta de campos vazios (%)";
+  - os problemas `allowed_values_type_mismatch`, `parameter_in_allowed_values`, `unknown_dataset` e `variable_not_from_dataset` no campo certo, pelo `path`;
+  - só leitura: tudo desabilitado, com o motivo.
+- Aceite: testes de trocar Lista por Consulta com a confirmação, de escolher o dataset e a variável (as de outro tipo não aparecem), do filtro que recusa `@`, de cada problema no campo, do alerta com 3 casas recusado no front, e do modo só leitura; os testes da F98 seguem verdes.
+
+**F124 · Formulário de parâmetros: valores por consulta e modo agendamento**
+- dep: F122
+- modelo: opus
+- arquivos: `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/index.ts`
+- Fazer (E7-23, E7-24):
+  - o campo de um parâmetro com consulta vira a busca com os valores de `GET .../allowed-values`, com o `truncated` e, na lista, várias escolhas; os erros de leitura com a mensagem da API;
+  - o modo agendamento (`mode="schedule"`): cada parâmetro com Fixo | Relativo (só os relativos que servem ao tipo, pelos `RELATIVE_LABELS`), enviado como `{kind, value}`;
+  - o `422 invalid_parameter` "não está entre os valores permitidos" no campo.
+- Aceite: testes da busca (com relógio falso para os 300 ms), do `truncated`, da lista com várias escolhas, do modo agendamento em cada tipo (o Relativo só aparece no tipo que tem), do envio no formato de Contratos e do 422 no campo; os testes da F100 seguem verdes.
+
+**F125 · Execuções: pré-validação, decisão e os estados novos no painel e na lista**
+- dep: F122
+- modelo: opus
+- arquivos: `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/executions/api/`
+- Fazer (E7-21): as fases; a nota de `awaiting_decision` com **Prosseguir** e **Cancelar** (com a permissão pelo modo) e o `409 not_awaiting_decision` relendo a execução; o resumo da pré-validação; a seção Fontes; o aborto `duplicate_record_key` com os exemplos; "Agendada" e o nome do agendamento; a sobreposição confirmada; a simulação ("Sem entrega" e Baixar CSV desabilitado com o motivo); o filtro de modo na lista.
+- Aceite: testes de cada estado novo (ponto e palavra), da decisão (Prosseguir, Cancelar com confirmação, botões escondidos sem permissão e o 409), do resumo, das Fontes, do aborto por chave repetida, da agendada e da simulação; a atualização a cada 2 s continua em `awaiting_decision` e para no estado final; os testes da F101 e da F102 seguem verdes.
+
+**F126 · Execuções: sobreposição de escopo no disparo**
+- dep: F122
+- modelo: sonnet
+- arquivos: `packages/react/src/executions/trigger/`
+- Fazer (E7-22): o `409 scope_already_delivered` vira a nota no próprio diálogo, com as execuções e os links; **Executar lote** de novo envia `confirm_overlap: true`; mudar um parâmetro tira a nota.
+- Aceite: testes do 409 com uma e com cinco execuções, do reenvio com `confirm_overlap`, da nota que some ao trocar o período e do link que abre o painel; os testes da F101 seguem verdes.
+
+**F127 · Execuções: comparação com o arquivo de referência no painel**
+- dep: F125
+- modelo: opus
+- arquivos: `packages/react/src/executions/comparison/` (nova), `packages/react/src/executions/detail/` (só a inclusão da seção no painel da simulação)
+- Fazer (E7-26): o resumo, as contagens, a tabela do diff com filtro e cursor e a gaveta do trace ao clicar.
+- Aceite: testes do resumo a 100% e com divergências (o percentual no padrão brasileiro, como veio da API), do filtro por resultado, de esperado × obtido (números no padrão brasileiro e nulo como "vazio"), dos estados vazio ("Nenhuma divergência"), carregando e erro, e da tabela escondida sem `simulations.run` nem `traces.view`; clicar abre a gaveta do trace.
+
+**F128 · Execuções: agendamentos**
+- dep: F124
+- modelo: opus
+- arquivos: `packages/react/src/executions/schedules/` (nova), `packages/react/src/executions/index.ts`
+- Fazer (E7-24): a lista (global e do workflow, o mesmo componente com o filtro do workflow fixo); o switch Ativo; **Novo agendamento** e a edição no diálogo, com a recorrência e o formulário no modo agendamento; **Usar a revisão atual**; apagar com confirmação; os erros `schedule_name_taken`, `too_many_schedules`, `draft_conflict`, `draft_has_problems`, `missing_parameter` e `invalid_parameter` no lugar certo; o texto da recorrência; e, para a Visão geral, o componente da próxima execução, exportado pelo `executions/index.ts`.
+- Aceite: testes da lista com cada resultado do último disparo, do texto de cada recorrência (inclusive "Último dia"), de criar um agendamento de cada recorrência com parâmetro relativo e fixo, de ativar e desativar, da revisão desatualizada e do **Usar a revisão atual**, de cada erro, de apagar e dos controles escondidos sem `executions.schedule`.
+
+**F129 · Testes do workflow: arquivo de referência**
+- dep: F122, F124
+- modelo: opus
+- arquivos: `packages/react/src/test-cases/`
+- Fazer (E7-25): a seção Arquivo de referência (envio com progresso, erros por linha, lista, apagar) e o diálogo **Simular**, que usa o formulário de parâmetros pelo `executions/index.ts` e abre o painel da simulação ao confirmar; a tela exportada pelo `test-cases/index.ts`.
+- Aceite: testes do envio com progresso, do 422 com três erros, do 413, da lista com e sem comparação, do **Simular** com sucesso, com o 409 `reference_file_mismatch` e com o 422 de parâmetro, de apagar e dos controles escondidos sem `test_cases.edit` e sem `simulations.run`; os quatro estados da lista.
+
+**F130 · Sino de alertas**
+- dep: F122
+- modelo: opus
+- arquivos: `packages/react/src/notifications/`
+- Fazer (E7-27): o botão do sino com a contagem, o popover com a lista, os links (pela render prop de navegação, sem importar `module/`), marcar como lido ao abrir, **Marcar todos como lidos** e a atualização a cada 30 s.
+- Aceite: testes da contagem, da lista com cada tipo, do vazio, do carregando e do erro, de abrir um alerta (marca como lido e navega), de marcar todos, da atualização (com relógio falso), do teclado (abre com Enter, fecha com Esc e devolve o foco ao botão) e do `aria-label` com a contagem.
+
+**F131 · Integração do épico 7: módulo, menus, sino e interface pública**
+- dep: F123, F125, F126, F127, F128, F129, F130
+- modelo: sonnet
+- arquivos: `packages/react/src/module/`, `packages/react/src/workflows/overview/`, `docs/glossario.md`, `README.md`, `.changeset/`
+- Fazer:
+  - a rota `/workflows/:id/tests` e o item **Testes** no menu do workflow (com `workflows.view`);
+  - as abas Execuções | Agendamentos nas duas telas de execuções, com as rotas das abas;
+  - a barra do conteúdo do casca, com o sino à direita, e o sino no fim da linha das abas do incorporado (sem `executions.view`, sem sino);
+  - os destinos dos links do sino (a execução e a aba Agendamentos);
+  - a "Próxima execução" na Visão geral do workflow;
+  - os nomes novos no glossário, com um changeset `minor`.
+- Aceite: testes por papel (o Operador agenda e decide o alerta do lote; o Configurador envia o arquivo e simula; o Aprovador simula e vê o diff, sem agendar; o Auditor vê tudo só para leitura, inclusive o sino); `pnpm build` verde; a barra do conteúdo nas três faixas de largura do estilos §15.
+
+**F132 · Testes ponta a ponta do épico 7**
+- dep: F131
+- modelo: opus
+- arquivos: `e2e/epic-7/` (nova), `e2e/support/`, `e2e/visual/`, `e2e/epic-6/` (só o `defects-and-abort.spec.ts`, que no modo real passa a esperar o bloqueio `duplicate_record_key` da pré-validação, E7-2, e os disparos que repetem o mesmo período no mesmo workflow, que passam a confirmar a sobreposição), `README.md`
+- Fazer: **todos** os fluxos do épico 7 do plano global ("Fluxos ponta a ponta" e "Roteiro de teste"), no modo simulado. A lista abaixo é o mínimo (D30):
+  - enviar o arquivo de referência da campanha, **Simular** e ver 100% de igualdade; um arquivo com um valor mudado e uma linha a menos, com o diff; um arquivo com erros de linha;
+  - um agendamento que dispara sozinho e aparece como "Agendada"; um com período relativo; um pulado pela sobreposição, com o alerta no sino;
+  - a "Campanha de referência — vazios" com Prosseguir e com Cancelar; a de defeitos bloqueada pela chave repetida;
+  - a sobreposição no disparo, confirmada;
+  - um parâmetro com valores por consulta, no editor e no formulário;
+  - o sino: alertas, abrir um e marcar todos;
+  - os papéis;
+  - as telas do épico 7 (painel com a decisão e com a comparação, diálogo de sobreposição, aba Agendamentos e o diálogo, tela Testes, sino aberto e a barra do conteúdo) no `pnpm e2e:visual`, nos dois temas e nas faixas de largura do estilos §15.
+  - **No modo real:**
+    - o `FLUXO_BACKEND_DIR` dá o `tests/fixtures/reference_campaign/expected.csv`;
+    - o agendamento é uma cópia da campanha com o período fixo de fevereiro de 2026, marcada para o minuto seguinte no fuso `E2E_BUSINESS_TIMEZONE`, com espera de até 3 min;
+    - as cópias evitam cruzar a sobreposição com os testes do épico 6.
+- Aceite: `pnpm e2e` e `pnpm e2e:visual` passam, com os épicos 4 a 6 verdes. O modo real é exercitado no teste de integração do CK7.
+
+**F133 · Portão do épico 7**
+- tipo: portao
+- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132
+- modelo: sonnet
+- Aceite: o mesmo da F106, com as telas do épico 7 provadas pelo `pnpm e2e:visual`.
