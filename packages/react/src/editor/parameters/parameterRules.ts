@@ -97,6 +97,10 @@ export function readErrorLimit(text: string): string | null {
   return reading.ok && ERROR_LIMIT.test(reading.value) ? reading.value : null;
 }
 
+/** The defaults of the contract for the two settings of the version 3, which a draft of an older form lacks. */
+export const DEFAULT_ERROR_LIMIT_PERCENT = '5';
+export const DEFAULT_TRACE_LEVEL: TraceLevel = 'standard';
+
 export function formatErrorLimit(value: string): string {
   return formatApiNumber(value);
 }

@@ -17,7 +17,7 @@ import { randomUUID } from 'node:crypto';
 import type { BrowserContext, Page, Request, Response, Route } from '@playwright/test';
 import { runUnit } from '../../epic-4/support/engine';
 import { CATALOG, ITEMS, type CatalogDataset } from '../../epic-5/support/campaign';
-import { EXAMPLES, type ErrorBody, type Schemas, type Session } from '../../support/contract';
+import { EXAMPLES, LEGACY_SETTINGS, type ErrorBody, type Schemas, type Session } from '../../support/contract';
 import { API_ROUTES, isApiCall } from '../../support/simulated-api';
 import { CAMPAIGN_DEFINITION_6, CAMPAIGN_WORKFLOW, DEFECTS, DEFECTS_DEFINITION, DEFECTS_WORKFLOW, ITEMS_WITH_DATE, epic6VariablesOf } from './campaign';
 import { analyzeDefinition, previewWith, resolveParameters, runBatch, runKeyWith, type Analysis, type BatchRecord } from './engine';
@@ -158,8 +158,13 @@ export class Epic6Simulation {
     private readonly now: () => number = Date.now,
   ) {
     const created = this.now() - 60 * 60 * 1000;
-    const seed = (name: string, objective: string, source: Definition) => {
+    const seed = (name: string, objective: string, source: Definition, legacySettings = false) => {
       const definition = structuredClone(source);
+      // The legacy form: the real API served the reference campaign with `settings` lacking the two settings of the version 3
+      // (D44), whatever the contract says; the editor reads their defaults, and the first save writes both.
+      if (legacySettings) {
+        definition.settings = structuredClone(LEGACY_SETTINGS);
+      }
       this.workflows.push({
         id: randomUUID(),
         name,
@@ -171,7 +176,7 @@ export class Epic6Simulation {
         draft: { revision: 1, definition, analysis: analyzeDefinition(definition), updatedAt: created, updatedBy: PREPARE_LOCAL },
       });
     };
-    seed(CAMPAIGN_WORKFLOW, 'Pontos por item de nota fiscal: a campanha de referência dos épicos 5 a 9.', CAMPAIGN_DEFINITION_6);
+    seed(CAMPAIGN_WORKFLOW, 'Pontos por item de nota fiscal: a campanha de referência dos épicos 5 a 9.', CAMPAIGN_DEFINITION_6, true);
     seed(DEFECTS_WORKFLOW, 'As regras da campanha sobre os itens com chave nula e chave repetida.', DEFECTS_DEFINITION);
   }
 

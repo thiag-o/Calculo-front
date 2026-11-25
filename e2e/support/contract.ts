@@ -5057,3 +5057,20 @@ export const EXAMPLES = {
 } satisfies Record<string, unknown>;
 
 export type ExampleName = keyof typeof EXAMPLES;
+
+/**
+ * LEGACY FORM, not a contract example (it stays out of EXAMPLES, which `contract-examples.spec.ts` compares exactly with the
+ * contract). The real API served the reference campaign with `settings` lacking `error_limit_percent` and `trace_level`
+ * (D44 of the front), whatever the schema says; the editor reads their defaults and the first save writes both. The cast is
+ * the only way to hold a value the generated type forbids.
+ */
+export const LEGACY_SETTINGS = {
+  error_policy: 'error',
+  rounding: { scale: 2, mode: 'half_up' },
+} as unknown as Schemas['WorkflowDefinition']['settings'];
+
+/** LEGACY FORM: the `DraftEmpty` example with the legacy `settings` (see `LEGACY_SETTINGS`). */
+export const LEGACY_DRAFT_EMPTY: Schemas['Draft'] = {
+  ...EXAMPLES_BASE.DraftEmpty,
+  definition: { ...EXAMPLES_BASE.DraftEmpty.definition, settings: LEGACY_SETTINGS },
+} as Schemas['Draft'];
