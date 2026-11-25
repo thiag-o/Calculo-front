@@ -60,8 +60,11 @@ test.describe('respostas da API simulada conferidas contra o esquema do contrato
       delete old.definition.parameters;
       expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
       old.definition.parameters = [];
-      delete old.definition.settings.trace_level;
+      // A setting that is not text is refused; an absent one is the legacy form the real API still serves (D44).
+      old.definition.settings.trace_level = 3;
       expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
+      delete old.definition.settings.trace_level;
+      expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).toEqual([]);
     }
   });
 

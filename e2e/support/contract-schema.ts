@@ -40,8 +40,11 @@ function versionViolations(name: string, body: unknown): string[] {
   const problems: string[] = [];
   if (definition.schema_version !== 3) problems.push(`${name}: /definition/schema_version deve ser 3, e não ${String(definition.schema_version)}`);
   if (!Array.isArray(definition.parameters)) problems.push(`${name}: /definition/parameters deve vir sempre (a gravação o escreve)`);
-  if (typeof settings.error_limit_percent !== 'string') problems.push(`${name}: /definition/settings/error_limit_percent deve vir sempre na versão 3`);
-  if (typeof settings.trace_level !== 'string') problems.push(`${name}: /definition/settings/trace_level deve vir sempre na versão 3`);
+  // The two settings may be absent: the real API still serves the legacy form (D44, B193), and the editor reads their defaults.
+  // Present, they must be text.
+  for (const key of ['error_limit_percent', 'trace_level']) {
+    if (key in settings && typeof settings[key] !== 'string') problems.push(`${name}: /definition/settings/${key} deve ser texto`);
+  }
   return problems;
 }
 

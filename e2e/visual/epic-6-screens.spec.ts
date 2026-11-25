@@ -6,7 +6,7 @@
 import { editorOf, openOverview } from '../epic-4/support/screens';
 import { BLOCKS } from '../epic-5/support/campaign';
 import { openEditor } from '../epic-5/support/screens';
-import { CAMPAIGN_WORKFLOW } from '../epic-6/support/campaign';
+import { CAMPAIGN_WORKFLOW, DATA_MONTH } from '../epic-6/support/campaign';
 import { expect, test } from '../epic-6/support/fixtures';
 import {
   errorGroups,
@@ -14,6 +14,7 @@ import {
   executionsTable,
   expectStatus,
   finishRun,
+  fixPeriod,
   keyText,
   openTrigger,
   parametersSection,
@@ -50,7 +51,8 @@ for (const theme of THEMES) {
         await inspect(page, 'epic6-parameters', theme, width);
 
         // "Executar lote" of the editor bar opens the panel of the new execution.
-        await openTrigger(page, editorOf(page, CAMPAIGN_WORKFLOW));
+        // The data are of one month (B98): the default period (previous month) would read none of them.
+        await fixPeriod(await openTrigger(page, editorOf(page, CAMPAIGN_WORKFLOW)), 'periodo', DATA_MONTH);
 
         // The panel while it calculates (phases and progress), and when it ends with errors.
         expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
