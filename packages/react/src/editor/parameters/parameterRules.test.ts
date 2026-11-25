@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { allowedSpot, defaultSpot } from './parameterProblems';
+import type { Schemas } from '../../api';
+import { allowedSpot, defaultSpot, parameterProblems } from './parameterProblems';
 import {
   defaultOfKind,
   fromLiteral,
-  readErrorLimit,
+  readPercent,
   relativesFor,
   takesFixedDefault,
   toLiteral,
@@ -91,12 +92,12 @@ describe('regras do parâmetro', () => {
     expect(defaultOfKind(parameter({ type: 'period' }), 'relative')).toEqual({ kind: 'relative', value: 'current_month' });
   });
 
-  it('o limite de erro vai de 0 a 100, com até 2 casas', () => {
-    expect(readErrorLimit('2,5')).toBe('2.5');
-    expect(readErrorLimit('100')).toBe('100');
-    expect(readErrorLimit('100,01')).toBeNull();
-    expect(readErrorLimit('2,555')).toBeNull();
-    expect(readErrorLimit('-1')).toBeNull();
+  it('os percentuais (limite de erro e alerta da pré-validação) vão de 0 a 100, com até 2 casas', () => {
+    expect(readPercent('2,5')).toBe('2.5');
+    expect(readPercent('100')).toBe('100');
+    expect(readPercent('100,01')).toBeNull();
+    expect(readPercent('2,555')).toBeNull();
+    expect(readPercent('-1')).toBeNull();
   });
 });
 
@@ -107,5 +108,38 @@ describe('onde cai o problema do padrão e dos valores permitidos', () => {
     expect(defaultSpot('parameters[1].default.value.end', 'parameters[1]')).toBe('end');
     expect(allowedSpot('parameters[0].allowed_values[1]', 'parameters[0]')).toBe(1);
     expect(allowedSpot('parameters[0].allowed_values', 'parameters[0]')).toBeNull();
+  });
+});
+
+describe('onde cai o problema da consulta dos valores permitidos', () => {
+  const at = 'parameters[0]';
+  const issue = (code: Schemas['ProblemCode'], path: string): Schemas['WorkflowProblem'] => ({
+    code,
+    message: code,
+    path,
+    node_id: null,
+    start: null,
+    end: null,
+    suggestion: null,
+  });
+
+  it('pelo código no dataset e na variável, qualquer que seja a profundidade do path; pelo path nos filtros', () => {
+    const sorted = parameterProblems(
+      [
+        issue('unknown_dataset', 'parameters[0].allowed_values'),
+        issue('allowed_values_type_mismatch', 'parameters[0].allowed_values.variable_id'),
+        issue('variable_not_from_dataset', 'parameters[0].allowed_values'),
+        issue('parameter_in_allowed_values', 'parameters[0].allowed_values.filters[1].values[0]'),
+        issue('parameter_in_allowed_values', 'parameters[0].allowed_values.filters'),
+        issue('invalid_allowed_value', 'parameters[0].allowed_values[2]'),
+        issue('unknown_dataset', 'parameters[1].allowed_values.dataset_id'),
+      ],
+      at,
+    );
+    expect(sorted.query.dataset.map((problem) => problem.code)).toEqual(['unknown_dataset']);
+    expect(sorted.query.variable.map((problem) => problem.code)).toEqual(['allowed_values_type_mismatch', 'variable_not_from_dataset']);
+    expect(sorted.query.filters.map((problem) => problem.path)).toEqual(['parameters[0].allowed_values.filters[1].values[0]']);
+    expect(sorted.query.filterList.map((problem) => problem.path)).toEqual(['parameters[0].allowed_values.filters']);
+    expect(sorted.allowed).toEqual([{ problem: expect.objectContaining({ code: 'invalid_allowed_value' }), spot: 2 }]);
   });
 });

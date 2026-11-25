@@ -28,6 +28,11 @@ export interface LiteralFieldProps {
   onPickParameter?: (reference: ParameterReference) => void;
   path: string | null;
   problems: readonly WorkflowProblem[];
+  /**
+   * Why run parameters cannot be used here (the query of the allowed values, E7-23), or nothing: with it, no parameter is
+   * offered and a typed `@` stays only in the field, with this message (ADR 0046).
+   */
+  refuseParameters?: string;
 }
 
 /**
@@ -40,16 +45,18 @@ export interface LiteralFieldProps {
  * without blocking (the analysis decides, D35). The date picker has "Usar parâmetro" beside it, since `@` cannot be typed
  * there; clearing the parameter brings the date picker back.
  */
-export function LiteralField({ label, scope, type, scale, operator, literal, onCommit, onPickParameter, path, problems }: LiteralFieldProps) {
+export function LiteralField({ label, scope, type, scale, operator, literal, onCommit, onPickParameter, path, problems, refuseParameters }: LiteralFieldProps) {
   const { readOnly, reasonId } = useFieldsState();
   const { definition } = useDraftEditor();
-  const parameters = definition.parameters;
+  // Where parameters are refused, none is offered (no list, no "Usar parâmetro").
+  const parameters = useMemo(() => (refuseParameters ? [] : definition.parameters), [refuseParameters, definition.parameters]);
   const serving = useMemo(() => servingReferences(parameters, type, operator), [parameters, type, operator]);
+  const read = (text: string) => (refuseParameters && isParameter(text) ? { ok: false as const, message: refuseParameters } : toLiteral(type, scale, text));
   // The text on screen follows the definition (undo, redo, reload, another field take back a text never committed). A text
   // that already gives the literal stays as typed: `1500` is not rewritten as `1.500` while it is typed.
   const [shown, setShown] = useState({ text: fromLiteral(type, literal), from: literal, type, definition });
   if (shown.from !== literal || shown.type !== type || shown.definition !== definition) {
-    const typed = toLiteral(type, scale, shown.text);
+    const typed = read(shown.text);
     const keep = shown.type === type && typed.ok && typed.value === literal;
     setShown({ text: keep ? shown.text : fromLiteral(type, literal), from: literal, type, definition });
   }
@@ -60,8 +67,14 @@ export function LiteralField({ label, scope, type, scale, operator, literal, onC
   const listId = `fc-filters-parameters-${useId()}`;
   const hintId = `fc-filters-parameter-hint-${useId()}`;
 
-  const reading = toLiteral(type, scale, shown.text);
-  const error = reading.ok ? problemText(problems) : `${reading.message} ${NOT_SAVED_NOTE}`;
+  const reading = read(shown.text);
+  // A refused parameter already in the definition (not typed now) shows the analysis' problem, or why it is refused.
+  const storedRefusal = Boolean(refuseParameters) && isParameter(literal) && shown.text.trim() === literal.trim();
+  const error = storedRefusal
+    ? (problemText(problems) ?? refuseParameters)
+    : reading.ok
+      ? problemText(problems)
+      : `${reading.message} ${NOT_SAVED_NOTE}`;
   const parameter = isParameter(shown.text);
   const datePicker = type === 'date' && !parameter && fitsDatePicker(literal);
   const numeric = type === 'integer' || type === 'decimal';
@@ -74,7 +87,7 @@ export function LiteralField({ label, scope, type, scale, operator, literal, onC
       : [];
   const open = items.length > 0;
   // The help waits for the reference to be written (no list open) and gives way to an error of the field.
-  const hint = parameter && !open && !error ? parameterHint(shown.text, parameters, type, operator) : null;
+  const hint = parameter && !open && !error && !refuseParameters ? parameterHint(shown.text, parameters, type, operator) : null;
 
   function pick(reference: ParameterReference) {
     setShown((current) => ({ ...current, text: reference.text }));
@@ -119,7 +132,7 @@ export function LiteralField({ label, scope, type, scale, operator, literal, onC
             onChange={(event) => {
               const text = event.target.value;
               setShown((current) => ({ ...current, text }));
-              const next = toLiteral(type, scale, text);
+              const next = read(text);
               if (next.ok && next.value !== literal) onCommit(next.value);
             }}
           />
@@ -134,7 +147,7 @@ export function LiteralField({ label, scope, type, scale, operator, literal, onC
             />
           ) : null}
         </div>
-        {type === 'date' || type === 'boolean' ? (
+        {(type === 'date' || type === 'boolean') && !refuseParameters ? (
           <ParameterButton fieldLabel={label} scope={scope} references={serving} hasParameters={parameters.length > 0} onPick={pick} />
         ) : null}
       </div>

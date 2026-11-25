@@ -2,12 +2,15 @@
 // `path` points into the analysed definition (`parameters[1].default`, `parameters[2].allowed_values[0]`). The contract does
 // not fix how deep the path of `invalid_parameter_default` and `invalid_allowed_value` goes (the default, its value, an item
 // of it), so, as with the batch source problems (D21), they are found by their code inside the parameter: the path only
-// says which value of the list to mark, when it names one.
+// says which value of the list to mark, when it names one. The problems of a query of the allowed values (E7-5) go the
+// same way: `unknown_dataset` at the dataset, `allowed_values_type_mismatch` and `variable_not_from_dataset` at the
+// variable, whatever the depth of their path; the ones under `allowed_values.filters` at their filter, by path.
 import type { WorkflowProblem } from '../draft';
 
 export const PARAMETERS_PATH = 'parameters';
 export const ERROR_LIMIT_PATH = 'settings.error_limit_percent';
 export const TRACE_LEVEL_PATH = 'settings.trace_level';
+export const PRE_VALIDATION_ALERT_PATH = 'settings.pre_validation_alert_percent';
 
 export function parameterPath(index: number): string {
   return `${PARAMETERS_PATH}[${index}]`;
@@ -39,6 +42,31 @@ export function allowedSpot(path: string | null, at: string): number | null {
   return item ? Number(item[1]) : null;
 }
 
+/** The problems of the query of the allowed values, by the part they show at. */
+export interface QueryProblems {
+  dataset: WorkflowProblem[];
+  variable: WorkflowProblem[];
+  /** The ones under `allowed_values.filters`: each filter shows its own, by path. */
+  filters: WorkflowProblem[];
+  /** The ones of the filters as a whole (a `parameter_in_allowed_values` without the path of a value): above the filters. */
+  filterList: WorkflowProblem[];
+}
+
+const DATASET_CODES: readonly string[] = ['unknown_dataset'];
+const VARIABLE_CODES: readonly string[] = ['allowed_values_type_mismatch', 'variable_not_from_dataset'];
+
+/** Where a problem of the query of the parameter at `at` shows, or `null` when it is not one of the query's. */
+function queryPart(problem: WorkflowProblem, at: string): keyof QueryProblems | null {
+  const path = problem.path!;
+  const allowed = `${at}.allowed_values`;
+  if (!isUnder(path, allowed)) return null;
+  if (isUnder(path, `${allowed}.filters`)) return /^\[\d+\]/.test(path.slice(`${allowed}.filters`.length)) ? 'filters' : 'filterList';
+  if (DATASET_CODES.includes(problem.code) || isUnder(path, `${allowed}.dataset_id`)) return 'dataset';
+  if (VARIABLE_CODES.includes(problem.code) || isUnder(path, `${allowed}.variable_id`)) return 'variable';
+  if (problem.code === 'parameter_in_allowed_values') return 'filterList';
+  return null;
+}
+
 /** The problems of a parameter, by the field they show at. */
 export interface ParameterProblems {
   name: WorkflowProblem[];
@@ -49,6 +77,7 @@ export interface ParameterProblems {
   description: WorkflowProblem[];
   defaults: { problem: WorkflowProblem; spot: DefaultSpot }[];
   allowed: { problem: WorkflowProblem; spot: number | null }[];
+  query: QueryProblems;
   /** The ones of the parameter that match none of its fields: they show at the top of the parameter. */
   other: WorkflowProblem[];
 }
@@ -57,13 +86,29 @@ const FIELDS = ['name', 'type', 'scale', 'list', 'required', 'description'] as c
 
 /** Sorts the problems under `at` (the parameter's path in the analysed definition) by field. */
 export function parameterProblems(problems: readonly WorkflowProblem[], at: string | null): ParameterProblems {
-  const sorted: ParameterProblems = { name: [], type: [], scale: [], list: [], required: [], description: [], defaults: [], allowed: [], other: [] };
+  const sorted: ParameterProblems = {
+    name: [],
+    type: [],
+    scale: [],
+    list: [],
+    required: [],
+    description: [],
+    defaults: [],
+    allowed: [],
+    query: { dataset: [], variable: [], filters: [], filterList: [] },
+    other: [],
+  };
   if (at === null) return sorted;
   for (const problem of problems) {
     const path = problem.path;
     if (path === null || !isUnder(path, at)) continue;
     if (problem.code === 'invalid_parameter_default' || isUnder(path, `${at}.default`)) {
       sorted.defaults.push({ problem, spot: defaultSpot(path, at) });
+      continue;
+    }
+    const part = queryPart(problem, at);
+    if (part) {
+      sorted.query[part].push(problem);
       continue;
     }
     if (problem.code === 'invalid_allowed_value' || isUnder(path, `${at}.allowed_values`)) {

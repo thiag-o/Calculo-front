@@ -1,6 +1,6 @@
 # 0059. O canvas importa `sources/batch-source`, e o `PropertiesPanel` recebe as peças de fontes e grupos por render props
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0061](0061-editor-definition-folha-com-leituras-puras-da-definicao.md): o canvas também importa `sources/source-block`, só por `sources/index.ts`)
+- **Status:** aceita, revisar no checkpoint (complementada por [0061](0061-editor-definition-folha-com-leituras-puras-da-definicao.md): o canvas também importa `sources/source-block`, só por `sources/index.ts`; e pela [0072](0072-parameters-importa-sources-e-filter-list-recusa-parametros.md): `editor/parameters` também importa `sources`)
 - **Data:** 2026-11-21
 - **Quem decidiu:** orquestração (tarefa F69, D21 e D29)
 - **Relacionadas:** ADRs 0003, 0042, 0044, 0047, 0052, 0057 (complementa 0052 e 0057); `packages/react/src/editor/canvas/`, `properties/PropertiesPanel.tsx`, `Editor.tsx`

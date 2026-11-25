@@ -14,6 +14,7 @@ export type ParameterDefault = Schemas['ParameterDefault'];
 export type RelativeDefault = Schemas['RelativeDefault'];
 export type PeriodLiteral = Schemas['PeriodLiteral'];
 export type TraceLevel = Schemas['TraceLevel'];
+export type AllowedValuesQuery = Schemas['AllowedValuesQuery'];
 /**
  * The types with a literal of their own: every parameter type but the `period` (whose ends are dates) and the `datetime`,
  * which the language has no literal for (D36: no fixed default, only none or the relative `now`).
@@ -67,6 +68,32 @@ export function takesAllowedValues(type: ParameterType): boolean {
   return type === 'text' || type === 'integer' || type === 'date';
 }
 
+/** How a parameter's values are restricted (E7-23): none, a closed list of literals, or a query to a catalog dataset. */
+export type AllowedValuesKind = 'none' | 'list' | 'query';
+
+export const ALLOWED_VALUES_KIND_LABELS: Readonly<Record<AllowedValuesKind, string>> = { none: 'Nenhum', list: 'Lista', query: 'Consulta' };
+
+export function allowedValuesKind(parameter: WorkflowParameter): AllowedValuesKind {
+  const allowed = parameter.allowed_values;
+  if (allowed === null) return 'none';
+  return Array.isArray(allowed) ? 'list' : 'query';
+}
+
+/** The literals of a closed list, or an empty list for none and for a query. */
+export function allowedList(parameter: WorkflowParameter | null): readonly string[] {
+  const allowed = parameter?.allowed_values;
+  return Array.isArray(allowed) ? allowed : [];
+}
+
+/** The query of the allowed values, or `null` for none and for a list. */
+export function allowedQuery(parameter: WorkflowParameter | null): AllowedValuesQuery | null {
+  const allowed = parameter?.allowed_values ?? null;
+  return allowed === null || Array.isArray(allowed) ? null : allowed;
+}
+
+/** Why a query filter takes no `@` (the engine's `parameter_in_allowed_values`): the values are read before any run. */
+export const QUERY_PARAMETER_REFUSAL = 'A consulta dos valores permitidos não aceita parâmetros. Use um valor fixo.';
+
 export const TRACE_LEVEL_LABELS: Readonly<Record<TraceLevel, string>> = {
   minimal: 'Mínimo',
   standard: 'Padrão',
@@ -86,22 +113,24 @@ export const TRACE_LEVEL_NOTES: Readonly<Record<TraceLevel, string>> = {
 };
 
 export const ERROR_LIMIT_NOTE = 'A execução para sem entregar nada quando os registros com erro passam deste percentual.';
-export const ERROR_LIMIT_RULE_MESSAGE = 'Use um percentual de 0 a 100, com até 2 casas, como 2,5.';
+export const PRE_VALIDATION_ALERT_NOTE = 'A pré-validação avisa quando uma variável da fonte do lote tem mais vazios que isso.';
+export const PERCENT_RULE_MESSAGE = 'Use um percentual de 0 a 100, com até 2 casas, como 2,5.';
 
-// The contract's pattern of `error_limit_percent`: from 0 to 100, with up to 2 places.
-const ERROR_LIMIT = /^(100(\.0{1,2})?|[0-9]{1,2}(\.[0-9]{1,2})?)$/;
+// The contract's pattern of `error_limit_percent` and `pre_validation_alert_percent`: from 0 to 100, with up to 2 places.
+const PERCENT = /^(100(\.0{1,2})?|[0-9]{1,2}(\.[0-9]{1,2})?)$/;
 
-/** The limit typed in the Brazilian pattern (`2,5`) as the API text (`"2.5"`), or `null` when it cannot be written. */
-export function readErrorLimit(text: string): string | null {
+/** A percent typed in the Brazilian pattern (`2,5`) as the API text (`"2.5"`), or `null` when it cannot be written. */
+export function readPercent(text: string): string | null {
   const reading = readBrazilianNumber(text, 2);
-  return reading.ok && ERROR_LIMIT.test(reading.value) ? reading.value : null;
+  return reading.ok && PERCENT.test(reading.value) ? reading.value : null;
 }
 
-/** The defaults of the contract for the two settings of the version 3, which a draft of an older form lacks. */
+/** The defaults of the contract for the settings a draft of an older form lacks (version 3, then version 4). */
 export const DEFAULT_ERROR_LIMIT_PERCENT = '5';
 export const DEFAULT_TRACE_LEVEL: TraceLevel = 'standard';
+export const DEFAULT_PRE_VALIDATION_ALERT_PERCENT = '1';
 
-export function formatErrorLimit(value: string): string {
+export function formatPercent(value: string): string {
   return formatApiNumber(value);
 }
 

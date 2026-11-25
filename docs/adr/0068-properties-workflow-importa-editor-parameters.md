@@ -1,6 +1,6 @@
 # 0068. `properties/workflow` importa `editor/parameters/index.ts`, com ciclo permitido entre as duas
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0072](0072-parameters-importa-sources-e-filter-list-recusa-parametros.md): `editor/parameters` importa `sources`, em um sentido só)
 - **Data:** 2026-11-22
 - **Quem decidiu:** orquestração (tarefa F98)
 - **Relacionadas:** ADRs 0003, 0042, 0047, 0052; `packages/react/src/editor/properties/workflow/`, `packages/react/src/editor/parameters/`

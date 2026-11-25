@@ -7,8 +7,11 @@ import { LiteralField } from './LiteralField';
 import { LITERALS_MAX, type ValueType } from './parameterRules';
 
 export interface LiteralListProps {
-  /** The caption of the list ("Valores permitidos"). */
-  legend: string;
+  /**
+   * The caption of the list ("Valores padrão"): the list is a group of its own. Without it, the list goes inside a group
+   * the caller draws (the Valores permitidos, with the Nenhum | Lista | Consulta control).
+   */
+  legend?: string;
   /** The label of each value, numbered from 1 ("Valor permitido 1"). */
   itemLabel: string;
   /** "Incluir valor permitido". */
@@ -53,7 +56,10 @@ export function LiteralList({
 }: LiteralListProps) {
   const { readOnly } = useFieldsState();
   const list = useRef<HTMLOListElement>(null);
-  const box = useRef<HTMLFieldSetElement>(null);
+  const box = useRef<HTMLElement | null>(null);
+  const setBox = (element: HTMLElement | null) => {
+    box.current = element;
+  };
   // Where the focus goes after a value is removed, applied once the list is rendered without it. It keeps how many values
   // the list had, to tell a removal that happened from one that did not change the list.
   const focusAfterRemove = useRef<{ index: number; count: number } | null>(null);
@@ -85,9 +91,8 @@ export function LiteralList({
     requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(':scope > li:last-child input, :scope > li:last-child button')?.focus());
   }
 
-  return (
-    <fieldset ref={box} className="fc-properties-group fc-parameters-list">
-      <legend className="fc-properties-group-title">{legend}</legend>
+  const content = (
+    <>
       {problems}
       {literals.length === 0 ? emptyNote : null}
       {literals.length > 0 ? (
@@ -135,6 +140,20 @@ export function LiteralList({
       <Button size="small" className="fc-properties-add" icon={<PlusIcon size={14} />} disabledReason={addReason} onClick={add}>
         {addLabel}
       </Button>
+    </>
+  );
+
+  if (legend === undefined) {
+    return (
+      <div ref={setBox} className="fc-parameters-list">
+        {content}
+      </div>
+    );
+  }
+  return (
+    <fieldset ref={setBox} className="fc-properties-group fc-parameters-list">
+      <legend className="fc-properties-group-title">{legend}</legend>
+      {content}
     </fieldset>
   );
 }

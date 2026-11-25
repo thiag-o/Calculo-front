@@ -14,6 +14,7 @@ import {
   useFocusOnSelection,
 } from '../properties';
 import { RELATIVE_LABELS } from '../../executions';
+import { AllowedValuesField } from './AllowedValuesField';
 import { TrashIcon } from './icons';
 import { LiteralField } from './LiteralField';
 import { LiteralList } from './LiteralList';
@@ -78,7 +79,7 @@ function problemList(problems: readonly WorkflowProblem[]) {
 /**
  * One parameter (E6-17): name and type (with the places of a `decimal`), Lista (not in the Período nor in the Booleano),
  * Obrigatório, the Padrão (Nenhum, Fixo or Relativo, only with the relatives that serve the type), the Valores permitidos
- * (only in text, integer and date) and the Descrição. Each problem shows beside its field, by `path`.
+ * (only in text, integer and date: Nenhum, Lista or Consulta, E7-23) and the Descrição. Each problem shows beside its field, by `path`.
  */
 export function ParameterItem({ parameter, at, analyzed, problems: sorted, names, onRemove }: ParameterItemProps) {
   const { change } = useDraftEditor();
@@ -117,9 +118,6 @@ export function ParameterItem({ parameter, at, analyzed, problems: sorted, names
   // A problem of a value of a list shows only while the same value is at the same place (ADR 0044).
   const listProblems = (index: number, spots: { problem: WorkflowProblem; spot: unknown }[], before: readonly string[] | null, now: readonly string[]) =>
     spots.filter(({ spot }) => spot === index).filter(() => before?.[index] === now[index]).map(({ problem }) => problem);
-  // Only the list form of the allowed values is edited here for now; the query form comes with F123.
-  const allowed = Array.isArray(parameter.allowed_values) ? parameter.allowed_values : [];
-  const allowedWhole = sorted.allowed.filter(({ spot }) => spot === null).map(({ problem }) => problem);
   const endProblems = (end: 'start' | 'end') => sorted.defaults.filter(({ spot }) => spot === end).map(({ problem }) => problem);
   // The problems of the default as a whole show once: at the Valor relativo of a relative default, at the value of a fixed
   // one; with no default, a list, a period or a Data e hora (no field for the whole value), at the Padrão control.
@@ -281,32 +279,13 @@ export function ParameterItem({ parameter, at, analyzed, problems: sorted, names
           />
         ) : null}
         {takesAllowedValues(parameter.type) && valueType !== null ? (
-          <LiteralList
-            legend="Valores permitidos"
-            itemLabel="Valor permitido"
-            addLabel="Incluir valor permitido"
-            scope={scope}
+          <AllowedValuesField
+            parameter={parameter}
+            analyzed={analyzed}
+            at={at}
             type={valueType}
-            scale={parameter.scale}
-            literals={allowed}
-            minimum={0}
-            problems={problemList(allowedWhole)}
-            emptyNote={
-              <Text as="p" variant="label-12" emphasis="secondary" className="fc-parameters-note">
-                Sem restrição: aceita qualquer valor do tipo.
-              </Text>
-            }
-            problemsAt={(index) => listProblems(index, sorted.allowed, Array.isArray(analyzed?.allowed_values) ? analyzed.allowed_values : null, allowed)}
-            pathAt={(index) => sorted.allowed.find(({ spot }) => spot === index)?.problem.path ?? path(`allowed_values[${index}]`)}
-            onChange={(apply, item) =>
-              update(
-                (current) => {
-                  const literals = apply(Array.isArray(current.allowed_values) ? current.allowed_values : []);
-                  return { ...current, allowed_values: literals.length > 0 ? literals : null };
-                },
-                item === undefined ? undefined : `allowed[${item}]`,
-              )
-            }
+            problems={sorted}
+            update={update}
           />
         ) : null}
         <CommitTextField

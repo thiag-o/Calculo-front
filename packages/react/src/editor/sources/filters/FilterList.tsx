@@ -56,6 +56,11 @@ export interface FilterListProps {
   onRemove: (index: number) => void;
   /** The most filters (20 in the contract). */
   max?: number;
+  /**
+   * Where run parameters cannot be used (the query of the allowed values, E7-23): why. With it, no parameter is offered and
+   * a typed `@` stays only in the field, with this message (ADR 0046).
+   */
+  refuseParameters?: string;
 }
 
 /** "categoria · Texto": the variable and its type, in the options. */
@@ -87,6 +92,7 @@ export function FilterList({
   onChange,
   onRemove,
   max = FILTERS_MAX,
+  refuseParameters,
 }: FilterListProps) {
   const { readOnly } = useFieldsState();
   const created = newFilter(variables);
@@ -115,6 +121,7 @@ export function FilterList({
               variables={variables}
               problems={problems}
               mergeKey={`${mergeKeyPrefix}.filter:${keys[index] ?? index}`}
+              refuseParameters={refuseParameters}
               onChange={(next, mergeKey) => onChange(index, next, mergeKey)}
               onRemove={() => onRemove(index)}
             />
@@ -144,11 +151,12 @@ interface FilterRowProps {
   variables: readonly FilterVariable[];
   problems: readonly WorkflowProblem[];
   mergeKey: string;
+  refuseParameters: string | undefined;
   onChange: (filter: FilterEntry, mergeKey?: string) => void;
   onRemove: () => void;
 }
 
-function FilterRow({ filter, number, at, variableField, variables, problems, mergeKey, onChange, onRemove }: FilterRowProps) {
+function FilterRow({ filter, number, at, variableField, variables, problems, mergeKey, refuseParameters, onChange, onRemove }: FilterRowProps) {
   const { readOnly } = useFieldsState();
   const scope = `filtro ${number}`;
   const variable = variables.find((candidate) => candidate.key === filter.variable);
@@ -192,6 +200,7 @@ function FilterRow({ filter, number, at, variableField, variables, problems, mer
         literal={filter.values[index] ?? ''}
         path={valuePath(index)}
         problems={problemsAt(problems, valuePath(index))}
+        refuseParameters={refuseParameters}
         onCommit={(literal) => setValue(index, literal)}
         onPickParameter={(reference) => pickParameter(index, reference)}
       />
@@ -307,6 +316,7 @@ interface ValueInputProps {
   literal: string;
   path: string | null;
   problems: readonly WorkflowProblem[];
+  refuseParameters: string | undefined;
   onCommit: (literal: string) => void;
   onPickParameter: (reference: ParameterReference) => void;
 }
@@ -320,7 +330,7 @@ const BOOLEAN_OPTIONS: readonly SelectOption[] = [
  * A boolean is chosen (Verdadeiro or Falso), with "Usar parâmetro" beside it; the other types are typed. A boolean holding a
  * parameter is typed too, and emptying it brings the select back.
  */
-function ValueInput({ label, scope, type, scale, operator, literal, path, problems, onCommit, onPickParameter }: ValueInputProps) {
+function ValueInput({ label, scope, type, scale, operator, literal, path, problems, refuseParameters, onCommit, onPickParameter }: ValueInputProps) {
   const { definition } = useDraftEditor();
   const lower = literal.toLowerCase();
   if (type === 'boolean' && (literal === '' || lower === BOOLEAN_LITERALS.true || lower === BOOLEAN_LITERALS.false)) {
@@ -335,13 +345,15 @@ function ValueInput({ label, scope, type, scale, operator, literal, path, proble
           problems={problems}
           onChange={onCommit}
         />
-        <ParameterButton
-          fieldLabel={label}
-          scope={scope}
-          references={servingReferences(definition.parameters, type, operator)}
-          hasParameters={definition.parameters.length > 0}
-          onPick={onPickParameter}
-        />
+        {refuseParameters ? null : (
+          <ParameterButton
+            fieldLabel={label}
+            scope={scope}
+            references={servingReferences(definition.parameters, type, operator)}
+            hasParameters={definition.parameters.length > 0}
+            onPick={onPickParameter}
+          />
+        )}
       </div>
     );
   }
@@ -355,6 +367,7 @@ function ValueInput({ label, scope, type, scale, operator, literal, path, proble
       literal={literal}
       path={path}
       problems={problems}
+      refuseParameters={refuseParameters}
       onCommit={onCommit}
       onPickParameter={onPickParameter}
     />

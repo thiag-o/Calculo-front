@@ -43,3 +43,38 @@
 .fc-parameters-remove-value {
   margin-top: 22px;
 }
+
+/* Valores permitidos (E7-23): the group's caption already names the Nenhum | Lista | Consulta control, which keeps the
+   parameter in its accessible name ("Valores permitidos (categoria)"); its own visible label would repeat the caption. */
+.fc-parameters-allowed-kind > .fc-label {
+  display: none;
+}
+
+/* The query: dataset, variable and filters, stacked like the other fields of the panel. */
+.fc-parameters-query,
+.fc-parameters-query-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+.fc-parameters-query-dataset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+}
+
+/* The dataset's name and its type badge, wrapping in the 300px panel. */
+.fc-parameters-query-dataset-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-6);
+  color: var(--fc-text);
+}
+
+.fc-parameters-query-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+}
