@@ -1,6 +1,6 @@
 # 0062. O editor usa o formulário de parâmetros de `executions/index.ts`
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0063](0063-executions-le-workflows-pela-api-e-chaves-proprias.md) e [0066](0066-painel-da-execucao-chaves-de-registros-e-render-prop-do-trace.md))
+- **Status:** aceita, revisar no checkpoint (complementada por [0063](0063-executions-le-workflows-pela-api-e-chaves-proprias.md) , [0066](0066-painel-da-execucao-chaves-de-registros-e-render-prop-do-trace.md) e [0073](0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md))
 - **Data:** 2026-11-22
 - **Quem decidiu:** orquestração (tarefa F100)
 - **Relacionadas:** plano.md E6-16; ADRs 0003, 0050, 0055; `packages/react/src/executions/index.ts`, `packages/react/src/executions/parameter-form/`

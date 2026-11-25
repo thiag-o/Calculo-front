@@ -69,7 +69,7 @@ export function TriggerExecutionDialog({
   const queryClient = useQueryClient();
   const sending = trigger.isPending;
   const draft = draftQuery.data;
-  const form = useParameterForm(draft?.definition.parameters ?? NO_PARAMETERS);
+  const form = useParameterForm(draft?.definition.parameters ?? NO_PARAMETERS, { workflowId });
 
   const problems = draft?.problems.length ?? 0;
   // A parameter error is shown at its field; any other error, in the note.

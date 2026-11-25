@@ -2,9 +2,13 @@
 import { ApiError, type Schemas } from '../../api';
 import { literalToApiText, type ScalarType } from './literals';
 import { formatApiNumber, readBrazilianNumber } from '../../design-system';
+import { relativesFor } from './labels';
 
 export type WorkflowParameter = Schemas['WorkflowParameter'];
 export type ParameterValue = Schemas['ParameterValue'];
+export type ScheduleParameter = Schemas['ScheduleParameter'];
+export type RelativeDefault = Schemas['RelativeDefault'];
+export type AllowedValuesQuery = Schemas['AllowedValuesQuery'];
 
 /** The part of a field the browser holds half typed (it reports an empty value; see `validity.badInput`). */
 export type ParameterPart = 'text' | 'start' | 'end';
@@ -13,9 +17,12 @@ export type ParameterPart = 'text' | 'start' | 'end';
  * What is typed in one parameter.
  * - `usingDefault`: the relative default is still in use; the parameter is not sent and the execution resolves it;
  * - `text`: a scalar. A number is typed as on screen (`1.500,5`); a date is `aaaa-mm-dd`; a datetime is the local
- *   date and time; a boolean is `''`, `'true'` or `'false'`. With `allowed_values`, it is the API text of the chosen one;
+ *   date and time; a boolean is `''`, `'true'` or `'false'`. With `allowed_values` (list or query), it is the API text of
+ *   the chosen one;
  * - `start` and `end`: the two dates of a period (`aaaa-mm-dd`);
- * - `items`: a list, as API texts (the chosen allowed values, or the tags).
+ * - `items`: a list, as API texts (the chosen allowed values, or the tags);
+ * - `relative`: only in the schedule mode, the relative chosen ("Relativo"); `null` is "Fixo". It starts on the relative
+ *   default of the declaration, if there is one. The run mode ignores it (it uses `usingDefault`).
  */
 export interface ParameterFieldState {
   usingDefault: boolean;
@@ -24,6 +31,7 @@ export interface ParameterFieldState {
   end: string;
   items: readonly string[];
   incomplete: readonly ParameterPart[];
+  relative: RelativeDefault | null;
 }
 
 /** What was typed, by parameter name. A parameter that is not here is still as its declaration starts it. */
@@ -32,10 +40,21 @@ export type ParameterFormValues = Readonly<Record<string, ParameterFieldState>>;
 /** The errors of the form, by parameter name. */
 export type ParameterErrors = Readonly<Record<string, string>>;
 
-/** Whether the parameter is chosen among the `allowed_values` (a closed list) and not typed. */
+/** The closed list of `allowed_values` (literals of the language), or `null` when there is none (no restriction or a query). */
+export function allowedList(parameter: WorkflowParameter): readonly string[] | null {
+  const allowed = parameter.allowed_values;
+  return Array.isArray(allowed) && allowed.length > 0 ? allowed : null;
+}
+
+/** The query of `allowed_values` (the values are read from a dataset, E7-5), or `null`. */
+export function allowedQuery(parameter: WorkflowParameter): AllowedValuesQuery | null {
+  const allowed = parameter.allowed_values;
+  return allowed !== null && !Array.isArray(allowed) ? allowed : null;
+}
+
+/** Whether the parameter is chosen among the `allowed_values` (a closed list or a query) and not typed. */
 export function hasAllowedValues(parameter: WorkflowParameter): boolean {
-  // Only the list form is a closed list here for now; the query form (values read from the API) comes with F124.
-  return Array.isArray(parameter.allowed_values) && parameter.allowed_values.length > 0;
+  return allowedList(parameter) !== null || allowedQuery(parameter) !== null;
 }
 
 /** The type of the elements of a parameter that is not a period. */
@@ -48,12 +67,14 @@ function typedFromApi(apiText: string, parameter: WorkflowParameter): string {
   return parameter.type === 'integer' || parameter.type === 'decimal' ? formatApiNumber(apiText) : apiText;
 }
 
+const EMPTY_STATE: ParameterFieldState = { usingDefault: false, text: '', start: '', end: '', items: [], incomplete: [], relative: null };
+
 /** How a parameter starts: with its fixed default typed in, or on the relative default, or empty. */
 export function initialFieldState(parameter: WorkflowParameter): ParameterFieldState {
-  const empty: ParameterFieldState = { usingDefault: false, text: '', start: '', end: '', items: [], incomplete: [] };
+  const empty = EMPTY_STATE;
   const fallback = parameter.default;
   if (fallback === null) return empty;
-  if (fallback.kind === 'relative') return { ...empty, usingDefault: true };
+  if (fallback.kind === 'relative') return { ...empty, usingDefault: true, relative: fallback.value };
 
   const value = fallback.value;
   if (parameter.type === 'period') {
@@ -166,4 +187,79 @@ export function readParameters(parameters: readonly WorkflowParameter[], values:
 /** `missing_parameter` and `invalid_parameter` (`422`): the message of each parameter by its name, or `null` for another error. */
 export function parameterErrorsFrom(error: unknown): ParameterErrors | null {
   return error instanceof ApiError && (error.code === 'missing_parameter' || error.code === 'invalid_parameter') ? error.fields : null;
+}
+
+/** The result of reading the form in the schedule mode: the `parameters` of the schedule, or the errors by parameter name. */
+export type ScheduleParametersReading = { ok: true; parameters: Record<string, ScheduleParameter> } | { ok: false; errors: ParameterErrors };
+
+/** Whether a parameter is on "Relativo" in the schedule mode. */
+export function isScheduleRelative(parameter: WorkflowParameter, state: ParameterFieldState): boolean {
+  return state.relative !== null && relativesFor(parameter).includes(state.relative);
+}
+
+/** In the schedule mode there is no "relative default in use": a parameter is either "Fixo" (typed) or "Relativo". */
+export function scheduleFieldState(state: ParameterFieldState): ParameterFieldState {
+  return state.usingDefault ? { ...state, usingDefault: false } : state;
+}
+
+/**
+ * Reads the form in the schedule mode (E7-24) for the `parameters` of the schedule, each as `{kind, value}`: "Relativo" goes
+ * as `{kind: 'relative', value}` (resolved at each trigger); "Fixo" goes as `{kind: 'fixed', value}`, read as in the run
+ * mode. A fixed parameter left empty is not sent: the frozen definition's default is used.
+ */
+export function readScheduleParameters(parameters: readonly WorkflowParameter[], values: ParameterFormValues): ScheduleParametersReading {
+  const result: Record<string, ScheduleParameter> = {};
+  const errors: Record<string, string> = {};
+  for (const parameter of parameters) {
+    const state = fieldState(values, parameter);
+    if (isScheduleRelative(parameter, state) && state.relative !== null) {
+      result[parameter.name] = { kind: 'relative', value: state.relative };
+      continue;
+    }
+    const { value, error } = readParameter(parameter, scheduleFieldState(state));
+    if (error !== null) errors[parameter.name] = error;
+    else if (value !== null) result[parameter.name] = { kind: 'fixed', value };
+  }
+  return Object.keys(errors).length > 0 ? { ok: false, errors } : { ok: true, parameters: result };
+}
+
+function two(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+/** An ISO 8601 instant as the local date and time of the `datetime-local` field (`aaaa-mm-ddThh:mm:ss`). */
+function localDateTime(iso: string): string {
+  const moment = new Date(iso);
+  if (Number.isNaN(moment.getTime())) return '';
+  const date = `${moment.getFullYear()}-${two(moment.getMonth() + 1)}-${two(moment.getDate())}`;
+  return `${date}T${two(moment.getHours())}:${two(moment.getMinutes())}:${two(moment.getSeconds())}`;
+}
+
+/** A value of the API (`ParameterValue`) as what the form holds for it. */
+function fixedFieldState(parameter: WorkflowParameter, value: ParameterValue): ParameterFieldState {
+  if (parameter.type === 'period') {
+    return typeof value === 'object' && !Array.isArray(value) ? { ...EMPTY_STATE, start: value.start, end: value.end } : EMPTY_STATE;
+  }
+  if (Array.isArray(value)) return { ...EMPTY_STATE, items: [...value] };
+  if (typeof value === 'boolean') return { ...EMPTY_STATE, text: value ? 'true' : 'false' };
+  if (typeof value !== 'string') return EMPTY_STATE;
+  if (parameter.type === 'datetime') return { ...EMPTY_STATE, text: localDateTime(value) };
+  return { ...EMPTY_STATE, text: typedFromApi(value, parameter) };
+}
+
+/**
+ * The form values of a saved schedule (`Schedule.parameters`), to edit it: each parameter as it was saved, fixed or
+ * relative. A parameter the schedule does not have starts as its declaration says.
+ */
+export function scheduleFormValues(
+  parameters: readonly WorkflowParameter[],
+  saved: Readonly<Record<string, ScheduleParameter>>,
+): ParameterFormValues {
+  const values: Record<string, ParameterFieldState> = {};
+  for (const parameter of parameters) {
+    const entry = saved[parameter.name];
+    if (entry === undefined) continue;
+    values[parameter.name] = entry.kind === 'relative' ? { ...EMPTY_STATE, relative: entry.value } : fixedFieldState(parameter, entry.value);
+  }
+  return values;
 }

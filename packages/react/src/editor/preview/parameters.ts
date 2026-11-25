@@ -33,7 +33,7 @@ export function useRunParameters(workflowId: string, parameters: readonly Workfl
   const key = `${session.data?.user.id ?? ''}:${session.data?.current_tenant?.id ?? ''}:${workflowId}`;
   const store = storeOf(queryClient);
   // Read once, when the tab opens: from then on the form holds what is typed.
-  const form = useParameterForm(parameters, store.get(key) ?? {});
+  const form = useParameterForm(parameters, { workflowId, initial: store.get(key) ?? {} });
   const { onChange } = form.formProps;
   const remember = useCallback(
     (next: ParameterFormValues) => {

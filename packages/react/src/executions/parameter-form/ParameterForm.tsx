@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button, Checkbox, FieldMessage, Select, Text, TextField, textClasses } from '../../design-system';
+import { AllowedValuesField } from './AllowedValuesField';
 import { displayApiText, literalToApiText } from './literals';
-import { RELATIVE_LABELS, fieldHelp } from './labels';
+import { RELATIVE_LABELS, fieldHelp, relativesFor } from './labels';
 import { TagsField } from './TagsField';
 import {
+  allowedList,
+  allowedQuery,
   fieldState,
-  hasAllowedValues,
+  isScheduleRelative,
   periodWarning,
   readParameter,
   scalarType,
+  scheduleFieldState,
   type ParameterErrors,
   type ParameterFieldState,
   type ParameterFormValues,
+  type RelativeDefault,
   type WorkflowParameter,
 } from './values';
 import { ValueInput } from './ValueInput';
@@ -20,30 +25,45 @@ import './parameter-form.css';
 /** The select needs a non-empty value for "no choice". */
 const NONE_OPTION = 'none';
 
+/**
+ * - `run` (default): the values of one run (trigger, preview, "Calcular", simulation). A relative default is shown by its
+ *   label, with "Trocar por um valor fixo";
+ * - `schedule`: the values of a schedule (E7-24). A parameter whose type has relatives (date, date and time, period; never a
+ *   list) is "Fixo" or "Relativo"; the relative is resolved at each trigger.
+ */
+export type ParameterFormMode = 'run' | 'schedule';
+
 export interface ParameterFormProps {
+  /** The workflow: the values of a parameter with a query (`allowed_values`) are read from its saved draft. */
+  workflowId: string;
   /** The declaration of the workflow (`definition.parameters`). */
   parameters: readonly WorkflowParameter[];
   /** What is typed, by parameter name. Start with `{}`: every parameter starts as its declaration says. */
   values: ParameterFormValues;
   onChange: (values: ParameterFormValues) => void;
-  /** The errors by parameter name: the back's `missing_parameter` and `invalid_parameter`, and the ones of `readParameters`. */
+  /** The errors by parameter name: the back's `missing_parameter` and `invalid_parameter`, and the ones of the reading. */
   errors?: ParameterErrors;
+  /** Default `run`. Comes with the controller (`useParameterForm` or `useScheduleParameterForm`). */
+  mode?: ParameterFormMode;
   disabled?: boolean;
 }
 
 /**
  * The form of the parameters of a run, generated from the declaration (E6-17, E6-19): a field by type, number and date in
- * the pattern of the user (E4-24), the period as two dates, the list as a multiple choice or as tags, and the relative
- * default shown by its label (the execution resolves it) with "Trocar por um valor fixo". Controlled: use it with
- * `useParameterForm`. The caller puts it inside its own `<form>` or dialog.
+ * the pattern of the user (E4-24), the period as two dates, the closed list as a multiple choice or a select, the query as
+ * a search over the values read from the API (E7-23), the free list as tags, and the relative default shown by its label
+ * (the execution resolves it) with "Trocar por um valor fixo". In the schedule mode, Fixo | Relativo (E7-24). Controlled:
+ * use it with `useParameterForm` or `useScheduleParameterForm`. The caller puts it inside its own `<form>` or dialog.
  */
-export function ParameterForm({ parameters, values, onChange, errors = {}, disabled = false }: ParameterFormProps) {
+export function ParameterForm({ workflowId, parameters, values, onChange, errors = {}, mode = 'run', disabled = false }: ParameterFormProps) {
   if (parameters.length === 0) return null;
+  const Field = mode === 'schedule' ? ScheduleParameterField : RunParameterField;
   return (
     <div className="fc-parameter-form" role="group" aria-label="Parâmetros">
       {parameters.map((parameter) => (
-        <ParameterField
+        <Field
           key={parameter.name}
+          workflowId={workflowId}
           parameter={parameter}
           state={fieldState(values, parameter)}
           error={errors[parameter.name]}
@@ -56,6 +76,7 @@ export function ParameterForm({ parameters, values, onChange, errors = {}, disab
 }
 
 interface ParameterFieldProps {
+  workflowId: string;
   parameter: WorkflowParameter;
   state: ParameterFieldState;
   error: string | undefined;
@@ -67,8 +88,15 @@ function relativeLabel(parameter: WorkflowParameter): string | null {
   return parameter.default?.kind === 'relative' ? RELATIVE_LABELS[parameter.default.value] : null;
 }
 
-function ParameterField({ parameter, state, error, disabled, onChange }: ParameterFieldProps) {
+/** The error on screen: the one given (the back's or the reading's) or, once the field was left, the one of what is typed. */
+function useShownError(parameter: WorkflowParameter, state: ParameterFieldState, error: string | undefined) {
   const [touched, setTouched] = useState(false);
+  const shown = error ?? (touched ? (readParameter(parameter, state).error ?? undefined) : undefined);
+  return { shown, markTouched: () => setTouched(true) };
+}
+
+function RunParameterField({ workflowId, parameter, state, error, disabled, onChange }: ParameterFieldProps) {
+  const { shown, markTouched } = useShownError(parameter, state, error);
   const relative = relativeLabel(parameter);
   const help = fieldHelp(parameter);
 
@@ -87,76 +115,18 @@ function ParameterField({ parameter, state, error, disabled, onChange }: Paramet
     );
   }
 
-  const shownError = error ?? (touched ? readParameter(parameter, state).error ?? undefined : undefined);
-  const patch = (next: Partial<ParameterFieldState>) => onChange({ ...state, ...next });
-  const markTouched = () => setTouched(true);
-
-  let field;
-  if (parameter.type === 'period') {
-    field = (
-      <PeriodField
-        name={parameter.name}
-        help={help}
-        state={state}
-        error={shownError}
-        disabled={disabled}
-        onChange={(next) => patch(next)}
-        onBlur={markTouched}
-      />
-    );
-  } else if (parameter.list && hasAllowedValues(parameter)) {
-    field = (
-      <ChoiceList
-        parameter={parameter}
-        help={help}
-        selected={state.items}
-        error={shownError}
-        disabled={disabled}
-        onChange={(items) => patch({ items })}
-      />
-    );
-  } else if (parameter.list) {
-    field = (
-      <TagsField
-        name={parameter.name}
-        type={scalarType(parameter)}
-        scale={parameter.scale}
-        help={help}
-        items={state.items}
-        error={shownError}
-        disabled={disabled}
-        onChange={(items) => patch({ items })}
-      />
-    );
-  } else if (hasAllowedValues(parameter)) {
-    field = (
-      <ChoiceSelect
-        parameter={parameter}
-        help={help}
-        value={state.text}
-        error={shownError}
-        disabled={disabled}
-        onChange={(text) => patch({ text })}
-      />
-    );
-  } else {
-    field = (
-      <ValueInput
-        label={parameter.name}
-        tooltip={help}
-        type={scalarType(parameter)}
-        value={state.text}
-        onChange={(text, badInput) => patch({ text, incomplete: badInput ? ['text'] : [] })}
-        onBlur={markTouched}
-        error={shownError}
-        disabled={disabled}
-      />
-    );
-  }
-
   return (
     <div className="fc-parameter-field">
-      {field}
+      <ValueField
+        workflowId={workflowId}
+        parameter={parameter}
+        help={help}
+        state={state}
+        error={shown}
+        disabled={disabled}
+        onChange={onChange}
+        onBlur={markTouched}
+      />
       {relative !== null ? (
         <Button
           type="button"
@@ -170,6 +140,176 @@ function ParameterField({ parameter, state, error, disabled, onChange }: Paramet
         </Button>
       ) : null}
     </div>
+  );
+}
+
+/** A parameter of a schedule: Fixo | Relativo when its type has relatives, otherwise just its field. */
+function ScheduleParameterField({ workflowId, parameter, state, error, disabled, onChange }: ParameterFieldProps) {
+  const fixed = scheduleFieldState(state);
+  const { shown, markTouched } = useShownError(parameter, fixed, error);
+  const relatives = relativesFor(parameter);
+  const help = fieldHelp(parameter);
+  const valueField = (
+    <ValueField
+      workflowId={workflowId}
+      parameter={parameter}
+      help={help}
+      state={fixed}
+      error={shown}
+      disabled={disabled}
+      onChange={onChange}
+      onBlur={markTouched}
+    />
+  );
+  if (relatives.length === 0) return <div className="fc-parameter-field">{valueField}</div>;
+
+  const relativeOn = isScheduleRelative(parameter, state);
+  const declared = parameter.default?.kind === 'relative' ? parameter.default.value : null;
+  const firstRelative: RelativeDefault | undefined = declared !== null && relatives.includes(declared) ? declared : relatives[0];
+  return (
+    <div className="fc-parameter-field">
+      <ValueKind
+        name={parameter.name}
+        relative={relativeOn}
+        disabled={disabled}
+        onChange={(toRelative) => onChange({ ...fixed, relative: toRelative ? (firstRelative ?? null) : null })}
+      />
+      {relativeOn ? (
+        <Select
+          label={parameter.name}
+          tooltip={help}
+          error={error}
+          disabled={disabled}
+          options={relatives.map((value) => ({ value, label: RELATIVE_LABELS[value] }))}
+          value={state.relative ?? undefined}
+          onValueChange={(next) => onChange({ ...fixed, relative: relatives.find((value) => value === next) ?? null })}
+        />
+      ) : (
+        valueField
+      )}
+    </div>
+  );
+}
+
+interface ValueKindProps {
+  name: string;
+  relative: boolean;
+  disabled: boolean;
+  onChange: (relative: boolean) => void;
+}
+
+const VALUE_KINDS = [
+  { relative: false, label: 'Fixo' },
+  { relative: true, label: 'Relativo' },
+] as const;
+
+/** Fixo | Relativo, a segmented control (estilos.md §7.2) made of native radios: the arrows move between the two. */
+function ValueKind({ name, relative, disabled, onChange }: ValueKindProps) {
+  const group = useId();
+  return (
+    <div className="fc-parameter-kind" role="radiogroup" aria-label={`Valor de ${name}`}>
+      {VALUE_KINDS.map((option) => {
+        const checked = option.relative === relative;
+        return (
+          <label
+            key={option.label}
+            className={`fc-parameter-kind-option ${textClasses({ variant: 'label-13' })}`}
+            data-checked={checked || undefined}
+            data-disabled={disabled || undefined}
+          >
+            <input
+              type="radio"
+              className="fc-parameter-kind-radio"
+              name={group}
+              checked={checked}
+              disabled={disabled}
+              onChange={() => onChange(option.relative)}
+            />
+            {option.label}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+interface ValueFieldProps {
+  workflowId: string;
+  parameter: WorkflowParameter;
+  help: string;
+  state: ParameterFieldState;
+  error: string | undefined;
+  disabled: boolean;
+  onChange: (state: ParameterFieldState) => void;
+  onBlur: () => void;
+}
+
+/** The field of a value, by what the declaration says: period, query, closed list, free list or one value of the type. */
+function ValueField({ workflowId, parameter, help, state, error, disabled, onChange, onBlur }: ValueFieldProps) {
+  const patch = (next: Partial<ParameterFieldState>) => onChange({ ...state, ...next });
+
+  if (parameter.type === 'period') {
+    return (
+      <PeriodField name={parameter.name} help={help} state={state} error={error} disabled={disabled} onChange={patch} onBlur={onBlur} />
+    );
+  }
+  if (allowedQuery(parameter) !== null) {
+    return (
+      <AllowedValuesField
+        workflowId={workflowId}
+        name={parameter.name}
+        type={scalarType(parameter)}
+        help={help}
+        multiple={parameter.list}
+        selected={parameter.list ? state.items : state.text === '' ? [] : [state.text]}
+        error={error}
+        disabled={disabled}
+        onChange={(selected) => patch(parameter.list ? { items: selected } : { text: selected[0] ?? '' })}
+      />
+    );
+  }
+  if (parameter.list && allowedList(parameter) !== null) {
+    return (
+      <ChoiceList
+        parameter={parameter}
+        help={help}
+        selected={state.items}
+        error={error}
+        disabled={disabled}
+        onChange={(items) => patch({ items })}
+      />
+    );
+  }
+  if (parameter.list) {
+    return (
+      <TagsField
+        name={parameter.name}
+        type={scalarType(parameter)}
+        scale={parameter.scale}
+        help={help}
+        items={state.items}
+        error={error}
+        disabled={disabled}
+        onChange={(items) => patch({ items })}
+      />
+    );
+  }
+  if (allowedList(parameter) !== null) {
+    return (
+      <ChoiceSelect parameter={parameter} help={help} value={state.text} error={error} disabled={disabled} onChange={(text) => patch({ text })} />
+    );
+  }
+  return (
+    <ValueInput
+      label={parameter.name}
+      tooltip={help}
+      type={scalarType(parameter)}
+      value={state.text}
+      onChange={(text, badInput) => patch({ text, incomplete: badInput ? ['text'] : [] })}
+      onBlur={onBlur}
+      error={error}
+      disabled={disabled}
+    />
   );
 }
 
@@ -261,16 +401,16 @@ interface ChoiceProps {
   disabled: boolean;
 }
 
-/** The allowed values as options: the API text to send and the text to show. */
+/** The closed list of allowed values as options: the API text to send and the text to show. */
 function allowedOptions(parameter: WorkflowParameter): { value: string; label: string }[] {
   const type = scalarType(parameter);
-  return (Array.isArray(parameter.allowed_values) ? parameter.allowed_values : []).flatMap((literal) => {
+  return (allowedList(parameter) ?? []).flatMap((literal) => {
     const value = literalToApiText(literal, type);
     return value === null ? [] : [{ value, label: displayApiText(value, type) }];
   });
 }
 
-/** A list parameter with `allowed_values`: a multiple choice among them. */
+/** A list parameter with a closed list of `allowed_values`: a multiple choice among them. */
 function ChoiceList({ parameter, help, selected, error, disabled, onChange }: ChoiceProps & { selected: readonly string[]; onChange: (items: string[]) => void }) {
   const options = allowedOptions(parameter);
   return (
@@ -299,7 +439,7 @@ function ChoiceList({ parameter, help, selected, error, disabled, onChange }: Ch
   );
 }
 
-/** A scalar parameter with `allowed_values`: one choice among them. */
+/** A scalar parameter with a closed list of `allowed_values`: one choice among them. */
 function ChoiceSelect({ parameter, help, value, error, disabled, onChange }: ChoiceProps & { value: string; onChange: (text: string) => void }) {
   const options = allowedOptions(parameter);
   return (

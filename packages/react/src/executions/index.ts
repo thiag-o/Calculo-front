@@ -2,16 +2,34 @@
 // Executions: list, panel, tree of composite executions and debug with trace.
 // This file is the vertical's public interface; the rest of the folder is private.
 
-// The form of the parameters of a run (E6-16): the editor's preview and "Calcular" use it too.
-export { ParameterForm, RELATIVE_LABELS, initialFieldState, parameterErrorsFrom, readParameters, useParameterForm } from './parameter-form';
+// The form of the parameters of a run (E6-16): the editor's preview and "Calcular" use it too. With the search over the
+// values of a query (E7-23) and the schedule mode, Fixo | Relativo (E7-24).
+export {
+  ParameterForm,
+  RELATIVE_LABELS,
+  initialFieldState,
+  parameterErrorsFrom,
+  readParameters,
+  readScheduleParameters,
+  relativesFor,
+  scheduleFormValues,
+  useParameterForm,
+  useScheduleParameterForm,
+} from './parameter-form';
 export type {
   ParameterErrors,
   ParameterFieldState,
   ParameterFormController,
+  ParameterFormMode,
+  ParameterFormOptions,
   ParameterFormProps,
+  ParameterFormStateProps,
   ParameterFormValues,
   ParameterValue,
   ParametersReading,
+  ScheduleParameter,
+  ScheduleParameterFormController,
+  ScheduleParametersReading,
   WorkflowParameter,
 } from './parameter-form';
 

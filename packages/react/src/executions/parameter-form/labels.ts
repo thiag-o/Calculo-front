@@ -16,6 +16,21 @@ export const RELATIVE_LABELS: Readonly<Record<Schemas['RelativeDefault'], string
   last_30_days: 'Últimos 30 dias',
 };
 
+/**
+ * The relatives that serve each type (contract, `RelativeDefault`), in the order they are offered. The other types, and
+ * every list, have no relative value.
+ */
+const RELATIVES_BY_TYPE: Readonly<Partial<Record<Schemas['ParameterType'], readonly Schemas['RelativeDefault'][]>>> = {
+  date: ['today', 'yesterday', 'first_day_of_current_month', 'first_day_of_previous_month', 'last_day_of_previous_month'],
+  datetime: ['now'],
+  period: ['current_month', 'previous_month', 'last_7_days', 'last_30_days'],
+};
+
+/** The relatives a parameter can take (empty when its type has none, or when it is a list). */
+export function relativesFor(parameter: Pick<Parameter, 'type' | 'list'>): readonly Schemas['RelativeDefault'][] {
+  return parameter.list ? [] : (RELATIVES_BY_TYPE[parameter.type] ?? []);
+}
+
 /** The type in words, under the field ("Número com 2 casas"). */
 export function typeDescription(parameter: Pick<Parameter, 'type' | 'scale' | 'list'>): string {
   const base = scalarDescription(parameter.type, parameter.scale);
