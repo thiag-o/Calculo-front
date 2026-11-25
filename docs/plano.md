@@ -1944,3 +1944,149 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 - dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137, F139, F140
 - modelo: sonnet
 - Aceite: o mesmo da F106, com as telas do épico 7 provadas pelo `pnpm e2e:visual`.
+
+### Épico 8 — Fonte Múltipla e agregações
+
+As decisões E8-1 a E8-16, o esquema na versão 5, o modo Múltiplo, os filtros com variável e data relativa, o `onde`, a prévia, as contagens e o trace estão no plano do back (`../backend/docs/plano.md`, épico 8, e Contratos, "Fonte Múltipla e agregações"). O contrato é o da B198. Decisões do front, propostas pela sessão global em 2026-11-25:
+- **E8-17, onde fica cada coisa:**
+  - `editor/sources/source-block/`: o modo Múltiplo nas propriedades do bloco Fonte, e `editor/canvas/NewSourceDialog.tsx` (a escolha do modo ao criar);
+  - `editor/sources/filters/`: o valor do filtro com variável do registro e a data relativa;
+  - `formula/`: o `onde` no Monaco e no campo simples;
+  - `editor/canvas/` e `editor/layers/`: o bloco Múltiplo no canvas, na barra de ferramentas e nas camadas;
+  - `editor/preview/`: as contagens do Múltiplo na aba Prévia;
+  - `editor/unit-run/`: os itens do Múltiplo no trace do Calcular;
+  - `executions/detail/` e `executions/records/`: as contagens no painel (seção Fontes) e os itens no trace guardado.
+  - Motivo: ADR 0003 e a mesma divisão das E5-16 a E5-21. Nenhuma vertical nova.
+- **E8-18, bloco Fonte no modo Múltiplo:**
+  - o controle segmentado do modo passa a **Linear | Múltiplo | Filtro** (estilos §7.2, que já traz o exemplo);
+  - **campos, nesta ordem:** Dataset; Nome da lista (mono, com `[]` mostrado depois do nome, sugerido pelo id do bloco); Ligações; Filtros; Ordenação (obrigatória, com a ajuda "Define a ordem dos itens da lista."); Sem itens (Lista vazia | Gerar erro | Descartar o registro); Limite de itens por registro (número, padrão 10.000, com a ajuda "Acima disso, o registro dá erro."); Registro atual (Excluir | Incluir, só quando o dataset é o da fonte do lote, com a ajuda "Excluir evita contar o registro corrente duas vezes."); Saídas, mostradas como campos da lista (`valor_compra[]`);
+  - **trocar de modo** com saídas usadas em fórmulas pede confirmação: "As fórmulas que usam as saídas deste bloco vão mostrar problemas até você ajustá-las." (decidido sem base no design);
+  - os problemas `multiple_in_link`, `not_visible`, `link_to_calculated`, `filter_type_mismatch` e `duplicate_name` (do nome da lista) aparecem no campo certo, pelo `path`;
+  - só leitura: tudo desabilitado, com o motivo.
+  - Motivo: design §7 (tabela de configuração) e estilos §7.2. Os textos vêm da D-E8-9 e da D-E8-4.
+- **E8-19, canvas e camadas:**
+  - o bloco Múltiplo usa a categoria `--fc-cat-multi` (estilos §2), com o tipo "Múltiplo" no cabeçalho;
+  - as portas de saída mostram `campo[]` em `mono-12`; a porta da lista mostra `pontuacoes[]`;
+  - a barra de ferramentas ganha **Fonte Múltiplo**, com o quadrado da categoria, e o diálogo de fonte nova passa a oferecer os três modos;
+  - na árvore de camadas e no painel Variáveis, os campos da lista aparecem com `[]` e o quadrado `cat-multi`;
+  - depois de um Calcular, o bloco mostra "2 itens" no lugar dos valores (os valores do canvas, E5-21).
+  - Motivo: estilos §2 e §8; design §8 (a referência a um múltiplo leva `[]`).
+- **E8-20, filtros com variável e data relativa:**
+  - o valor do filtro de um bloco Fonte ganha um seletor **Valor | Variável | Data relativa**, ao lado do botão `@` que já existe (F99);
+  - **Variável:** uma busca com as variáveis lidas e visíveis naquele ponto, só do tipo da coluna (inteiro e decimal juntos), em mono;
+  - **Data relativa** (só em colunas de data e data e hora; operador "Nos últimos"): "Nos últimos [30] dias antes de [Hoje | @periodo.inicio | …]", com a explicação "Da data − 30 dias até a véspera." (texto ligado à resposta da D-E8-5);
+  - a fonte do lote não ganha nada disso (D-E8-6).
+  - Motivo: design §6 e §7 (filtros com valor fixo, variável, parâmetro e data relativa).
+- **E8-21, `onde` na fórmula:**
+  - `onde` e `e` são palavras-chave, em `cat-decision` (estilos §8);
+  - depois de `onde`, o autocomplete oferece primeiro os campos da lista da agregação, **sem** `[]`, e depois as variáveis lineares e os parâmetros;
+  - os operadores do `onde` vêm do `GET /v1/formula-language` (bloco `where`), nunca fixos no front (E4-17);
+  - os problemas `where_outside_aggregation` e os do `onde` sublinham o trecho, como os outros.
+  - Motivo: estilos §8 ("palavras-chave em `cat-decision`") e E4-17.
+- **E8-22, prévia:**
+  - na aba Prévia, o bloco Múltiplo mostra "29 com itens · 19 sem itens · média de 0,98 item por registro · máximo de 2", com ponto e palavra como as outras fontes (F66); `item_limit_exceeded` > 0 aparece em vermelho, com "3 acima do limite";
+  - o máximo traz as chaves de exemplo em mono;
+  - a amostra mostra os itens com a coluna da chave do registro primeiro;
+  - os números vêm da API, no padrão brasileiro, nunca recalculados (E4-24).
+  - Motivo: design §6 ("no modo Múltiplo: média e máximo de itens por registro").
+- **E8-23, trace do Calcular:** o nó Múltiplo mostra "2 itens" e uma tabela compacta com os itens (até 100; acima disso, "Mostrando 100 de 250 itens.", D-E8-8), com os números no padrão brasileiro e o nulo como "vazio"; os erros `no_items` e `item_limit_exceeded` aparecem no nó, com a mensagem da API.
+  - Motivo: design §12 (trace com os múltiplos).
+- **E8-24, execuções:**
+  - na seção Fontes do painel, o bloco Múltiplo mostra com itens, sem itens, acima do limite, média e máximo, com a cor de aviso quando sem itens ou acima do limite passa de 0 (a regra da D111-global);
+  - na gaveta do trace do registro, o nó Múltiplo mostra "2 itens" e o hash; no nível completo, também a tabela dos itens; nos outros, a nota "Os itens só ficam guardados no nível de trace completo.".
+  - Motivo: design §12 (níveis do trace) e E7-21 (seção Fontes).
+
+**F141 · Tipos da API do épico 8**
+- tipo: contrato
+- dep: B198, F133
+- modelo: sonnet
+- arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, `e2e/epic-4/support/`, `e2e/epic-5/support/`, `e2e/epic-6/support/`, `e2e/epic-7/support/`, `packages/react/src/editor/draft/` (só a versão gravada passar a 5, como a F122)
+- Fazer: gerar os tipos do contrato da B198 (`pnpm generate:api`); acrescentar os exemplos do épico 8 ao contrato simulado do e2e; passar **todas** as definições do simulado (épicos 4 a 7) à versão 5, validadas contra o esquema (ADR 0060); o editor lê rascunhos nas versões 1 a 5 e grava sempre a 5, pela constante única da F117. Nada de mascarar no componente com `?? []`.
+- Aceite: `pnpm typecheck` e o `contract-examples` verdes; o `pnpm e2e` dos épicos 4 a 7 verde no simulado; um teste que abre um rascunho v4 e grava v5; `git grep` não acha outra versão gravada fixa no editor.
+
+**F142 · Editor: bloco Fonte no modo Múltiplo**
+- dep: F141
+- modelo: opus
+- arquivos: `packages/react/src/editor/sources/source-block/`, `packages/react/src/editor/canvas/NewSourceDialog.tsx`, e (só se ainda faltar) a exportação em `packages/react/src/editor/sources/index.ts`
+- Fazer (E8-18): o modo Múltiplo nas propriedades do bloco Fonte, com os campos, a ordem e os textos da E8-18; o Registro atual só com o dataset da fonte do lote; a confirmação ao trocar de modo; o diálogo de fonte nova com os três modos; os problemas no campo pelo `path`; o só leitura.
+- Aceite: testes de criar um Múltiplo pelo diálogo; de cada campo gravando no rascunho no formato do contrato (`list_name`, `no_items`, `row_limit`, `current_record`); do limite fora de 1 a 10.000 recusado no front; do Registro atual escondido em outro dataset e visível no da fonte do lote; da troca Linear → Múltiplo com a confirmação; de cada problema no campo; e do só leitura. Os testes da F64 seguem verdes.
+
+**F143 · Editor: filtros com variável do registro e data relativa**
+- dep: F141
+- modelo: opus
+- arquivos: `packages/react/src/editor/sources/filters/`
+- Fazer (E8-20): o seletor Valor | Variável | Data relativa nos filtros do bloco Fonte (nos três modos), com a busca das variáveis visíveis do tipo e o "Nos últimos N dias antes de …" com a âncora Hoje ou um parâmetro de data (ou `.inicio` e `.fim` de um período); o envio no formato do contrato (`values` com o nome; `last_days` com `anchor`); os problemas no campo; a fonte do lote sem as opções novas.
+- Aceite: testes de escolher uma variável (só as do tipo, inclusive inteiro com decimal); da data relativa com "Hoje" e com `@periodo.inicio` (o envio é `{"operator": "last_days", "values": ["30"], "anchor": "@periodo.inicio"}`); de N fora de 1 a 3.650 recusado; da data relativa só em colunas de data; de cada problema no campo; da fonte do lote sem as opções; os testes da F64 e da F99 seguem verdes.
+
+**F144 · Fórmula: `onde` nas agregações**
+- dep: F141
+- modelo: opus
+- arquivos: `packages/react/src/formula/`
+- Fazer (E8-21): `onde` e `e` como palavras-chave no realce; o autocomplete depois de `onde` (os campos da lista sem `[]`, depois os lineares e os parâmetros); os operadores do bloco `where` do `formula-language`; os problemas novos sublinhados; o mesmo no campo simples (sem Monaco).
+- Aceite: testes do realce; do autocomplete dentro de `SOMA(valor_compra[] * taxa[] onde |)` (oferece `campanha_id`, `valor_compra` e `taxa` sem `[]`, antes dos lineares); dos operadores lidos da API (um operador a menos na resposta simulada some da lista); do `where_outside_aggregation` sublinhado; e do campo simples. Os testes da fórmula do épico 4 e da F99 seguem verdes.
+
+**F145 · Canvas e camadas: o bloco Múltiplo**
+- dep: F141
+- modelo: opus
+- arquivos: `packages/react/src/editor/canvas/` (menos o `NewSourceDialog.tsx`, da F142), `packages/react/src/editor/layers/`
+- Fazer (E8-19): o bloco Múltiplo com a categoria `cat-multi` e o tipo "Múltiplo"; as portas com `[]`; **Fonte Múltiplo** na barra de ferramentas; as camadas e o painel Variáveis com os campos da lista; "2 itens" no bloco depois do Calcular.
+- Aceite: testes do bloco (cor, tipo e portas), da barra de ferramentas criando um Múltiplo, das camadas com o ícone e os campos `[]`, e do "N itens" depois de um Calcular (some na próxima edição, E5-21); a ligação desenhada vem da referência, como sempre (E4-9). Os testes da F65 e da F68 seguem verdes.
+
+**F146 · Prévia: média e máximo de itens**
+- dep: F141
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/preview/`
+- Fazer (E8-22): as contagens do Múltiplo na aba Prévia, com o máximo e as chaves de exemplo, o "acima do limite" e a amostra de itens com a chave do registro.
+- Aceite: testes com a prévia do exemplo do contrato ("29 com itens · 19 sem itens · média de 0,98 item por registro · máximo de 2"); com `item_limit_exceeded` 3 em vermelho; com nenhum registro no bloco (média "—"); e a amostra com a chave primeiro. Os testes da F66 seguem verdes.
+
+**F147 · Calcular: os itens do Múltiplo no trace**
+- dep: F141
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/unit-run/`
+- Fazer (E8-23): o nó Múltiplo no resultado do Calcular, com a contagem, a tabela dos itens (até 100, com a nota do corte), o nulo como "vazio" e os erros `no_items` e `item_limit_exceeded` no nó. O componente da tabela de itens fica exportável para a F148 pelo `editor/unit-run/index.ts`.
+- Aceite: testes com o registro (1, 1) do exemplo do contrato (2 itens, "200,00" e "100,00", na ordem da API); com 101 itens (a nota "Mostrando 100 de 101 itens."); com `item_limit_exceeded`; com `no_items`; e o teclado da tabela. Os testes da F67 seguem verdes.
+
+**F148 · Execuções: o Múltiplo em Fontes e no trace do registro**
+- dep: F141, F147
+- modelo: sonnet
+- arquivos: `packages/react/src/executions/detail/`, `packages/react/src/executions/records/`
+- Fazer (E8-24): os campos do Múltiplo na seção Fontes (com a cor de aviso da D111-global) e o nó Múltiplo na gaveta do trace (contagem e hash; a tabela de itens da F147 só no nível completo; a nota nos outros níveis).
+- Aceite: testes das Fontes com o exemplo do contrato; das cores com sem itens e acima do limite; da gaveta no `standard` (com a nota) e no `full` (com a tabela); e do `no_items` nos grupos de erro. Os testes da F118 e da F125 seguem verdes.
+
+**F149 · Integração do épico 8: interface pública, simulado e glossário**
+- dep: F142, F143, F144, F145, F146, F147, F148
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/index.ts`, `packages/react/src/module/`, `e2e/support/` (a API simulada responde a análise, a prévia e o Calcular da "Campanha de referência — histórico" com os exemplos do contrato), `docs/glossario.md`, `README.md`, `.changeset/`, e `e2e/visual/__screenshots__/` só para as telas que mudam pelo modo Múltiplo (o relatório lista as telas)
+- Fazer: ligar as peças do épico no editor e no módulo (o diálogo de fonte nova, a barra de ferramentas, as propriedades, a Prévia, o Calcular e o painel); a API simulada com o workflow do histórico; os nomes novos no glossário (Fonte Múltiplo, lista, item, `onde`, data relativa, âncora, registro atual), com um changeset `minor`.
+- Aceite: um teste de ponta a ponta no editor simulado: criar um Múltiplo, ligar, escrever `EXISTE(pontuacoes[] onde campanha_id = 1)` na Tabela, ver a Prévia e o Calcular; `pnpm build` verde; o Auditor vê o bloco e o trace só para leitura.
+
+**F150 · Testes ponta a ponta do épico 8**
+- dep: F149
+- modelo: opus
+- arquivos: `e2e/epic-8/` (nova), `e2e/support/`, `e2e/visual/`, `README.md`
+- Fazer: **todos** os fluxos do épico 8 do plano global ("Fluxos ponta a ponta" e "Roteiro de teste"), no modo simulado. A lista abaixo é o mínimo (D30):
+  - abrir a "Campanha de referência — histórico", ver o bloco "Pontuações anteriores" e a Prévia com fevereiro de 2026 (29 com itens, 19 sem itens, média 0,98, máximo 2);
+  - Calcular (1, 1), (2, 2), (5, 1) e (17, 2), com os itens e os valores da tabela de Contratos;
+  - executar o lote com fevereiro de 2026 e ver as Fontes no painel; baixar o CSV;
+  - na tela Testes, enviar o `expected_history.csv` e **Simular**: 100% iguais;
+  - numa cópia, o limite 1 e o Calcular de (1, 1) com o erro; o Sem itens "Descartar o registro" e o Calcular de (3, 1) ignorado;
+  - escrever um `onde` errado e ver o problema; o `onde` fora de agregação;
+  - uma execução com o trace completo, com os itens na gaveta, e uma com o padrão, com a nota;
+  - as telas do épico 8 (propriedades do Múltiplo, filtro com data relativa, autocomplete do `onde`, Prévia, Calcular e gaveta do trace) no `pnpm e2e:visual`, nos dois temas e nas faixas de largura do estilos §15.
+  - **No modo real:**
+    - o `FLUXO_BACKEND_DIR` dá o `tests/fixtures/reference_campaign/expected_history.csv`;
+    - as mudanças de limite, de Sem itens e de nível do trace são feitas em cópias do workflow do histórico, criadas pelo teste, para não cruzar a sobreposição (E7-6) nem mudar a campanha que os outros specs usam.
+- Aceite: `pnpm e2e` e `pnpm e2e:visual` passam, com os épicos 4 a 7 verdes. O modo real é exercitado no teste de integração do CK8.
+
+**F151 · Manutenção: acabamentos agrupados do épico 8 (achados médios e baixos)**
+- dep: F149
+- modelo: sonnet
+- arquivos: (a global preenche ao acrescentar cada item, sem sobrepor uma tarefa do épico que ainda esteja rodando)
+- Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente): os achados médios e baixos dos verificadores e revisores das tarefas F141 a F150, um item por achado, com a tarefa de origem entre parênteses.
+- Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
+
+**F152 · Portão do épico 8**
+- tipo: portao
+- dep: F141, F142, F143, F144, F145, F146, F147, F148, F149, F150, F151
+- modelo: sonnet
+- Aceite: o mesmo da F133, com as telas do épico 8 provadas pelo `pnpm e2e:visual`.
