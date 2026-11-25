@@ -1814,7 +1814,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F130 · Sino de alertas**
 - dep: F122
 - modelo: opus
-- arquivos: `packages/react/src/notifications/`
+- arquivos: `packages/react/src/notifications/`, e (ratificado pela global, E7-27) `packages/react/package.json` e `pnpm-lock.yaml` só para a dependência `@radix-ui/react-popover`
 - Fazer (E7-27): o botão do sino com a contagem, o popover com a lista, os links (pela render prop de navegação, sem importar `module/`), marcar como lido ao abrir, **Marcar todos como lidos** e a atualização a cada 30 s.
 - Aceite: testes da contagem, da lista com cada tipo, do vazio, do carregando e do erro, de abrir um alerta (marca como lido e navega), de marcar todos, da atualização (com relógio falso), do teclado (abre com Enter, fecha com Esc e devolve o foco ao botão) e do `aria-label` com a contagem.
 
@@ -1875,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1902,6 +1902,11 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F126) a nota de sobreposição some ao mudar um parâmetro por um sinal explícito do formulário, e não pela identidade de `form.formProps.values` do `useParameterForm`;
   - (F126) o JSDoc do `TriggerExecutionDialog` fica curto;
   - (F126) o e2e `epic-2/configurator-and-reset-link.spec.ts:24` e o `catalog/Catalog.test.tsx`, que falharam uma vez com a máquina sob carga, passam a esperar o estado certo (`waitFor` ou `expect.poll`), sem afrouxar o que conferem.
+  - (F127) o foco não vai ao `body` quando "Carregar mais registros" some na última página: ele vai para a última linha carregada ou para o título da tabela;
+  - (F127) a troca de filtro e a paginação são anunciadas por um `role="status"` sempre montado, inclusive "Nenhum registro"; o Notice de erro da primeira página também é anunciado;
+  - (F127) o erro `invalid_data` do filtro oferece "Ver as divergências" (volta ao filtro padrão), e não só "Tentar de novo";
+  - (F127) sem `aria-label` no `<dl>` (o mesmo padrão do `RecordTraceDrawer` fica para o épico 14);
+  - (F127) testes que faltam: cursor com troca de filtro e resposta tardia, `invalid_cursor`, erro em "Carregar mais" e a gaveta só com `simulations.run`.
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F133 · Portão do épico 7**
