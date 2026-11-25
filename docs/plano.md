@@ -1814,8 +1814,20 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
     - as cópias evitam cruzar a sobreposição com os testes do épico 6.
 - Aceite: `pnpm e2e` e `pnpm e2e:visual` passam, com os épicos 4 a 6 verdes. O modo real é exercitado no teste de integração do CK7.
 
+**F134 · Manutenção: baselines do e2e:visual defasados (achado da F121)**
+- dep: F106
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/visual/`
+- Fazer: os baselines de `epic5-*`, `editor-canvas`, `editor-properties`, `editor-calculate`, `overview` e `epic6-trace-drawer` estão com 11% a 12% de diferença real de tela. Para cada um:
+  - achar a tarefa que mudou a tela (`git log` dos componentes) e conferir, pelo `docs/estilos.md` e pela tarefa, que a mudança era esperada;
+  - só então regravar.
+  Uma diferença que não tenha tarefa por trás é regressão: não regrave, e avise a global.
+  Se a tolerância do `e2e:visual` deixou passar 11% de mudança, ajuste-a para um valor que pegue uma mudança real e não pegue ruído de renderização.
+- Aceite: o relatório lista cada baseline com a tarefa que explica a mudança; o `pnpm e2e:visual` fica verde com a tolerância nova e falha numa mudança de tela feita de propósito no teste.
+
 **F133 · Portão do épico 7**
 - tipo: portao
-- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132
+- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134
 - modelo: sonnet
 - Aceite: o mesmo da F106, com as telas do épico 7 provadas pelo `pnpm e2e:visual`.
