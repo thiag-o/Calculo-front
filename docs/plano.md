@@ -1672,9 +1672,21 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - o `README.md` da raiz, na seção do épico 6, troca o aviso "ajuste as datas" pela regra nova. Cancelar no meio e derrubar o worker continuam cobertos pelo simulado e pelos testes do back (B144), não pelo real.
 - Aceite: o `pnpm e2e:real e2e/epic-6` passa contra o back real em qualquer dia do ano, com os totais da B100 (58 lidos, 44 ok, 4 avisos, 2 erros, 6 ignorados, 2 filtrados); o simulado continua verde.
 
+**F138 · Correção da integração do épico 6, rodada 2: três specs reais desalinhados**
+- dep: F136
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/epic-6/`
+- Fazer (relatório `.orquestracao/integracao-epico-6-r2.md`):
+  - `preview-and-calculate.spec.ts`: o editor real mostra o período como dois filtros, "Valor (filtro 2)" com `@periodo.inicio` e "Valor (filtro 3)" com `@periodo.fim`, e não "De/Até (filtro 2)". O spec segue a forma real, e a simulação também, para os dois modos baterem;
+  - `defects-and-abort.spec.ts`: os dois testes passam a disparar pelo `openTriggerForDataMonth` (fevereiro de 2026, D105-global);
+  - `expected.ts`: o `DEFECTS_TOTALS` passa ao valor real do lote de defeitos em fevereiro de 2026 (8 lidos, 6 ok e 2 erros, chave repetida e chave nula), que passa do limite de 5% e termina `aborted` com `error_limit_exceeded`, sem CSV. Confira contra o `backend/docs/campanha-de-referencia.md`;
+  - procurar no `e2e/epic-6/` qualquer outro `openTrigger` que confira totais e trocar também.
+- Aceite: o `pnpm e2e:real e2e/epic-6` passa contra o back real (no banco `fluxo_int6`), e o simulado continua verde.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120, F121, F135, F136
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120, F121, F135, F136, F138
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
 
