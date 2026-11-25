@@ -1,0 +1,198 @@
+/*
+ * The bell (E7-27): icon-only ghost button with the neutral count badge (estilos.md §7.1 and §7.4) and the popover
+ * (§4: 12px radius, menu shadow; §5: 200ms). Only fc- classes and --fc-* variables; no global reset (ADR 0002).
+ */
+
+/* Ghost button (estilos.md §7.1), 32px high; square without the count, wider with it. */
+.fc-notifications-bell {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fc-space-4);
+  flex-shrink: 0;
+  min-width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0 var(--fc-space-8);
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--fc-text-secondary);
+  font-family: var(--fc-font-sans);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Transparent outline: the focus ring stays visible in Windows high contrast mode. */
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.fc-notifications-bell svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.fc-notifications-bell:hover,
+.fc-notifications-bell[data-state='open'] {
+  background-color: var(--fc-hover);
+  color: var(--fc-text);
+}
+
+.fc-notifications-bell:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-notifications-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The popover: background-100, 12px radius, menu shadow (estilos.md §4). */
+.fc-notifications {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  /* Never wider than the room Radix measured beside the button (nothing tied to the whole window, ADR 0002). */
+  width: min(360px, var(--radix-popover-content-available-width));
+  max-height: min(480px, var(--radix-popover-content-available-height));
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  box-shadow: var(--fc-shadow-menu);
+  font-family: var(--fc-font-sans);
+  overflow: hidden;
+  outline: none;
+  animation: fc-notifications-appear 200ms ease-out;
+}
+
+@keyframes fc-notifications-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-notifications {
+    animation: none;
+  }
+}
+
+.fc-notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-8);
+  min-height: 44px;
+  padding: var(--fc-space-8) var(--fc-space-8) var(--fc-space-8) var(--fc-space-16);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-notifications-header h2 {
+  margin: 0;
+}
+
+.fc-notifications-notice {
+  margin: var(--fc-space-12) var(--fc-space-16) 0;
+}
+
+.fc-notifications-loading,
+.fc-notifications-empty {
+  padding: var(--fc-space-16);
+}
+
+.fc-notifications-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  padding: var(--fc-space-8) 0;
+}
+
+/* The alerts: the list scrolls, the header stays. One divider between items (estilos.md §4). */
+.fc-notifications-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.fc-notifications-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  padding: var(--fc-space-12) var(--fc-space-16);
+}
+
+.fc-notifications-item + .fc-notifications-item {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-notifications-title {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.fc-notifications-item-unread .fc-notifications-title {
+  font-weight: 500;
+}
+
+.fc-notifications-detail {
+  margin: 0;
+  /* Aligned with the title, after the 10px dot and its 8px gap. */
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+.fc-notifications-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-8);
+  padding-left: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Link (estilos.md §3): --fc-link, no underline until hover; focus ring of §11. */
+.fc-notifications-link {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  /* Click target of at least 28px (estilos.md §11). */
+  min-height: 28px;
+  margin: 0 calc(-1 * var(--fc-space-4));
+  padding: 0 var(--fc-space-4);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 16px;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-notifications-link:hover {
+  text-decoration: underline;
+}
+
+.fc-notifications-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-notifications-more {
+  margin: 0;
+  padding: var(--fc-space-8) var(--fc-space-16);
+  border-top: 1px solid var(--fc-border);
+}

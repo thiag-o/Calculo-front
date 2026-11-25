@@ -95,6 +95,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0073](0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md) | Formulário de parâmetros exige `workflowId`; modo agendamento é o controlador irmão `useScheduleParameterForm` (complementa 0062) | aceita, revisar no checkpoint | 2026-11-25 |
 | [0074](0074-esc-de-combobox-em-dialogo-por-listener-de-captura.md) | Esc de combobox dentro de diálogo Radix: listener nativo em captura na `window` com `preventDefault` | aceita, revisar no checkpoint | 2026-11-25 |
 | [0075](0075-sub-vertical-executions-comparison.md) | Sub-vertical `executions/comparison/` importa `api` e `records`, `detail` importa `comparison`; consulta sob `['executions', id, 'comparison', …]` (complementa 0063 e 0066) | aceita, revisar no checkpoint | 2026-11-25 |
+| [0076](0076-vertical-notifications-com-popover-radix-e-relative-time-de-workflows.md) | Vertical `notifications/` importa `workflows/index.ts` (só `relativeTime`) e usa `@radix-ui/react-popover` | aceita, revisar no checkpoint | 2026-11-25 |
 
 ## Pendentes (sem ADR ainda)
 
