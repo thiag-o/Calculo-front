@@ -1854,13 +1854,14 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 - dep: F106
 - modelo: sonnet
 - revisão: não
-- arquivos: `e2e/visual/`
+- arquivos: `e2e/visual/`, `playwright.config.ts` (só o projeto do `e2e:visual`)
 - Fazer: os baselines de `epic5-*`, `editor-canvas`, `editor-properties`, `editor-calculate`, `overview` e `epic6-trace-drawer` estão com 11% a 12% de diferença real de tela. Para cada um:
   - achar a tarefa que mudou a tela (`git log` dos componentes) e conferir, pelo `docs/estilos.md` e pela tarefa, que a mudança era esperada;
   - só então regravar.
   Uma diferença que não tenha tarefa por trás é regressão: não regrave, e avise a global.
   Se a tolerância do `e2e:visual` deixou passar 11% de mudança, ajuste-a para um valor que pegue uma mudança real e não pegue ruído de renderização.
-- Aceite: o relatório lista cada baseline com a tarefa que explica a mudança; o `pnpm e2e:visual` fica verde com a tolerância nova e falha numa mudança de tela feita de propósito no teste.
+- (D45 do front, opção C) O `e2e:visual` hoje só salva as capturas, e a diferença medida é de 0% a 2%. Ele passa a comparar pixels (`toHaveScreenshot`) só nas telas estáveis, com máscara nas áreas que variam (datas, ids, horários) e uma tolerância pequena. As telas que não estabilizam continuam só salvando a captura, listadas no cabeçalho do spec com o motivo.
+- Aceite: o relatório lista cada baseline com a tarefa que explica a mudança; o `pnpm e2e:visual` fica verde com a tolerância nova e falha numa mudança de tela feita de propósito numa tela estável; rodar duas vezes seguidas sem mudança não acusa diferença.
 
 **F137 · Manutenção: tipos do e2e checados no `pnpm typecheck` (achado da F135)**
 - dep: F106
