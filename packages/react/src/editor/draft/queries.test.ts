@@ -55,7 +55,7 @@ const draftKeyInCache = (queryClient: QueryClient) =>
   queryClient.getQueryCache().find({ queryKey: workflowDraftKey(DRAFT.workflow_id), exact: true }) !== undefined;
 
 describe('versão gravada da definição', () => {
-  it.each([1, 2] as const)('um rascunho aberto na versão %i é salvo na versão 3, com parameters vazio e os settings padrão', async (version) => {
+  it.each([1, 2, 3] as const)('um rascunho aberto na versão %i é salvo na versão 4, com parameters vazio e os settings padrão (alerta da pré-validação "1")', async (version) => {
     setCsrfCookie('csrf-123');
     const api = simulateApi();
     api.respond(SAVE_ROUTE, json(SAVED));
@@ -65,27 +65,44 @@ describe('versão gravada da definição', () => {
     delete opened.parameters;
     delete (opened.settings as Record<string, unknown>).error_limit_percent;
     delete (opened.settings as Record<string, unknown>).trace_level;
+    delete (opened.settings as Record<string, unknown>).pre_validation_alert_percent;
 
     await saveDraft(queryClient, createApiClient({ apiUrl: API }), DRAFT.workflow_id, { revision: 3,
       definition: opened as unknown as Schemas['WorkflowDefinition'],
     });
 
     const [body] = api.bodiesTo(SAVE_ROUTE) as Schemas['DraftUpdate'][];
-    expect(body!.definition.schema_version).toBe(3);
+    expect(body!.definition.schema_version).toBe(4);
     expect(body!.definition.parameters).toEqual([]);
-    expect(body!.definition.settings).toEqual({ ...SAVED.definition.settings, error_limit_percent: '5', trace_level: 'standard' });
+    expect(body!.definition.settings).toEqual({ ...SAVED.definition.settings, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' });
     expect(body!.definition.root).toEqual(SAVED.definition.root);
   });
 
-  it('uma definição já na versão 3 segue como está, com os parâmetros e os settings que tem', async () => {
+  it('um rascunho v3 com parameters e settings próprios é salvo na versão 4, só com o alerta padrão a mais', async () => {
+    setCsrfCookie('csrf-123');
+    const api = simulateApi();
+    api.respond(SAVE_ROUTE, json(SAVED));
+    const { queryClient } = moduleWithSession();
+    const opened: Record<string, unknown> = { ...SAVED.definition, schema_version: 3, settings: { ...SAVED.definition.settings, error_limit_percent: '2.5' } };
+    delete (opened.settings as Record<string, unknown>).pre_validation_alert_percent;
+
+    await saveDraft(queryClient, createApiClient({ apiUrl: API }), DRAFT.workflow_id, { revision: 3, definition: opened as unknown as Schemas['WorkflowDefinition'] });
+
+    const [body] = api.bodiesTo(SAVE_ROUTE) as Schemas['DraftUpdate'][];
+    expect(body!.definition.schema_version).toBe(4);
+    expect(body!.definition.settings).toMatchObject({ error_limit_percent: '2.5', pre_validation_alert_percent: '1' });
+    expect(body!.definition.parameters).toEqual(SAVED.definition.parameters);
+  });
+
+  it('uma definição já na versão 4 segue como está, com os parâmetros e os settings que tem', async () => {
     setCsrfCookie('csrf-123');
     const api = simulateApi();
     api.respond(SAVE_ROUTE, json(SAVED));
     const { queryClient } = moduleWithSession();
     const definition: Schemas['WorkflowDefinition'] = {
       ...SAVED.definition,
-      schema_version: 3,
-      settings: { ...SAVED.definition.settings, error_limit_percent: '2.5', trace_level: 'minimal' },
+      schema_version: 4,
+      settings: { ...SAVED.definition.settings, error_limit_percent: '2.5', trace_level: 'minimal', pre_validation_alert_percent: '3' },
     };
 
     await saveDraft(queryClient, createApiClient({ apiUrl: API }), DRAFT.workflow_id, { revision: 3, definition });

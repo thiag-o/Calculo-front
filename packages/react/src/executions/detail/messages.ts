@@ -12,6 +12,9 @@ export const ABORT_GUIDANCE: Readonly<Record<Schemas['AbortReason'], string>> = 
   schema_drift: 'Ajuste o dataset e as variáveis no catálogo e execute o lote de novo.',
   source_read_denied: 'Peça a quem administra a origem a permissão de leitura para o usuário da conexão e execute o lote de novo.',
   parameter_table_rows: 'Deixe a tabela de parâmetros com exatamente uma linha e execute o lote de novo.',
+  connection_not_allowed: 'Ajuste a conexão da fonte no catálogo (TLS ou destino) e execute o lote de novo.',
+  excel_file_unreadable: 'Envie o arquivo Excel de novo no catálogo e execute o lote de novo.',
+  duplicate_record_key: 'Corrija a origem ou a chave do registro no workflow e execute o lote de novo.',
   internal_error: 'Execute o lote de novo. Se voltar a acontecer, avise o suporte com o id desta execução.',
 };
 

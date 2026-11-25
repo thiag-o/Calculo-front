@@ -34,7 +34,8 @@ export type ParameterErrors = Readonly<Record<string, string>>;
 
 /** Whether the parameter is chosen among the `allowed_values` (a closed list) and not typed. */
 export function hasAllowedValues(parameter: WorkflowParameter): boolean {
-  return parameter.allowed_values !== null && parameter.allowed_values.length > 0;
+  // Only the list form is a closed list here for now; the query form (values read from the API) comes with F124.
+  return Array.isArray(parameter.allowed_values) && parameter.allowed_values.length > 0;
 }
 
 /** The type of the elements of a parameter that is not a period. */

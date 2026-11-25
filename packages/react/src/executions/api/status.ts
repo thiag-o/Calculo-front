@@ -21,14 +21,17 @@ export interface StatusPresentation {
 }
 
 /**
- * The label and the dot of each state (estilos.md §7.3): the phases `loading`, `calculating` and `delivering` are all
- * "Calculando"; a finished execution with delivery is "Entregue".
+ * The label and the dot of each state (estilos.md §7.3): the phases `loading`, `pre_validating`, `calculating`, `delivering` and
+ * `comparing` are all "Calculando" (E7-21); `awaiting_decision` is a wait, without pulse; a finished execution with delivery is "Entregue".
  */
 export const STATUS_PRESENTATION: Readonly<Record<ExecutionStatus, StatusPresentation>> = {
   pending: { label: 'Na fila', tone: 'gray', pulsing: true },
   loading: { label: 'Calculando', tone: 'amber', pulsing: true },
   calculating: { label: 'Calculando', tone: 'amber', pulsing: true },
   delivering: { label: 'Calculando', tone: 'amber', pulsing: true },
+  pre_validating: { label: 'Calculando', tone: 'amber', pulsing: true },
+  comparing: { label: 'Calculando', tone: 'amber', pulsing: true },
+  awaiting_decision: { label: 'Aguardando decisão', tone: 'amber', pulsing: false },
   awaiting_source: { label: 'Aguardando fonte', tone: 'amber', pulsing: false },
   completed: { label: 'Entregue', tone: 'green', pulsing: false },
   completed_with_errors: { label: 'Com erros', tone: 'red', pulsing: false },
@@ -46,7 +49,8 @@ export interface StatusChoice {
 /** The status filter, one label at a time (as the audit type filter, D3): "Calculando" covers its three phases. */
 export const STATUS_CHOICES: readonly StatusChoice[] = [
   { value: 'pending', label: 'Na fila', statuses: ['pending'] },
-  { value: 'running', label: 'Calculando', statuses: ['loading', 'calculating', 'delivering'] },
+  { value: 'running', label: 'Calculando', statuses: ['loading', 'pre_validating', 'calculating', 'delivering', 'comparing'] },
+  { value: 'awaiting_decision', label: 'Aguardando decisão', statuses: ['awaiting_decision'] },
   { value: 'awaiting_source', label: 'Aguardando fonte', statuses: ['awaiting_source'] },
   { value: 'completed', label: 'Entregue', statuses: ['completed'] },
   { value: 'completed_with_errors', label: 'Com erros', statuses: ['completed_with_errors'] },

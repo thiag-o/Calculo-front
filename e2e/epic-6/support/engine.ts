@@ -105,7 +105,8 @@ function scalarError(parameter: Parameter, value: unknown): string | null {
   }
   if (type === 'date' && !DATE.test(value)) return 'Informe uma data.';
   if (type === 'datetime' && Number.isNaN(Date.parse(value))) return 'Informe uma data e hora.';
-  const allowed = parameter.allowed_values?.map((literal) => valueOfLiteral(type, literal));
+  // The query form of the allowed values (epic 7) is read by the simulation of epic 7, not here.
+  const allowed = Array.isArray(parameter.allowed_values) ? parameter.allowed_values.map((literal) => valueOfLiteral(type, literal)) : undefined;
   if (allowed && !allowed.includes(value)) return 'O valor não está entre os valores permitidos.';
   return null;
 }

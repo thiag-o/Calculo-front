@@ -96,7 +96,7 @@ describe('Executar lote: diálogo', () => {
 
     await waitFor(() => expect(onTriggered).toHaveBeenCalledWith(created));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(await bodyOf(api.callsTo(TRIGGER)[0]!)).toEqual({ revision: 5, parameters: { meta_minima: '1500.5' } });
+    expect(await bodyOf(api.callsTo(TRIGGER)[0]!)).toEqual({ revision: 5, parameters: { meta_minima: '1500.5' }, confirm_overlap: false });
   });
 
   it('enquanto lê o rascunho salvo, o botão fica desabilitado com o motivo', async () => {
@@ -229,7 +229,7 @@ describe('Executar lote: erros do disparo', () => {
 
     await user.click(confirmButton(dialog));
     await waitFor(() => expect(onTriggered).toHaveBeenCalledWith(created));
-    expect(await bodyOf(api.callsTo(TRIGGER)[1]!)).toEqual({ revision: 6, parameters: {} });
+    expect(await bodyOf(api.callsTo(TRIGGER)[1]!)).toEqual({ revision: 6, parameters: {}, confirm_overlap: false });
   });
 
   it('draft_has_problems: lê o rascunho de novo e desabilita o botão com o motivo', async () => {

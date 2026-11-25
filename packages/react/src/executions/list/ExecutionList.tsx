@@ -136,7 +136,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
       skeletonWidth: 120,
       cell: (execution) => (
         <Text variant="label-14" className="fc-executions-wrap">
-          {execution.triggered_by.name}
+          {execution.triggered_by?.name ?? 'Agendada'}
         </Text>
       ),
     },

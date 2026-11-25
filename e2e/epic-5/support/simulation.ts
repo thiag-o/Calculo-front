@@ -30,9 +30,9 @@ const PREPARE_LOCAL: UserRef = { id: '7d0c1f6e-0000-4000-8000-0000000000a1', nam
 
 /** A new workflow (contract, `WorkflowDefinition`): no batch source, no inputs, no nodes. */
 const EMPTY_DEFINITION: Definition = {
-  schema_version: 3,
+  schema_version: 4,
   kind: 'batch',
-  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
   // The API always sends `parameters` (the drafts of versions 1 and 2 are read as 3): the filter values read them (F99).
   parameters: [],
   root: { batch_source: null, inputs: [], nodes: [], output: { fields: [] } },
@@ -244,7 +244,7 @@ export class CampaignSimulation {
     if (body.revision !== workflow.draft.revision) return problem({ ...ERRORS.DraftConflict, current_revision: workflow.draft.revision });
     const now = this.now();
     // The save is always in schema 3 (the drafts of versions 1 and 2 are read as 3).
-    const saved = toVersion3(definition);
+    const saved = toVersion4(definition);
     workflow.draft = { revision: workflow.draft.revision + 1, definition: saved, analysis: analyze(saved), updatedAt: now, updatedBy: caller.user };
     workflow.updatedAt = now;
     workflow.updatedBy = caller.user;
@@ -350,7 +350,7 @@ function isDefinition(value: unknown): value is Definition {
   if (value === null || typeof value !== 'object') return false;
   const definition = value as Partial<Definition>;
   return (
-    (definition.schema_version === 1 || definition.schema_version === 2 || definition.schema_version === 3) &&
+    (definition.schema_version === 1 || definition.schema_version === 2 || definition.schema_version === 3 || definition.schema_version === 4) &&
     definition.kind === 'batch' &&
     Array.isArray(definition.root?.inputs) &&
     Array.isArray(definition.root?.nodes) &&
@@ -359,18 +359,19 @@ function isDefinition(value: unknown): value is Definition {
 }
 
 /**
- * What the backend stores: the drafts of versions 1 and 2 are read as 3, with `parameters` always present and the two new
- * `settings` fields at their defaults (the error limit of 5 % and the standard trace); what the draft already has is kept.
+ * What the backend stores: the drafts of versions 1 to 3 are read as 4, with `parameters` always present and the new
+ * `settings` fields at their defaults (the error limit of 5 %, the standard trace and the 1 % pre-validation alert); what the draft already has is kept.
  */
-function toVersion3(definition: Definition): Definition {
+function toVersion4(definition: Definition): Definition {
   const stored: Partial<Definition['settings']> = definition.settings;
   return {
     ...definition,
-    schema_version: 3,
+    schema_version: 4,
     settings: {
       ...definition.settings,
       error_limit_percent: stored.error_limit_percent ?? '5',
       trace_level: stored.trace_level ?? 'standard',
+      pre_validation_alert_percent: stored.pre_validation_alert_percent ?? '1',
     },
     parameters: Array.isArray(definition.parameters) ? definition.parameters : [],
   };

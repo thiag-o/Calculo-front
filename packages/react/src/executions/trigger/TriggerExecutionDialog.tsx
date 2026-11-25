@@ -65,7 +65,7 @@ export function TriggerExecutionDialog({ workflowId, onClose, onTriggered, onOpe
     const reading = form.read();
     if (!reading.ok) return;
     trigger.mutate(
-      { revision: draft.revision, parameters: reading.parameters },
+      { revision: draft.revision, parameters: reading.parameters, confirm_overlap: false },
       {
         // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) opens nothing (ADR 0015).
         onSuccess: (execution, _body, mark) => {

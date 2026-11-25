@@ -45,9 +45,9 @@ const FINAL: ReadonlySet<ExecutionStatus> = new Set(['completed', 'completed_wit
 const PREPARE_LOCAL: UserRef = { id: '7d0c1f6e-0000-4000-8000-0000000000a1', name: 'Administradora Demonstração' };
 
 const EMPTY_DEFINITION: Definition = {
-  schema_version: 3,
+  schema_version: 4,
   kind: 'batch',
-  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
   parameters: [],
   root: { batch_source: null, inputs: [], nodes: [], output: { fields: [] } },
 };
@@ -377,7 +377,7 @@ export class Epic6Simulation {
     if (typeof body?.revision !== 'number' || !isDefinition(definition)) return problem(ERRORS.InvalidData);
     if (body.revision !== workflow.draft.revision) return problem({ ...ERRORS.DraftConflict, current_revision: workflow.draft.revision });
     const now = this.now();
-    const saved = toVersion3(definition);
+    const saved = toVersion4(definition);
     workflow.draft = { revision: workflow.draft.revision + 1, definition: saved, analysis: analyzeDefinition(saved), updatedAt: now, updatedBy: caller.user };
     workflow.updatedAt = now;
     workflow.updatedBy = caller.user;
@@ -386,7 +386,7 @@ export class Epic6Simulation {
 
   private analysis(request: Request): RouteResponse {
     const definition = readJson(request)?.definition;
-    return isDefinition(definition) ? json(200, analyzeDefinition(toVersion3(definition))) : problem(ERRORS.InvalidData);
+    return isDefinition(definition) ? json(200, analyzeDefinition(toVersion4(definition))) : problem(ERRORS.InvalidData);
   }
 
   /** The checks shared by the preview and "Calcular": the revision saved now, without problems. */
@@ -512,6 +512,13 @@ export class Epic6Simulation {
         totals: { read: 0, ok: 0, ok_with_warnings: 0, error: 0, ignored: 0, filtered: 0 },
         error_groups: [],
         output: { available: false, expires_at: null, rows: null },
+        mode: 'batch',
+        schedule: null,
+        pre_validation: null,
+        source_counts: [],
+        overlap_of: null,
+        reference_file: null,
+        comparison: null,
       },
     };
     this.executions.push(execution);
@@ -807,7 +814,7 @@ function isDefinition(value: unknown): value is Definition {
   if (!isObject(value)) return false;
   const definition = value as Partial<Definition>;
   return (
-    (definition.schema_version === 1 || definition.schema_version === 2 || definition.schema_version === 3) &&
+    (definition.schema_version === 1 || definition.schema_version === 2 || definition.schema_version === 3 || definition.schema_version === 4) &&
     definition.kind === 'batch' &&
     Array.isArray(definition.root?.inputs) &&
     Array.isArray(definition.root?.nodes) &&
@@ -815,15 +822,16 @@ function isDefinition(value: unknown): value is Definition {
   );
 }
 
-/** What the backend stores: versions 1 and 2 are read as 3, with `parameters` and the two new `settings` at their defaults. */
-function toVersion3(definition: Definition): Definition {
+/** What the backend stores: versions 1 to 3 are read as 4, with `parameters` and the new `settings` at their defaults. */
+function toVersion4(definition: Definition): Definition {
   return {
     ...definition,
-    schema_version: 3,
+    schema_version: 4,
     settings: {
       ...definition.settings,
       error_limit_percent: definition.settings.error_limit_percent ?? '5',
       trace_level: definition.settings.trace_level ?? 'standard',
+      pre_validation_alert_percent: definition.settings.pre_validation_alert_percent ?? '1',
     },
     parameters: Array.isArray(definition.parameters) ? definition.parameters : [],
   };

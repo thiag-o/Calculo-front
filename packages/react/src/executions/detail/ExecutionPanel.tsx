@@ -291,7 +291,7 @@ function Summary({ execution }: { execution: Execution }) {
         <Pair label="Agora">{dateTime(execution.now)}</Pair>
         <Pair label="Nível do trace">{TRACE_LEVEL_LABELS[execution.trace_level]}</Pair>
         <Pair label="Limite de erro">{percentText(execution.error_limit_percent)}</Pair>
-        <Pair label="Disparado por">{`${execution.triggered_by.name} em ${dateTime(execution.created_at)}`}</Pair>
+        <Pair label="Disparado por">{`${execution.triggered_by?.name ?? 'Agendada'} em ${dateTime(execution.created_at)}`}</Pair>
         <Pair label="Início">{dateTime(execution.started_at)}</Pair>
         <Pair label="Dados lidos em">{dateTime(execution.data_read_at)}</Pair>
         <Pair label="Duração">{duration}</Pair>

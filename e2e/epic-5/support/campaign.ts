@@ -262,9 +262,9 @@ export const MULTIPLIER_RULES = [
 
 /** The workflow of the campaign (docs/campanha-de-referencia.md, "As regras"), in the contract's shape (schema 3). */
 export const CAMPAIGN_DEFINITION: Definition = {
-  schema_version: 3,
+  schema_version: 4,
   kind: 'batch',
-  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+  settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
   // The API always sends `parameters` (the drafts of versions 1 and 2 are read as 3): the filter values read them (F99).
   parameters: [],
   root: {

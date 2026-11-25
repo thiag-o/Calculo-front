@@ -48,15 +48,17 @@ test.describe('respostas da API simulada conferidas contra o esquema do contrato
     expect(contract.violations('POST', UNIT_RUNS, 200, 'text/plain', 'ok')).toHaveLength(1);
   });
 
-  test('o rascunho do GET e do PUT em versão 3 passa; uma definição fora da versão 3 é recusada', () => {
+  test('o rascunho do GET e do PUT em versão 4 passa; uma definição fora da versão 4 é recusada', () => {
     for (const method of ['GET', 'PUT']) {
       for (const draft of [EXAMPLES.DraftEmpty, EXAMPLES.Draft, EXAMPLES.DraftWithSources]) {
         expect(contract.violations(method, DRAFT, 200, JSON_TYPE, draft), `${method} ${draft.revision}`).toEqual([]);
       }
       const old = clone(EXAMPLES.DraftEmpty) as { definition: { schema_version: number; parameters?: unknown; settings: Record<string, unknown> } };
-      old.definition.schema_version = 2;
-      expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
-      old.definition.schema_version = 3;
+      for (const version of [2, 3]) {
+        old.definition.schema_version = version;
+        expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old), `versão ${version}`).not.toEqual([]);
+      }
+      old.definition.schema_version = 4;
       delete old.definition.parameters;
       expect(contract.violations(method, DRAFT, 200, JSON_TYPE, old)).not.toEqual([]);
       old.definition.parameters = [];

@@ -40,7 +40,7 @@ function definition(batch: BatchSource | null = null): WorkflowDefinition {
   return {
     schema_version: 1,
     kind: 'batch',
-    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
     parameters: [],
     root: {
       batch_source: batch,

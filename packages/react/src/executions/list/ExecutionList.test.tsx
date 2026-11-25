@@ -196,7 +196,7 @@ describe('Execuções: filtros', () => {
     await choose(user, 'Status', 'Calculando');
 
     expect(await screen.findByText('Bônus de metas')).toBeInTheDocument();
-    expect(listQueries().at(-1)!.getAll('status')).toEqual(['calculating', 'delivering', 'loading']);
+    expect(listQueries().at(-1)!.getAll('status')).toEqual(['calculating', 'comparing', 'delivering', 'loading', 'pre_validating']);
     expect(screen.getByText('1 execução com esses filtros')).toBeInTheDocument();
   });
 

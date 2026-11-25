@@ -85,7 +85,7 @@ function definition(nodes: Node[]): WorkflowDefinition {
   return {
     schema_version: 2,
     kind: 'batch',
-    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
     parameters: [],
     root: {
       batch_source: null,

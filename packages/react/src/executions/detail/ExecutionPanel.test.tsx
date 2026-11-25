@@ -80,7 +80,7 @@ const FROZEN: Schemas['ExecutionDefinition'] = {
   definition: {
     schema_version: 3,
     kind: 'batch',
-    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
     parameters: [],
     root: {
       batch_source: null,
@@ -202,6 +202,9 @@ describe('Painel da execução: estados', () => {
     ['source_read_denied', 'O usuário de uma conexão não tem permissão de leitura numa fonte. Nada foi entregue.', /permissão de leitura para o usuário da conexão/],
     ['parameter_table_rows', 'Uma tabela de parâmetros não tem exatamente uma linha. Nada foi entregue.', /exatamente uma linha e execute o lote de novo/],
     ['internal_error', 'A execução parou por um erro interno. Nada foi entregue.', /avise o suporte com o id desta execução/],
+    ['connection_not_allowed', 'A conexão de uma fonte não é permitida pela configuração (TLS ou destino). Ajuste a conexão e execute de novo.', /Ajuste a conexão da fonte no catálogo/],
+    ['excel_file_unreadable', 'O arquivo não pode ser lido. Envie o arquivo de novo.', /Envie o arquivo Excel de novo no catálogo/],
+    ['duplicate_record_key', 'A chave do registro se repete no lote. Nada foi calculado: corrija a origem ou a chave do registro.', /Corrija a origem ou a chave do registro no workflow/],
   ];
 
   it.each(reasons)('abortada por %s: mostra o código, a mensagem do back e o que fazer', async (code, message, guidance) => {

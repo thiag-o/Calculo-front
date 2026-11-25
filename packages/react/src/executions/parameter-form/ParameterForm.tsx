@@ -264,7 +264,7 @@ interface ChoiceProps {
 /** The allowed values as options: the API text to send and the text to show. */
 function allowedOptions(parameter: WorkflowParameter): { value: string; label: string }[] {
   const type = scalarType(parameter);
-  return (parameter.allowed_values ?? []).flatMap((literal) => {
+  return (Array.isArray(parameter.allowed_values) ? parameter.allowed_values : []).flatMap((literal) => {
     const value = literalToApiText(literal, type);
     return value === null ? [] : [{ value, label: displayApiText(value, type) }];
   });

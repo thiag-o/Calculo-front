@@ -37,7 +37,7 @@ async function triggerThroughApi(page: Page, apiOrigin: string): Promise<Executi
   const id = await workflowId(page, apiOrigin, CAMPAIGN_WORKFLOW);
   const draft = await callApi(page, apiOrigin, 'GET', `/v1/workflows/${id}/draft`);
   const revision = (draft.body as Schemas['Draft']).revision;
-  const created = await callApi(page, apiOrigin, 'POST', `/v1/workflows/${id}/executions`, { revision, parameters: { periodo: DATA_MONTH } } satisfies Schemas['NewExecution']);
+  const created = await callApi(page, apiOrigin, 'POST', `/v1/workflows/${id}/executions`, { revision, parameters: { periodo: DATA_MONTH }, confirm_overlap: false } satisfies Schemas['NewExecution']);
   expect(created.status, `disparar o lote pela API (${String(created.code)})`).toBe(202);
   return created.body as Execution;
 }

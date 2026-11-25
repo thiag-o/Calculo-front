@@ -1086,12 +1086,25 @@ export interface paths {
          * @description Substitui o nome e o objetivo (`objective: null` tira o objetivo). O
          *     rascunho não muda. Nome repetido no tenant: `409 workflow_exists`.
          *     Auditado como `workflow_updated`, com o nome e o objetivo antes e depois.
+         *     Se outra operação segura a linha do workflow por mais de 5 s (outro
+         *     `PUT` ou um apagar em andamento e, quando o nome muda, também um disparo
+         *     em andamento), com ou sem troca de nome, responde `409 workflow_busy`,
+         *     sem alterar nada; basta tentar de novo.
          */
         put: operations["update_workflow"];
         post?: never;
         /**
          * Remove um workflow
          * @description Remove o workflow e o rascunho dele. Auditado como `workflow_deleted`.
+         *     As execuções são histórico e nunca somem com o workflow: um workflow com
+         *     pelo menos uma execução (de qualquer estado, até `cancelled`) responde
+         *     `409 workflow_has_executions`, sem remover nada. Se outra operação (um
+         *     disparo em andamento) segura o workflow por mais de 5 s, responde
+         *     `409 workflow_busy`, também sem remover nada; basta tentar de novo.
+         *     Um workflow com agendamento responde `409 workflow_has_schedules`
+         *     (E7-16): o agendamento só some pelo próprio `DELETE`. A conferência
+         *     é feita sob a mesma trava do workflow que a criação do agendamento
+         *     usa.
          */
         delete: operations["delete_workflow"];
         options?: never;
@@ -1317,12 +1330,34 @@ export interface paths {
          *     - Rascunho com problemas: `409 draft_has_problems`, com a lista em
          *       `problems`.
          *     - Workflow sem fonte do lote: `409 no_batch_source`.
+         *     - Um apagar ou atualizar o workflow em andamento que segura o workflow
+         *       por mais de 5 s (o `lock_timeout`): `409 workflow_busy`, sem criar a
+         *       execução; basta tentar de novo.
          *     - Parâmetro obrigatório sem valor nem padrão: `422 missing_parameter`;
          *       valor fora do tipo, fora de `allowed_values`, nome desconhecido ou
          *       `start` depois de `end`: `422 invalid_parameter`. Os dois trazem o
          *       nome do parâmetro e o motivo em `fields`, sem ecoar o valor.
          *     - Corpo acima de 1 MB: `413 definition_too_large`; outro `Content-Type`:
          *       `415`.
+         *
+         *     Épico 7:
+         *     - **Valores permitidos por consulta (E7-5):** cada valor de um parâmetro
+         *       com `allowed_values` por consulta (cada item de uma lista, e também o
+         *       padrão fixo) é conferido agora, por uma consulta com `IN` dos valores
+         *       e os filtros da consulta. Valor fora: `422 invalid_parameter`, com o
+         *       motivo "não está entre os valores permitidos", sem o valor.
+         *     - **Escopo e sobreposição (E7-6):** o escopo é o workflow mais os
+         *       valores resolvidos dos parâmetros (as listas como conjunto; o
+         *       opcional sem valor fica de fora). Se outra execução de lote do mesmo
+         *       workflow, com o mesmo escopo, está em `completed`, em
+         *       `completed_with_errors` ou num estado que não é final:
+         *       `409 scope_already_delivered`, com até 5 delas em `overlapping` (das
+         *       mais novas), sem criar nada. O mesmo pedido com
+         *       `confirm_overlap: true` cria a execução e grava em `overlap_of` a
+         *       mais nova delas; a entrega sai com uma revisão nova. A simulação
+         *       nunca conta para a sobreposição.
+         *     - A execução nasce com `mode` `batch` e passa pela pré-validação
+         *       (`pre_validating`) antes do primeiro chunk.
          */
         post: operations["trigger_execution"];
         delete?: never;
@@ -1343,7 +1378,9 @@ export interface paths {
          * @description As execuções do tenant atual, paginadas, da mais nova para a mais velha:
          *     por `created_at` decrescente e, no empate, por `id` decrescente.
          *     - `workflow_id` filtra pelas execuções de um workflow;
-         *     - `status` aceita vários valores (`?status=completed&status=aborted`).
+         *     - `status` aceita vários valores (`?status=completed&status=aborted`);
+         *     - `mode` (épico 7) separa o lote da simulação;
+         *     - `schedule_id` (épico 7) traz só as execuções de um agendamento.
          */
         get: operations["list_executions"];
         put?: never;
@@ -1389,6 +1426,10 @@ export interface paths {
          *     `draft_revision` dela (E6-1). O painel a usa para mostrar o trace com o
          *     nome e o tipo dos blocos, mesmo que o rascunho tenha mudado depois.
          *     Vale em qualquer estado da execução e em qualquer `trace_level`.
+         *
+         *     Na simulação (`mode` `simulation`), aceita também `simulations.run`
+         *     (requisitos alternativos, ADR 0046): quem simula já vê o trace no
+         *     Calcular (E7-14).
          */
         get: operations["get_execution_definition"];
         put?: never;
@@ -1420,6 +1461,16 @@ export interface paths {
          *       `cancel_requested_at`.
          *     - Execução já terminada (`completed`, `completed_with_errors`,
          *       `aborted` ou `cancelled`): `409 execution_finished`.
+         *
+         *     Épico 7:
+         *     - Em `awaiting_decision`, cancela na hora (`cancelled`), com a decisão
+         *       `cancel` em `pre_validation.decision`.
+         *     - Em `pre_validating`, a pré-validação para no fim da página em
+         *       andamento; em `comparing`, a comparação termina e a execução vira
+         *       `cancelled`, sem o resumo.
+         *     - A permissão segue o modo da execução: `executions.trigger` no lote e
+         *       `simulations.run` na simulação (requisitos alternativos, ADR 0046).
+         *       Com só a permissão do outro modo: `403 no_permission`.
          */
         post: operations["cancel_execution"];
         delete?: never;
@@ -1440,12 +1491,19 @@ export interface paths {
          * @description O CSV da execução (E6-10), em streaming, com
          *     `Content-Disposition: attachment`, exposto ao navegador por
          *     `Access-Control-Expose-Headers` (o incorporado lê o nome do arquivo
-         *     nele). Um arquivo por execução, só com os
+         *     nele), `Cache-Control: no-store` e `X-Content-Type-Options: nosniff`
+         *     (o CSV traz dado do negócio: não fica em cache nem é reinterpretado
+         *     pelo navegador). Um arquivo por execução, só com os
          *     registros `ok` e `ok_with_warnings`:
          *     - UTF-8 sem BOM, separador `,`, aspas e quebra de linha pela RFC 4180
          *       (`\r\n`, também depois da última linha);
          *     - números como texto exato, com ponto; datas em ISO; booleano `true` ou
          *       `false`; nulo como campo vazio;
+         *     - numa coluna do tipo texto (variável da chave ou campo de saída
+         *       `text`), um valor que começa com `=`, `+`, `-`, `@`, tabulação ou
+         *       retorno de carro ganha um `'` na frente, para a planilha não o ler
+         *       como fórmula (D92). Colunas de número, data e booleano nunca mudam:
+         *       um `-5.00` continua número;
          *     - colunas, em ordem: `result_key`, `revision`, `run_id`,
          *       `workflow_version` (vazio até o épico 10) e `status`; as variáveis da
          *       chave do registro, com o nome no workflow; os campos de
@@ -1490,7 +1548,12 @@ export interface paths {
          *
          *     Os registros com erro de chave (`null_record_key` e
          *     `duplicate_record_key`) aparecem na lista com `result_key` nulo: eles
-         *     não foram calculados e não têm trace próprio.
+         *     não foram calculados e não têm trace próprio. Desde o épico 7, a linha
+         *     toda vazia da fonte do lote também: `ignored`, com `error_code`
+         *     `empty_row` e a chave toda nula.
+         *
+         *     Na simulação (`mode` `simulation`), aceita também `simulations.run`
+         *     (requisitos alternativos, ADR 0046; E7-14).
          */
         get: operations["list_execution_records"];
         put?: never;
@@ -1516,10 +1579,384 @@ export interface paths {
          *     épico 8). O `trace` tem o formato do `UnitRunTrace` da execução
          *     unitária; os valores dos parâmetros são os da execução (`parameters`).
          *     - `result_key` que não está na execução: `404 record_not_found`.
+         *
+         *     Na simulação (`mode` `simulation`), aceita também `simulations.run`
+         *     (requisitos alternativos, ADR 0046; E7-14).
          */
         get: operations["get_execution_record"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions/{id}/proceed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prossegue uma execução parada no alerta da pré-validação
+         * @description A decisão **Prosseguir** sobre o alerta da pré-validação (E7-3), sem
+         *     corpo. Responde `202` com a `Execution`: ela volta à fila, passa a
+         *     `calculating` e grava a decisão `proceed` em
+         *     `pre_validation.decision`, com quem e quando.
+         *     - Fora de `awaiting_decision` (inclusive depois do prazo, quando ela
+         *       já foi cancelada com a decisão `expired`): `409 not_awaiting_decision`.
+         *     - A permissão segue o modo da execução: `executions.trigger` no lote e
+         *       `simulations.run` na simulação (requisitos alternativos, ADR 0046).
+         *       Com só a permissão do outro modo: `403 no_permission`.
+         */
+        post: operations["proceed_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/executions/{id}/comparison/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista o diff da comparação de uma simulação
+         * @description O resultado da comparação com o arquivo de referência (E7-11, E7-12),
+         *     um registro comparado por linha, 50 por página, na ordem do diff
+         *     guardado. Só os registros com `outcome`; os `not_compared` não
+         *     aparecem.
+         *     - `outcome` aceita vários valores (`?outcome=different&outcome=status_differs`);
+         *     - em cada registro, `fields` traz só os campos diferentes, com o
+         *       valor esperado (do arquivo) e o obtido (da simulação).
+         *
+         *     Aceita `simulations.run` **ou** `traces.view` (requisitos
+         *     alternativos, ADR 0046). Execução sem comparação (um lote, ou uma
+         *     simulação que ainda não terminou o `comparing`):
+         *     `404 comparison_not_available`.
+         */
+        get: operations["list_comparison_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os agendamentos do tenant
+         * @description Os agendamentos do tenant atual, 50 por página, em ordem de nome (e,
+         *     no empate, de `id`). `workflow_id` filtra pelos de um workflow.
+         */
+        get: operations["list_schedules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cria um agendamento do workflow
+         * @description Cria um agendamento (E7-7, E7-8) e congela nele a definição do
+         *     rascunho **salvo** na `revision` enviada, como o disparo: editar o
+         *     rascunho depois não muda o agendamento. Auditado como
+         *     `schedule_created`.
+         *     - `name`: de 1 a 100 caracteres, sem texto em branco (ADR 0121), único
+         *       no workflow (`409 schedule_name_taken`); até 20 agendamentos por
+         *       workflow (`409 too_many_schedules`).
+         *     - `recurrence`: diária, semanal ou mensal, num horário `HH:MM` no fuso
+         *       `FLUXO_BUSINESS_TIMEZONE`. Fora da forma: `422 invalid_data`, com
+         *       `fields`.
+         *     - `parameters`: por nome, fixo ou relativo; o ausente usa o padrão da
+         *       definição congelada. A resolução é conferida com o "agora" do pedido:
+         *       obrigatório sem valor dá `422 missing_parameter`; valor fora do tipo,
+         *       `422 invalid_parameter`. A consulta dos valores permitidos só é
+         *       conferida no disparo.
+         *     - `revision` diferente da atual: `409 draft_conflict`; rascunho com
+         *       problemas: `409 draft_has_problems`; sem fonte do lote:
+         *       `409 no_batch_source`.
+         *     - Criar toma a trava do workflow como o disparo (ADR 0124); um apagar
+         *       ou atualizar o workflow que o segura por mais de 5 s:
+         *       `409 workflow_busy`.
+         *     - Corpo acima de 1 MB: `413 definition_too_large`; outro
+         *       `Content-Type`: `415`.
+         */
+        post: operations["create_schedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/schedules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devolve um agendamento
+         * @description O agendamento, com a revisão congelada (`draft_revision`), a revisão
+         *     atual do rascunho (`current_draft_revision`, para a tela avisar que o
+         *     rascunho mudou), o próximo disparo e o último.
+         */
+        get: operations["get_schedule"];
+        /**
+         * Altera um agendamento
+         * @description Substitui os campos do agendamento, com as regras da criação.
+         *     Auditado como `schedule_updated`.
+         *     - `revision` igual à congelada (`draft_revision`) mantém a definição;
+         *       diferente, recongela, e tem de ser a revisão atual do rascunho
+         *       (`409 draft_conflict`), sem problemas (`409 draft_has_problems`) e
+         *       com fonte do lote (`409 no_batch_source`).
+         *     - Nome repetido no workflow: `409 schedule_name_taken`.
+         *     - `enabled: false` para os disparos (`next_run_at` nulo); voltar a
+         *       `true` calcula o próximo horário depois do "agora".
+         */
+        put: operations["update_schedule"];
+        post?: never;
+        /**
+         * Apaga um agendamento
+         * @description Apaga o agendamento. As execuções já disparadas por ele ficam, com o
+         *     `schedule` mostrando o nome guardado. Auditado como
+         *     `schedule_deleted`.
+         */
+        delete: operations["delete_schedule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/reference-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os arquivos de referência do workflow
+         * @description Os arquivos de referência do workflow (até 20), do mais novo para o
+         *     mais velho, sem paginação, com a última comparação de cada um.
+         */
+        get: operations["list_reference_files"];
+        put?: never;
+        /**
+         * Envia um arquivo de referência
+         * @description Corpo `multipart/form-data` com o arquivo no campo `file`; o nome é o do
+         *     arquivo (E7-10). Conferido contra o rascunho **salvo**, linha a linha,
+         *     antes de gravar; com erro, nada é gravado. Guardado cifrado, com o
+         *     SHA-256. Auditado como `reference_file_uploaded` (nome, tamanho,
+         *     SHA-256 e número de registros, nunca o conteúdo).
+         *     - **Formato:** RFC 4180, UTF-8 (o BOM é ignorado), separador `,`. A
+         *       primeira linha traz os nomes das colunas, sem os espaços das pontas:
+         *       - uma coluna por variável da chave do registro, com o nome no
+         *         workflow, todas obrigatórias;
+         *       - colunas com nomes de `root.output.fields`: só as presentes são
+         *         conferidas, e precisa haver pelo menos uma, ou a coluna `status`;
+         *       - `status` (opcional): `ok`, `ok_with_warnings`, `error`, `ignored`
+         *         ou `filtered`; vazio quer dizer "calculado";
+         *       - `result_key`, `revision`, `run_id`, `workflow_version` e
+         *         `_warnings` são ignoradas: um CSV entregue serve de referência;
+         *       - qualquer outra coluna, ou uma coluna repetida, é erro.
+         *     - **Valores**, pelo tipo da variável (E4-14): número com ponto, sem
+         *       separador de milhar (inteiro `-?[0-9]+`; decimal com até 18 casas);
+         *       `true` ou `false`, sem diferenciar maiúsculas; data `AAAA-MM-DD`;
+         *       data e hora ISO 8601 com fuso; texto como está (um texto que começa
+         *       com `'` seguido de `=`, `+`, `-`, `@`, tabulação ou retorno de carro
+         *       perde o `'`, o contrário da entrega); campo vazio é nulo.
+         *     - **Erros de linha:** valor fora do tipo; variável da chave com mais
+         *       casas que a `scale` dela; parte da chave vazia; chave repetida no
+         *       arquivo; linha com `status` `error`, `ignored` ou `filtered` e
+         *       algum campo preenchido.
+         *     - Erros: `422 invalid_reference_file`, com até 20 itens em `fields`
+         *       (a chave diz a linha e a coluna, como "linha 12, coluna pontos"; a
+         *       linha 1 é o cabeçalho; os erros de colunas vão em `header`), sem
+         *       ecoar o valor. As chaves de `fields` deste erro são texto para
+         *       pessoas, em pt-BR.
+         *     - Até 20 MB, conferido antes de ler tudo: `413 file_too_large`. Até 20
+         *       arquivos por workflow: `409 too_many_reference_files`. Rascunho sem
+         *       fonte do lote: `409 no_batch_source`.
+         *     - Corpo sem o campo `file`, ou nome do arquivo vazio, com mais de 255
+         *       caracteres ou com caractere de controle: `422 invalid_data`, com
+         *       `fields.file`.
+         */
+        post: operations["upload_reference_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/reference-files/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Apaga um arquivo de referência
+         * @description Apaga o arquivo (o objeto guardado também). As simulações feitas com
+         *     ele ficam, com o nome guardado em `reference_file`. Auditado como
+         *     `reference_file_deleted`.
+         */
+        delete: operations["delete_reference_file"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/reference-files/{file_id}/simulations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simula o workflow e compara com o arquivo de referência
+         * @description Dispara uma execução no modo `simulation` (E7-11) do rascunho salvo
+         *     na `revision` enviada, com os `parameters`, como o disparo do lote.
+         *     Responde `202` com a `Execution` (`mode` `simulation` e
+         *     `reference_file`).
+         *     - A simulação passa pela pré-validação e calcula como o lote, mas não
+         *       entrega: nenhum CSV e nenhuma entrega registrada (`output.available`
+         *       é falso e o download dá `404 output_not_available`); o limite de erro
+         *       não aborta (com erros, termina `completed_with_errors`); e ela não
+         *       conta para a sobreposição.
+         *     - Depois do último chunk, o estado `comparing` compara cada registro
+         *       com o arquivo, pelo `result_key`, e grava o resumo em `comparison` e
+         *       o diff (`GET /v1/executions/{id}/comparison/records`).
+         *     - Os erros do disparo do lote, menos a sobreposição: `409
+         *       draft_conflict`, `409 draft_has_problems`, `409 no_batch_source`,
+         *       `409 workflow_busy`, `422 missing_parameter`, `422 invalid_parameter`.
+         *     - Uma variável da chave ou um campo do arquivo que sumiu do rascunho
+         *       ou mudou de tipo: `409 reference_file_mismatch`.
+         *     - Arquivo que não existe: `404 not_found`.
+         */
+        post: operations["trigger_simulation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflows/{id}/parameters/{name}/allowed-values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lê os valores permitidos de um parâmetro
+         * @description Os valores permitidos de um parâmetro com `allowed_values` por
+         *     consulta (E7-5), para o formulário. Lê a declaração do rascunho
+         *     **salvo**: um `SELECT DISTINCT` da coluna da variável da consulta,
+         *     com os filtros dela (bind e o tempo limite das fontes), sem nulos, em
+         *     ordem crescente, até 1.000 valores; com mais, `truncated: true`. Os
+         *     valores vêm como texto (E4-14).
+         *     - `search` (até 100 caracteres): no `text`, filtra por "contém", sem
+         *       diferenciar maiúsculas; no `integer` e no `date`, por "começa com",
+         *       no texto canônico.
+         *     - Parâmetro que não existe no rascunho: `404 parameter_not_found`.
+         *     - Parâmetro sem consulta (lista fechada ou sem restrição):
+         *       `409 allowed_values_not_query`.
+         *     - Rascunho com problemas: `409 draft_has_problems`; credencial
+         *       guardada ilegível: `409 connection_credential_unreadable` (D44).
+         *     - Erro de leitura da origem: `422 schema_drift` (uma coluna mudou ou
+         *       não existe mais) e `422 source_read_denied` (sem permissão de
+         *       leitura), com o texto fixo da prévia; banco do cliente fora do ar:
+         *       `422 connection_failed`; destino bloqueado:
+         *       `422 connection_target_not_allowed`.
+         *
+         *     Aceita `executions.trigger`, `executions.schedule`, `workflows.edit`
+         *     **ou** `simulations.run`: qualquer permissão que preenche o
+         *     formulário dos parâmetros (requisitos alternativos, ADR 0046).
+         */
+        get: operations["list_allowed_values"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista os alertas do sino
+         * @description Os alertas do tenant atual (E7-13), 20 por página, do mais novo para o
+         *     mais velho, com `read` da pessoa que pede e `unread_count` (os não
+         *     lidos dela no tenant, em todas as páginas). O front consulta a cada
+         *     30 s. Alertas com mais de 90 dias são apagados pelo agendador.
+         *     - `unread_only=true` traz só os não lidos.
+         */
+        get: operations["list_notifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marca alertas como lidos
+         * @description Marca como lidos, para a pessoa que pede, os alertas de `ids` (de 1 a
+         *     100) ou, com `{"all": true}`, todos os do tenant atual. Ids de outro
+         *     tenant ou que não existem são ignorados. Responde `204` sem corpo.
+         *     Outro `Content-Type`: `415`.
+         */
+        post: operations["mark_notifications_read"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2212,9 +2649,17 @@ export interface components {
          *     saída com o nome de uma variável da chave do registro: os dois viram
          *     colunas do CSV). O `parameter_not_available` não sai mais no workflow
          *     de lote; ele volta no workflow função (épico 12).
+         *
+         *     Do épico 7 (Contratos, "Esquema do workflow, versão 4"), no fim da
+         *     lista: `allowed_values_type_mismatch` (a variável da consulta dos
+         *     valores permitidos não é do tipo do parâmetro) e
+         *     `parameter_in_allowed_values` (um filtro da consulta usa `@`). Na
+         *     consulta também valem `unknown_dataset`, `unknown_catalog_variable`,
+         *     `variable_not_from_dataset` e `filter_type_mismatch`, com o caminho
+         *     `parameters[i].allowed_values...`.
          * @enum {string}
          */
-        ProblemCode: "syntax_error" | "formula_empty" | "formula_too_long" | "formula_too_complex" | "unknown_variable" | "unknown_function" | "wrong_argument_count" | "type_mismatch" | "invalid_constant" | "operator_not_allowed" | "function_not_allowed_here" | "multiple_outside_aggregation" | "multiple_without_brackets" | "linear_with_brackets" | "more_than_one_list" | "nested_aggregation" | "aggregation_without_multiple" | "cycle" | "duplicate_name" | "duplicate_node_id" | "reserved_name" | "output_type_mismatch" | "multiple_in_output" | "missing_default_value" | "empty_decision_table" | "rule_width" | "inputs_with_batch_source" | "unknown_dataset" | "unknown_catalog_variable" | "variable_not_from_dataset" | "not_visible" | "link_to_calculated" | "link_type_mismatch" | "filter_outside_root" | "filter_type_mismatch" | "parameter_not_available" | "scale_above_engine_limit" | "group_too_deep" | "empty_group_output" | "missing_batch_source_key" | "missing_order_by" | "definition_invalid" | "unknown_parameter" | "parameter_type_mismatch" | "period_without_part" | "list_outside_in" | "invalid_parameter_default" | "invalid_allowed_value" | "output_field_conflicts_with_key";
+        ProblemCode: "syntax_error" | "formula_empty" | "formula_too_long" | "formula_too_complex" | "unknown_variable" | "unknown_function" | "wrong_argument_count" | "type_mismatch" | "invalid_constant" | "operator_not_allowed" | "function_not_allowed_here" | "multiple_outside_aggregation" | "multiple_without_brackets" | "linear_with_brackets" | "more_than_one_list" | "nested_aggregation" | "aggregation_without_multiple" | "cycle" | "duplicate_name" | "duplicate_node_id" | "reserved_name" | "output_type_mismatch" | "multiple_in_output" | "missing_default_value" | "empty_decision_table" | "rule_width" | "inputs_with_batch_source" | "unknown_dataset" | "unknown_catalog_variable" | "variable_not_from_dataset" | "not_visible" | "link_to_calculated" | "link_type_mismatch" | "filter_outside_root" | "filter_type_mismatch" | "parameter_not_available" | "scale_above_engine_limit" | "group_too_deep" | "empty_group_output" | "missing_batch_source_key" | "missing_order_by" | "definition_invalid" | "unknown_parameter" | "parameter_type_mismatch" | "period_without_part" | "list_outside_in" | "invalid_parameter_default" | "invalid_allowed_value" | "output_field_conflicts_with_key" | "allowed_values_type_mismatch" | "parameter_in_allowed_values";
         /**
          * @description Falhas de dado de um registro (Contratos, "Execução unitária"). O aviso de
          *     uma política tem o mesmo código da falha. `multiple_rules_matched` é
@@ -2337,7 +2782,7 @@ export interface components {
          *     forma: voltam em `problems`, e o rascunho é salvo mesmo assim. O corpo
          *     que a leva tem até 1 MB (`413 definition_too_large`).
          *
-         *     O workflow novo é `{"schema_version": 3, "kind": "batch", "settings":
+         *     O workflow novo é `{"schema_version": 4, "kind": "batch", "settings":
          *     {"error_policy": "error", "rounding": {"scale": 2, "mode": "half_up"}},
          *     "root": {"inputs": [], "nodes": [], "output": {"fields": []}}}`.
          *
@@ -2345,15 +2790,21 @@ export interface components {
          *
          *     Versão 3 (E6-2): os parâmetros de execução (`parameters`) e, em
          *     `settings`, o limite de erro e o nível do trace. Definições nas versões
-         *     1 e 2 são aceitas e lidas como 3, sem mudar nada (sem parâmetros, com
-         *     os padrões dos dois campos novos); a gravação sai sempre na 3.
+         *     1 e 2 são lidas como 3, sem mudar nada (sem parâmetros, com os padrões
+         *     dos dois campos novos).
+         *
+         *     Versão 4 (E7-4): em `settings`, o limite do alerta da pré-validação
+         *     (`pre_validation_alert_percent`, padrão `"1"`) e, nos parâmetros, os
+         *     `allowed_values` também como consulta a um dataset
+         *     (`AllowedValuesQuery`). Definições nas versões 1 a 3 são aceitas e
+         *     lidas como 4, sem mudar nada; a gravação sai sempre na 4.
          */
         WorkflowDefinition: {
             /**
-             * @description `3` é a versão atual; `1` e `2` são lidas como 3.
+             * @description `4` é a versão atual; `1`, `2` e `3` são lidas como 4.
              * @enum {integer}
              */
-            schema_version: 1 | 2 | 3;
+            schema_version: 1 | 2 | 3 | 4;
             kind: components["schemas"]["WorkflowKind"];
             settings: components["schemas"]["WorkflowSettings"];
             /**
@@ -2379,6 +2830,15 @@ export interface components {
             error_limit_percent: string;
             /** @default standard */
             trace_level: components["schemas"]["TraceLevel"];
+            /**
+             * @description O limite do alerta de campos vazios da pré-validação (E7-2), em
+             *     percentual, como texto: de `"0"` a `"100"`, com até 2 casas. Há
+             *     alerta quando o percentual de vazios de uma variável da fonte do
+             *     lote usada no fluxo é **estritamente maior** que ele. Opcional
+             *     (padrão `"1"`).
+             * @default 1
+             */
+            pre_validation_alert_percent: string;
         };
         RoundingSettings: {
             /** @description Casas oferecidas ao declarar uma saída `decimal` nova (só o padrão da tela). */
@@ -3247,7 +3707,8 @@ export interface components {
          *       fixo é um literal da linguagem (uma lista de literais, se `list`; um
          *       `PeriodLiteral`, se `period`);
          *     - `allowed_values` só em `text`, `integer` e `date`, com 1 a 100
-         *       literais do tipo.
+         *       literais do tipo ou uma consulta a um dataset (épico 7). Com
+         *       `list: true`, cada item da lista é conferido.
          *
          *     O `period` é um intervalo de datas fechado nas duas pontas, acessado
          *     só pelas partes `.inicio` e `.fim` (como `@periodo.inicio` e `@periodo.fim`,
@@ -3272,10 +3733,10 @@ export interface components {
             default: components["schemas"]["ParameterDefault"] | null;
             /**
              * @description Lista fechada de literais da linguagem (`"\"A\""`, `"10"`,
-             *     `"DATA(2026, 10, 1)"`); nula sem restrição. A consulta a um dataset é
-             *     do épico 7.
+             *     `"DATA(2026, 10, 1)"`), consulta a um dataset (`AllowedValuesQuery`,
+             *     épico 7) ou nula, sem restrição.
              */
-            allowed_values: string[] | null;
+            allowed_values: string[] | components["schemas"]["AllowedValuesQuery"] | null;
             description: string | null;
         };
         /**
@@ -3368,24 +3829,42 @@ export interface components {
             parameters: {
                 [key: string]: components["schemas"]["ParameterValue"];
             };
+            /**
+             * @description Confirma o disparo de um escopo já entregue ou em execução (E7-6).
+             *     Sem ele, a sobreposição dá `409 scope_already_delivered`; com ele,
+             *     a execução é criada e grava `overlap_of`.
+             * @default false
+             */
+            confirm_overlap: boolean;
         };
         /**
-         * @description O estado da execução (E6-8): `pending` → `loading` → `calculating` →
-         *     `delivering` → um dos finais (`completed`, `completed_with_errors`,
-         *     `aborted` ou `cancelled`).
+         * @description O estado da execução (E6-8, E7-3): `pending` → `loading` →
+         *     `pre_validating` → (`awaiting_decision`) → `calculating` → `delivering`
+         *     (lote) ou `comparing` (simulação) → um dos finais (`completed`,
+         *     `completed_with_errors`, `aborted` ou `cancelled`).
          *     - `loading`: confere o drift de todas as fontes e conta os registros do
          *       lote (`total_records`);
+         *     - `pre_validating` (épico 7): lê a fonte do lote inteira antes do
+         *       primeiro chunk e confere as linhas vazias, as chaves nulas, as
+         *       chaves repetidas e os campos vazios (`pre_validation`);
+         *     - `awaiting_decision` (épico 7): a pré-validação deu alerta numa
+         *       execução disparada por uma pessoa; a execução fica parada, fora do
+         *       worker, até Prosseguir ou Cancelar. Sem resposta em
+         *       `FLUXO_PRE_VALIDATION_DECISION_HOURS` horas (padrão 24), ela é
+         *       cancelada com a decisão `expired`;
          *     - `calculating`: processa os chunks;
-         *     - `delivering`: gera o CSV e registra as entregas;
-         *     - `awaiting_source`: no lugar de `loading` ou de `calculating`, enquanto
-         *       uma fonte está fora do ar; a execução tenta de novo depois de 30 s,
-         *       2 min e 10 min e, na quarta falha, termina `aborted` com
-         *       `source_unavailable`.
+         *     - `delivering`: gera o CSV e registra as entregas (só no lote);
+         *     - `comparing` (épico 7): compara o resultado da simulação com o
+         *       arquivo de referência (só na simulação);
+         *     - `awaiting_source`: no lugar de `loading`, de `pre_validating` ou de
+         *       `calculating`, enquanto uma fonte está fora do ar; a execução tenta
+         *       de novo depois de 30 s, 2 min e 10 min e, na quarta falha, termina
+         *       `aborted` com `source_unavailable`.
          *
          *     Um estado final não muda mais.
          * @enum {string}
          */
-        ExecutionStatus: "pending" | "loading" | "awaiting_source" | "calculating" | "delivering" | "completed" | "completed_with_errors" | "aborted" | "cancelled";
+        ExecutionStatus: "pending" | "loading" | "pre_validating" | "awaiting_decision" | "awaiting_source" | "calculating" | "delivering" | "comparing" | "completed" | "completed_with_errors" | "aborted" | "cancelled";
         /**
          * @description Por que a execução abortou, com a mensagem fixa em pt-BR de cada um (a
          *     `message` do `ExecutionAbort`):
@@ -3401,13 +3880,20 @@ export interface components {
          *       uma linha. Nada foi entregue.
          *     - `internal_error`: A execução parou por um erro interno. Nada foi
          *       entregue.
+         *     - `connection_not_allowed`: A conexão de uma fonte não é permitida pela
+         *       configuração (TLS ou destino). Ajuste a conexão e execute de novo.
+         *     - `excel_file_unreadable`: O arquivo não pode ser lido. Envie o arquivo
+         *       de novo.
+         *     - `duplicate_record_key`: A chave do registro se repete no lote. Nada
+         *       foi calculado: corrija a origem ou a chave do registro.
          *
-         *     `schema_drift`, `source_read_denied` e `parameter_table_rows` abortam
-         *     na hora, sem nova tentativa. O `internal_error` nunca leva o texto da
-         *     exceção.
+         *     `schema_drift`, `source_read_denied`, `parameter_table_rows`,
+         *     `connection_not_allowed` e `excel_file_unreadable` abortam na hora, sem nova tentativa. O `internal_error` nunca leva o texto da
+         *     exceção. O `duplicate_record_key` vem da pré-validação, antes de
+         *     calcular qualquer registro (`pre_validation.status` `blocked`).
          * @enum {string}
          */
-        AbortReason: "error_limit_exceeded" | "source_unavailable" | "schema_drift" | "source_read_denied" | "parameter_table_rows" | "internal_error";
+        AbortReason: "error_limit_exceeded" | "source_unavailable" | "schema_drift" | "source_read_denied" | "parameter_table_rows" | "internal_error" | "connection_not_allowed" | "excel_file_unreadable" | "duplicate_record_key";
         /** @description O motivo do aborto e a mensagem fixa dele. */
         ExecutionAbort: {
             code: components["schemas"]["AbortReason"];
@@ -3421,9 +3907,16 @@ export interface components {
          *     - `null_record_key`: alguma variável da chave do lote veio nula;
          *     - `duplicate_record_key`: a chave se repetiu no lote; a primeira
          *       ocorrência segue e as seguintes são erro, mesmo em chunks diferentes
-         *       e depois de uma retomada.
+         *       e depois de uma retomada (no épico 7, a pré-validação bloqueia a
+         *       execução antes; este erro fica para o dado que muda entre a
+         *       pré-validação e o cálculo).
+         *
+         *     E o motivo do registro `ignored` que não foi calculado (épico 7, E7-2):
+         *     - `empty_row`: Linha toda vazia na fonte do lote. Todas as colunas lidas
+         *       vieram nulas; o registro nunca vira `null_record_key` e não entra nos
+         *       `error_groups`.
          */
-        RecordFailureCode: components["schemas"]["FailureCode"] | ("duplicate_record_key" | "null_record_key");
+        RecordFailureCode: components["schemas"]["FailureCode"] | ("duplicate_record_key" | "empty_row" | "null_record_key");
         /** @description O avanço, atualizado no fim de cada chunk confirmado. */
         ExecutionProgress: {
             chunks_done: number;
@@ -3470,6 +3963,14 @@ export interface components {
          *     congelada da definição na `draft_revision` e os valores resolvidos dos
          *     parâmetros: quem disparou, quando e com quais parâmetros ficam aqui (não
          *     há evento de auditoria novo).
+         *
+         *     Épico 7: o `mode` separa o lote da simulação (`simulation`, disparada
+         *     pelo arquivo de referência, sem entrega: `output.available` é sempre
+         *     falso). A execução agendada vem com `triggered_by` nulo e o
+         *     `schedule`. A pré-validação (`pre_validation`), as contagens por bloco
+         *     Fonte (`source_counts`), a sobreposição confirmada (`overlap_of`) e o
+         *     resumo da comparação (`comparison`) também ficam aqui; a decisão sobre
+         *     o alerta, com quem e quando, fica em `pre_validation.decision`.
          */
         Execution: {
             /**
@@ -3485,6 +3986,7 @@ export interface components {
             draft_revision: number;
             /** @description A versão publicada; `null` até o épico 10. */
             workflow_version: number | null;
+            mode: components["schemas"]["ExecutionMode"];
             status: components["schemas"]["ExecutionStatus"];
             /** @description Só em `aborted`. */
             abort_reason: components["schemas"]["ExecutionAbort"] | null;
@@ -3504,9 +4006,18 @@ export interface components {
              */
             now: string;
             trace_level: components["schemas"]["TraceLevel"];
-            /** @description O limite de erro da definição congelada. */
+            /**
+             * @description O limite de erro da definição congelada. Na simulação ele não aborta:
+             *     com erros, ela termina `completed_with_errors`.
+             */
             error_limit_percent: string;
-            triggered_by: components["schemas"]["UserRef"];
+            /** @description Quem disparou; nulo na execução agendada (épico 7). */
+            triggered_by: components["schemas"]["UserRef"] | null;
+            /**
+             * @description O agendamento que disparou a execução, com o nome guardado (mesmo
+             *     depois de apagado); nulo no disparo por uma pessoa.
+             */
+            schedule: components["schemas"]["ScheduleRef"] | null;
             /** Format: date-time */
             created_at: string;
             /** @description Quando o worker pegou a execução; nulo em `pending`. */
@@ -3527,6 +4038,27 @@ export interface components {
             /** @description Os erros agrupados por nó e código, do maior para o menor `count`. */
             error_groups: components["schemas"]["ErrorGroup"][];
             output: components["schemas"]["ExecutionOutput"];
+            /** @description O resultado da pré-validação; nulo até ela terminar. */
+            pre_validation: components["schemas"]["PreValidation"] | null;
+            /**
+             * @description As contagens de cada bloco Fonte (em qualquer grupo), somadas no
+             *     fim de cada chunk, como os `error_groups`, na ordem dos blocos na
+             *     definição congelada. Vazia antes do primeiro chunk e no workflow
+             *     sem bloco Fonte.
+             */
+            source_counts: components["schemas"]["SourceCount"][];
+            /**
+             * @description A execução mais nova do mesmo escopo, quando o disparo foi
+             *     confirmado com `confirm_overlap`; nulo sem sobreposição.
+             */
+            overlap_of: components["schemas"]["ExecutionOverlap"] | null;
+            /**
+             * @description O arquivo de referência da simulação, com o nome guardado (mesmo
+             *     depois de apagado); nulo no lote.
+             */
+            reference_file: components["schemas"]["ReferenceFileRef"] | null;
+            /** @description O resumo da comparação; nulo no lote e até o fim do `comparing`. */
+            comparison: components["schemas"]["ComparisonSummary"] | null;
         };
         /**
          * @description A definição congelada de uma execução (E6-1): a cópia do rascunho que
@@ -3590,6 +4122,523 @@ export interface components {
             } | null;
             /** @description O trace do registro; nulo no `minimal`. */
             trace: components["schemas"]["UnitRunTrace"] | null;
+        };
+        /**
+         * @description Os valores permitidos de um parâmetro lidos de um dataset do catálogo
+         *     (E7-5): os valores distintos da variável `variable_id`, com os
+         *     `filters`. Só nos tipos `text`, `integer` e `date`, como a lista; com
+         *     `list: true`, cada item da lista é conferido.
+         *
+         *     O que o motor confere (problemas, não erro de forma):
+         *     - `variable_id` é uma variável do próprio dataset
+         *       (`variable_not_from_dataset`), do tipo do parâmetro
+         *       (`allowed_values_type_mismatch`);
+         *     - os filtros, na forma dos filtros do bloco Fonte, só com literais: um
+         *       `@parametro` num filtro da consulta é `parameter_in_allowed_values`;
+         *     - também valem `unknown_dataset`, `unknown_catalog_variable` e
+         *       `filter_type_mismatch`, com o caminho
+         *       `parameters[i].allowed_values...`.
+         *
+         *     A análise do rascunho não lê dados: os valores são lidos pela rota dos
+         *     valores permitidos e conferidos no uso (disparo, simulação, prévia,
+         *     execução unitária e disparo agendado).
+         */
+        AllowedValuesQuery: {
+            /** Format: uuid */
+            dataset_id: string;
+            /**
+             * Format: uuid
+             * @description A variável do dataset cujos valores distintos são os permitidos.
+             */
+            variable_id: string;
+            /** @description De 0 a 20 filtros, sobre variáveis do próprio dataset. */
+            filters: components["schemas"]["SourceFilter"][];
+        };
+        /**
+         * @description Os valores permitidos lidos pela consulta, sem nulos, em ordem
+         *     crescente, como texto (E4-14), até 1.000.
+         */
+        AllowedValues: {
+            values: string[];
+            /** @description `true` quando havia mais de 1.000 valores (vêm os 1.000 primeiros). */
+            truncated: boolean;
+        };
+        /**
+         * @description `batch`: a execução em lote, que entrega o CSV. `simulation` (épico 7):
+         *     o lote sem entrega, disparado pelo arquivo de referência e comparado
+         *     com ele; não conta para a sobreposição e o limite de erro não a aborta.
+         * @enum {string}
+         */
+        ExecutionMode: "batch" | "simulation";
+        /** @description Corpo da simulação pelo arquivo de referência. */
+        NewSimulation: {
+            /** @description A revisão do rascunho salvo que deve rodar. */
+            revision: number;
+            /**
+             * @description Os valores dos parâmetros de execução, por nome; o ausente usa o padrão.
+             * @default {}
+             */
+            parameters: {
+                [key: string]: components["schemas"]["ParameterValue"];
+            };
+        };
+        /** @description Um agendamento, pelo id e pelo nome (o nome guardado, mesmo depois de apagado). */
+        ScheduleRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description Um arquivo de referência, pelo id e pelo nome (o nome guardado, mesmo depois de apagado). */
+        ReferenceFileRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description Um workflow, pelo id e pelo nome. */
+        WorkflowRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description Uma execução, pelo id. */
+        ExecutionRef: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description A execução mais nova do mesmo escopo, quando o disparo confirmou a sobreposição. */
+        ExecutionOverlap: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /**
+         * @description `passed`: sem alerta. `alerted`: algum campo vazio acima do limite.
+         *     `blocked`: chave repetida no lote; a execução termina `aborted` com
+         *     `duplicate_record_key`, sem calcular nenhum registro.
+         * @enum {string}
+         */
+        PreValidationStatus: "passed" | "alerted" | "blocked";
+        /**
+         * @description A decisão sobre o alerta da pré-validação: `proceed` (Prosseguir),
+         *     `cancel` (Cancelar), `automatic` (a execução agendada segue sozinha) ou
+         *     `expired` (sem resposta no prazo; a execução é cancelada).
+         * @enum {string}
+         */
+        DecisionChoice: "proceed" | "cancel" | "automatic" | "expired";
+        /** @description Quem decidiu sobre o alerta, o quê e quando. */
+        PreValidationDecision: {
+            choice: components["schemas"]["DecisionChoice"];
+            /** @description Quem decidiu; nulo em `automatic` e `expired`. */
+            by: components["schemas"]["UserRef"] | null;
+            /** Format: date-time */
+            at: string;
+        };
+        /** @description As chaves repetidas no lote, pelo texto canônico do `result_key`. */
+        DuplicateKeys: {
+            /** @description Quantas chaves distintas se repetem. */
+            count: number;
+            /** @description Até 5 chaves repetidas, na ordem do lote. */
+            examples: components["schemas"]["RecordKey"][];
+        };
+        /** @description Os vazios de uma variável da fonte do lote usada no fluxo. */
+        EmptyValueCount: {
+            /** @description O nome da variável no workflow. */
+            variable: string;
+            /** @description Os registros (linhas que não são vazias) com o valor nulo. */
+            empty: number;
+            /** @description `empty / records × 100`, truncado em 2 casas, como texto. */
+            percent: string;
+            /** @description `true` quando `percent` é estritamente maior que `alert_percent`. */
+            alert: boolean;
+        };
+        /**
+         * @description O resultado da pré-validação (E7-1 a E7-3), lida a fonte do lote
+         *     inteira, com os filtros dela, antes do primeiro chunk.
+         *     - linha vazia: todas as colunas lidas nulas; contada em `empty_rows` e,
+         *       no cálculo, registro `ignored` com `empty_row`;
+         *     - chave nula: linha que não é vazia com alguma variável da chave nula;
+         *       contada em `null_key_records` e, no cálculo, erro `null_record_key`;
+         *     - chave repetida: `duplicate_keys`; bloqueia a execução;
+         *     - campos vazios: só as variáveis da fonte do lote usadas no fluxo (fora
+         *       as da chave), com algum vazio, pelo nome no workflow.
+         */
+        PreValidation: {
+            status: components["schemas"]["PreValidationStatus"];
+            /**
+             * @description Os registros: as linhas lidas da fonte do lote que não são vazias
+             *     (a base do `percent` dos campos vazios).
+             */
+            records: number;
+            empty_rows: number;
+            null_key_records: number;
+            duplicate_keys: components["schemas"]["DuplicateKeys"];
+            /** @description As variáveis com algum vazio, ordenadas pelo nome no workflow. */
+            empty_values: components["schemas"]["EmptyValueCount"][];
+            /** @description O `pre_validation_alert_percent` da definição congelada. */
+            alert_percent: string;
+            /** @description A decisão sobre o alerta; nula sem alerta e até a decisão. */
+            decision: components["schemas"]["PreValidationDecision"] | null;
+            /**
+             * @description Até quando a pessoa pode decidir: o fim da pré-validação mais
+             *     `FLUXO_PRE_VALIDATION_DECISION_HOURS`. Só com alerta numa execução
+             *     disparada por uma pessoa; nulo nos outros casos.
+             */
+            decision_expires_at: string | null;
+        };
+        /**
+         * @description As contagens de um bloco Fonte no cálculo (E7-1), como as da prévia: no
+         *     `linear`, `found`, `no_match` e `multiple_rows`; no `filter`, `kept` e
+         *     `filtered`. Os campos que não servem ao modo vêm nulos.
+         */
+        SourceCount: {
+            node_id: string;
+            /** @description O nome do bloco na definição congelada. */
+            node_name: string;
+            mode: components["schemas"]["SourceMode"];
+            found: number | null;
+            no_match: number | null;
+            multiple_rows: number | null;
+            kept: number | null;
+            filtered: number | null;
+        };
+        /**
+         * @description O resumo da comparação com o arquivo de referência (E7-11). `compared`
+         *     é a soma dos cinco resultados; os registros com erro, ignorados ou
+         *     filtrados que não estão no arquivo ficam em `not_compared`.
+         *     `equal_percent` = `equal / compared × 100`, truncado em 2 casas: só dá
+         *     `"100.00"` com igualdade total; nulo com `compared` 0.
+         */
+        ComparisonSummary: {
+            compared: number;
+            equal: number;
+            different: number;
+            status_differs: number;
+            missing_from_result: number;
+            missing_from_file: number;
+            not_compared: number;
+            equal_percent: string | null;
+        };
+        /** @description Uma execução de lote do mesmo escopo, entregue ou em andamento. */
+        OverlappingExecution: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["ExecutionStatus"];
+            /** Format: date-time */
+            created_at: string;
+            finished_at: string | null;
+            triggered_by: components["schemas"]["UserRef"] | null;
+            schedule: components["schemas"]["ScheduleRef"] | null;
+        };
+        /**
+         * @description O `Problem` do `409` do disparo do lote: o `DraftRunConflictProblem`
+         *     mais `overlapping`, que só vem no `scope_already_delivered` (até 5
+         *     execuções do mesmo escopo, das mais novas).
+         */
+        TriggerConflictProblem: {
+            /** @default about:blank */
+            type: string;
+            title: string;
+            status: number;
+            /** @description Mensagem em pt-BR para o usuário final. */
+            detail: string;
+            /** @description Identificador estável do erro (slug). */
+            code: string;
+            /** @description Erro por campo do corpo, quando houver (`{"<field>": "<error>"}`). */
+            fields?: {
+                [key: string]: string;
+            };
+            /** @description A revisão atual do rascunho. */
+            current_revision?: number;
+            /** @description Os problemas do rascunho salvo. */
+            problems?: components["schemas"]["WorkflowProblem"][];
+            /** @description As execuções do mesmo escopo, das mais novas. */
+            overlapping?: components["schemas"]["OverlappingExecution"][];
+        };
+        /**
+         * @description O resultado de um registro na comparação, pelo `result_key`:
+         *     - `equal`: mesma classe de status e, se calculado, todos os campos do
+         *       arquivo iguais aos obtidos;
+         *     - `different`: calculado nos dois, com algum campo diferente;
+         *     - `status_differs`: classes de status diferentes (calculado, `error`,
+         *       `ignored` e `filtered`);
+         *     - `missing_from_result`: chave do arquivo que o lote não leu;
+         *     - `missing_from_file`: registro calculado que não está no arquivo.
+         *
+         *     Igualdade de valor: número pelo valor (`225.0` é igual a `225.00`);
+         *     texto exato, com maiúsculas; booleano; data; data e hora pelo instante.
+         *     Nulo só é igual a nulo.
+         * @enum {string}
+         */
+        ComparisonOutcome: "equal" | "different" | "status_differs" | "missing_from_result" | "missing_from_file";
+        /** @description Um campo diferente, com o valor esperado (do arquivo) e o obtido. */
+        ComparisonField: {
+            name: string;
+            expected: components["schemas"]["Value"] | null;
+            obtained: components["schemas"]["Value"] | null;
+        };
+        /** @description Um registro comparado. */
+        ComparisonRecord: {
+            /** @description Calculado da chave (do arquivo ou do lote) em texto canônico. */
+            result_key: string;
+            record_key: components["schemas"]["RecordKey"];
+            outcome: components["schemas"]["ComparisonOutcome"];
+            /**
+             * @description O `status` do arquivo; nulo quando o arquivo o deixou vazio ou não
+             *     tem a coluna (quer dizer "calculado") e em `missing_from_file`.
+             */
+            expected_status: components["schemas"]["UnitRunStatus"] | null;
+            /** @description O status obtido; nulo em `missing_from_result`. */
+            obtained_status: components["schemas"]["UnitRunStatus"] | null;
+            /** @description Só os campos diferentes; vazio nos outros resultados. */
+            fields: components["schemas"]["ComparisonField"][];
+        };
+        ComparisonRecordList: {
+            items: components["schemas"]["ComparisonRecord"][];
+            next_cursor: string | null;
+        };
+        /** @description A recorrência de um agendamento, pelo `kind` (E7-7). Sem expressão cron. */
+        Recurrence: components["schemas"]["DailyRecurrence"] | components["schemas"]["WeeklyRecurrence"] | components["schemas"]["MonthlyRecurrence"];
+        /** @description Todo dia, no horário. */
+        DailyRecurrence: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "daily";
+            /** @description O horário local `HH:MM` (de `00:00` a `23:59`) no fuso `FLUXO_BUSINESS_TIMEZONE`. */
+            time: string;
+        };
+        /** @description Nos dias da semana, no horário. */
+        WeeklyRecurrence: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "weekly";
+            /** @description O horário local `HH:MM` (de `00:00` a `23:59`) no fuso `FLUXO_BUSINESS_TIMEZONE`. */
+            time: string;
+            /** @description Os dias da semana, de 1 (segunda-feira) a 7 (domingo), ISO 8601, sem repetição. */
+            weekdays: number[];
+        };
+        /** @description Num dia do mês, no horário. */
+        MonthlyRecurrence: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "monthly";
+            /** @description O horário local `HH:MM` (de `00:00` a `23:59`) no fuso `FLUXO_BUSINESS_TIMEZONE`. */
+            time: string;
+            /** @description O dia, de 1 a 28, ou `"last"` (o último dia do mês). */
+            day: number | "last";
+        };
+        /** @description O valor de um parâmetro no agendamento, fixo ou relativo, pelo `kind`. */
+        ScheduleParameter: components["schemas"]["FixedScheduleParameter"] | components["schemas"]["RelativeScheduleParameter"];
+        /** @description Um valor fixo, como no disparo (`ParameterValue`). */
+        FixedScheduleParameter: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "fixed";
+            value: components["schemas"]["ParameterValue"];
+        };
+        /**
+         * @description Um valor relativo, resolvido a cada disparo pelo horário marcado
+         *     (`scheduled_for`), só com os relativos que servem ao tipo.
+         */
+        RelativeScheduleParameter: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "relative";
+            value: components["schemas"]["RelativeDefault"];
+        };
+        /**
+         * @description O que aconteceu num disparo: `triggered` (criou a execução),
+         *     `skipped_overlap` (o escopo já foi entregue ou está em execução; nada
+         *     foi criado) ou `failed` (valor fora dos valores permitidos, parâmetro
+         *     obrigatório sem valor, ou definição congelada com problemas; nada foi
+         *     criado).
+         * @enum {string}
+         */
+        ScheduleRunOutcome: "triggered" | "skipped_overlap" | "failed";
+        /** @description O último disparo do agendamento. */
+        ScheduleRun: {
+            /**
+             * Format: date-time
+             * @description O horário marcado; é o "agora" da execução e dos relativos.
+             */
+            scheduled_for: string;
+            /**
+             * Format: date-time
+             * @description Quando o agendador disparou.
+             */
+            fired_at: string;
+            outcome: components["schemas"]["ScheduleRunOutcome"];
+            /** @description A execução criada; nula sem `triggered`. */
+            execution_id: string | null;
+            /** @description O motivo em pt-BR, sem dado do cliente; nulo em `triggered`. */
+            message: string | null;
+        };
+        /** @description Corpo da criação e da alteração de agendamento (a alteração substitui tudo). */
+        ScheduleData: {
+            /** @description A revisão do rascunho salvo a congelar (ou a já congelada, na alteração). */
+            revision: number;
+            /**
+             * @description Único no workflow (`409 schedule_name_taken`), sem texto em branco
+             *     (ADR 0121); guardado sem os espaços das pontas.
+             */
+            name: string;
+            enabled: boolean;
+            recurrence: components["schemas"]["Recurrence"];
+            /**
+             * @description O valor de cada parâmetro, por nome; o ausente usa o padrão da
+             *     definição congelada.
+             * @default {}
+             */
+            parameters: {
+                [key: string]: components["schemas"]["ScheduleParameter"];
+            };
+        };
+        /**
+         * @description Um agendamento (E7-7 a E7-9): roda a definição congelada na
+         *     `draft_revision`, no horário da recorrência, pelo agendador
+         *     (`fluxo scheduler`). A execução agendada tem `triggered_by` nulo e o
+         *     `schedule`; o alerta da pré-validação não a para.
+         */
+        Schedule: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workflow_id: string;
+            workflow_name: string;
+            name: string;
+            enabled: boolean;
+            recurrence: components["schemas"]["Recurrence"];
+            /** @description O fuso dos horários (`FLUXO_BUSINESS_TIMEZONE`); só leitura. */
+            timezone: string;
+            parameters: {
+                [key: string]: components["schemas"]["ScheduleParameter"];
+            };
+            /** @description A revisão do rascunho congelada no agendamento. */
+            draft_revision: number;
+            /** @description A revisão do rascunho agora, para a tela avisar que ele mudou. */
+            current_draft_revision: number;
+            /**
+             * @description O próximo disparo: o primeiro horário local marcado depois do
+             *     "agora", em UTC. Hora que não existe (salto do horário de verão)
+             *     vira o primeiro instante válido depois dela; hora repetida, a
+             *     primeira das duas. Nulo com `enabled` falso.
+             */
+            next_run_at: string | null;
+            /** @description O último disparo; nulo antes do primeiro. */
+            last_run: components["schemas"]["ScheduleRun"] | null;
+            created_by: components["schemas"]["UserRef"];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ScheduleList: {
+            items: components["schemas"]["Schedule"][];
+            next_cursor: string | null;
+        };
+        /** @description Corpo do envio do arquivo de referência (`multipart/form-data`). */
+        ReferenceFileUpload: {
+            file: string;
+        };
+        /** @description A última simulação feita com o arquivo. */
+        ReferenceFileComparison: {
+            /** Format: uuid */
+            execution_id: string;
+            status: components["schemas"]["ExecutionStatus"];
+            /** @description O `comparison.equal_percent` dela; nulo até o fim do `comparing`. */
+            equal_percent: string | null;
+            finished_at: string | null;
+        };
+        /**
+         * @description Um arquivo de referência (E7-10), guardado cifrado; o Postgres guarda só
+         *     estes metadados.
+         */
+        ReferenceFile: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workflow_id: string;
+            /** @description O nome do arquivo enviado. */
+            name: string;
+            size_bytes: number;
+            /** @description O SHA-256 do arquivo, em hexadecimal. */
+            sha256: string;
+            /** @description As linhas de dado (sem o cabeçalho). */
+            records: number;
+            /** @description As colunas da chave do registro, na ordem do arquivo. */
+            key_columns: string[];
+            /** @description As colunas de campos da saída conferidas, na ordem do arquivo. */
+            field_columns: string[];
+            /** @description Se o arquivo tem a coluna `status`. */
+            has_status: boolean;
+            uploaded_by: components["schemas"]["UserRef"];
+            /** Format: date-time */
+            uploaded_at: string;
+            /** @description A última simulação feita com o arquivo; nula antes da primeira. */
+            last_comparison: components["schemas"]["ReferenceFileComparison"] | null;
+        };
+        ReferenceFileList: {
+            items: components["schemas"]["ReferenceFile"][];
+        };
+        /**
+         * @description O tipo do alerta (E7-13), com o título e o detalhe fixos em pt-BR, com
+         *     os nomes do caso e nunca com valores do cliente:
+         *     - `awaiting_decision`: "Execução aguarda decisão";
+         *     - `pre_validation_alert`: "Alerta na pré-validação" (a execução
+         *       agendada seguiu com alerta);
+         *     - `execution_aborted`: "Execução abortada";
+         *     - `execution_completed_with_errors`: "Execução com erros" (só no lote);
+         *     - `schedule_failed`: "Agendamento não disparou";
+         *     - `schedule_skipped`: "Agendamento não executou" (sobreposição).
+         *
+         *     A simulação só gera `awaiting_decision` e `execution_aborted`.
+         * @enum {string}
+         */
+        NotificationKind: "awaiting_decision" | "pre_validation_alert" | "execution_aborted" | "execution_completed_with_errors" | "schedule_failed" | "schedule_skipped";
+        /**
+         * @description Um alerta do sino. É do tenant e vale para todas as pessoas com
+         *     `executions.view`; o `read` é de cada pessoa.
+         */
+        Notification: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["NotificationKind"];
+            title: string;
+            detail: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @description Se a pessoa que pede já o leu. */
+            read: boolean;
+            workflow: components["schemas"]["WorkflowRef"];
+            /** @description A execução do alerta; nula nos alertas de agendamento que não criaram execução. */
+            execution: components["schemas"]["ExecutionRef"] | null;
+            /** @description O agendamento do alerta; nulo quando a execução foi disparada por uma pessoa. */
+            schedule: components["schemas"]["ScheduleRef"] | null;
+        };
+        NotificationList: {
+            items: components["schemas"]["Notification"][];
+            next_cursor: string | null;
+            /** @description Os alertas não lidos da pessoa no tenant, em todas as páginas. */
+            unread_count: number;
+        };
+        /** @description Os alertas a marcar como lidos, por id ou todos. */
+        NotificationsRead: components["schemas"]["ReadNotificationIds"] | components["schemas"]["ReadAllNotifications"];
+        ReadNotificationIds: {
+            ids: string[];
+        };
+        ReadAllNotifications: {
+            /** @constant */
+            all: true;
         };
     };
     responses: {
@@ -4093,6 +5142,55 @@ export interface components {
             };
         };
         /**
+         * @description - `workflow_exists`: já há um workflow com esse nome no tenant (sem os
+         *       espaços das pontas e sem diferenciar maiúsculas, como na D12);
+         *     - `workflow_busy`: outra operação (apagar, disparar ou atualizar o
+         *       workflow) segura a linha do workflow por mais de 5 s (o
+         *       `lock_timeout`) e o `PUT` espera por ela, com ou sem troca de nome;
+         *       nada foi alterado, tente de novo em instantes.
+         */
+        WorkflowExistsOrBusy: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `invalid_data`: o corpo (ou o `{id}` do caminho) não segue o esquema;
+         *     - `missing_parameter`: um parâmetro obrigatório ficou sem valor e sem
+         *       padrão (o nome em `fields`);
+         *     - `invalid_parameter`: um valor de parâmetro foi recusado, inclusive
+         *       fora dos valores permitidos (o nome e o motivo em `fields`, sem o
+         *       valor).
+         */
+        RunParametersRejected: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
+         * @description - `workflow_has_executions`: o workflow já tem execuções (de qualquer
+         *       estado) e não pode ser apagado; elas são histórico;
+         *     - `workflow_busy`: outra operação (disparar ou atualizar o workflow)
+         *       segura a linha do workflow por mais de 5 s (o `lock_timeout`); nada
+         *       foi removido, tente de novo em instantes;
+         *     - `workflow_has_schedules` (épico 7): o workflow tem agendamentos;
+         *       apague-os antes de apagar o workflow.
+         */
+        WorkflowHasExecutions: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
          * @description `draft_conflict`: a `revision` enviada não é a atual do rascunho (outra
          *     aba ou outra pessoa salvou antes). `current_revision` traz a atual; nada
          *     é gravado nem executado.
@@ -4137,6 +5235,11 @@ export interface components {
         Limit: number;
         /** @description O `next_cursor` da página anterior; ausente na primeira página. */
         Cursor: string | null;
+        /**
+         * @description Id (UUID) do arquivo de referência. Um valor que não é UUID dá
+         *     `422 invalid_data` com `fields.file_id`.
+         */
+        FileId: string;
     };
     requestBodies: never;
     headers: {
@@ -4165,6 +5268,16 @@ export interface components {
          *     incorporado ler o nome do arquivo numa chamada entre origens.
          */
         ContentDispositionOutput: string;
+        /**
+         * @description `no-store`: o CSV traz dado do negócio e não pode ficar em cache do
+         *     navegador nem de intermediário.
+         */
+        CacheControlNoStore: "no-store";
+        /**
+         * @description `nosniff`: o navegador não interpreta o arquivo como outro tipo além de
+         *     `text/csv`.
+         */
+        ContentTypeOptionsNosniff: "nosniff";
     };
     pathItems: never;
 }
@@ -5982,7 +7095,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["WorkflowExists"];
+            409: components["responses"]["WorkflowExistsOrBusy"];
             413: components["responses"]["DefinitionTooLarge"];
             415: components["responses"]["InvalidBodyContentType"];
             422: components["responses"]["InvalidDataWithId"];
@@ -6010,6 +7123,7 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenMutation"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["WorkflowHasExecutions"];
             422: components["responses"]["InvalidId"];
         };
     };
@@ -6287,14 +7401,17 @@ export interface operations {
             /**
              * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
              *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
-             *     - `no_batch_source`: o workflow não tem fonte do lote.
+             *     - `no_batch_source`: o workflow não tem fonte do lote;
+             *     - `workflow_busy`: um apagar ou atualizar o workflow o segura por mais de 5 s;
+             *     - `scope_already_delivered`: o escopo já foi entregue ou está em
+             *       execução (`overlapping`); confirme com `confirm_overlap: true`.
              */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                    "application/problem+json": components["schemas"]["TriggerConflictProblem"];
                 };
             };
             413: components["responses"]["DefinitionTooLarge"];
@@ -6321,6 +7438,10 @@ export interface operations {
             query?: {
                 /** @description Só as execuções deste workflow. */
                 workflow_id?: string | null;
+                /** @description Só as execuções deste modo (`batch` ou `simulation`). */
+                mode?: components["schemas"]["ExecutionMode"] | null;
+                /** @description Só as execuções disparadas por este agendamento. */
+                schedule_id?: string | null;
                 /** @description Só as execuções nestes estados (repita o parâmetro para mais de um). */
                 status?: components["schemas"]["ExecutionStatus"][] | null;
                 /** @description Quantos itens por página (1 a 200). */
@@ -6346,8 +7467,9 @@ export interface operations {
             401: components["responses"]["NoSession"];
             403: components["responses"]["ForbiddenRead"];
             /**
-             * @description - `invalid_data`: `limit` fora de 1..200, `workflow_id` que não é UUID
-             *       ou `status` fora da lista (`fields.<parameter>`);
+             * @description - `invalid_data`: `limit` fora de 1..200, `workflow_id` ou
+             *       `schedule_id` que não é UUID, ou `status` ou `mode` fora da lista
+             *       (`fields.<parameter>`);
              *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
              */
             422: {
@@ -6466,6 +7588,8 @@ export interface operations {
             200: {
                 headers: {
                     "Content-Disposition": components["headers"]["ContentDispositionOutput"];
+                    "Cache-Control": components["headers"]["CacheControlNoStore"];
+                    "X-Content-Type-Options": components["headers"]["ContentTypeOptionsNosniff"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -6609,6 +7733,599 @@ export interface operations {
                     "application/problem+json": components["schemas"]["InvalidDataProblem"];
                 };
             };
+        };
+    };
+    proceed_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A decisão aceita; a execução volta à fila. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /** @description `not_awaiting_decision`: a execução não está em `awaiting_decision`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    list_comparison_records: {
+        parameters: {
+            query?: {
+                /** @description Só os registros com estes resultados (repita o parâmetro para mais de um). */
+                outcome?: components["schemas"]["ComparisonOutcome"][] | null;
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página do diff. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComparisonRecordList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `not_found`: a execução não existe (ou não é do tenant atual);
+             *     - `comparison_not_available`: a execução não tem comparação.
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description - `invalid_data`: o `{id}` do caminho não é UUID ou `outcome` fora da
+             *       lista (`fields.<parameter>`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_schedules: {
+        parameters: {
+            query?: {
+                /** @description Só os agendamentos deste workflow. */
+                workflow_id?: string | null;
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de agendamentos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `invalid_data`: `workflow_id` que não é UUID (`fields.workflow_id`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_schedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleData"];
+            };
+        };
+        responses: {
+            /** @description O agendamento criado. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
+             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
+             *     - `no_batch_source`: o workflow não tem fonte do lote;
+             *     - `workflow_busy`: um apagar ou atualizar o workflow o segura por mais de 5 s;
+             *     - `schedule_name_taken`: já existe um agendamento com esse nome no workflow;
+             *     - `too_many_schedules`: o workflow já tem 20 agendamentos.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                };
+            };
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
+            422: components["responses"]["RunParametersRejected"];
+        };
+    };
+    get_schedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O agendamento. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    update_schedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleData"];
+            };
+        };
+        responses: {
+            /** @description O agendamento como ficou. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `draft_conflict`: a `revision` não é a congelada nem a atual (`current_revision`);
+             *     - `draft_has_problems`: o rascunho a recongelar tem problemas (`problems`);
+             *     - `no_batch_source`: o rascunho a recongelar não tem fonte do lote;
+             *     - `workflow_busy`: um apagar ou atualizar o workflow o segura por mais de 5 s;
+             *     - `schedule_name_taken`: já existe outro agendamento com esse nome no workflow.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                };
+            };
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
+            422: components["responses"]["RunParametersRejected"];
+        };
+    };
+    delete_schedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agendamento apagado. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    list_reference_files: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os arquivos de referência. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceFileList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    upload_reference_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ReferenceFileUpload"];
+            };
+        };
+        responses: {
+            /** @description O arquivo guardado, com as colunas lidas. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceFile"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `no_batch_source`: o rascunho salvo não tem fonte do lote;
+             *     - `too_many_reference_files`: o workflow já tem 20 arquivos de referência.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description `file_too_large`: o arquivo passa de 20 MB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description - `invalid_data`: o corpo não traz o campo `file`, o nome do arquivo
+             *       é inválido (`fields.file`) ou o `{id}` não é UUID;
+             *     - `invalid_reference_file`: o arquivo não segue o formato (`fields`
+             *       com até 20 erros, por linha e coluna, ou `header`).
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_reference_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+                /**
+                 * @description Id (UUID) do arquivo de referência. Um valor que não é UUID dá
+                 *     `422 invalid_data` com `fields.file_id`.
+                 */
+                file_id: components["parameters"]["FileId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Arquivo apagado. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidId"];
+        };
+    };
+    trigger_simulation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+                /**
+                 * @description Id (UUID) do arquivo de referência. Um valor que não é UUID dá
+                 *     `422 invalid_data` com `fields.file_id`.
+                 */
+                file_id: components["parameters"]["FileId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewSimulation"];
+            };
+        };
+        responses: {
+            /** @description A simulação criada, na fila (`pending`). */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            404: components["responses"]["NotFound"];
+            /**
+             * @description - `draft_conflict`: a `revision` não é a atual (`current_revision`);
+             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
+             *     - `no_batch_source`: o workflow não tem fonte do lote;
+             *     - `workflow_busy`: um apagar ou atualizar o workflow o segura por mais de 5 s;
+             *     - `reference_file_mismatch`: as colunas do arquivo não batem mais com o rascunho.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                };
+            };
+            413: components["responses"]["DefinitionTooLarge"];
+            415: components["responses"]["InvalidBodyContentType"];
+            422: components["responses"]["RunParametersRejected"];
+        };
+    };
+    list_allowed_values: {
+        parameters: {
+            query?: {
+                /** @description Filtra os valores (contém, no texto; começa com, nos outros tipos). */
+                search?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description Id (UUID) do recurso. Um valor que não é UUID dá `422 invalid_data` com `fields.id`. */
+                id: components["parameters"]["Id"];
+                /** @description O nome do parâmetro na definição. */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os valores, em ordem crescente. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllowedValues"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `not_found`: o workflow não existe (ou não é do tenant atual);
+             *     - `parameter_not_found`: o rascunho salvo não tem parâmetro com esse nome.
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /**
+             * @description - `allowed_values_not_query`: o parâmetro não tem consulta;
+             *     - `draft_has_problems`: o rascunho salvo tem problemas (`problems`);
+             *     - `connection_credential_unreadable`: a credencial guardada da
+             *       conexão do dataset não pôde ser lida (D44).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["DraftRunConflictProblem"];
+                };
+            };
+            /**
+             * @description - `invalid_data`: o `{id}` não é UUID, o `{name}` não segue a regra
+             *       de nome ou `search` passa de 100 caracteres (`fields`);
+             *     - `schema_drift`: uma coluna da consulta mudou ou não existe mais
+             *       na origem;
+             *     - `source_read_denied`: o usuário da conexão não pode ler o dataset;
+             *     - `connection_failed`: a conexão com o banco do cliente falhou;
+             *     - `connection_target_not_allowed`: o `host` da conexão resolve para
+             *       uma rede bloqueada.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_notifications: {
+        parameters: {
+            query?: {
+                /** @description Com `true`, só os alertas que a pessoa ainda não leu. */
+                unread_only?: boolean | null;
+                /** @description O `next_cursor` da página anterior; ausente na primeira página. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uma página de alertas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationList"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenRead"];
+            /**
+             * @description - `invalid_data`: `unread_only` que não é booleano (`fields.unread_only`);
+             *     - `invalid_cursor`: o cursor não foi gerado por esta lista ou foi alterado.
+             */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    mark_notifications_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationsRead"];
+            };
+        };
+        responses: {
+            /** @description Alertas marcados como lidos. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            403: components["responses"]["ForbiddenMutation"];
+            415: components["responses"]["InvalidBodyContentType"];
+            422: components["responses"]["InvalidData"];
         };
     };
 }

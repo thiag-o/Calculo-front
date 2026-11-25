@@ -1,12 +1,12 @@
-// Epic 4 · the draft is always read in version 3: a definition saved in version 2 (with no `parameters` and no new
-// `settings` fields) comes back from the PUT and from the next GET in 3, with the parameters empty and the settings at
+// Epic 4 · the draft is always read in version 4: a definition saved in version 2 (with no `parameters` and no new
+// `settings` fields) comes back from the PUT and from the next GET in 4, with the parameters empty and the settings at
 // their defaults (both modes; the simulated answers are also checked against the contract by the fixture).
 import { callApi, suffix } from '../epic-2/support/screens';
 import { expect, test } from './support/fixtures';
 import { signInForApi, type Workflow } from './support/screens';
 import type { Schemas } from '../support/contract';
 
-test('um rascunho gravado em versão 2 volta em versão 3, no PUT e no GET seguinte', async ({ page, epic4 }) => {
+test('um rascunho gravado em versão 2 volta em versão 4, no PUT e no GET seguinte', async ({ page, epic4 }) => {
   const apiOrigin = await signInForApi(page, epic4.account('admin'));
   const created = await callApi(page, apiOrigin, 'POST', '/v1/workflows', { name: `Versão 3 e2e ${suffix()}` });
   expect(created.status, 'criar o workflow pela API').toBe(201);
@@ -23,9 +23,9 @@ test('um rascunho gravado em versão 2 volta em versão 3, no PUT e no GET segui
   const saved = await callApi(page, apiOrigin, 'PUT', `/v1/workflows/${workflow.id}/draft`, body);
   expect(saved.status, `gravar o rascunho em versão 2 (${String(saved.code)})`).toBe(200);
   const expected = {
-    schema_version: 3,
+    schema_version: 4,
     parameters: [],
-    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
   };
   expect((saved.body as Schemas['Draft']).definition, 'a resposta do PUT').toMatchObject(expected);
 

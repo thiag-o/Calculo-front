@@ -26,23 +26,23 @@ const VALIDATED_ROUTES: ReadonlyArray<{ method: string; path: string }> = [
 ];
 
 /**
- * The routes that answer with a draft (`Draft`): the backend reads a definition of version 1 or 2 as 3 and answers
- * always in 3, with `parameters` and the two new `settings` fields. The schema accepts the three versions (it also types
+ * The routes that answer with a draft (`Draft`): the backend reads a definition of version 1 to 3 as 4 and answers
+ * always in 4, with `parameters` and the new `settings` fields. The schema accepts the four versions (it also types
  * what the editor sends), so the answer of these routes is held to the current one here.
  */
 const DRAFT_ROUTES: ReadonlySet<string> = new Set(['GET /v1/workflows/{id}/draft', 'PUT /v1/workflows/{id}/draft']);
 
-/** What a draft answer's definition lacks to be in version 3 (empty: it is in 3). */
+/** What a draft answer's definition lacks to be in version 4 (empty: it is in 4). */
 function versionViolations(name: string, body: unknown): string[] {
   const definition = isObject(body) && isObject(body.definition) ? body.definition : undefined;
   if (!definition) return [];
   const settings = isObject(definition.settings) ? definition.settings : {};
   const problems: string[] = [];
-  if (definition.schema_version !== 3) problems.push(`${name}: /definition/schema_version deve ser 3, e não ${String(definition.schema_version)}`);
+  if (definition.schema_version !== 4) problems.push(`${name}: /definition/schema_version deve ser 4, e não ${String(definition.schema_version)}`);
   if (!Array.isArray(definition.parameters)) problems.push(`${name}: /definition/parameters deve vir sempre (a gravação o escreve)`);
-  // The two settings may be absent: the real API still serves the legacy form (D44, B193), and the editor reads their defaults.
+  // The settings may be absent: the real API still serves the legacy form (D44, B193), and the editor reads their defaults.
   // Present, they must be text.
-  for (const key of ['error_limit_percent', 'trace_level']) {
+  for (const key of ['error_limit_percent', 'trace_level', 'pre_validation_alert_percent']) {
     if (key in settings && typeof settings[key] !== 'string') problems.push(`${name}: /definition/settings/${key} deve ser texto`);
   }
   return problems;

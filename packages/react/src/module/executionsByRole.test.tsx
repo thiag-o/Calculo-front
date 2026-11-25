@@ -51,7 +51,7 @@ const DRAFT: Schemas['Draft'] = {
   definition: {
     schema_version: 3,
     kind: 'batch',
-    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+    settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard', pre_validation_alert_percent: '1' },
     parameters: [],
     root: { batch_source: null, inputs: [], nodes: [], output: { fields: [] } },
   },
@@ -89,6 +89,13 @@ function execution(id: string, partial: Partial<Schemas['Execution']> = {}): Sch
     totals: { read: 1000, ok: 400, ok_with_warnings: 0, error: 0, ignored: 0, filtered: 0 },
     error_groups: [],
     output: { available: false, expires_at: null, rows: null },
+    mode: 'batch',
+    schedule: null,
+    pre_validation: null,
+    source_counts: [],
+    overlap_of: null,
+    reference_file: null,
+    comparison: null,
     ...partial,
   };
 }
