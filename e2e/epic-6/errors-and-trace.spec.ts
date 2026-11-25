@@ -21,7 +21,7 @@ import {
   openTriggerForDataMonth,
   recordsSection,
   recordsTable,
-  submitTrigger,
+  submitTriggerConfirmingOverlap,
   traceDrawer,
 } from './support/screens';
 
@@ -42,7 +42,7 @@ test('com erros dentro do limite, o grupo de erro filtra os registros e o trace 
   const id = await copyWorkflow(page, apiOrigin, CAMPAIGN_WORKFLOW, name);
   await openOverview(page, name);
   await openTriggerForDataMonth(page);
-  expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
+  expect((await submitTriggerConfirmingOverlap(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, name);
   finishRun(epic6);
   await expectStatus(page, epic6, panel, 'Com erros');

@@ -21,7 +21,7 @@ import {
   phases,
   resolvedParameter,
   stepRun,
-  submitTrigger,
+  submitTriggerConfirmingOverlap,
   total,
 } from './support/screens';
 import type { Page } from '@playwright/test';
@@ -50,7 +50,7 @@ test('com um período fixo, o painel acompanha as fases até Entregue e o CSV tr
   // The default is relative: shown by its label; the flow fixes the period.
   await expect(dialog.getByRole('group', { name: 'periodo', exact: true })).toContainText('Mês anterior');
   await fixPeriod(dialog, 'periodo', FIRST_DAYS);
-  const response = await submitTrigger(page);
+  const response = await submitTriggerConfirmingOverlap(page);
   expect(response.status(), 'disparar o lote').toBe(202);
   expect(response.request().postDataJSON()).toMatchObject({ parameters: { periodo: FIRST_DAYS } });
   const id = ((await response.json()) as { id: string }).id;
@@ -112,7 +112,7 @@ test('com o padrão Mês anterior, a execução resolve o mês anterior ao dia d
   await openOverview(page, CAMPAIGN_WORKFLOW);
 
   await openTrigger(page);
-  const response = await submitTrigger(page);
+  const response = await submitTriggerConfirmingOverlap(page);
   expect(response.status(), 'disparar o lote').toBe(202);
   // The default goes by name: the request does not carry it, the API resolves and freezes it. Only the resolved period is
   // checked: the data is fixed in February 2026, so the totals of this run do not count.
@@ -127,7 +127,7 @@ test('com o mês dos dados, o lote lê a campanha inteira e termina Com erros, c
   await openOverview(page, CAMPAIGN_WORKFLOW);
 
   await openTriggerForDataMonth(page);
-  const response = await submitTrigger(page);
+  const response = await submitTriggerConfirmingOverlap(page);
   expect(response.status(), 'disparar o lote').toBe(202);
   expect(response.request().postDataJSON()).toMatchObject({ parameters: { periodo: DATA_MONTH } });
   const execution = (await response.json()) as { id: string; parameters: Record<string, unknown> };

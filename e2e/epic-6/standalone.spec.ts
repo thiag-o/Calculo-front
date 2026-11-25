@@ -8,7 +8,7 @@ import { signInForApi } from '../epic-4/support/screens';
 import type { Schemas } from '../support/contract';
 import { CAMPAIGN_WORKFLOW } from './support/campaign';
 import { expect, test } from './support/fixtures';
-import { executionPanel, executionsTable, expectStatus, finishRun, openTriggerForDataMonth, submitTrigger } from './support/screens';
+import { executionPanel, executionsTable, expectStatus, finishRun, openTriggerForDataMonth, submitTriggerConfirmingOverlap } from './support/screens';
 
 const TEST_PAGE = '/embed-test.html';
 
@@ -51,7 +51,7 @@ test('o <Workflows> e o <Executions> avulsos, incorporados, listam, abrem o pain
       await expect(hostApp.getByRole('heading', { level: 1, name: CAMPAIGN_WORKFLOW, exact: true })).toBeVisible();
 
       await openTriggerForDataMonth(hostApp, region);
-      const response = await submitTrigger(hostApp);
+      const response = await submitTriggerConfirmingOverlap(hostApp);
       expect(response.status(), 'disparar o lote').toBe(202);
       expect(await response.request().headerValue('authorization')).toMatch(/^Bearer /);
       executionId = ((await response.json()) as { id: string }).id;

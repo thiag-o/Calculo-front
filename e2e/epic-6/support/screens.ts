@@ -86,6 +86,19 @@ export async function submitTrigger(page: Page): Promise<Response> {
   return response;
 }
 
+/**
+ * "Executar lote" that confirms the overlap: since epic 7 a real database that kept an earlier run of the same workflow and
+ * period answers `409 scope_already_delivered`, and the dialog lists the executions of the same scope; the second click
+ * sends `confirm_overlap`. Any other 409 is a failure. Returns the response that ended the attempt.
+ */
+export async function submitTriggerConfirmingOverlap(page: Page): Promise<Response> {
+  const first = await submitTrigger(page);
+  if (first.status() !== 409) return first;
+  expect(((await first.json()) as { code: string }).code, 'o único 409 aceito é o da sobreposição').toBe('scope_already_delivered');
+  await expect(triggerDialog(page).getByRole('list', { name: 'Execuções do mesmo escopo', exact: true })).toBeVisible();
+  return submitTrigger(page);
+}
+
 // --- The execution panel ---------------------------------------------------------------------------------------------
 
 /** The panel of an execution of the workflow `name` (its title is the workflow name). */

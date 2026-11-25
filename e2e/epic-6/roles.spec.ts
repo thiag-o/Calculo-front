@@ -21,7 +21,7 @@ import {
   openTriggerForDataMonth,
   recordsSection,
   recordsTable,
-  submitTrigger,
+  submitTriggerConfirmingOverlap,
   traceDrawer,
   workflowId,
 } from './support/screens';
@@ -37,7 +37,11 @@ async function triggerThroughApi(page: Page, apiOrigin: string): Promise<Executi
   const id = await workflowId(page, apiOrigin, CAMPAIGN_WORKFLOW);
   const draft = await callApi(page, apiOrigin, 'GET', `/v1/workflows/${id}/draft`);
   const revision = (draft.body as Schemas['Draft']).revision;
-  const created = await callApi(page, apiOrigin, 'POST', `/v1/workflows/${id}/executions`, { revision, parameters: { periodo: DATA_MONTH }, confirm_overlap: false } satisfies Schemas['NewExecution']);
+  const send = (confirmOverlap: boolean) =>
+    callApi(page, apiOrigin, 'POST', `/v1/workflows/${id}/executions`, { revision, parameters: { periodo: DATA_MONTH }, confirm_overlap: confirmOverlap } satisfies Schemas['NewExecution']);
+  let created = await send(false);
+  // Epic 7: a database that kept an earlier run of the same period asks to confirm the overlap (E7-6).
+  if (created.status === 409 && created.code === 'scope_already_delivered') created = await send(true);
   expect(created.status, `disparar o lote pela API (${String(created.code)})`).toBe(202);
   return created.body as Execution;
 }
@@ -62,7 +66,7 @@ test('o Operador dispara, acompanha, baixa o CSV e não vê o trace', async ({ p
   await openOverview(page, CAMPAIGN_WORKFLOW);
   await expect(page.getByRole('button', { name: 'Ver execuções', exact: true })).toBeVisible();
   await openTriggerForDataMonth(page);
-  expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
+  expect((await submitTriggerConfirmingOverlap(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, CAMPAIGN_WORKFLOW);
   if (epic6.worker) await expect(panel.getByRole('button', { name: 'Cancelar execução', exact: true })).toBeEnabled();
 
