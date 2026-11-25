@@ -1848,6 +1848,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
     - o `FLUXO_BACKEND_DIR` dá o `tests/fixtures/reference_campaign/expected.csv`;
     - o agendamento é uma cópia da campanha com o período fixo de fevereiro de 2026, marcada para o minuto seguinte no fuso `E2E_BUSINESS_TIMEZONE`, com espera de até 3 min;
     - as cópias evitam cruzar a sobreposição com os testes do épico 6.
+  - **README (achado da F134):** a seção do `e2e:visual` (hoje linhas 109 a 114) ainda diz que ele só salva capturas e fica fora da posse. Atualize-a: desde a F134 (ADR 0071), ele compara pixels com `toHaveScreenshot` e usa máscara nas áreas que mudam (data, hora, duração e id).
 - Aceite: `pnpm e2e` e `pnpm e2e:visual` passam, com os épicos 4 a 6 verdes. O modo real é exercitado no teste de integração do CK7.
 
 **F134 · Manutenção: baselines do e2e:visual defasados (achado da F121)**
