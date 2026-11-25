@@ -2053,6 +2053,20 @@ const EXAMPLES_BASE = {
     detail: 'Já existe um workflow com esse nome.',
     code: 'workflow_exists',
   },
+  WorkflowHasExecutions: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Este workflow já tem execuções e não pode ser apagado.',
+    code: 'workflow_has_executions',
+  },
+  WorkflowBusy: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Este workflow está em uso por outra operação. Tente de novo em instantes.',
+    code: 'workflow_busy',
+  },
   DraftConflict: {
     type: 'about:blank',
     title: 'Conflito',
@@ -4162,7 +4176,7 @@ const EXAMPLES_BASE = {
     problems: [
       {
         code: 'unknown_parameter',
-        message: '@categoria não existe entre os parâmetros. Você quis dizer @categorias?',
+        message: '@categoria não é um parâmetro deste fluxo. Você quis dizer @categorias?',
         path: 'root.nodes[0].filters[0].values[0]',
         node_id: 'produto',
         start: null,

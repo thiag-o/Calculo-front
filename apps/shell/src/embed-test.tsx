@@ -1,7 +1,8 @@
 // Embed test page (local use only; not part of the production build).
 // Plays the host app backend: exchanges the API key for a token and mounts <FluxoCalculo token> or, to
-// test standalone use, only the <Admin token> or <Catalog token> screen (own root, API and cache; in-memory navigation).
-import { Admin, Catalog, FluxoCalculo } from '@fluxo/react';
+// test standalone use, only the <Admin token>, <Catalog token>, <Workflows token> or <Executions token> screen (own root, API and
+// cache; in-memory navigation).
+import { Admin, Catalog, Executions, FluxoCalculo, Workflows } from '@fluxo/react';
 import '@fluxo/react/styles.css';
 import { StrictMode, useState, type FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -32,8 +33,8 @@ async function exchangeApiKey(apiKey: string, body: object): Promise<State> {
   }
 }
 
-/** What the page mounts with the token: the whole module or only the standalone Admin or Catalog screen. */
-type Mount = 'module' | 'admin' | 'catalog';
+/** What the page mounts with the token: the whole module or only one standalone screen. */
+type Mount = 'module' | 'admin' | 'catalog' | 'workflows' | 'executions';
 
 function EmbedTestPage() {
   const [state, setState] = useState<State>({ phase: 'home' });
@@ -102,6 +103,8 @@ function EmbedTestPage() {
             <option value="module">Módulo inteiro (&lt;FluxoCalculo&gt;)</option>
             <option value="admin">Só a Administração, avulsa (&lt;Admin&gt;)</option>
             <option value="catalog">Só o Catálogo, avulso (&lt;Catalog&gt;)</option>
+            <option value="workflows">Só os Workflows, avulsos (&lt;Workflows&gt;)</option>
+            <option value="executions">Só as Execuções, avulsas (&lt;Executions&gt;)</option>
           </select>
         </label>
         <button type="submit" disabled={switching || apiKey.trim() === ''}>
@@ -118,6 +121,10 @@ function EmbedTestPage() {
           <Admin apiUrl={apiUrl} token={state.token} onSessionExpired={() => setState({ phase: 'home' })} />
         ) : mount === 'catalog' ? (
           <Catalog apiUrl={apiUrl} token={state.token} onSessionExpired={() => setState({ phase: 'home' })} />
+        ) : mount === 'workflows' ? (
+          <Workflows apiUrl={apiUrl} token={state.token} onSessionExpired={() => setState({ phase: 'home' })} />
+        ) : mount === 'executions' ? (
+          <Executions apiUrl={apiUrl} token={state.token} onSessionExpired={() => setState({ phase: 'home' })} />
         ) : (
           <FluxoCalculo
             apiUrl={apiUrl}

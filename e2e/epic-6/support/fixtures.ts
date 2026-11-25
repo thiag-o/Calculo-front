@@ -5,6 +5,7 @@
 //   the two workflows of `prepare-local` (campaign.ts); the test moves the executions with `epic6.worker`;
 // - real (pnpm e2e:real): the shell talks to the real backend, with a worker running beside it (`uv run fluxo worker`),
 //   the `prepare-local` accounts (E2E_ADMIN_*, E2E_OPERATOR_*, E2E_APPROVER_*, E2E_AUDITOR_*) and its workflows.
+import type { BrowserContext, Page, TestInfo } from '@playwright/test';
 import { Epic2Simulation, type InitialAccount } from '../../epic-2/support/simulation';
 import { deleteCreatedWorkflows } from '../../epic-5/support/created-workflows';
 import { expect, test as base, type E2EMode, type LoginCredentials } from '../../support/fixtures';
@@ -22,6 +23,17 @@ export interface Epic6 {
   worker: SimulatedWorker | null;
   /** What the module sent to the workflow, catalog and execution routes; `null` in real mode. */
   calls(): readonly ReceivedCall[] | null;
+  /** The host app origin (the embed test page's, `metadata.hostAppUrl` of playwright.config.ts), the same in both modes. */
+  hostAppOrigin: string;
+  /** A page in a new browser context (no cookies of the shell), for the host app; in simulated mode with the same simulated API. */
+  newHostPage(): Promise<Page>;
+}
+
+/** The host app origin, from `metadata.hostAppUrl` in `playwright.config.ts`. */
+function hostAppOrigin(testInfo: TestInfo): string {
+  const url: unknown = testInfo.config.metadata?.hostAppUrl;
+  if (typeof url !== 'string') throw new Error('Defina metadata.hostAppUrl no playwright.config.ts.');
+  return new URL(url).origin;
 }
 
 type Other = Exclude<Epic6Account, 'admin'>;
@@ -51,7 +63,7 @@ export const test = base.extend<{ epic6: Epic6 }>({
   reducedMotion: 'reduce',
   epic6: [
     // Depends on `api`: these routes are added after the epic 1 one and therefore answer before it.
-    async ({ page, api, baseURL }, use) => {
+    async ({ page, api, baseURL, browser }, use, testInfo) => {
       const shellOrigin = new URL(baseURL ?? 'http://localhost:5173').origin;
       const simulated = api.mode === 'simulated';
       const accounts: InitialAccount[] = [
@@ -63,6 +75,7 @@ export const test = base.extend<{ epic6: Epic6 }>({
       await session?.install(page);
       await executions?.install(page);
 
+      const contexts: BrowserContext[] = [];
       await use({
         mode: api.mode,
         account(name) {
@@ -73,12 +86,23 @@ export const test = base.extend<{ epic6: Epic6 }>({
         },
         worker: executions?.worker ?? null,
         calls: () => executions?.calls ?? null,
+        hostAppOrigin: hostAppOrigin(testInfo),
+        async newHostPage() {
+          const context = await browser.newContext({ baseURL, reducedMotion: 'reduce' });
+          contexts.push(context);
+          const hostPage = await context.newPage();
+          await session?.install(hostPage);
+          await executions?.install(hostPage);
+          return hostPage;
+        },
       });
+      await Promise.all(contexts.map((context) => context.close()));
 
-      // Real mode keeps what a run leaves in the database: the copies of the workflows the test created are deleted here
-      // (their executions stay, as the backend keeps them).
+      // Real mode keeps what a run leaves in the database: the copies of the workflows the test created are deleted here.
+      // A copy that was executed stays (`409 workflow_has_executions`, B157: the executions are history): that is accepted,
+      // and the copy is recognizable by the " e2e " in its name (see `copyWorkflow`). Any other failure is an error.
       if (!simulated) {
-        const left = await deleteCreatedWorkflows(page);
+        const left = (await deleteCreatedWorkflows(page)).filter((failure) => !failure.includes('409 workflow_has_executions'));
         if (left.length > 0) throw new Error(`Não foi possível apagar os workflows criados pelo teste: ${left.join('; ')}.`);
       }
 

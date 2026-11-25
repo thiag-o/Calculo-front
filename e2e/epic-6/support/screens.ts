@@ -167,7 +167,8 @@ export async function workflowId(page: Page, apiOrigin: string, name: string): P
 /**
  * A copy of a workflow of `prepare-local` (its saved draft, read through the API) in a new workflow `name`, changed by
  * `change`: the flows that edit work on it, so the shared workflow stays as it is. In real mode the fixture deletes the
- * copy when the test ends.
+ * copy when the test ends; a copy that was executed cannot be deleted (`409 workflow_has_executions`) and stays, so its
+ * `name` must carry " e2e " to be recognized.
  */
 export async function copyWorkflow(
   page: Page,
@@ -176,6 +177,7 @@ export async function copyWorkflow(
   name: string,
   change: (definition: Definition) => Definition = (definition) => definition,
 ): Promise<string> {
+  expect(name, 'o nome da cópia leva " e2e " para ser reconhecida').toContain(' e2e ');
   const id = await workflowId(page, apiOrigin, from);
   const draft = await callApi(page, apiOrigin, 'GET', `/v1/workflows/${id}/draft`);
   expect(draft.status, `ler o rascunho de ${from}`).toBe(200);

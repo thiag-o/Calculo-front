@@ -17,6 +17,28 @@ import {
 let api: SimulatedApi;
 
 const DETAIL = `GET /v1/workflows/${SCORING.id}`;
+/** The saved draft the "Executar lote" dialog reads (revision 3, no parameters, no problems). */
+function savedDraftOf(workflowId: string) {
+  return {
+    workflow_id: workflowId,
+    revision: 3,
+    definition: {
+      schema_version: 3,
+      kind: 'batch',
+      settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' }, error_limit_percent: '5', trace_level: 'standard' },
+      parameters: [],
+      root: { batch_source: null, inputs: [], nodes: [], output: { fields: [] } },
+    },
+    problems: [],
+    symbols: [],
+    dependencies: [],
+    order: [],
+    groups: [],
+    updated_at: SCORING.draft.updated_at,
+    updated_by: SCORING.draft.updated_by,
+  };
+}
+
 const UPDATE = `PUT /v1/workflows/${SCORING.id}`;
 const REMOVE = `DELETE /v1/workflows/${SCORING.id}`;
 
@@ -242,6 +264,19 @@ describe('Visão geral do workflow: renomear', () => {
     ).toBeInTheDocument();
   });
 
+  it('workflow_busy mostra a mensagem da API numa nota, sem quebrar a tela, e deixa tentar de novo', async () => {
+    api.respond(DETAIL, json(SCORING));
+    api.respond(UPDATE, problem(409, 'workflow_busy'), json(SCORING));
+    const { user, dialog } = await openRename();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+
+    expect(await within(dialog).findByText('Texto do servidor para workflow_busy.')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Salvar' })).not.toHaveAttribute('aria-disabled');
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
   it('Cancelar fecha sem enviar', async () => {
     api.respond(DETAIL, json(SCORING));
     const { user, dialog } = await openRename();
@@ -315,6 +350,31 @@ describe('Visão geral do workflow: remover', () => {
     expect(
       await within(dialog).findByText('Você não tem permissão para editar workflows neste tenant. Peça acesso a um Admin.'),
     ).toBeInTheDocument();
+    expect(onDeleted).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Remover workflow' }));
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
+  });
+
+  it('workflow_has_executions mostra a mensagem da API no diálogo, sem desabilitar nem chamar onDeleted', async () => {
+    api.respond(DETAIL, json(SCORING));
+    api.respond(REMOVE, problem(409, 'workflow_has_executions'));
+    const { user, dialog, onDeleted } = await openRemove();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Remover workflow' }));
+
+    expect(await within(dialog).findByText('Texto do servidor para workflow_has_executions.')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Remover workflow' })).not.toHaveAttribute('aria-disabled');
+    expect(onDeleted).not.toHaveBeenCalled();
+  });
+
+  it('workflow_busy mostra a mensagem da API e deixa tentar de novo', async () => {
+    api.respond(DETAIL, json(SCORING));
+    api.respond(REMOVE, problem(409, 'workflow_busy'), new Response(null, { status: 204 }));
+    const { user, dialog, onDeleted } = await openRemove();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Remover workflow' }));
+    expect(await within(dialog).findByText('Texto do servidor para workflow_busy.')).toBeInTheDocument();
     expect(onDeleted).not.toHaveBeenCalled();
 
     await user.click(within(dialog).getByRole('button', { name: 'Remover workflow' }));
@@ -413,6 +473,22 @@ describe('Visão geral do workflow: execuções', () => {
     await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
 
     expect(within(section('Execuções')).queryByRole('button', { name: 'Ver execuções' })).not.toBeInTheDocument();
+  });
+
+  it('workflow_busy ao executar o lote mostra a mensagem da API no diálogo, sem fechá-lo', async () => {
+    api = simulateApi(OPERATOR);
+    api.respond(DETAIL, json(SCORING));
+    api.respond(`GET /v1/workflows/${SCORING.id}/draft`, json(savedDraftOf(SCORING.id)));
+    api.respond(`POST /v1/workflows/${SCORING.id}/executions`, problem(409, 'workflow_busy'));
+    const { user } = renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions: vi.fn() });
+
+    await user.click(await screen.findByRole('button', { name: 'Executar lote' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Executar lote' });
+    await within(dialog).findByText(/revisão 3/);
+    await user.click(within(dialog).getByRole('button', { name: 'Executar lote' }));
+
+    expect(await within(dialog).findByText('Texto do servidor para workflow_busy.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Executar lote' })).toBeInTheDocument();
   });
 
   it('sem o caminho para as execuções (a tela avulsa), não há Executar lote nem Ver execuções', async () => {

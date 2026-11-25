@@ -258,7 +258,9 @@ export class Epic6Simulation {
   private async authenticated(method: string, request: Request, context: BrowserContext, then: (caller: Caller) => RouteResponse): Promise<RouteResponse> {
     const caller = await this.sessions.get(context);
     if (!caller) return problem(ERRORS.NoSession);
-    if (CSRF_METHODS.has(method)) {
+    // The embedded module (host app page) sends a Bearer token and no cookie: no CSRF there.
+    const bearer = (request.headers().authorization ?? '').startsWith('Bearer ');
+    if (CSRF_METHODS.has(method) && !bearer) {
       const cookies = await context.cookies(new URL(request.url()).origin);
       const session = cookies.find((cookie) => cookie.name === 'fc_session');
       const csrf = cookies.find((cookie) => cookie.name === 'fc_csrf');
