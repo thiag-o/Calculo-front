@@ -1849,7 +1849,6 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
     - o agendamento é uma cópia da campanha com o período fixo de fevereiro de 2026, marcada para o minuto seguinte no fuso `E2E_BUSINESS_TIMEZONE`, com espera de até 3 min;
     - as cópias evitam cruzar a sobreposição com os testes do épico 6.
   - **README (achado da F134):** a seção do `e2e:visual` (hoje linhas 109 a 114) ainda diz que ele só salva capturas e fica fora da posse. Atualize-a: desde a F134 (ADR 0071), ele compara pixels com `toHaveScreenshot` e usa máscara nas áreas que mudam (data, hora, duração e id).
-  - (achado da F139) as baselines do `e2e:visual` que mudaram pela F139 (painel da simulação, Fontes sem `traces.view`, título focável) são conferidas e regravadas aqui, só quando a diferença vier dessas mudanças.
 - Aceite: `pnpm e2e` e `pnpm e2e:visual` passam, com os épicos 4 a 6 verdes. O modo real é exercitado no teste de integração do CK7.
 
 **F134 · Manutenção: baselines do e2e:visual defasados (achado da F121)**
@@ -1876,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`, `packages/react/src/notifications/`, `packages/react/src/catalog/datasets/DatasetVariables.test.tsx`, `packages/react/src/executions/schedules/`, `packages/react/src/executions/index.ts`, `packages/react/src/test-cases/`, `packages/react/src/module/workflowsByRole.test.tsx`, `e2e/epic-2/api-key-and-embed.spec.ts`, `packages/react/src/module/`, `docs/adr/0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md`, e (ratificado pela global) `packages/react/src/executions/records/ExecutionRecords.tsx`, `packages/react/src/editor/layout/EditorBar.test.tsx` e `packages/react/src/workflows/overview/WorkflowOverview.test.tsx`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`, `packages/react/src/notifications/`, `packages/react/src/catalog/datasets/DatasetVariables.test.tsx`, `packages/react/src/executions/schedules/`, `packages/react/src/executions/index.ts`, `packages/react/src/test-cases/`, `packages/react/src/module/workflowsByRole.test.tsx`, `e2e/epic-2/api-key-and-embed.spec.ts`, `packages/react/src/module/`, `docs/adr/0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md`, e (ratificado pela global) `packages/react/src/executions/records/ExecutionRecords.tsx`, `packages/react/src/editor/layout/EditorBar.test.tsx` e `packages/react/src/workflows/overview/WorkflowOverview.test.tsx`, e `e2e/visual/__screenshots__/` só para as telas que a F139 muda (painel da simulação, Fontes sem `traces.view`, título focável), regravadas depois de a F132 entrar na `main`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1929,10 +1928,19 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F131) no incorporado, o sino fica na barra das abas (`margin-left: auto`), e não em overlay absoluto que cobre abas em largura estreita;
   - (F131) no incorporado, as duas fileiras de abas com painéis focáveis seguem o fluxo de Tab da ADR 0027;
   - (F131) depois de abrir um alerta, o foco vai para a tela de destino, não volta ao sino (`onCloseAutoFocus` no `notifications/`).
+  - (F132) na lista de Testes, em 900 px, o nome de quem enviou o arquivo não quebra no meio da palavra (quebra entre palavras ou reticências);
+  - (F132) a nota de sobreposição mostra a data no formato do estilos §10 (com "às" e sem segundos).
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
+
+**F140 · Correção: e2e real do épico 6 com a sobreposição do épico 7**
+- dep: F132
+- modelo: sonnet
+- arquivos: `e2e/epic-6/` (menos o `defects-and-abort.spec.ts`, que já é da F132), `e2e/epic-6/support/`
+- Fazer: no modo real, os specs do épico 6 que disparam fevereiro na "Campanha de referência" compartilhada (`trigger-and-download`, `roles`, `awaiting-source`, `cancel`, e o `errors-and-trace`, que já usa cópia) deixam de falhar com `409 scope_already_delivered` depois do épico 7: cada um usa uma cópia própria da campanha ou confirma a sobreposição, como o `defects-and-abort.spec.ts` da F132.
+- Aceite: `pnpm e2e:real e2e/epic-6` verde duas vezes seguidas no mesmo banco, com o back do épico 7; o modo simulado continua verde.
 
 **F133 · Portão do épico 7**
 - tipo: portao
-- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137, F139
+- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137, F139, F140
 - modelo: sonnet
 - Aceite: o mesmo da F106, com as telas do épico 7 provadas pelo `pnpm e2e:visual`.
