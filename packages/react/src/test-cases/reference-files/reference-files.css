@@ -1,0 +1,257 @@
+/*
+ * Testes › Arquivo de referência: upload area, list and the Simular dialog (estilos.md §3, §4, §5, §7.6, §7.7, §14 and §15).
+ * Only fc- classes and --fc-* variables; no global reset, no z-index and no full-window measurement (ADR 0002).
+ */
+
+.fc-reference,
+.fc-reference-upload-block {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-reference-upload-block {
+  gap: var(--fc-space-12);
+}
+
+.fc-reference-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-reference-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-reference-title h2,
+.fc-reference-title p {
+  margin: 0;
+}
+
+/* The title gets the focus after a file is removed (its row goes away). */
+.fc-reference-heading:focus {
+  outline: none;
+}
+
+.fc-reference-heading:focus-visible {
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-reference-wrap {
+  overflow-wrap: anywhere;
+}
+
+.fc-reference-number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Two lines in a row (estilos.md §7.6). */
+.fc-reference-two-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-reference-hash {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-4);
+  white-space: nowrap;
+}
+
+.fc-reference-full-hash {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.fc-reference-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--fc-space-4);
+}
+
+/* The last comparison opens the simulation: a link (estilos.md §3: --fc-link, no underline, underline on hover). */
+.fc-reference-link {
+  box-sizing: border-box;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  text-align: start;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-reference-link:hover {
+  text-decoration: underline;
+}
+
+.fc-reference-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Only the screen reader reads the copy result (the region stays in the tree, empty, so the change is announced). */
+.fc-reference-copy-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * Upload area: a box (12px radius) with a 1px dashed gray-500 border, like the one of the catalog files: it marks a place
+ * to drop something. While a file is dragged over it, the border turns gray-1000 and the background --fc-hover.
+ */
+.fc-reference-upload {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+  min-width: 0;
+  padding: var(--fc-space-20) var(--fc-space-24);
+  border: 1px dashed var(--fc-gray-500);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+  color: var(--fc-text);
+  transition:
+    border-color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.fc-reference-upload.fc-reference-upload-over {
+  border-color: var(--fc-gray-1000);
+  background-color: var(--fc-hover);
+}
+
+/* Outline icon (estilos.md §6): a 1px circle without color. */
+.fc-reference-upload-icon {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--fc-space-32);
+  height: var(--fc-space-32);
+  border: 1px solid var(--fc-border);
+  border-radius: 50%;
+  color: var(--fc-text-secondary);
+}
+
+.fc-reference-upload-text {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-reference-upload-text p {
+  margin: 0;
+}
+
+/* Meter (estilos.md §7.7): a 4px bar, gray-200 track, gray-1000 fill. */
+.fc-reference-meter {
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background-color: var(--fc-gray-200);
+}
+
+.fc-reference-meter-fill {
+  display: block;
+  height: 100%;
+  background-color: var(--fc-gray-1000);
+  transition: width 150ms ease-out;
+}
+
+.fc-reference-notice-text {
+  margin: 0;
+}
+
+.fc-reference-notice-more {
+  margin-top: var(--fc-space-8);
+}
+
+/* The errors of an invalid_reference_file: where (line and column, in mono), then what to fix. */
+.fc-reference-errors {
+  margin: var(--fc-space-8) 0 0;
+  padding-left: var(--fc-space-20);
+}
+
+.fc-reference-errors li + li {
+  margin-top: var(--fc-space-2);
+}
+
+.fc-reference-error-where {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Simular dialog. */
+.fc-reference-simulate-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+  margin: 0;
+}
+
+.fc-reference-simulate-file {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fc-reference-simulate-name {
+  font-weight: 500;
+}
+
+.fc-reference-simulate-records {
+  color: var(--fc-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-reference-simulate-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-reference-upload,
+  .fc-reference-meter-fill {
+    transition: none;
+  }
+}

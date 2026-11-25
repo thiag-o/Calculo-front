@@ -103,6 +103,47 @@ describe('envio multipart com progresso', () => {
     await expect(result).resolves.toEqual(EXCEL_FILE);
   });
 
+  it('troca cada segmento entre chaves do caminho pelo valor dele, codificado', async () => {
+    const client = createApiClient({ apiUrl: API });
+
+    const result = client.upload('/v1/workflows/{id}/reference-files', formWithFile(), { pathParams: { id: 'a b/1' } });
+    const request = lastRequest();
+    expect(request.url).toBe(`${API}/v1/workflows/a%20b%2F1/reference-files`);
+
+    request.respond(201, EXCEL_FILE);
+    await expect(result).resolves.toEqual(EXCEL_FILE);
+  });
+
+  it('sem o valor de um segmento entre chaves, recusa antes de enviar', async () => {
+    const client = createApiClient({ apiUrl: API });
+
+    await expect(client.upload('/v1/workflows/{id}/reference-files', formWithFile())).rejects.toThrow(TypeError);
+    expect(FakeXMLHttpRequest.sent).toHaveLength(0);
+  });
+
+  it('recusa antes de enviar o valor vazio, o ponto e os dois pontos, que mudariam o caminho', async () => {
+    const client = createApiClient({ apiUrl: API });
+
+    for (const id of ['', '.', '..']) {
+      await expect(
+        client.upload('/v1/workflows/{id}/reference-files', formWithFile(), { pathParams: { id } }),
+      ).rejects.toThrow(TypeError);
+    }
+    expect(FakeXMLHttpRequest.sent).toHaveLength(0);
+  });
+
+  it('não usa propriedade herdada como valor de um segmento entre chaves', async () => {
+    const client = createApiClient({ apiUrl: API });
+
+    // The `id` comes only from the prototype, never as an own property.
+    const inherited = Object.create({ id: 'w1' }) as Record<string, string>;
+
+    await expect(
+      client.upload('/v1/workflows/{id}/reference-files', formWithFile(), { pathParams: inherited }),
+    ).rejects.toThrow(TypeError);
+    expect(FakeXMLHttpRequest.sent).toHaveLength(0);
+  });
+
   it('avisa o progresso do corpo enviado, só quando o total é conhecido', async () => {
     const onProgress = vi.fn();
     const client = createApiClient({ apiUrl: API });

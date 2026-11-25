@@ -12,6 +12,11 @@ export interface UploadOptions {
   onProgress?: (progress: UploadProgress) => void;
   /** Cancels the upload; the promise rejects with an `AbortError`, like a cancelled fetch. */
   signal?: AbortSignal;
+  /**
+   * The values of the `{name}` segments of the path, like the `params.path` of the other calls (e.g. `{ id }` for
+   * `/v1/workflows/{id}/reference-files`). Each value is encoded; a segment left without a value rejects before sending.
+   */
+  pathParams?: Readonly<Record<string, string>>;
 }
 
 /** The contract paths whose POST takes a `multipart/form-data` body (e.g. `/v1/excel-files`). */
@@ -48,6 +53,24 @@ function parseBody(text: string): unknown {
   }
 }
 
+/**
+ * The path with each `{name}` replaced by its encoded value; `undefined` when a segment has no value. Only own properties
+ * count (never one inherited, such as `constructor`), and `''`, `'.'` and `'..'` count as missing: they would change the
+ * path itself (an empty segment, or a dot segment the URL resolves to another route).
+ */
+function resolvePath(path: string, values: Readonly<Record<string, string>> = {}): string | undefined {
+  let missing = false;
+  const resolved = path.replace(/\{([^}]+)\}/g, (_segment, name: string) => {
+    const value = Object.hasOwn(values, name) ? values[name] : undefined;
+    if (value === undefined || value === '' || value === '.' || value === '..') {
+      missing = true;
+      return '';
+    }
+    return encodeURIComponent(value);
+  });
+  return missing ? undefined : resolved;
+}
+
 function abortError(): Error {
   return new DOMException('O envio foi cancelado.', 'AbortError');
 }
@@ -63,15 +86,20 @@ export function upload<P extends MultipartPath>(
   settings: UploadSettings,
   path: P,
   body: FormData,
-  { onProgress, signal }: UploadOptions = {},
+  { onProgress, signal, pathParams }: UploadOptions = {},
 ): Promise<UploadResult<P>> {
   return new Promise<UploadResult<P>>((resolve, reject) => {
     if (signal?.aborted) {
       reject(abortError());
       return;
     }
+    const resolvedPath = resolvePath(path, pathParams);
+    if (resolvedPath === undefined) {
+      reject(new TypeError(`O caminho ${path} precisa de um valor para cada segmento entre chaves.`));
+      return;
+    }
     const request = new globalThis.XMLHttpRequest();
-    request.open('POST', `${settings.apiUrl.replace(/\/+$/, '')}${path}`);
+    request.open('POST', `${settings.apiUrl.replace(/\/+$/, '')}${resolvedPath}`);
     request.responseType = 'text';
     request.setRequestHeader('Accept', 'application/json, application/problem+json');
     if (settings.token !== undefined) {

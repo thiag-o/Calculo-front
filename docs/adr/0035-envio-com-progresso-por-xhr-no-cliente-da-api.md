@@ -1,6 +1,6 @@
 # 0035. Envio de arquivo com progresso por `client.upload` (XMLHttpRequest) no cliente da API
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0078](0078-vertical-test-cases-e-path-params-no-upload.md))
 - **Data:** 2026-11-17
 - **Quem decidiu:** orquestração (tarefa F32)
 - **Relacionadas:** [0005](0005-tipos-da-api-pelo-openapi.md), [0008](0008-consumo-da-api-pelas-verticais.md), [0015](0015-cache-na-troca-de-identidade-e-tenant.md), [0031](0031-codigo-em-ingles.md)
