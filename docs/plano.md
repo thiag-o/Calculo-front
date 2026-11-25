@@ -1779,7 +1779,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F125 · Execuções: pré-validação, decisão e os estados novos no painel e na lista**
 - dep: F122
 - modelo: opus
-- arquivos: `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/executions/api/`
+- arquivos: `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/executions/api/`, e (ratificado pela global) em `packages/react/src/module/screens.tsx` só o `onOpenExecution` passado ao `ExecutionPanel`, e a fixture de `packages/react/src/module/standalone/StandaloneScreens.test.tsx`
 - Fazer (E7-21): as fases; a nota de `awaiting_decision` com **Prosseguir** e **Cancelar** (com a permissão pelo modo) e o `409 not_awaiting_decision` relendo a execução; o resumo da pré-validação; a seção Fontes; o aborto `duplicate_record_key` com os exemplos; "Agendada" e o nome do agendamento; a sobreposição confirmada; a simulação ("Sem entrega" e Baixar CSV desabilitado com o motivo); o filtro de modo na lista.
 - Aceite: testes de cada estado novo (ponto e palavra), da decisão (Prosseguir, Cancelar com confirmação, botões escondidos sem permissão e o 409), do resumo, das Fontes, do aborto por chave repetida, da agendada e da simulação; a atualização a cada 2 s continua em `awaiting_decision` e para no estado final; os testes da F101 e da F102 seguem verdes.
 
@@ -1875,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1891,6 +1891,13 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F124) o erro do Fixo "tocado" não reaparece ao voltar de Relativo;
   - (F124) o ícone svg usa o token de tamanho, não `14` cru;
   - (F124) o `relativesFor` duplicado usa o de `editor/parameters/parameterRules.ts`.
+  - (F125) o erro do Prosseguir some quando a execução sai de `awaiting_decision` (`proceed.reset`, ou mostrar só enquanto aguarda);
+  - (F125) o Cancelar do alerta e o do cabeçalho usam uma instância estável do diálogo: o 409 `execution_finished` mostra o erro sem desmontar o diálogo e sem mandar o foco ao `body`;
+  - (F125) o diálogo de cancelar, na pré-validação e em `awaiting_decision`, não diz "Os registros já calculados não são entregues", porque nada foi calculado; ele usa um texto próprio dessa fase;
+  - (F125) o motivo do CSV na simulação termina com ponto final;
+  - (F125) o filtro "Entregue" da lista não traz as simulações "Sem entrega";
+  - (F125, D111-global) em Fontes, a cor das contagens segue o valor, com ou sem `traces.view`: `no_match` ou `multiple_rows` > 0 ficam na cor de aviso, e sem a permissão some só o link para os registros;
+  - (F125) o `toHaveFocus` de `EditorScreen.test.tsx:279`, que falhou uma vez com a suíte sob carga, passa a esperar o foco (`waitFor`), sem afrouxar o que confere.
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F133 · Portão do épico 7**
