@@ -85,6 +85,8 @@ export function EditorBar({ workflowId, workflowName, onBack, onOpenWorkflows, r
         <TriggerExecution
           workflowId={workflowId}
           onOpenProblems={onOpenProblems}
+          // The executions of the overlap note open their panel, which takes `executions.view`.
+          onOpenExecution={canViewExecutions ? onOpenExecution : undefined}
           onTriggered={(execution) => (canViewExecutions ? onOpenExecution(execution.id) : setCreated(true))}
         />
       ) : null}

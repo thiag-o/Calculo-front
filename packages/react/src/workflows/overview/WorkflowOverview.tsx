@@ -202,6 +202,7 @@ function LoadedOverview({
             <TriggerExecution
               workflowId={workflow.id}
               onOpenProblems={() => onOpenEditor(workflow.id)}
+              onOpenExecution={canViewExecutions ? onOpenExecution : undefined}
               onTriggered={(execution) => (canViewExecutions ? onOpenExecution(execution.id) : setCreated(true))}
             />
           ) : null}

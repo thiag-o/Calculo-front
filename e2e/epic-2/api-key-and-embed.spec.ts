@@ -77,6 +77,9 @@ test.describe('chave de API e incorporação', () => {
     });
 
     await test.step('o Admin cadastra a origem do hospedeiro como domínio autorizado', async () => {
+      // `not.toHaveAttribute` passes while the table is not there yet: first the table, then the end of its loading, and only then
+      // is the list of domains read (under load, reading earlier took an empty list for the real one).
+      await expect(authorizedDomainsTable(page)).toBeVisible();
       await expect(authorizedDomainsTable(page)).not.toHaveAttribute('aria-busy', 'true');
       // Real mode: registered by `prepare-local` (or by an interrupted previous run).
       authorizedDomainAlreadyExists = (await row(authorizedDomainsTable(page), origin).count()) > 0;
@@ -119,7 +122,7 @@ test.describe('chave de API e incorporação', () => {
       expect(accessEvents.status()).toBe(200);
       expect(await accessEvents.request().headerValue('authorization')).toMatch(/^Bearer /);
       await expect(hostApp.getByRole('heading', { level: 2, name: 'Acessos' })).toBeVisible();
-      expect(new URL(hostApp.url()).pathname).toBe(TEST_PAGE);
+      await expect.poll(() => new URL(hostApp.url()).pathname).toBe(TEST_PAGE);
     });
 
     await test.step('o Admin revoga a chave', async () => {

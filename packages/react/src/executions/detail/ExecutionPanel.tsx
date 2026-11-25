@@ -13,7 +13,7 @@ import {
 } from '../records';
 import { TRIGGER_PERMISSION } from '../trigger';
 import { ReferenceComparison } from '../comparison';
-import { CancelExecution } from './CancelExecution';
+import { CancelDialog, CancelExecution } from './CancelExecution';
 import { DownloadOutput } from './DownloadOutput';
 import {
   PHASE_STATE_WORDS,
@@ -74,6 +74,10 @@ export function ExecutionPanel({ executionId, renderRecordTrace, onOpenExecution
   const query = useExecution(executionId);
   const execution = query.data;
   const recordsHeading = useRef<HTMLHeadingElement>(null);
+  const title = useRef<HTMLDivElement>(null);
+  // One cancel dialog for the header's button and the alert's: the execution leaving `awaiting_decision` moves the button, and
+  // the dialog (with the error of a `409 execution_finished`) must stay where it is.
+  const [cancelling, setCancelling] = useState<{ origin: HTMLElement | null } | null>(null);
   const [recordsFilter, setRecordsFilter] = useState<RecordsFilter>(NO_RECORDS_FILTER);
   const proceed = useProceedExecution(executionId);
   const canViewTraces = session.hasPermission(TRACES_PERMISSION);
@@ -128,7 +132,7 @@ export function ExecutionPanel({ executionId, renderRecordTrace, onOpenExecution
   return (
     <section className="fc-execution" aria-labelledby={titleId}>
       <header className="fc-execution-top">
-        <div className="fc-execution-title">
+        <div ref={title} tabIndex={-1} className="fc-execution-title">
           <Text as="h1" variant="heading-24" id={titleId} className="fc-execution-wrap">
             {execution.workflow_name}
           </Text>
@@ -148,7 +152,9 @@ export function ExecutionPanel({ executionId, renderRecordTrace, onOpenExecution
         </div>
         <div className="fc-execution-actions">
           {/* While the alert waits, "Cancelar" is in the alert itself: one button per action. */}
-          {canDecide && !awaitingDecision ? <CancelExecution execution={execution} /> : null}
+          {canDecide && !awaitingDecision ? (
+            <CancelExecution execution={execution} onRequest={(origin) => setCancelling({ origin })} />
+          ) : null}
           <DownloadOutput execution={execution} />
         </div>
       </header>
@@ -176,9 +182,20 @@ export function ExecutionPanel({ executionId, renderRecordTrace, onOpenExecution
           onProceed={() => {
             if (!proceed.isPending) proceed.mutate();
           }}
+          onCancel={(origin) => setCancelling({ origin })}
         />
       ) : null}
-      {proceed.isError ? (
+      {canDecide ? (
+        <CancelDialog
+          execution={execution}
+          open={cancelling !== null}
+          origin={cancelling?.origin ?? null}
+          fallbackFocus={() => title.current}
+          onClose={() => setCancelling(null)}
+        />
+      ) : null}
+      {/* The error belongs to the alert: once the execution leaves `awaiting_decision` (this or another person decided), it goes. */}
+      {proceed.isError && awaitingDecision ? (
         <Notice type="error" title="Não foi possível prosseguir">
           {proceedErrorMessage(proceed.error)}
         </Notice>
@@ -348,7 +365,7 @@ function Summary({ execution }: { execution: Execution }) {
   const duration = executionDuration(execution, new Date());
   return (
     <div className="fc-execution-summary">
-      <dl className="fc-execution-pairs" aria-label="Parâmetros">
+      <dl className="fc-execution-pairs">
         {parameters.length > 0 ? (
           parameters.map(([name, value]) => (
             <Pair key={name} label={name}>
@@ -359,7 +376,7 @@ function Summary({ execution }: { execution: Execution }) {
           <Pair label="Parâmetros">Sem parâmetros</Pair>
         )}
       </dl>
-      <dl className="fc-execution-pairs" aria-label="Execução">
+      <dl className="fc-execution-pairs">
         <Pair label="Agora">{dateTime(execution.now)}</Pair>
         <Pair label="Nível do trace">{TRACE_LEVEL_LABELS[execution.trace_level]}</Pair>
         <Pair label="Limite de erro">{percentText(execution.error_limit_percent)}</Pair>

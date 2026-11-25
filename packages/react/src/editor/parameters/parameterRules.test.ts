@@ -143,3 +143,14 @@ describe('onde cai o problema da consulta dos valores permitidos', () => {
     expect(sorted.allowed).toEqual([{ problem: expect.objectContaining({ code: 'invalid_allowed_value' }), spot: 2 }]);
   });
 });
+
+describe('relativos por tipo: uma tabela só, a de executions', () => {
+  it('o editor oferece os mesmos relativos que o formulário da execução', async () => {
+    const { relativesFor: executionRelatives } = await import('../../executions');
+    for (const type of ['text', 'integer', 'decimal', 'date', 'datetime', 'boolean', 'period'] as const) {
+      expect(relativesFor(type, false)).toEqual(executionRelatives({ type, list: false }));
+      expect(relativesFor(type, true)).toEqual([]);
+    }
+    expect(relativesFor('period', false)).toEqual(['current_month', 'previous_month', 'last_7_days', 'last_30_days']);
+  });
+});

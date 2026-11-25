@@ -83,6 +83,7 @@ export function RecurrenceFieldset({ fields, onChange, errors, timeZoneNote, dis
             label="Dia do mês"
             options={DAY_OPTIONS}
             value={String(fields.day)}
+            error={errors.day}
             disabled={disabled}
             onValueChange={(value) => patch({ day: monthDay(value) })}
           />

@@ -1,5 +1,6 @@
-import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { clearSessionData } from '../../session';
 import {
   LIST_ROUTE,
   NEW_FILE,
@@ -262,5 +263,73 @@ describe('Testes › Arquivo de referência: envio', () => {
     await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument());
     expect(screen.queryByText(/Não foi possível enviar/)).not.toBeInTheDocument();
     expect(within(dropArea()).getByRole('button', { name: 'Enviar arquivo' })).toHaveFocus();
+  });
+});
+
+describe('Testes › Arquivo de referência: cancelar o envio', () => {
+  it('o cancelamento do envio é anunciado pela região de status', async () => {
+    const api = simulateApi();
+    api.respond(LIST_ROUTE, fileList([]));
+    const uploads = simulateUploads();
+    const { user } = renderTestCases();
+    await screen.findByText('Nenhum arquivo de referência');
+
+    await user.upload(fileInput(), fileOf('esperado.csv'));
+    await uploads.nth(1);
+    expect(screen.queryByText('Envio de esperado.csv cancelado.')).not.toBeInTheDocument();
+    await user.click(within(dropArea()).getByRole('button', { name: 'Cancelar' }));
+
+    const note = await screen.findByText('Envio de esperado.csv cancelado.');
+    expect(note.closest('[role="status"]')).not.toBeNull();
+  });
+
+  it('o aviso do cancelamento some quando um envio novo começa', async () => {
+    const api = simulateApi();
+    api.respond(LIST_ROUTE, fileList([]));
+    const uploads = simulateUploads();
+    const { user } = renderTestCases();
+    await screen.findByText('Nenhum arquivo de referência');
+    await user.upload(fileInput(), fileOf('esperado.csv'));
+    await uploads.nth(1);
+    await user.click(within(dropArea()).getByRole('button', { name: 'Cancelar' }));
+    await screen.findByText('Envio de esperado.csv cancelado.');
+
+    await user.upload(fileInput(), fileOf('outro.csv'));
+    await uploads.nth(2);
+
+    expect(screen.queryByText('Envio de esperado.csv cancelado.')).not.toBeInTheDocument();
+  });
+
+  it('sair da tela com um envio em andamento cancela e lê a lista de novo', async () => {
+    const api = simulateApi();
+    api.respond(LIST_ROUTE, fileList([]));
+    const uploads = simulateUploads();
+    const { user, queryClient } = renderTestCases();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    await screen.findByText('Nenhum arquivo de referência');
+    await user.upload(fileInput(), fileOf('esperado.csv'));
+    await uploads.nth(1);
+
+    cleanup();
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalled());
+  });
+
+  it('se a marca da sessão mudou, o cancelamento do envio ao desmontar não lê a lista de novo', async () => {
+    const api = simulateApi();
+    api.respond(LIST_ROUTE, fileList([]));
+    const uploads = simulateUploads();
+    const { user, queryClient } = renderTestCases();
+    await screen.findByText('Nenhum arquivo de referência');
+    await user.upload(fileInput(), fileOf('esperado.csv'));
+    await uploads.nth(1);
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+    clearSessionData(queryClient);
+    cleanup();
+    // Let the cancellation settle (it is the rejected promise of the aborted upload).
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(invalidate).not.toHaveBeenCalled();
   });
 });

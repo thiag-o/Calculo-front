@@ -7,6 +7,7 @@ import { FilterList, type FilterEntry, type FilterVariable } from '../sources';
 import { DatasetSearch } from '../sources/batch-source';
 import { filterKey, indexOfFilter, removeFilter, replaceFilter, type QueryFilter } from './filterIdentity';
 import type { QueryProblems } from './parameterProblems';
+import { useNextFrame } from './useNextFrame';
 import { QUERY_PARAMETER_REFUSAL, type AllowedValuesQuery, type ValueType } from './parameterRules';
 
 export interface AllowedValuesQueryFieldsProps {
@@ -46,13 +47,16 @@ export function AllowedValuesQueryFields({ query, analyzed, at, scope, type, pro
   const [chosen, setChosen] = useState<Dataset | null>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const errorId = useId();
+  const nextFrame = useNextFrame();
 
   const pending = chosen !== null && chosen.id !== query?.dataset_id ? chosen : null;
   const datasetId = pending?.id ?? query?.dataset_id ?? null;
   const search = datasetId === null || searching;
   const path = (field: string) => (at === null ? null : `${at}.allowed_values.${field}`);
-  const datasetPath = problems.dataset[0]?.path ?? path('dataset_id');
-  const datasetError = problemText(problems.dataset);
+  // A mark of the analysis shows only while what it points to is still there: a dataset changed since then has none (ADR 0044).
+  const datasetProblems = analyzed !== null && analyzed.dataset_id === datasetId ? problems.dataset : [];
+  const datasetPath = datasetProblems[0]?.path ?? path('dataset_id');
+  const datasetError = problemText(datasetProblems);
   useFocusOnSelection(search ? null : datasetPath, () => toggle.current);
 
   const dataset = datasets.data?.find((item) => item.id === datasetId);
@@ -66,7 +70,7 @@ export function AllowedValuesQueryFields({ query, analyzed, at, scope, type, pro
 
   function keepDataset() {
     setSearching(false);
-    requestAnimationFrame(() => toggle.current?.focus());
+    nextFrame(() => toggle.current?.focus());
   }
 
   function chooseVariable(variableId: string) {
@@ -90,7 +94,7 @@ export function AllowedValuesQueryFields({ query, analyzed, at, scope, type, pro
             onChoose={(next) => {
               setSearching(false);
               setChosen(next);
-              requestAnimationFrame(() => toggle.current?.focus());
+              nextFrame(() => toggle.current?.focus());
             }}
           />
           {datasetId !== null ? (
@@ -138,7 +142,7 @@ export function AllowedValuesQueryFields({ query, analyzed, at, scope, type, pro
                 disabledReason={readOnly ? READ_ONLY_REASON : undefined}
                 onClick={() => {
                   setChosen(null);
-                  requestAnimationFrame(() => toggle.current?.focus());
+                  nextFrame(() => toggle.current?.focus());
                 }}
               >
                 Manter dataset
@@ -198,7 +202,12 @@ function DatasetVariables({ datasetId, query, analyzed, at, scope, type, problem
   if (current !== '' && !options.some((option) => option.value === current)) {
     options.push({ value: current, label: all.some((variable) => variable.id === current) ? OUT_OF_TYPE : OUT_OF_DATASET });
   }
-  const variablePath = problems.variable[0]?.path ?? (at === null ? null : `${at}.allowed_values.variable_id`);
+  // The variable's marks follow the same rule: the same variable of the same dataset as in the analysed query.
+  const variableProblems =
+    query !== null && analyzed !== null && analyzed.dataset_id === query.dataset_id && analyzed.variable_id === query.variable_id
+      ? problems.variable
+      : [];
+  const variablePath = variableProblems[0]?.path ?? (at === null ? null : `${at}.allowed_values.variable_id`);
   const filterVariables: FilterVariable[] = all.map((variable) => ({ key: variable.id, name: variable.name, type: variable.type, scale: variable.scale }));
 
   return (
@@ -213,7 +222,7 @@ function DatasetVariables({ datasetId, query, analyzed, at, scope, type, problem
           tooltip={`Os valores distintos desta variável são os permitidos. Só aparecem as do tipo ${typeLabel}.`}
           className="fc-properties-mono"
           path={query === null ? null : variablePath}
-          problems={query === null ? [] : problems.variable}
+          problems={variableProblems}
           onChange={onChooseVariable}
         />
       ) : (

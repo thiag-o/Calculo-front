@@ -48,11 +48,21 @@ export function ScheduleList({ workflowId, onOpenExecution }: ScheduleListProps 
   const schedules = list.data;
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
   const [changeError, setChangeError] = useState<{ name: string; message: string } | null>(null);
+  // Another workflow takes the place of this one while the list stays mounted: nothing of the previous one stays open or on screen.
+  const [shownWorkflow, setShownWorkflow] = useState(workflowId);
+  if (shownWorkflow !== workflowId) {
+    setShownWorkflow(workflowId);
+    setDialog(null);
+    setChangeError(null);
+  }
   const noDataError = list.isError && schedules === undefined ? list.error : null;
   const noPermission = noDataError instanceof ApiError && noDataError.code === 'no_permission';
   const invalidCursor = list.error instanceof ApiError && list.error.code === 'invalid_cursor';
   // Every schedule has the time zone of the system: the first one tells it to the dialog of a new one.
   const timeZone = schedules?.[0]?.timezone;
+  // The schedule of the edit dialog is the one in the list as it is now: when a conflict makes the list be read again, the dialog
+  // sends the new revision (what was open when the dialog started is only the fallback, if the schedule left the list).
+  const editing = dialog?.kind === 'edit' ? (schedules?.find((item) => item.id === dialog.schedule.id) ?? dialog.schedule) : null;
 
   // Focus goes back to the "…" of the row; when the row went away (removed), to "Novo agendamento", when there is one.
   const menuButtonOf = (id: string) => () =>
@@ -298,12 +308,12 @@ export function ScheduleList({ workflowId, onOpenExecution }: ScheduleListProps 
           onSaved={() => setDialog(null)}
         />
       ) : null}
-      {dialog?.kind === 'edit' ? (
+      {dialog?.kind === 'edit' && editing ? (
         <ScheduleDialog
-          workflowId={dialog.schedule.workflow_id}
-          schedule={dialog.schedule}
-          timeZone={dialog.schedule.timezone}
-          focusOnClose={menuButtonOf(dialog.schedule.id)}
+          workflowId={editing.workflow_id}
+          schedule={editing}
+          timeZone={editing.timezone}
+          focusOnClose={menuButtonOf(editing.id)}
           onClose={() => setDialog(null)}
           onSaved={() => setDialog(null)}
         />

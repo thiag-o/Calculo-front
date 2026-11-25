@@ -211,6 +211,50 @@ describe('Painel da execução (épico 7): decisão sobre o alerta', () => {
     expect(screen.queryByRole('button', { name: 'Cancelar execução' })).not.toBeInTheDocument();
   });
 
+  it('o diálogo de cancelar na pré-validação diz que nada foi calculado, e no cálculo, que os registros calculados não são entregues', async () => {
+    api.respond(GET, json(awaiting()));
+    const { user } = renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Cancelar execução' });
+    expect(dialog).toHaveTextContent('Nada foi calculado ainda e a execução não gera CSV.');
+    expect(dialog).not.toHaveTextContent('Os registros já calculados não são entregues');
+  });
+
+  it('pré-validando também: nada foi calculado', async () => {
+    api.respond(GET, json(withId({ status: 'pre_validating', total_records: 1180 })));
+    const { user } = renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Cancelar execução' }));
+    expect(await screen.findByRole('dialog', { name: 'Cancelar execução' })).toHaveTextContent('Nada foi calculado ainda');
+  });
+
+  it('409 execution_finished no Cancelar do alerta: o diálogo fica com o erro e o foco não vai ao body', async () => {
+    let answerRead: (response: Response) => void = () => {};
+    api.respond(GET, json(awaiting()), () => new Promise<Response>((resolve) => (answerRead = resolve)));
+    api.respond(CANCEL, problem(409, 'execution_finished'));
+    const { user } = renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Cancelar' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Cancelar execução' });
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar execução' }));
+    expect(await within(dialog).findByText(/A execução terminou antes do pedido de cancelamento/)).toBeInTheDocument();
+
+    // The execution is read again and is no longer awaiting a decision: the alert (and its button) is gone, the dialog stays.
+    await waitFor(() => expect(api.callsTo(GET)).toHaveLength(2));
+    answerRead(json(awaiting({ status: 'cancelled', finished_at: DEADLINE, pre_validation: { ...ALERTED, decision: { choice: 'expired', by: null, at: DEADLINE } } })));
+    // The open dialog hides the rest of the screen from the accessibility tree: the word is found by its text.
+    expect((await screen.findAllByText('Cancelada')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('A pré-validação encontrou campos vazios acima do limite.')).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Cancelar execução' })).toBe(dialog);
+    expect(within(dialog).getByText(/A execução terminou antes do pedido de cancelamento/)).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Voltar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(document.body).not.toHaveFocus();
+    expect(screen.getByRole('heading', { level: 1 }).closest('.fc-execution-title')).toHaveFocus();
+  });
+
   it('Prosseguir envia a decisão e o painel segue para o cálculo', async () => {
     api.respond(GET, json(awaiting()));
     const decision: Schemas['PreValidationDecision'] = { choice: 'proceed', by: ANA, at: '2026-11-21T15:05:00Z' };
@@ -305,7 +349,8 @@ describe('Painel da execução (épico 7): decisão sobre o alerta', () => {
 
   it('409 not_awaiting_decision: explica e lê a execução de novo', async () => {
     const expired: Schemas['PreValidationDecision'] = { choice: 'expired', by: null, at: DEADLINE };
-    api.respond(GET, json(awaiting()), json(awaiting({ status: 'cancelled', finished_at: DEADLINE, pre_validation: { ...ALERTED, decision: expired } })));
+    let answerRead: (response: Response) => void = () => {};
+    api.respond(GET, json(awaiting()), () => new Promise<Response>((resolve) => (answerRead = resolve)));
     api.respond(PROCEED, problem(409, 'not_awaiting_decision'));
     const { user } = renderPanel();
 
@@ -315,7 +360,10 @@ describe('Painel da execução (épico 7): decisão sobre o alerta', () => {
     expect(alert).toHaveTextContent('Não foi possível prosseguir');
     expect(alert).toHaveTextContent('A execução não está mais aguardando decisão');
     await waitFor(() => expect(api.callsTo(GET)).toHaveLength(2));
+    answerRead(json(awaiting({ status: 'cancelled', finished_at: DEADLINE, pre_validation: { ...ALERTED, decision: expired } })));
     expect(await headerStatus('Cancelada')).toBeInTheDocument();
+    // The error belonged to the alert: once the execution left `awaiting_decision`, it goes.
+    expect(screen.queryByText('Não foi possível prosseguir')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Prosseguir' })).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Pré-validação' })).toHaveTextContent(`DecisãoSem resposta no prazo: cancelada em ${dateTime(DEADLINE)}`);
   });
@@ -598,7 +646,7 @@ describe('Painel da execução (épico 7): Fontes', () => {
     expect(section).toHaveTextContent('Filtro');
   });
 
-  it('sem traces.view: as mesmas palavras, ponto neutro onde a política decide, e a definição não é pedida', async () => {
+  it('sem traces.view: as mesmas palavras, a cor segue o valor (aviso acima de zero) e a definição não é pedida', async () => {
     api.respond(GET, json(finished({ source_counts: COUNTS })));
     const { queryClient } = renderPanel();
 
@@ -606,8 +654,9 @@ describe('Painel da execução (épico 7): Fontes', () => {
     await sessionLoaded(queryClient);
     const product = within(section).getByRole('list', { name: 'Contagens de Produto do item' });
     expect(dotOf(within(product).getByText('1.100 encontrados'))).toBe('fc-status-green');
-    expect(dotOf(within(product).getByText('80 sem correspondência'))).toBe('fc-status-gray');
-    expect(dotOf(within(product).getByText('1 com mais de uma linha'))).toBe('fc-status-gray');
+    // Without the definition the policy is unknown, but a count above zero is still a warning (D111).
+    expect(dotOf(within(product).getByText('80 sem correspondência'))).toBe('fc-status-amber');
+    expect(dotOf(within(product).getByText('1 com mais de uma linha'))).toBe('fc-status-amber');
     expect(api.callsTo(DEFINITION)).toHaveLength(0);
   });
 });
@@ -617,7 +666,7 @@ describe('Painel da execução (épico 7): agendada e sobreposição', () => {
     api.respond(GET, json(finished({ triggered_by: null, schedule: SCHEDULE })));
     renderPanel();
     await screen.findByRole('heading', { level: 1 });
-    const run = screen.getByLabelText('Execução');
+    const run = screen.getByRole('region', { name: 'Resumo' });
     expect(run).toHaveTextContent(`Disparado porAgendada · Fechamento mensal em ${dateTime('2026-11-21T15:00:00Z')}`);
   });
 
@@ -648,22 +697,22 @@ describe('Painel da execução (épico 7): agendada e sobreposição', () => {
 });
 
 describe('Painel da execução (épico 7): simulação', () => {
-  it('Baixar CSV fica desabilitado com "A simulação não entrega arquivo"', async () => {
+  it('Baixar CSV fica desabilitado com "A simulação não entrega arquivo."', async () => {
     api = simulateApi(SIMULATOR_PERMISSIONS);
     api.respond(GET, json(finished({ mode: 'simulation', output: { available: false, expires_at: null, rows: null } })));
     renderPanel();
 
     const button = await screen.findByRole('button', { name: 'Baixar CSV' });
     expect(button).toHaveAttribute('aria-disabled', 'true');
-    expect(button).toHaveAccessibleDescription('A simulação não entrega arquivo');
-    expect(screen.getByText('A simulação não entrega arquivo')).toBeInTheDocument();
+    expect(button).toHaveAccessibleDescription('A simulação não entrega arquivo.');
+    expect(screen.getByText('A simulação não entrega arquivo.')).toBeInTheDocument();
     expect(phases().at(-1)).toBe('Comparaçãoconcluída');
   });
 
-  it('enquanto roda, a simulação também diz que não entrega arquivo', async () => {
+  it('enquanto roda, a simulação também diz que não entrega arquivo.', async () => {
     api.respond(GET, json(withId({ mode: 'simulation', status: 'calculating', total_records: 10, progress: { chunks_done: 0, records_done: 4 } })));
     renderPanel();
-    expect(await screen.findByRole('button', { name: 'Baixar CSV' })).toHaveAccessibleDescription('A simulação não entrega arquivo');
+    expect(await screen.findByRole('button', { name: 'Baixar CSV' })).toHaveAccessibleDescription('A simulação não entrega arquivo.');
   });
 
   it('Cancelar execução de uma simulação não aparece só com executions.trigger', async () => {

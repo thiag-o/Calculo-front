@@ -157,7 +157,7 @@ export function outputExpired(execution: Execution, now: Date): boolean {
 }
 
 /** Why "Baixar CSV" is disabled in a simulation, always (E7-21, E7-26). */
-export const SIMULATION_DOWNLOAD_REASON = 'A simulação não entrega arquivo';
+export const SIMULATION_DOWNLOAD_REASON = 'A simulação não entrega arquivo.';
 
 /**
  * Why "Baixar CSV" is disabled (E6-21: running, aborted, cancelled or expired; E7-21: a simulation never delivers);

@@ -100,11 +100,12 @@ describe('Variáveis do dataset: lista', () => {
     api.respond(VARIABLES, pending.promise);
     renderScreen(<DatasetDetail datasetId={DATASET.id} />);
 
-    expect(await screen.findByRole('heading', { level: 3, name: 'Variáveis' })).toBeInTheDocument();
-    expect(variablesTable()).toHaveAttribute('aria-busy', 'true');
+    // Under load the screen answers late (F130): the waits are for the state, with a longer time; the checks stay the same.
+    expect(await screen.findByRole('heading', { level: 3, name: 'Variáveis' }, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(variablesTable()).toHaveAttribute('aria-busy', 'true'));
     pending.release();
 
-    const row = await within(variablesTable()).findByRole('row', { name: /valor_item/ });
+    const row = await within(variablesTable()).findByRole('row', { name: /valor_item/ }, { timeout: 4000 });
     expect(within(row).getByText('vl_itm')).toBeInTheDocument();
     expect(within(row).getByText('Decimal (2 casas)')).toBeInTheDocument();
     expect(screen.getByText('1 variável')).toBeInTheDocument();

@@ -1,5 +1,6 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { clearSessionData } from '../../session';
 import {
   APPROVER_PERMISSIONS,
   COMPARED_FILE,
@@ -260,5 +261,73 @@ describe('Testes › Arquivo de referência: permissões', () => {
     expect(screen.queryByRole('group', { name: 'Área para soltar o arquivo de referência' })).not.toBeInTheDocument();
     // The link to the last simulation stays: seeing it is up to the execution panel.
     expect(screen.getByRole('button', { name: /^100% iguais/ })).toBeInTheDocument();
+  });
+});
+
+describe('Testes › Arquivo de referência: remover (travas e sessão)', () => {
+  async function openDelete(user: ReturnType<typeof renderTestCases>['user']) {
+    await user.click(await screen.findByRole('button', { name: 'Mais ações para o arquivo esperado-outubro.csv' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Remover arquivo' }));
+    return screen.findByRole('dialog', { name: 'Remover arquivo' });
+  }
+
+  it('durante a requisição, Esc e Cancelar não fecham o diálogo', async () => {
+    const api = simulateApi();
+    api.respond(LIST_ROUTE, fileList([COMPARED_FILE]), fileList([]));
+    const answer = pendingResponse(() => new Response(null, { status: 204 }));
+    api.respond(deleteRoute(COMPARED_FILE.id), answer.promise);
+    const { user } = renderTestCases();
+    const dialog = await openDelete(user);
+
+    await user.click(within(dialog).getByRole('button', { name: 'Remover arquivo' }));
+    await waitFor(() => expect(api.callsTo(deleteRoute(COMPARED_FILE.id))).toHaveLength(1));
+    const cancel = within(dialog).getByRole('button', { name: 'Cancelar' });
+    expect(cancel).toHaveAttribute('aria-disabled', 'true');
+    expect(cancel).toHaveAccessibleDescription('Aguarde a remoção do arquivo');
+    await user.keyboard('{Escape}');
+    await user.click(cancel);
+    expect(screen.getByRole('dialog', { name: 'Remover arquivo' })).toBeInTheDocument();
+
+    answer.release();
+    expect(await screen.findByText('Arquivo esperado-outubro.csv removido.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('a resposta que chega depois de a sessão mudar não confirma a remoção na tela (marca da sessão, ADR 0015)', async () => {
+    const api = simulateApi();
+    api.respond(LIST_ROUTE, fileList([COMPARED_FILE]));
+    const answer = pendingResponse(() => new Response(null, { status: 204 }));
+    api.respond(deleteRoute(COMPARED_FILE.id), answer.promise);
+    const { user, queryClient } = renderTestCases();
+    const dialog = await openDelete(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Remover arquivo' }));
+    await waitFor(() => expect(api.callsTo(deleteRoute(COMPARED_FILE.id))).toHaveLength(1));
+
+    act(() => clearSessionData(queryClient));
+    answer.release();
+
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Remover arquivo' })).not.toHaveAttribute('aria-busy'));
+    expect(screen.queryByText('Arquivo esperado-outubro.csv removido.')).not.toBeInTheDocument();
+  });
+
+  it('a última comparação ganha o ponto de status da simulação', async () => {
+    const api = simulateApi();
+    const base = COMPARED_FILE.last_comparison!;
+    api.respond(
+      LIST_ROUTE,
+      fileList([
+        { ...COMPARED_FILE, id: '9e0f1a2b-3c4d-4e5f-8a6b-7c8d9e0f1a21', name: 'com-erros.csv', last_comparison: { ...base, status: 'completed_with_errors', equal_percent: '98.27' } },
+        { ...COMPARED_FILE, id: '9e0f1a2b-3c4d-4e5f-8a6b-7c8d9e0f1a22', name: 'rodando.csv', last_comparison: { ...base, status: 'comparing', equal_percent: null, finished_at: null } },
+        { ...COMPARED_FILE, id: '9e0f1a2b-3c4d-4e5f-8a6b-7c8d9e0f1a23', name: 'abortada.csv', last_comparison: { ...base, status: 'aborted', equal_percent: null } },
+      ]),
+    );
+    renderTestCases();
+
+    await screen.findByText('com-erros.csv');
+    const dot = (name: string, word: string) =>
+      Array.from(within(rowOf(name)).getByText(word).closest('.fc-status')!.classList).find((item) => item.startsWith('fc-status-') && item !== 'fc-status-pulsing');
+    expect(dot('com-erros.csv', 'Com erros')).toBe('fc-status-red');
+    expect(dot('rodando.csv', 'Calculando')).toBe('fc-status-amber');
+    expect(dot('abortada.csv', 'Abortada')).toBe('fc-status-red');
   });
 });

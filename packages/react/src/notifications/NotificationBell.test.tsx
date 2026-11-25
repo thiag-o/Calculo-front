@@ -1,5 +1,6 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearSessionData } from '../session';
 import { NotificationBell } from './NotificationBell';
 import {
   LIST,
@@ -15,6 +16,19 @@ import {
   type SimulatedApi,
 } from './notifications.test-support';
 
+/** The module root has no portal container yet (the first render of `FluxoRoot`): the test switches it off. */
+const portalOff = vi.hoisted(() => ({ value: false }));
+vi.mock('../design-system', async (original) => {
+  const actual = await original<typeof import('../design-system')>();
+  return {
+    ...actual,
+    useFluxoPortal: () => {
+      const container = actual.useFluxoPortal();
+      return portalOff.value ? null : container;
+    },
+  };
+});
+
 let api: SimulatedApi;
 const onOpenExecution = vi.fn();
 const onOpenSchedules = vi.fn();
@@ -26,6 +40,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  portalOff.value = false;
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -397,5 +412,148 @@ describe('NotificationBell: teclado', () => {
 
     await user.keyboard('{Enter}');
     expect(onOpenExecution).toHaveBeenCalledWith(decision.execution!.id);
+  });
+});
+
+describe('NotificationBell: sondagem e marcação como lido', () => {
+  it('a sondagem de 30 s espera enquanto um "marcar como lido" está pendente e volta depois', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const decision = alert();
+    api.respond(LIST, page([decision]), page([{ ...decision, read: true }]));
+    let answer: (response: Response) => void = () => {};
+    api.respond(READ, () => new Promise<Response>((resolve) => (answer = resolve)));
+    const { user } = renderBell();
+    await screen.findByRole('button', { name: 'Alertas, 1 não lido' });
+
+    const popover = await openBell(user);
+    await user.click(within(popover).getByRole('button', { name: 'Abrir execução' }));
+    await waitFor(() => expect(api.callsTo(READ)).toHaveLength(1));
+
+    // The marking is on its way: 90 s later no refresh was asked, so none can undo the alert read on screen.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90_000);
+    });
+    expect(api.callsTo(LIST)).toHaveLength(1);
+    expect(bell()).toHaveAccessibleName('Alertas, nenhum não lido');
+
+    await act(async () => answer(noContent()));
+    await waitFor(() => expect(api.callsTo(LIST)).toHaveLength(2));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    await waitFor(() => expect(api.callsTo(LIST)).toHaveLength(3));
+  });
+
+  it('uma atualização em voo quando o alerta é aberto não traz o alerta de volta como não lido', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const decision = alert();
+    let releasePoll: (response: Response) => void = () => {};
+    api.respond(
+      LIST,
+      page([decision]),
+      () => new Promise<Response>((resolve) => (releasePoll = resolve)),
+      page([{ ...decision, read: true }]),
+    );
+    api.respond(READ, noContent());
+    const { user } = renderBell();
+    await screen.findByRole('button', { name: 'Alertas, 1 não lido' });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    await waitFor(() => expect(api.callsTo(LIST)).toHaveLength(2));
+    const popover = await openBell(user);
+    await user.click(within(popover).getByRole('button', { name: 'Abrir execução' }));
+    await waitFor(() => expect(api.callsTo(READ)).toHaveLength(1));
+
+    // The answer read before the marking arrives late, with the alert still unread: it is not written.
+    await act(async () => releasePoll(page([decision])));
+    await waitFor(() => expect(api.callsTo(LIST)).toHaveLength(3));
+    expect(bell()).toHaveAccessibleName('Alertas, nenhum não lido');
+  });
+
+  it('com a lista em erro, marcar como lido não retoma a sondagem: só "Tentar de novo" retoma (ADR 0067)', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    api.respond(LIST, page([alert()]), problem(500, 'internal_error'), page([alert()]));
+    api.respond(READ, noContent());
+    const { user } = renderBell();
+    await screen.findByRole('button', { name: 'Alertas, 1 não lido' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    await waitFor(() => expect(api.callsTo(LIST)).toHaveLength(2));
+
+    const popover = await openBell(user);
+    await user.click(within(popover).getByRole('button', { name: 'Abrir execução' }));
+    await waitFor(() => expect(api.callsTo(READ)).toHaveLength(1));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120_000);
+    });
+    // The marking settled and the 30 s refresh did not come back: the list is still the one of the failed refresh.
+    expect(api.callsTo(LIST)).toHaveLength(2);
+
+    await user.click(bell());
+    await user.click(await screen.findByRole('button', { name: 'Tentar de novo' }));
+    await waitFor(() => expect(api.callsTo(LIST)).toHaveLength(3));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    await waitFor(() => expect(api.callsTo(LIST)).toHaveLength(4));
+  });
+
+  it('se a sessão mudou durante a marcação, o fim dela não lê a lista de novo', async () => {
+    api.respond(LIST, page([alert()]));
+    let answer: (response: Response) => void = () => {};
+    api.respond(READ, () => new Promise<Response>((resolve) => (answer = resolve)));
+    const { user, queryClient } = renderBell();
+    await screen.findByRole('button', { name: 'Alertas, 1 não lido' });
+    const popover = await openBell(user);
+    await user.click(within(popover).getByRole('button', { name: 'Abrir execução' }));
+    await waitFor(() => expect(api.callsTo(READ)).toHaveLength(1));
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+    act(() => clearSessionData(queryClient));
+    await act(async () => answer(noContent()));
+
+    expect(invalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe('NotificationBell: foco e portal', () => {
+  it('depois de abrir um alerta, o foco volta ao sino (o foco na tela de destino fica para o épico 14), nunca ao body', async () => {
+    api.respond(LIST, page([alert()]));
+    api.respond(READ, noContent());
+    const { user } = renderBell();
+    await screen.findByRole('button', { name: 'Alertas, 1 não lido' });
+
+    const popover = await openBell(user);
+    await user.click(within(popover).getByRole('button', { name: 'Abrir execução' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(bell()).toHaveFocus();
+    expect(document.body).not.toHaveFocus();
+  });
+
+  it('fechar sem abrir um alerta continua devolvendo o foco ao sino', async () => {
+    api.respond(LIST, page([alert()]));
+    const { user } = renderBell();
+    await screen.findByRole('button', { name: 'Alertas, 1 não lido' });
+
+    await openBell(user);
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(bell()).toHaveFocus();
+  });
+
+  it('sem o contêiner do portal do módulo, o popover não abre vazio com aria-expanded verdadeiro', async () => {
+    portalOff.value = true;
+    api.respond(LIST, page([alert()]));
+    const { user } = renderBell();
+
+    await user.click(await screen.findByRole('button', { name: 'Alertas, 1 não lido' }));
+
+    expect(bell()).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

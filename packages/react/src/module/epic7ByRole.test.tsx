@@ -526,3 +526,107 @@ describe('Barra do conteúdo e sino', () => {
     expect(await screen.findByRole('tab', { name: 'Agendamentos', selected: true })).toBeInTheDocument();
   });
 });
+
+describe('Épico 7 no módulo: acabamentos da integração (F139)', () => {
+  it('o Voltar do painel volta à origem: o sino aberto nos Agendamentos volta para os Agendamentos', async () => {
+    open('/executions/schedules');
+    simulateApiWith(OPERATOR);
+    const { user } = renderScreen();
+    await screen.findByRole('tab', { name: 'Agendamentos', selected: true });
+
+    await user.click(await screen.findByRole('button', { name: 'Alertas, 2 não lidos' }));
+    await user.click(await screen.findByRole('button', { name: 'Abrir execução' }));
+    await waitFor(() => expect(window.location.pathname).toBe(`/executions/${AWAITING_ID}`));
+
+    await user.click(await screen.findByRole('button', { name: 'Voltar para os agendamentos' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/executions/schedules'));
+    expect(await screen.findByRole('tab', { name: 'Agendamentos', selected: true })).toBeInTheDocument();
+  });
+
+  it('o Voltar do painel aberto pelo sino em outra tela volta para ela', async () => {
+    open('/home');
+    simulateApiWith(OPERATOR);
+    const { user } = renderScreen();
+    await screen.findByRole('heading', { level: 1, name: 'Início' });
+
+    await user.click(await screen.findByRole('button', { name: 'Alertas, 2 não lidos' }));
+    await user.click(await screen.findByRole('button', { name: 'Abrir execução' }));
+    await waitFor(() => expect(window.location.pathname).toBe(`/executions/${AWAITING_ID}`));
+
+    await user.click(await screen.findByRole('button', { name: 'Voltar' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/home'));
+  });
+
+  it('o Voltar do painel aberto pela lista volta para a lista, com os filtros que estavam', async () => {
+    open('/executions');
+    simulateApiWith(OPERATOR);
+    const { user } = renderScreen();
+    await screen.findByRole('heading', { level: 1, name: 'Execuções' });
+    await user.click(await screen.findByRole('combobox', { name: 'Modo' }));
+    await user.click(await screen.findByRole('option', { name: 'Lotes' }));
+
+    await user.click(await screen.findByRole('button', { name: new RegExp(`^${WORKFLOW_NAME}, execução`) }));
+    await user.click(await screen.findByRole('button', { name: 'Voltar para execuções' }));
+
+    expect(await screen.findByRole('combobox', { name: 'Modo' })).toHaveTextContent('Lotes');
+  });
+
+  it('os filtros da lista de execuções não zeram ao trocar entre as abas Execuções e Agendamentos', async () => {
+    open('/executions');
+    simulateApiWith(OPERATOR);
+    const { user } = renderScreen();
+    await screen.findByRole('heading', { level: 1, name: 'Execuções' });
+    await user.click(await screen.findByRole('combobox', { name: 'Status' }));
+    await user.click(await screen.findByRole('option', { name: 'Abortada' }));
+
+    const tabs = screen.getByRole('tablist', { name: 'Abas de Execuções' });
+    await user.click(within(tabs).getByRole('tab', { name: 'Agendamentos' }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Agendamentos' })).toBeInTheDocument();
+    await user.click(within(screen.getByRole('tablist', { name: 'Abas de Execuções' })).getByRole('tab', { name: 'Execuções' }));
+
+    expect(await screen.findByRole('combobox', { name: 'Status' })).toHaveTextContent('Abortada');
+  });
+});
+
+describe('Incorporado: o sino na barra das abas e a ordem do Tab', () => {
+  it('o sino é o último item da barra das abas (não um overlay), depois da lista de abas', async () => {
+    simulateApiWith(OPERATOR);
+    renderScreen({ token: 'embed', navigation: 'memory' });
+    const tabs = await screen.findByRole('tablist', { name: 'Telas do Fluxo de Cálculo' });
+    const embeddedBell = (await bell()).closest('.fc-embedded-bell') as HTMLElement;
+
+    const bar = tabs.closest('.fc-tabs-bar') as HTMLElement;
+    expect(bar).not.toBeNull();
+    expect(embeddedBell.parentElement).toBe(bar);
+    expect(bar.lastElementChild).toBe(embeddedBell);
+    expect(embeddedBell.previousElementSibling).toBe(tabs);
+  });
+
+  /** Where the focus is, by role and by the name of its tab list or panel. */
+  function focusStop(): string {
+    const element = document.activeElement as HTMLElement;
+    const role = element.getAttribute('role') ?? element.tagName.toLowerCase();
+    if (role === 'tab') return `tab em ${element.closest('[role="tablist"]')?.getAttribute('aria-label')}`;
+    if (role === 'tabpanel') return `painel de ${document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent}`;
+    return `${role} ${element.getAttribute('aria-label') ?? element.textContent}`;
+  }
+
+  it('as duas fileiras de abas seguem o Tab: aba, sino, painel, aba interna, painel interno', async () => {
+    simulateApiWith(OPERATOR);
+    const { user } = renderScreen({ token: 'embed', navigation: 'memory', screen: 'executions' });
+    await screen.findByRole('tablist', { name: 'Abas de Execuções' });
+    await screen.findByRole('heading', { level: 1, name: 'Execuções' });
+
+    const stops: string[] = [];
+    for (let step = 0; step < 5; step += 1) {
+      await user.tab();
+      stops.push(focusStop());
+    }
+
+    expect(stops[0]).toBe('tab em Telas do Fluxo de Cálculo');
+    expect(stops[1]).toMatch(/^button Alertas/);
+    expect(stops[2]).toMatch(/^painel de /);
+    expect(stops[3]).toBe('tab em Abas de Execuções');
+    expect(stops[4]).toMatch(/^painel de /);
+  });
+});

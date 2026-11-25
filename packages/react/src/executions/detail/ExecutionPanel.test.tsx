@@ -261,11 +261,11 @@ describe('Painel da execução: progresso, resumo e totais', () => {
     api.respond(GET, json(finished({ error_limit_percent: '2.5', trace_level: 'minimal' })));
     renderPanel();
 
-    const parameters = await screen.findByLabelText('Parâmetros');
+    const parameters = await screen.findByRole('region', { name: 'Resumo' });
     expect(parameters).toHaveTextContent('periodo01/10/2026 a 31/10/2026');
     expect(parameters).toHaveTextContent('categoriasA, B');
     expect(parameters).toHaveTextContent('meta_minima100,00');
-    const run = screen.getByLabelText('Execução');
+    const run = parameters;
     expect(run).toHaveTextContent(`Agora${dateTime('2026-11-21T15:00:00Z')}`);
     expect(run).toHaveTextContent('Nível do traceMínimo');
     expect(run).toHaveTextContent('Limite de erro2,5%');
@@ -749,5 +749,212 @@ describe('Painel da execução: atualização', () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
     await waitFor(() => expect(api.callsTo(GET)).toHaveLength(4));
+  });
+});
+
+describe('Painel da execução: registros e gaveta (casos de borda)', () => {
+  const COMPARISON = `GET /v1/executions/${ID}/comparison/records`;
+  const failedSummary = summary({ result_key: 'b'.repeat(64), record_key: { nf_id: '11', item_seq: '1' }, status: 'error', error_node_id: 'calc_pontos', error_code: 'division_by_zero' });
+  const regionOf = () => screen.getByRole('heading', { level: 2, name: 'Registros' });
+  /** The always-mounted status region of the records, read by the screen reader. */
+  const announcement = () => document.querySelector('.fc-records > p[role="status"]');
+
+  it('"Carregar mais registros" some na última página: o foco vai para o título dos registros, não para o body', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(
+      RECORDS,
+      json({ items: [summary()], next_cursor: 'c2' }),
+      json({ items: [summary({ result_key: 'c'.repeat(64), record_key: { nf_id: '20', item_seq: '1' } })], next_cursor: null }),
+    );
+    const { user } = renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Carregar mais registros' }));
+    expect(await screen.findByText('nf_id 20 · item_seq 1')).toBeInTheDocument();
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Carregar mais registros' })).not.toBeInTheDocument());
+    await waitFor(() => expect(regionOf()).toHaveFocus());
+  });
+
+  it('o fim das páginas por troca de filtro não leva o foco ao título dos registros (nem rola a tela)', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(RECORDS, (request) =>
+      json({ items: [summary()], next_cursor: queryOf(request).has('status') ? null : 'c2' }),
+    );
+    const { user } = renderPanel();
+    expect(await screen.findByRole('button', { name: 'Carregar mais registros' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('combobox', { name: 'Status' }));
+    await user.click(await screen.findByRole('option', { name: 'erro' }));
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Carregar mais registros' })).not.toBeInTheDocument());
+    expect(regionOf()).not.toHaveFocus();
+  });
+
+  it('uma região de status sempre montada anuncia a página, a troca de filtro e o "Nenhum registro"', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(
+      RECORDS,
+      json({ items: [summary()], next_cursor: 'c2' }),
+      json({ items: [summary({ result_key: 'c'.repeat(64), record_key: { nf_id: '20', item_seq: '1' } })], next_cursor: null }),
+      json({ items: [], next_cursor: null }),
+    );
+    const { user } = renderPanel();
+
+    await screen.findByText('nf_id 10 · item_seq 1');
+    await waitFor(() => expect(announcement()).toHaveTextContent('Mais de 1 registros'));
+    await user.click(screen.getByRole('button', { name: 'Carregar mais registros' }));
+    await waitFor(() => expect(announcement()).toHaveTextContent('2 registros'));
+
+    await user.click(screen.getByRole('combobox', { name: 'Status' }));
+    await user.click(await screen.findByRole('option', { name: 'filtrado' }));
+    await waitFor(() => expect(announcement()).toHaveTextContent('Nenhum registro'));
+  });
+
+  it('o erro da primeira página também é anunciado', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(RECORDS, problem(500, 'internal_error'));
+    renderPanel();
+
+    await screen.findByText('Não foi possível carregar os registros', { selector: '.fc-notice-title' });
+    await waitFor(() => expect(announcement()).toHaveTextContent('Não foi possível carregar os registros'));
+  });
+
+  it('invalid_data do filtro: "Ver as divergências" volta ao filtro padrão', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(
+      RECORDS,
+      json({ items: [summary()], next_cursor: null }),
+      problem(422, 'invalid_data'),
+      json({ items: [summary(), failedSummary], next_cursor: null }),
+    );
+    const { user } = renderPanel();
+    await screen.findByText('nf_id 10 · item_seq 1');
+
+    await user.click(screen.getByRole('combobox', { name: 'Status' }));
+    await user.click(await screen.findByRole('option', { name: 'filtrado' }));
+    expect(await screen.findByText(/A API recusou o filtro escolhido/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Ver as divergências' }));
+    expect(await screen.findByText('nf_id 11 · item_seq 1')).toBeInTheDocument();
+    expect(queryOf(api.callsTo(RECORDS).at(-1)!).getAll('status')).toEqual([]);
+  });
+
+  it('a resposta tardia da página seguinte de um filtro antigo não entra na lista do filtro novo', async () => {
+    api.respond(GET, json(finished()));
+    let releaseLate: (response: Response) => void = () => {};
+    api.respond(
+      RECORDS,
+      json({ items: [summary()], next_cursor: 'c2' }),
+      () => new Promise<Response>((resolve) => (releaseLate = resolve)),
+      json({ items: [failedSummary], next_cursor: null }),
+    );
+    const { user } = renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Carregar mais registros' }));
+    await waitFor(() => expect(api.callsTo(RECORDS)).toHaveLength(2));
+    expect(queryOf(api.callsTo(RECORDS)[1]!).get('cursor')).toBe('c2');
+
+    await user.click(screen.getByRole('combobox', { name: 'Status' }));
+    await user.click(await screen.findByRole('option', { name: 'erro' }));
+    expect(await screen.findByText('nf_id 11 · item_seq 1')).toBeInTheDocument();
+    expect(queryOf(api.callsTo(RECORDS).at(-1)!).has('cursor')).toBe(false);
+
+    await act(async () => releaseLate(json({ items: [summary({ result_key: 'd'.repeat(64), record_key: { nf_id: '30', item_seq: '1' } })], next_cursor: null })));
+    expect(screen.queryByText('nf_id 30 · item_seq 1')).not.toBeInTheDocument();
+    expect(screen.getByText('nf_id 11 · item_seq 1')).toBeInTheDocument();
+  });
+
+  it('invalid_cursor na página seguinte: "Recarregar registros" lê a lista desde o início', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(
+      RECORDS,
+      json({ items: [summary()], next_cursor: 'c2' }),
+      problem(422, 'invalid_cursor'),
+      json({ items: [summary({ record_key: { nf_id: '40', item_seq: '1' } })], next_cursor: null }),
+    );
+    const { user } = renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Carregar mais registros' }));
+    expect(await screen.findByText(/Não foi possível continuar de onde a lista parou/)).toBeInTheDocument();
+    expect(screen.getByText('nf_id 10 · item_seq 1')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Recarregar registros' }));
+    expect(await screen.findByText('nf_id 40 · item_seq 1')).toBeInTheDocument();
+    expect(queryOf(api.callsTo(RECORDS).at(-1)!).has('cursor')).toBe(false);
+  });
+
+  it('erro em "Carregar mais": avisa, mantém as linhas e "Tentar de novo" pede a mesma página', async () => {
+    api.respond(GET, json(finished()));
+    api.respond(
+      RECORDS,
+      json({ items: [summary()], next_cursor: 'c2' }),
+      problem(500, 'internal_error'),
+      json({ items: [summary({ result_key: 'c'.repeat(64), record_key: { nf_id: '20', item_seq: '1' } })], next_cursor: null }),
+    );
+    const { user } = renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Carregar mais registros' }));
+    expect(await screen.findByText('Não foi possível carregar mais registros')).toBeInTheDocument();
+    expect(screen.getByText('nf_id 10 · item_seq 1')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByText('nf_id 20 · item_seq 1')).toBeInTheDocument();
+    expect(queryOf(api.callsTo(RECORDS).at(-1)!).get('cursor')).toBe('c2');
+  });
+
+  it('só com simulations.run (sem traces.view), a simulação não mostra os registros, mas a gaveta abre pela comparação com a definição', async () => {
+    api = simulateApi(['workflows.view', 'executions.view', 'simulations.run']);
+    api.respond(
+      GET,
+      json(
+        finished({
+          mode: 'simulation',
+          output: { available: false, expires_at: null, rows: null },
+          reference_file: { id: '8c9d0e1f-2a3b-4c4d-8e5f-6a7b8c9d0e1f', name: 'esperado.csv' },
+          comparison: { compared: 1, equal: 0, different: 1, status_differs: 0, missing_from_result: 0, missing_from_file: 0, not_compared: 0, equal_percent: '0.00' },
+        }),
+      ),
+    );
+    api.respond(
+      COMPARISON,
+      json({
+        items: [
+          {
+            result_key: RESULT_KEY,
+            record_key: { nf_id: '10', item_seq: '1' },
+            outcome: 'different',
+            expected_status: null,
+            obtained_status: 'ok',
+            fields: [{ name: 'pontos', expected: '1500.00', obtained: '1250.5' }],
+          },
+        ],
+        next_cursor: null,
+      }),
+    );
+    api.respond(RECORD, json(storedRecord('standard')));
+    api.respond(DEFINITION_ROUTE, json(FROZEN));
+    const renderRecordTrace = vi.fn(({ definition }: { definition: Schemas['WorkflowDefinition'] }) => <p>{`definição de ${definition.root.nodes.length} bloco`}</p>);
+    const { user, queryClient } = renderPanel({ renderRecordTrace });
+
+    const open = await screen.findByRole('button', { name: 'Abrir o trace de nf_id 10 · item_seq 1' });
+    await waitFor(() => expect(queryClient.getQueryState(['session'])?.status).toBe('success'));
+    expect(screen.queryByRole('heading', { level: 2, name: 'Registros' })).not.toBeInTheDocument();
+    expect(api.callsTo(RECORDS)).toHaveLength(0);
+
+    await user.click(open);
+    const drawer = await screen.findByRole('dialog', { name: 'Trace do registro' });
+    expect(await within(drawer).findByText('definição de 1 bloco')).toBeInTheDocument();
+  });
+});
+
+describe('Painel da execução: listas de definição', () => {
+  it('as listas <dl> do resumo não levam aria-label (o nome fica na seção)', async () => {
+    api.respond(GET, json(finished()));
+    renderPanel();
+
+    const summary = await screen.findByRole('region', { name: 'Resumo' });
+    expect(summary.querySelectorAll('dl')).toHaveLength(2);
+    expect(summary.querySelectorAll('dl[aria-label]')).toHaveLength(0);
   });
 });

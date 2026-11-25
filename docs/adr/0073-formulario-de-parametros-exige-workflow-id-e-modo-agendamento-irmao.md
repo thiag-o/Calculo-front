@@ -7,7 +7,7 @@
 
 ## Contexto
 
-A ADR 0062 exporta `useParameterForm` de `executions/index.ts` para o disparo e para o editor. Na F124 os parâmetros ganharam valores permitidos por consulta (E7-23), e a rota que lista esses valores é do workflow (`workflowId`). O formulário também ganhou o modo agendamento (E7-24), que lê e grava os parâmetros de forma diferente do disparo. A F128 vai usar esse modo (a F129 usa o modo de execução).
+A ADR 0062 exporta `useParameterForm` de `executions/index.ts` para o disparo e para o editor. Na F124 os parâmetros ganharam valores permitidos por consulta (E7-23), e a rota que lista esses valores é do workflow (`workflowId`). O formulário também ganhou o modo agendamento (E7-24), que lê e grava os parâmetros de forma diferente do disparo. A F128 usa esse modo (`useScheduleParameterForm`); a F129 usa o `useParameterForm`, o modo de execução, porque o corpo da simulação tem os mesmos valores do disparo.
 
 ## Decisão
 
@@ -15,6 +15,7 @@ A ADR 0062 exporta `useParameterForm` de `executions/index.ts` para o disparo e 
 - O modo agendamento é um controlador irmão, `useScheduleParameterForm(parameters, { workflowId, initial? })`, com `formProps.mode = 'schedule'`. Não é uma flag no `read()` do outro.
 - `executions/index.ts` exporta também `useScheduleParameterForm`, `readScheduleParameters`, `scheduleFormValues` e `relativesFor`. Para retomar um agendamento salvo, use `initial: scheduleFormValues(parameters, schedule.parameters)`.
 - Cada modo tem seu tipo de leitura (`ParametersReading` e `ScheduleParametersReading`).
+- O `useParameterForm` é o controlador do disparo, do editor e da simulação da F129 (ver [0078](0078-vertical-test-cases-e-path-params-no-upload.md)); o `useScheduleParameterForm` é só dos agendamentos (F128).
 - As regras da 0062 seguem: o editor só importa nomes de `executions/index.ts`, e `executions` não importa o editor.
 
 ## Alternativas consideradas

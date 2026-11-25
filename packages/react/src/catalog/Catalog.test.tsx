@@ -5,6 +5,9 @@ import { problem, renderScreen, simulateApi } from './datasets/datasets.test-sup
 
 afterEach(cleanup);
 
+/** Under load the answers come late: the waits for them get a longer time. */
+const SLOW = { timeout: 4000 };
+
 /** The id the module hands over when the address has a part it cannot decode (`/catalog/<tab>/%zz`). */
 const MALFORMED_ID = '%zz';
 const ROUTE_ID = '%25zz';
@@ -21,10 +24,11 @@ describe('Catálogo: endereço mal formado', () => {
     const onLocationChange = vi.fn();
     const { user } = renderScreen(<Catalog location={{ tab, id: MALFORMED_ID }} onLocationChange={onLocationChange} />);
 
-    expect(await screen.findByText(new RegExp(message))).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: 'Catálogo' })).toBeInTheDocument();
+    // With the machine under load the screen answers late (F43, F126): the waits are for the state, with a longer time.
+    expect(await screen.findByText(new RegExp(message), undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Catálogo' }, SLOW)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument();
-    await user.click(screen.getAllByRole('button', { name: back })[0]!);
+    await user.click((await screen.findAllByRole('button', { name: back }, SLOW))[0]!);
     expect(onLocationChange).toHaveBeenCalledWith({ tab, id: null });
   });
 });

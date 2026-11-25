@@ -1,7 +1,13 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ApiProvider, createQueryClient } from '../../api';
+import { FluxoRoot } from '../../design-system';
+import { AllowedValuesField } from './AllowedValuesField';
 import {
   QUERY,
+  WORKFLOW_ID,
   allowedValues,
   parameter,
   parameterProblem,
@@ -265,5 +271,114 @@ describe('ParameterForm: valores permitidos por consulta', () => {
       expect(await screen.findByText('não está entre os valores permitidos')).toBeInTheDocument();
       expect(screen.getByRole('combobox', { name: 'regioes' })).toHaveAttribute('aria-invalid', 'true');
     });
+  });
+});
+
+describe('ParameterForm: a lista antiga durante a busca', () => {
+  it('enquanto espera os 300 ms e a busca responde, Enter e as setas não escolhem um valor que não bate com o texto', async () => {
+    let answerSearch: (response: Response) => void = () => {};
+    const api = simulateAllowedValues((search) =>
+      search === null ? allowedValues(REGIONS) : new Promise<Response>((resolve) => (answerSearch = resolve)),
+    );
+    const { user } = renderScreen({ parameters: [parameter('regiao', 'text', { allowed_values: QUERY })] });
+    const field = screen.getByRole('combobox', { name: 'regiao' });
+    await user.click(field);
+    await screen.findByRole('option', { name: 'Sul' });
+
+    // Typed, and the 300 ms have not passed: the list of the empty text is still there, but nothing in it is active.
+    fireEvent.change(field, { target: { value: 'No' } });
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field).toHaveValue('No');
+    expect(field).not.toHaveAttribute('aria-activedescendant');
+    expect(screen.getByText('Carregando valores')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Sul' })).toHaveAttribute('aria-disabled', 'true');
+
+    // The search is in flight (nothing answered yet): same thing.
+    await waitFor(() => expect(api.searches).toEqual([null, 'No']));
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field).toHaveValue('No');
+    expect(screen.getByText('Carregando valores')).toBeInTheDocument();
+
+    // The answer arrives: the list is the one of the text, active.
+    await act(async () => answerSearch(allowedValues(['Nordeste', 'Norte'])));
+    await waitFor(() => expect(screen.queryByRole('option', { name: 'Sul' })).not.toBeInTheDocument());
+    expect(screen.queryByText('Carregando valores')).not.toBeInTheDocument();
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field).toHaveValue('Nordeste');
+  });
+
+  it('o popup não deixa o campo perder o foco ao apertar "Tentar de novo" (Safari não foca o botão)', async () => {
+    simulateAllowedValues(() => problem(500, 'internal_error', 'Falhou ao ler.'));
+    const { user } = renderScreen({ parameters: [parameter('regiao', 'text', { allowed_values: QUERY })] });
+    await user.click(screen.getByRole('combobox', { name: 'regiao' }));
+
+    const retry = await screen.findByRole('button', { name: 'Tentar de novo' });
+    // `fireEvent` answers false when the event was default-prevented: the browser does not move the focus off the field.
+    expect(fireEvent.mouseDown(retry)).toBe(false);
+  });
+
+  it('o mesmo vale para "Remover" na etiqueta de uma escolha', async () => {
+    simulateAllowedValues(() => allowedValues(REGIONS));
+    const { user } = renderScreen({ parameters: [parameter('regioes', 'text', { list: true, allowed_values: QUERY })] });
+    await user.click(screen.getByRole('combobox', { name: 'regioes' }));
+    await user.click(await screen.findByRole('option', { name: 'Sul' }));
+
+    expect(fireEvent.mouseDown(screen.getByRole('button', { name: 'Remover Sul' }))).toBe(false);
+  });
+});
+
+describe('AllowedValuesField: sair do campo', () => {
+  function renderField(onBlur: () => void) {
+    simulateAllowedValues(() => allowedValues(REGIONS));
+    const queryClient = createQueryClient();
+    const user = userEvent.setup({ delay: null });
+    render(
+      <FluxoRoot>
+        <ApiProvider apiUrl="https://api.teste">
+          <QueryClientProvider client={queryClient}>
+            <AllowedValuesField
+              workflowId={WORKFLOW_ID}
+              name="regiao"
+              type="text"
+              help="Texto"
+              multiple={false}
+              selected={[]}
+              onChange={() => {}}
+              onBlur={onBlur}
+            />
+            <button type="button">Outro</button>
+          </QueryClientProvider>
+        </ApiProvider>
+      </FluxoRoot>,
+    );
+    return user;
+  }
+
+  it('avisa o formulário, que passa a mostrar o erro do campo (como os outros campos)', async () => {
+    const onBlur = vi.fn();
+    const user = renderField(onBlur);
+
+    await user.click(screen.getByRole('combobox', { name: 'regiao' }));
+    await screen.findByRole('option', { name: 'Sul' });
+    expect(onBlur).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Outro' }));
+    expect(onBlur).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ParameterForm: ícone da etiqueta', () => {
+  it('o ícone de remover usa o tamanho do ícone em botão pequeno (14, estilos §6) e é decorativo', async () => {
+    simulateAllowedValues(() => allowedValues(REGIONS));
+    const { user } = renderScreen({ parameters: [parameter('regioes', 'text', { list: true, allowed_values: QUERY })] });
+    await user.click(screen.getByRole('combobox', { name: 'regioes' }));
+    await user.click(await screen.findByRole('option', { name: 'Sul' }));
+
+    const icon = screen.getByRole('button', { name: 'Remover Sul' }).querySelector('svg');
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+    expect(icon).toHaveAttribute('width', '14');
+    expect(icon).toHaveAttribute('height', '14');
   });
 });

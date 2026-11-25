@@ -19,9 +19,17 @@
 }
 
 .fc-embedded-tabs-list {
-  max-width: 1200px;
-  margin: 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 0 14px;
+}
+
+/* The bar of the tabs: a row with the tabs and, at its end, the bell; the content is aligned with the 1200px of the page. */
+.fc-embedded-tabs .fc-tabs-bar {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding-inline: max(0px, calc((100% - 1200px) / 2));
 }
 
 .fc-embedded-panel {
@@ -29,33 +37,11 @@
 }
 
 /*
- * The bell of the alerts (E7-27) sits at the end of the tab row: over the row, aligned with the 1200px content, with the room
- * the tab list leaves on its right (no z-index: a positioned element paints over the row).
+ * The bell of the alerts (E7-27) is the last item of the tab bar: `margin-left: auto` takes it to the end, and the list of tabs,
+ * which can shrink and scroll, leaves its room (nothing over the tabs, no z-index).
  */
-.fc-embedded {
-  position: relative;
-}
-
-.fc-embedded-tabs-list-with-bell {
-  padding-right: 54px;
-}
-
 .fc-embedded-bell {
-  box-sizing: border-box;
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  max-width: 1200px;
-  height: 43px;
-  margin: 0 auto;
-  padding: 0 14px;
-  pointer-events: none;
-}
-
-.fc-embedded-bell-slot {
-  pointer-events: auto;
+  flex: none;
+  margin-left: auto;
+  padding: 0 14px 0 var(--fc-space-8);
 }

@@ -169,6 +169,33 @@ describe('ParameterForm: modo agendamento', () => {
     expect(screen.getByRole('combobox', { name: 'corte' })).toHaveTextContent('Hoje');
   });
 
+  it('de Relativo para Fixo e de volta, o relativo escolhido continua o mesmo', async () => {
+    const { user } = renderScreen({ mode: 'schedule', parameters: [parameter('periodo', 'period')] });
+    await user.click(screen.getByRole('radio', { name: 'Relativo' }));
+    await user.click(screen.getByRole('combobox', { name: 'periodo' }));
+    await user.click(await screen.findByRole('option', { name: 'Últimos 7 dias' }));
+
+    await user.click(screen.getByRole('radio', { name: 'Fixo' }));
+    await user.click(screen.getByRole('radio', { name: 'Relativo' }));
+
+    expect(screen.getByRole('combobox', { name: 'periodo' })).toHaveTextContent('Últimos 7 dias');
+    await user.click(send());
+    expect(sent()).toBe('{"periodo":{"kind":"relative","value":"last_7_days"}}');
+  });
+
+  it('o erro de um Fixo já tocado não volta com ele depois do Relativo', async () => {
+    const { user } = renderScreen({ mode: 'schedule', parameters: [parameter('periodo', 'period')] });
+    fireEvent.change(screen.getByLabelText('Início'), { target: { value: '2026-10-01' } });
+    fireEvent.blur(screen.getByLabelText('Início'));
+    expect(await screen.findByText('Informe o início e o fim do período.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: 'Relativo' }));
+    await user.click(screen.getByRole('radio', { name: 'Fixo' }));
+
+    expect(screen.getByLabelText('Início')).toHaveValue('2026-10-01');
+    expect(screen.queryByText('Informe o início e o fim do período.')).not.toBeInTheDocument();
+  });
+
   it('retoma um agendamento salvo (scheduleFormValues)', async () => {
     const parameters = [
       parameter('periodo', 'period'),

@@ -11,6 +11,7 @@ import {
   newEmail,
   generateResetLink,
   userRow,
+  usersTable,
   INVALID_LINK_MESSAGE,
   mainNavigation,
   newPassword,
@@ -34,6 +35,9 @@ test.describe('usuário Configurador e link de redefinição', () => {
     await test.step('o Admin cria o usuário com o papel Configurador', async () => {
       await signIn(page, api.account('admin'));
       await openFromMenu(page, 'Usuários');
+      // The list is there (and loaded) before anything is read from it.
+      await expect(usersTable(page)).toBeVisible();
+      await expect(usersTable(page)).not.toHaveAttribute('aria-busy', 'true');
 
       user = await createUser(page, { ...person, role: 'Configurador' });
 

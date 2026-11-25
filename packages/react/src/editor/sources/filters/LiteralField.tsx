@@ -57,7 +57,10 @@ export function LiteralField({ label, scope, type, scale, operator, literal, onC
   const [shown, setShown] = useState({ text: fromLiteral(type, literal), from: literal, type, definition });
   if (shown.from !== literal || shown.type !== type || shown.definition !== definition) {
     const typed = read(shown.text);
-    const keep = shown.type === type && typed.ok && typed.value === literal;
+    // A parameter refused here (the query of the allowed values) never reached the definition: it stays, with the reason, as long as
+    // the literal it was typed over is the same one, whatever else changed in the draft or in its analysis.
+    const refused = Boolean(refuseParameters) && isParameter(shown.text) && shown.type === type && shown.from === literal;
+    const keep = refused || (shown.type === type && typed.ok && typed.value === literal);
     setShown({ text: keep ? shown.text : fromLiteral(type, literal), from: literal, type, definition });
   }
   const input = useRef<HTMLInputElement>(null);

@@ -92,6 +92,8 @@ export interface UploadAreaProps {
 export function UploadArea({ upload, sendButton }: UploadAreaProps) {
   const dragDepth = useRef(0);
   const [dragging, setDragging] = useState(false);
+  // The upload that was cancelled, told to the screen reader (the progress that said "Enviando" is gone with it).
+  const [cancelled, setCancelled] = useState<string | null>(null);
   const { pending, error, chosen, uploaded } = upload;
   const percent = percentOf(upload.progress);
   const reading = pending && percent >= 100;
@@ -117,11 +119,13 @@ export function UploadArea({ upload, sendButton }: UploadAreaProps) {
     event.preventDefault();
     dragDepth.current = 0;
     setDragging(false);
+    setCancelled(null);
     upload.receive(event.dataTransfer.files);
   }
 
   function cancel() {
     upload.cancel();
+    setCancelled(name);
     // The "Cancelar" button leaves with the upload: the focus goes back to "Enviar arquivo".
     sendButton.current?.focus();
   }
@@ -180,6 +184,7 @@ export function UploadArea({ upload, sendButton }: UploadAreaProps) {
           tabIndex={-1}
           aria-label="Arquivo de referência (.csv)"
           onChange={(event) => {
+            setCancelled(null);
             upload.receive(event.target.files);
             // Choosing the same file again (after fixing it) must fire the change again.
             event.target.value = '';
@@ -189,6 +194,10 @@ export function UploadArea({ upload, sendButton }: UploadAreaProps) {
         <Button ref={sendButton} variant="primary" loading={pending} onClick={upload.choose}>
           Enviar arquivo
         </Button>
+      </div>
+
+      <div role="status" className="fc-visually-hidden">
+        {!pending && cancelled ? `Envio de ${cancelled} cancelado.` : null}
       </div>
 
       {!pending && uploaded && !error ? (

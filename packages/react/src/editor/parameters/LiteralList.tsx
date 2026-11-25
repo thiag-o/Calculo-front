@@ -3,6 +3,7 @@ import { Button } from '../../design-system';
 import { READ_ONLY_REASON, type WorkflowProblem } from '../draft';
 import { useFieldsState } from '../properties';
 import { PlusIcon, TrashIcon } from './icons';
+import { useNextFrame } from './useNextFrame';
 import { LiteralField } from './LiteralField';
 import { LITERALS_MAX, type ValueType } from './parameterRules';
 
@@ -55,6 +56,7 @@ export function LiteralList({
   emptyNote,
 }: LiteralListProps) {
   const { readOnly } = useFieldsState();
+  const nextFrame = useNextFrame();
   const list = useRef<HTMLOListElement>(null);
   const box = useRef<HTMLElement | null>(null);
   const setBox = (element: HTMLElement | null) => {
@@ -88,7 +90,7 @@ export function LiteralList({
   function add() {
     onChange((current) => [...current, '']);
     // The new value comes last: it is the next thing to type.
-    requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(':scope > li:last-child input, :scope > li:last-child button')?.focus());
+    nextFrame(() => list.current?.querySelector<HTMLElement>(':scope > li:last-child input, :scope > li:last-child button')?.focus());
   }
 
   const content = (
@@ -126,7 +128,7 @@ export function LiteralList({
                       onChange((current) => current.filter((_, at) => at !== index));
                       // The change renders the list without the value within this frame. If no render came (the change left
                       // the list as it was), the mark goes away anyway, so a later render does not take the focus.
-                      requestAnimationFrame(() => {
+                      nextFrame(() => {
                         focusAfterRemove.current = null;
                       });
                     }}

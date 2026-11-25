@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { forwardRef, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import { ApiError } from '../../api';
 import { Button, EmptyState, Notice, Select, Status, Table, Text, textClasses, type SelectOption, type TableColumn } from '../../design-system';
 import {
@@ -72,6 +72,13 @@ export const ExecutionRecords = forwardRef<HTMLHeadingElement, ExecutionRecordsP
   const titleId = useId();
   const queryClient = useQueryClient();
   const statusFilter = useRef<HTMLButtonElement>(null);
+  const heading = useRef<HTMLHeadingElement | null>(null);
+  const setHeading = (element: HTMLHeadingElement | null) => {
+    heading.current = element;
+    const outer: Ref<HTMLHeadingElement> = headingRef;
+    if (typeof outer === 'function') outer(element);
+    else if (outer) outer.current = element;
+  };
   const [openKey, setOpenKey] = useState<string | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const apiFilter = apiRecordFilter(filter);
@@ -92,6 +99,33 @@ export const ExecutionRecords = forwardRef<HTMLHeadingElement, ExecutionRecordsP
     lastMark.current = progressMark;
     void queryClient.invalidateQueries({ queryKey: executionRecordListsKey(execution.id) });
   }, [progressMark, execution.id, queryClient]);
+
+  // "Carregar mais registros" goes away on the last page, with the focus on it: the focus goes to the title of the table
+  // instead of falling to the `body`.
+  // Only when the focus was on that button: a change of filter that ends the pages does not take the focus (nor the scroll) away.
+  const hasNextPage = list.hasNextPage;
+  const hadNextPage = useRef(hasNextPage);
+  const moreFocused = useRef(false);
+  useEffect(() => {
+    const lost = hadNextPage.current && !hasNextPage;
+    hadNextPage.current = hasNextPage;
+    if (!lost) return;
+    const hadFocus = moreFocused.current;
+    moreFocused.current = false;
+    if (hadFocus && document.activeElement === document.body) heading.current?.focus();
+  }, [hasNextPage]);
+
+  // The change of filter or of page is announced by a region that is always there, so the screen reader hears it even when the
+  // table has nothing to show (the status of the table itself is not a live region).
+  const announcement = noDataError
+    ? 'Não foi possível carregar os registros'
+    : list.isPending || list.isPlaceholderData
+      ? ''
+      : records && records.length > 0
+        ? recordsSummary(records.length, hasNextPage, filtered)
+        : records
+          ? 'Nenhum registro'
+          : '';
 
   function clearFilters() {
     onFilterChange(NO_RECORDS_FILTER);
@@ -162,6 +196,14 @@ export const ExecutionRecords = forwardRef<HTMLHeadingElement, ExecutionRecordsP
     },
   ];
 
+  // The API refused the filter chosen: trying again with it changes nothing, so it also offers the unfiltered records.
+  const invalidFilter = filtered && list.error instanceof ApiError && list.error.code === 'invalid_data';
+  const defaultFilterButton = (
+    <Button size="small" onClick={clearFilters}>
+      Ver as divergências
+    </Button>
+  );
+
   const clearButton = (
     <Button size="small" onClick={clearFilters}>
       Limpar filtros
@@ -171,13 +213,17 @@ export const ExecutionRecords = forwardRef<HTMLHeadingElement, ExecutionRecordsP
   return (
     <section className="fc-records" aria-labelledby={titleId}>
       <div className="fc-records-top">
-        <h2 id={titleId} ref={headingRef} tabIndex={-1} className={`fc-text ${textClasses({ variant: 'heading-16' })} fc-records-title`}>
+        <h2 id={titleId} ref={setHeading} tabIndex={-1} className={`fc-text ${textClasses({ variant: 'heading-16' })} fc-records-title`}>
           Registros
         </h2>
         <Text as="p" variant="label-13" emphasis="secondary">
           {records && records.length > 0 ? recordsSummary(records.length, list.hasNextPage, filtered) : 'Na ordem de leitura do lote'}
         </Text>
       </div>
+
+      <p role="status" className="fc-visually-hidden fc-records-status">
+        {announcement}
+      </p>
 
       <div className="fc-records-filters" role="group" aria-label="Filtros dos registros">
         <Select
@@ -217,9 +263,12 @@ export const ExecutionRecords = forwardRef<HTMLHeadingElement, ExecutionRecordsP
               type="error"
               title="Não foi possível carregar os registros"
               actions={
-                <Button size="small" loading={list.isFetching} onClick={() => void list.refetch()}>
-                  Tentar de novo
-                </Button>
+                <>
+                  <Button size="small" loading={list.isFetching} onClick={() => void list.refetch()}>
+                    Tentar de novo
+                  </Button>
+                  {invalidFilter ? defaultFilterButton : null}
+                </>
               }
             >
               {recordsErrorMessage(noDataError)}
@@ -258,16 +307,19 @@ export const ExecutionRecords = forwardRef<HTMLHeadingElement, ExecutionRecordsP
                 Recarregar registros
               </Button>
             ) : (
-              <Button size="small" loading={list.isFetching} onClick={() => void (list.isFetchNextPageError ? list.fetchNextPage() : list.refetch())}>
-                Tentar de novo
-              </Button>
+              <>
+                <Button size="small" loading={list.isFetching} onClick={() => void (list.isFetchNextPageError ? list.fetchNextPage() : list.refetch())}>
+                  Tentar de novo
+                </Button>
+                {invalidFilter ? defaultFilterButton : null}
+              </>
             )
           }
         >
           {recordsErrorMessage(list.error)}
         </Notice>
       ) : list.hasNextPage ? (
-        <div className="fc-records-more">
+        <div className="fc-records-more" onFocus={() => (moreFocused.current = true)} onBlur={() => (moreFocused.current = false)}>
           <Button loading={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>
             Carregar mais registros
           </Button>

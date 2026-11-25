@@ -226,6 +226,17 @@ describe('Execuções no casca, por papel', () => {
     expect(window.location.pathname).toBe(`/executions/${RUNNING.id}`);
   });
 
+  it('no módulo, o painel aberto pela lista do workflow volta para a lista de Execuções, com o rótulo dela', async () => {
+    window.history.replaceState(null, '', `/workflows/${WORKFLOW_ID}/executions`);
+    simulateApiWith(OPERATOR);
+    const { user } = renderScreen();
+    await user.click(await screen.findByRole('button', { name: /Pontuação de exemplo, execução 6a7b8c9d/ }));
+    expect(window.location.pathname).toBe(`/executions/${RUNNING.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Voltar para execuções' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/executions'));
+  });
+
   it('o botão Ver execuções da Visão geral abre a lista do workflow, e o voltar leva à Visão geral', async () => {
     simulateApiWith(OPERATOR);
     const { user } = renderScreen({ navigation: 'memory', token: 'embed', screen: 'workflows' });

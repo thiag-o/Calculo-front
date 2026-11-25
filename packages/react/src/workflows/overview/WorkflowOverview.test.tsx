@@ -553,3 +553,48 @@ describe('Visão geral do workflow: execuções', () => {
     expect(screen.queryByRole('button', { name: 'Ver execuções' })).not.toBeInTheDocument();
   });
 });
+
+describe('Visão geral do workflow: nota de sobreposição', () => {
+  const OVERLAP = {
+    id: '6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c01',
+    status: 'completed',
+    created_at: '2026-11-01T05:00:00Z',
+    finished_at: '2026-11-01T05:09:30Z',
+    triggered_by: { id: 'b1b2c3d4-0000-4000-8000-000000000002', name: 'Maria Souza' },
+    schedule: null,
+  };
+
+  it('a execução da nota de "este escopo já foi entregue" abre o painel dela, com executions.view', async () => {
+    api = simulateApi(['workflows.view', 'executions.view', 'executions.trigger']);
+    api.respond(DETAIL, json(SCORING));
+    api.respond(`GET /v1/workflows/${SCORING.id}/draft`, json(savedDraftOf(SCORING.id)));
+    api.respond(`POST /v1/workflows/${SCORING.id}/executions`, problem(409, 'scope_already_delivered', { overlapping: [OVERLAP] }));
+    const onOpenExecution = vi.fn();
+    const { user } = renderOverview({ onOpenExecution, onOpenExecutions: vi.fn() });
+
+    await user.click(await screen.findByRole('button', { name: 'Executar lote' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Executar lote' });
+    await within(dialog).findByText(/revisão 3/);
+    await user.click(within(dialog).getByRole('button', { name: 'Executar lote' }));
+    await user.click(await within(dialog).findByRole('button', { name: /Abrir a execução de/ }));
+
+    expect(onOpenExecution).toHaveBeenCalledWith(OVERLAP.id);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('sem executions.view, a nota lista as execuções sem link (o painel não abriria)', async () => {
+    api = simulateApi(['workflows.view', 'executions.trigger']);
+    api.respond(DETAIL, json(SCORING));
+    api.respond(`GET /v1/workflows/${SCORING.id}/draft`, json(savedDraftOf(SCORING.id)));
+    api.respond(`POST /v1/workflows/${SCORING.id}/executions`, problem(409, 'scope_already_delivered', { overlapping: [OVERLAP] }));
+    const { user } = renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions: vi.fn() });
+
+    await user.click(await screen.findByRole('button', { name: 'Executar lote' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Executar lote' });
+    await within(dialog).findByText(/revisão 3/);
+    await user.click(within(dialog).getByRole('button', { name: 'Executar lote' }));
+
+    expect(await within(dialog).findByText('Este escopo já foi entregue')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: /Abrir a execução de/ })).not.toBeInTheDocument();
+  });
+});

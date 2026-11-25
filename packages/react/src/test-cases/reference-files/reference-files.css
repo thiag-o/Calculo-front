@@ -49,7 +49,7 @@
 }
 
 .fc-reference-wrap {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .fc-reference-number {

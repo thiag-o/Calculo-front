@@ -31,7 +31,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 /** The catalog (datasets and their variables) and the editor's routes (analysis without problems, the save). */
-function simulateApi() {
+function simulateApi({ analysisPending = false }: { analysisPending?: boolean } = {}) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (request: Request) => {
@@ -39,7 +39,10 @@ function simulateApi() {
       if (request.method === 'GET' && url.pathname === '/v1/datasets') return json({ items: DATASETS });
       const variables = /^\/v1\/datasets\/([^/]+)\/variables$/.exec(url.pathname);
       if (request.method === 'GET' && variables) return json({ items: VARIABLES[variables[1]!] ?? [] });
-      if (url.pathname.endsWith('/draft/analysis')) return json({ problems: [], symbols: [], dependencies: [], order: [], groups: [] });
+      // With `analysisPending` the analysis of a change never comes back: what shows is what the screen decides by itself.
+      if (url.pathname.endsWith('/draft/analysis')) {
+        return analysisPending ? new Promise<Response>(() => {}) : json({ problems: [], symbols: [], dependencies: [], order: [], groups: [] });
+      }
       if (request.method === 'PUT' && url.pathname.endsWith('/draft')) {
         const body = JSON.parse(await request.clone().text());
         return json({ ...exampleDraft(), revision: 4, definition: body.definition });
@@ -210,6 +213,46 @@ describe('filtros da consulta', () => {
     await user.paste('A');
     expect(currentDefinition().parameters[1]!.allowed_values).toMatchObject({ filters: [{}, { values: ['"A"'] }] });
   });
+
+  it('o limite de 20 filtros fala da consulta, não da fonte', async () => {
+    simulateApi();
+    const filters = Array.from({ length: 20 }, () => ({ variable_id: variableId(PRODUTOS, 'codigo'), operator: '=', values: ['"A"'] })) satisfies Schemas['SourceFilter'][];
+    renderPanel({ draft: draftWith([parameter({ name: 'categoria', allowed_values: { ...QUERY, filters } })]) });
+
+    const group = await screen.findByRole('group', { name: 'Filtros' }, SLOW);
+    expect(within(group).getByRole('button', { name: 'Incluir filtro' })).toHaveAccessibleDescription('A consulta aceita até 20 filtros.');
+  });
+
+  it('o @ recusado continua no campo, com o motivo, quando outra mudança do rascunho chega', async () => {
+    simulateApi();
+    const draft = draftWith([
+      parameter({ name: 'periodo', type: 'period' }),
+      parameter({
+        name: 'categoria',
+        allowed_values: { ...QUERY, filters: [{ variable_id: variableId(PRODUTOS, 'vigencia_inicio'), operator: '=', values: [''] }] },
+      }),
+    ]);
+    const { user } = renderPanel({ draft });
+
+    const filters = await screen.findByRole('group', { name: 'Filtros' }, SLOW);
+    await user.click(within(filters).getByRole('button', { name: 'Incluir filtro' }));
+    const value = within(filters).getByRole('textbox', { name: 'Valor (filtro 2)' });
+    await user.click(value);
+    await user.paste('@periodo');
+    expect(value).toHaveAccessibleDescription(expect.stringContaining(QUERY_PARAMETER_REFUSAL));
+
+    // Another field of the draft changes (a new definition) and, with it, the analysis comes back: the refusal stays.
+    const description = screen.getByRole('textbox', { name: 'Descrição (periodo)' });
+    await user.click(description);
+    await user.paste('Mês fechado');
+    await user.tab();
+    await waitFor(() => expect(currentDefinition().parameters[0]!.description).toBe('Mês fechado'));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const again = within(await screen.findByRole('group', { name: 'Filtros' })).getByRole('textbox', { name: 'Valor (filtro 2)' });
+    expect(again).toHaveValue('@periodo');
+    expect(again).toHaveAccessibleDescription(expect.stringContaining(QUERY_PARAMETER_REFUSAL));
+  });
 });
 
 describe('problemas da consulta no campo certo', () => {
@@ -282,5 +325,120 @@ describe('só leitura', () => {
     expect(within(filterGroup).getByRole('button', { name: 'Incluir filtro' })).toHaveAttribute('aria-disabled', 'true');
     expect(within(filterGroup).getByRole('combobox', { name: 'Variável (filtro 1)' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: /Alerta de campos vazios/ })).toBeDisabled();
+  });
+});
+
+describe('seletor Nenhum | Lista | Consulta: só a escolha confirmada grava', () => {
+  it('as setas só movem o foco: nada vai ao rascunho nem o foco sai do seletor', async () => {
+    simulateApi();
+    const { user } = renderPanel({ draft: draftWith([parameter({ name: 'categoria' })]) });
+
+    const kinds = screen.getByRole('radiogroup', { name: 'Valores permitidos (categoria)' });
+    const none = within(kinds).getByRole('radio', { name: 'Nenhum' });
+    const list = within(kinds).getByRole('radio', { name: 'Lista' });
+    none.focus();
+    await user.keyboard('{ArrowRight}');
+
+    expect(list).toHaveFocus();
+    expect(none).toHaveAttribute('aria-checked', 'true');
+    expect(allowed()).toBeNull();
+    expect(screen.queryByRole('textbox', { name: /Valor permitido 1/ })).not.toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
+    expect(within(kinds).getByRole('radio', { name: 'Consulta' })).toHaveFocus();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.keyboard('{Home}');
+    expect(none).toHaveFocus();
+    expect(allowed()).toBeNull();
+
+    await user.keyboard('{ArrowRight}{Enter}');
+    expect(list).toHaveAttribute('aria-checked', 'true');
+    expect(allowed()).toEqual(['']);
+  });
+
+  it('as setas não abrem a confirmação de trocar a Lista pela Consulta', async () => {
+    simulateApi();
+    const { user } = renderPanel({ draft: draftWith([parameter({ name: 'categoria', allowed_values: ['"A"'] })]) });
+
+    const kinds = screen.getByRole('radiogroup', { name: 'Valores permitidos (categoria)' });
+    within(kinds).getByRole('radio', { name: 'Lista' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(within(kinds).getByRole('radio', { name: 'Consulta' })).toHaveFocus();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(allowed()).toEqual(['"A"']);
+  });
+});
+
+describe('marcas de problema velhas da consulta (ADR 0044)', () => {
+  it('a marca da variável some quando a variável muda, sem esperar a análise', async () => {
+    simulateApi({ analysisPending: true });
+    const draft = draftWith(
+      [parameter({ name: 'loja', allowed_values: { dataset_id: PRODUTOS, variable_id: variableId(PRODUTOS, 'estoque'), filters: [] } })],
+      [problem('allowed_values_type_mismatch', 'A variável dos valores permitidos de @loja não é do tipo texto.', 'parameters[0].allowed_values.variable_id')],
+    );
+    const { user } = renderPanel({ draft });
+
+    const variable = await screen.findByRole('combobox', { name: 'Variável (loja)' }, SLOW);
+    expect(variable).toHaveAccessibleDescription(expect.stringContaining('não é do tipo texto'));
+
+    await choose(user, 'Variável (loja)', 'codigo');
+    expect(allowed()).toMatchObject({ variable_id: variableId(PRODUTOS, 'codigo') });
+    expect(screen.getByRole('combobox', { name: 'Variável (loja)' })).not.toHaveAccessibleDescription(expect.stringContaining('não é do tipo texto'));
+  });
+
+  it('a marca do dataset some quando o dataset muda, sem esperar a análise', async () => {
+    simulateApi({ analysisPending: true });
+    const draft = draftWith(
+      [parameter({ name: 'sumido', allowed_values: { dataset_id: '7b1e4c2a-0d3f-4a5b-8c6d-1e2f3a4b5c99', variable_id: variableId(PRODUTOS, 'codigo'), filters: [] } })],
+      [problem('unknown_dataset', 'O dataset dos valores permitidos de @sumido não existe mais no catálogo.', 'parameters[0].allowed_values.dataset_id')],
+    );
+    const { user } = renderPanel({ draft });
+
+    const swap = await screen.findByRole('button', { name: 'Trocar dataset (sumido)' });
+    expect(swap).toHaveAccessibleDescription(expect.stringContaining('não existe mais no catálogo'));
+
+    await user.click(swap);
+    await user.click(await screen.findByRole('button', { name: /^Produtos Tabela ou view/ }, SLOW));
+    await choose(user, 'Variável (sumido)', 'codigo');
+    expect(allowed()).toMatchObject({ dataset_id: PRODUTOS });
+    expect(await screen.findByRole('button', { name: 'Trocar dataset (sumido)' })).not.toHaveAccessibleDescription(
+      expect.stringContaining('não existe mais no catálogo'),
+    );
+  });
+});
+
+describe('problemas dos valores permitidos enquanto se escolhe a consulta', () => {
+  it('o problema da lista continua na tela até a variável ser escolhida', async () => {
+    simulateApi();
+    const draft = draftWith(
+      [parameter({ name: 'categoria', allowed_values: ['"A"'] })],
+      [problem('invalid_allowed_value', 'Os valores permitidos de @categoria têm um valor que não serve.', 'parameters[0].allowed_values')],
+    );
+    const { user } = renderPanel({ draft });
+
+    const kinds = screen.getByRole('radiogroup', { name: 'Valores permitidos (categoria)' });
+    expect(screen.getByText('Os valores permitidos de @categoria têm um valor que não serve.')).toBeVisible();
+    await user.click(within(kinds).getByRole('radio', { name: 'Consulta' }));
+    await user.click(within(await screen.findByRole('dialog', { name: 'Usar consulta' })).getByRole('button', { name: 'Usar consulta' }));
+
+    expect(await screen.findByText('Os valores permitidos de @categoria têm um valor que não serve.')).toBeVisible();
+    expect(screen.queryByRole('textbox', { name: /Valor permitido 1/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('foco adiado ao desmontar', () => {
+  it('o quadro à espera do foco de "Incluir valor permitido" é cancelado com a seção', async () => {
+    simulateApi();
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback));
+    const cancelled: number[] = [];
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => void cancelled.push(id));
+    const { user, unmount } = renderPanel({ draft: draftWith([parameter({ name: 'categoria' })]) });
+
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Valores permitidos (categoria)' })).getByRole('radio', { name: 'Lista' }));
+    expect(frames).toHaveLength(1);
+    unmount();
+
+    expect(cancelled).toEqual([1]);
   });
 });

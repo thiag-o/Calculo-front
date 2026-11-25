@@ -1,6 +1,6 @@
 // The "Fontes" section of the panel (E7-21): the counts of each Fonte block in the calculation, with dot + word, as in the
 // Prévia tab of the editor (F66). The dot is the status those records get, by the policy of the block in the frozen
-// definition; without the definition (no permission to read it, or it failed), a count that is not zero stays neutral.
+// definition; without the definition (no permission to read it, or it failed), a count that is not zero is a warning.
 import { useMemo } from 'react';
 import type { Schemas } from '../../api';
 import { Status, Text, type StatusTone } from '../../design-system';
@@ -35,15 +35,21 @@ function linearSources(nodes: readonly DefinitionNode[], found = new Map<string,
   return found;
 }
 
-/** No line with "Gerar erro" is an error, with "Manter vazio" a warning, with "Descartar" ignored. */
+/**
+ * No line with "Gerar erro" is an error, with "Manter vazio" a warning, with "Descartar" ignored. Without the policy (the
+ * person cannot read the frozen definition), the dot still follows the value: a count above zero is a warning (D111).
+ */
 function noMatchTone(count: number, policy: Schemas['NoMatchPolicy'] | undefined): StatusTone {
-  if (count === 0 || policy === undefined || policy === 'discard') return 'gray';
+  if (count === 0) return 'gray';
+  if (policy === undefined) return 'amber';
+  if (policy === 'discard') return 'gray';
   return policy === 'keep_null' ? 'amber' : 'red';
 }
 
-/** More than one line with "Gerar erro" is an error and with "Aceitar a primeira linha" a warning. */
+/** More than one line with "Gerar erro" is an error and with "Aceitar a primeira linha" a warning; without the policy, a warning. */
 function multipleRowsTone(count: number, policy: Schemas['MultipleRowsPolicy'] | undefined): StatusTone {
-  if (count === 0 || policy === undefined) return 'gray';
+  if (count === 0) return 'gray';
+  if (policy === undefined) return 'amber';
   return policy === 'accept_first' ? 'amber' : 'red';
 }
 

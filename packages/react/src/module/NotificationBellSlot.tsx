@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { NotificationBell } from '../notifications';
-import { executionPath, schedulesPath, type ScreenDefinition } from './screens';
+import { executionPath, openedFrom, schedulesPath, type ScreenDefinition } from './screens';
 
 /** The bell is for whoever can follow the executions (E7-27): without `executions.view` the module has no Execuções screen. */
 export function hasNotificationBell(screens: readonly ScreenDefinition[]): boolean {
@@ -15,11 +15,13 @@ export function hasNotificationBell(screens: readonly ScreenDefinition[]): boole
  */
 export function NotificationBellSlot({ screens }: { screens: readonly ScreenDefinition[] }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   if (!hasNotificationBell(screens)) return null;
   const workflowsAllowed = screens.some((screen) => screen.id === 'workflows');
   return (
     <NotificationBell
-      onOpenExecution={(id) => void navigate(executionPath(id))}
+      // The panel goes back to the screen the alert was opened from.
+      onOpenExecution={(id) => void navigate(executionPath(id), { state: openedFrom(pathname) })}
       onOpenSchedules={(workflowId) => void navigate(schedulesPath(workflowId, workflowsAllowed))}
     />
   );

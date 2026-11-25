@@ -1,3 +1,5 @@
+import { useLayoutEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Tabs } from '../../design-system';
 import { useSessionGeneration } from '../../session';
@@ -31,9 +33,17 @@ export function EmbeddedLayout({ screens }: EmbeddedLayoutProps) {
   // The open tab is the one whose route contains the current address (a section tab stays open on any of its screens).
   const open = tabs.find((tab) => pathname === `/${tab.path}` || pathname.startsWith(`/${tab.path}/`));
   const withBell = hasNotificationBell(screens);
+  // The bell goes into the bar of the tabs (a flex row, the bell at its end), so a narrow module leaves it room instead of
+  // having it over the tabs. The bar belongs to `Tabs`, which has no slot for it: the bell is drawn into the bar by a portal.
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  const [bar, setBar] = useState<Element | null>(null);
+  const hasTabs = tabs.length > 0;
+  useLayoutEffect(() => {
+    setBar(hasTabs ? (root?.querySelector('.fc-tabs-bar') ?? null) : null);
+  }, [root, hasTabs]);
 
   return (
-    <section className="fc-embedded" aria-label="Fluxo de Cálculo">
+    <section ref={setRoot} className="fc-embedded" aria-label="Fluxo de Cálculo">
       <Tabs
         label="Telas do Fluxo de Cálculo"
         items={tabs}
@@ -43,21 +53,22 @@ export function EmbeddedLayout({ screens }: EmbeddedLayoutProps) {
           if (tab) void navigate(`/${tab.path}`);
         }}
         className="fc-embedded-tabs"
-        listClassName={withBell ? 'fc-embedded-tabs-list fc-embedded-tabs-list-with-bell' : 'fc-embedded-tabs-list'}
+        listClassName="fc-embedded-tabs-list"
         panelClassName="fc-module-content fc-embedded-panel"
       >
         <div className="fc-module-page">
           <Outlet key={generation} />
         </div>
       </Tabs>
-      {/* The bell (E7-27) at the end of the tab row, over the room the list leaves for it. */}
-      {withBell ? (
-        <div className="fc-embedded-bell">
-          <div className="fc-embedded-bell-slot">
-            <NotificationBellSlot screens={screens} />
-          </div>
-        </div>
-      ) : null}
+      {/* The bell (E7-27) at the end of the tab row, after the tabs in the Tab order. */}
+      {withBell && bar
+        ? createPortal(
+            <div className="fc-embedded-bell">
+              <NotificationBellSlot screens={screens} />
+            </div>,
+            bar,
+          )
+        : null}
     </section>
   );
 }

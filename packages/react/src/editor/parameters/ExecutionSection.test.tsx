@@ -69,6 +69,15 @@ describe('Execução: alerta de campos vazios da pré-validação', () => {
     expect(screen.getByRole('textbox', { name: ALERT })).toHaveAccessibleDescription(expect.stringContaining('O alerta de campos vazios passa de 100%.'));
   });
 
+  it('o problema do campo aparece só nele, não repetido no topo do painel do workflow', () => {
+    simulateApi();
+    renderPanel({
+      draft: exampleDraft({ problems: [problem('definition_invalid', 'O alerta de campos vazios passa de 100%.', 'settings.pre_validation_alert_percent')] }),
+    });
+
+    expect(screen.getAllByText('O alerta de campos vazios passa de 100%.')).toHaveLength(1);
+  });
+
   it('só leitura: desabilitado, com o motivo', () => {
     simulateApi();
     renderPanel({ readOnly: true });

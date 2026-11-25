@@ -64,6 +64,8 @@ export function useScheduleDraft(workflowId: string) {
     queryFn: ({ signal }) => dataOrError(client.GET('/v1/workflows/{id}/draft', { params: { path: { id: workflowId } }, signal })),
     gcTime: 0,
     staleTime: 0,
+    // The dialog that reads it is open on the revision it showed: a refresh on focus would change it under the person's hands.
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -103,6 +105,9 @@ export function useCreateSchedule(workflowId: string) {
   });
 }
 
+/** The errors of a change that say the schedule the screen holds is out of date. */
+const REFRESH_LISTS_CODES: ReadonlySet<string> = new Set(['not_found', 'draft_conflict', 'draft_has_problems', 'schedule_name_taken']);
+
 /**
  * Changes a schedule (`PUT /v1/schedules/{id}`), replacing every field: the dialog, the "Ativo" switch and "Usar a revisão
  * atual" all send the whole body. The schedule returned goes into the loaded lists in place, and they are fetched again.
@@ -122,7 +127,9 @@ export function useUpdateSchedule() {
     },
     onError: (error, _variables, mark) => {
       if (!isSameSessionData(queryClient, mark)) return;
-      if (error instanceof ApiError && error.code === 'not_found') void queryClient.invalidateQueries({ queryKey: SCHEDULE_LISTS_KEY });
+      // The schedule on screen is older than the one in the API (removed, re-frozen or renamed by someone else): the lists are
+      // read again, and what shows the schedule takes it from them, so sending it again does not repeat the conflict.
+      if (error instanceof ApiError && REFRESH_LISTS_CODES.has(error.code)) void queryClient.invalidateQueries({ queryKey: SCHEDULE_LISTS_KEY });
     },
   });
 }

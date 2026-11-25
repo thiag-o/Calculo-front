@@ -171,10 +171,11 @@ function fieldErrors(error: unknown): { name?: string; recurrence: RecurrenceErr
   for (const [field, message] of Object.entries(error.fields)) {
     if (field === 'name') name = message;
     else if (field.startsWith('recurrence') && field.includes('weekdays')) recurrence.weekdays = message;
+    else if (/^recurrence\.(?:\w+\.)?day$/.test(field)) recurrence.day = message;
     else if (field.startsWith('recurrence')) recurrence.time = message;
     else return null;
   }
-  return name || recurrence.time || recurrence.weekdays ? { name, recurrence } : null;
+  return name || recurrence.time || recurrence.weekdays || recurrence.day ? { name, recurrence } : null;
 }
 
 /** The body of the dialog once the saved draft is read: it owns what is typed (the parameters start from the declaration). */
@@ -211,7 +212,7 @@ function ScheduleForm({
   const moved = schedule !== undefined && draft.revision !== frozen;
   const revision = schedule && !useCurrent ? schedule.draft_revision : draft.revision;
   const problems = draft.problems.length;
-  const noteError = error && fieldErrors(error) === null && !isParameterError(error) ? saveErrorMessage(error) : null;
+  const noteError = error && fieldErrors(error) === null && !isParameterError(error) ? saveErrorMessage(error, schedule !== undefined) : null;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -250,6 +251,7 @@ function ScheduleForm({
   const shownRecurrenceErrors: RecurrenceErrors = {
     time: recurrenceErrors.time ?? apiFieldErrors?.recurrence.time,
     weekdays: recurrenceErrors.weekdays ?? apiFieldErrors?.recurrence.weekdays,
+    day: apiFieldErrors?.recurrence.day,
   };
 
   return (

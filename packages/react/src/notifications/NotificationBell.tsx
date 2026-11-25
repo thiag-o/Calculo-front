@@ -34,6 +34,8 @@ export function NotificationBell({ onOpenExecution, onOpenSchedules }: Notificat
   const unread = list.data?.unread_count;
 
   function changeOpen(next: boolean) {
+    // Without the module root there is nowhere to draw the popover (ADR 0011): it stays closed, never an empty "open".
+    if (next && !portal) return;
     setOpen(next);
     // A failed "Marcar todos como lidos" is not shown again on the next opening.
     if (!next) markAll.reset();
@@ -47,7 +49,7 @@ export function NotificationBell({ onOpenExecution, onOpenSchedules }: Notificat
   }
 
   return (
-    <Popover.Root open={open} onOpenChange={changeOpen}>
+    <Popover.Root open={open && portal !== null} onOpenChange={changeOpen}>
       <Popover.Trigger asChild>
         <button type="button" className="fc-notifications-bell" aria-label={bellLabel(unread)}>
           <BellIcon />

@@ -1,11 +1,18 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Admin, ADMIN_TAB_PERMISSIONS, type AdminTab } from '../admin';
 import { Audit } from '../audit';
 import { Catalog, CATALOG_PERMISSION, type CatalogLocation, type CatalogTab } from '../catalog';
 import { Button } from '../design-system';
 import { Editor, UnitRunResult, UnsavedChangesNotice } from '../editor';
-import { ExecutionList, ExecutionPanel, ScheduleList, type RenderRecordTrace } from '../executions';
+import {
+  ExecutionList,
+  ExecutionPanel,
+  NO_EXECUTION_LIST_CHOICES,
+  ScheduleList,
+  type ExecutionListChoices,
+  type RenderRecordTrace,
+} from '../executions';
 import { Home } from '../home';
 import { useSession } from '../session';
 import { TestCases } from '../test-cases';
@@ -174,7 +181,7 @@ export function RoutedWorkflows({ executions = false }: { executions?: boolean }
   const navigate = useNavigate();
   const canViewExecutions = useSession().hasPermission(EXECUTIONS_VIEW_PERMISSION);
   // The panel remembers where it was opened from, so the standalone screen can go back there.
-  const openExecution = executions ? (id: string) => void navigate(executionPath(id), { state: { from: pathname } }) : undefined;
+  const openExecution = executions ? (id: string) => void navigate(executionPath(id), { state: openedFrom(pathname) }) : undefined;
   // `/workflows/:id/tests` is the module's own screen, not the workflows' one: `workflows` does not import `test-cases`.
   const [, , testsId, segment] = pathname.split('/');
   if (executions && openExecution && testsId && segment === TESTS_SEGMENT) {
@@ -216,14 +223,35 @@ export function WorkflowsWithExecutions() {
   return pathname.startsWith(`/${EXECUTIONS_PATH}`) && canViewExecutions ? <RoutedExecutions standalone /> : <RoutedWorkflows executions />;
 }
 
-/** Where the panel was opened from (only inside the workflows: the standalone `<Workflows>` goes back there). */
-function panelOrigin(state: unknown): string | null {
+/**
+ * Where the panel was opened from: an address of the module (`state.from`, set by whoever opens the panel). In the module the
+ * panel goes back to the Agendamentos tab or to the screen of the bell; the workflow screens and another panel
+ * (a loop A, B, A) do not count: it goes to its own list. The standalone `<Workflows>` goes back to the workflow screens.
+ */
+function panelOrigin(state: unknown, standalone: boolean): string | null {
   const from = typeof state === 'object' && state !== null ? (state as { from?: unknown }).from : undefined;
-  return typeof from === 'string' && from.startsWith(`/${WORKFLOWS_PATH}`) ? from : null;
+  if (typeof from !== 'string' || !from.startsWith('/') || from.startsWith('//') || isPanelPath(from)) return null;
+  if (standalone) return from.startsWith(`/${WORKFLOWS_PATH}`) ? from : null;
+  return from.startsWith(`/${WORKFLOWS_PATH}`) ? null : from;
 }
 
-/** The "Voltar" of the standalone panel, by the screen it goes back to. */
+/** `/executions/:id`: the panel of one execution (not the list nor the Agendamentos tab). */
+function isPanelPath(path: string): boolean {
+  const [, root, id] = path.split('/');
+  return root === EXECUTIONS_PATH && Boolean(id) && id !== SCHEDULES_SEGMENT;
+}
+
+/** The `state` that tells the panel where it was opened from. */
+export function openedFrom(pathname: string): { from: string } {
+  return { from: pathname };
+}
+
+/** The "Voltar" of the panel, by the screen it goes back to. */
 function originLabel(from: string): string {
+  if (from.startsWith(`/${EXECUTIONS_PATH}/${SCHEDULES_SEGMENT}`)) return 'Voltar para os agendamentos';
+  // The standalone `<Executions>` has its list at the root of the in-memory router.
+  if (from === '/' || from === `/${EXECUTIONS_PATH}`) return 'Voltar para execuções';
+  if (!from.startsWith(`/${WORKFLOWS_PATH}`)) return 'Voltar';
   if (from.endsWith(`/${EDITOR_SEGMENT}`)) return 'Voltar para o editor';
   if (from.endsWith(`/${TESTS_SEGMENT}`)) return 'Voltar para os testes';
   if (from.includes(`/${EXECUTIONS_SEGMENT}`)) return 'Voltar para as execuções do workflow';
@@ -247,7 +275,9 @@ export function RoutedExecutions({ standalone = false }: { standalone?: boolean 
   const { pathname, state } = useLocation();
   const navigate = useNavigate();
   const id = executionId(pathname);
-  const openExecution = (opened: string) => void navigate(executionPath(opened));
+  // The filters of the list stay here, not in the list: the list leaves the screen with the Agendamentos tab (and with the panel).
+  const [choices, setChoices] = useState<ExecutionListChoices>(NO_EXECUTION_LIST_CHOICES);
+  const openExecution = (opened: string) => void navigate(executionPath(opened), { state: openedFrom(pathname) });
   if (id === null || (!standalone && id === SCHEDULES_SEGMENT)) {
     const tab = id === null ? 'executions' : 'schedules';
     return (
@@ -255,15 +285,19 @@ export function RoutedExecutions({ standalone = false }: { standalone?: boolean 
         tab={tab}
         onTabChange={(next) => void navigate(next === 'schedules' ? `/${EXECUTIONS_PATH}/${SCHEDULES_SEGMENT}` : `/${EXECUTIONS_PATH}`)}
       >
-        {tab === 'schedules' ? <ScheduleList onOpenExecution={openExecution} /> : <ExecutionList onOpenExecution={openExecution} />}
+        {tab === 'schedules' ? (
+          <ScheduleList onOpenExecution={openExecution} />
+        ) : (
+          <ExecutionList onOpenExecution={openExecution} choices={choices} onChoicesChange={setChoices} />
+        )}
       </ExecutionsTabs>
     );
   }
-  const origin = standalone ? (panelOrigin(state) ?? `/${WORKFLOWS_PATH}`) : `/${EXECUTIONS_PATH}`;
+  const origin = panelOrigin(state, standalone) ?? (standalone ? `/${WORKFLOWS_PATH}` : `/${EXECUTIONS_PATH}`);
   return (
     <div className="fc-module-executions">
       <Button variant="ghost" size="small" className="fc-module-executions-back" onClick={() => void navigate(origin)}>
-        {standalone ? originLabel(origin) : 'Voltar para execuções'}
+        {originLabel(origin)}
       </Button>
       {/* The overlapped execution opens in the same panel route, keeping where the panel was opened from. */}
       <ExecutionPanel

@@ -84,6 +84,8 @@ const TIME = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 export interface RecurrenceErrors {
   time?: string;
   weekdays?: string;
+  /** The day of the month of a monthly recurrence. */
+  day?: string;
 }
 
 export type RecurrenceReading = { ok: true; recurrence: Recurrence } | { ok: false; errors: RecurrenceErrors };

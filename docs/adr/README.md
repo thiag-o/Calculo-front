@@ -95,9 +95,10 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0073](0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md) | Formulário de parâmetros exige `workflowId`; modo agendamento é o controlador irmão `useScheduleParameterForm` (complementa 0062) | aceita, revisar no checkpoint (corrigida: a F129 usa `useParameterForm`; ver 0078) | 2026-11-25 |
 | [0074](0074-esc-de-combobox-em-dialogo-por-listener-de-captura.md) | Esc de combobox dentro de diálogo Radix: listener nativo em captura na `window` com `preventDefault` | aceita, revisar no checkpoint | 2026-11-25 |
 | [0075](0075-sub-vertical-executions-comparison.md) | Sub-vertical `executions/comparison/` importa `api` e `records`, `detail` importa `comparison`; consulta sob `['executions', id, 'comparison', …]` (complementa 0063 e 0066) | aceita, revisar no checkpoint | 2026-11-25 |
-| [0076](0076-vertical-notifications-com-popover-radix-e-relative-time-de-workflows.md) | Vertical `notifications/` importa `workflows/index.ts` (só `relativeTime`) e usa `@radix-ui/react-popover` | aceita, revisar no checkpoint | 2026-11-25 |
+| [0076](0076-vertical-notifications-com-popover-radix-e-relative-time-de-workflows.md) | Vertical `notifications/` importa `workflows/index.ts` (só `relativeTime`) e usa `@radix-ui/react-popover` | aceita, revisar no checkpoint (complementada por 0079) | 2026-11-25 |
 | [0077](0077-sub-vertical-executions-schedules.md) | Sub-vertical `executions/schedules/`: lista única, chaves sob `['executions','schedules',…]`, datas no fuso do agendamento, paliativos do fuso e da declaração (complementa 0063) | aceita, revisar no checkpoint | 2026-11-25 |
 | [0078](0078-vertical-test-cases-e-path-params-no-upload.md) | Vertical `test-cases/` depende de `executions`, chaves sob `['test-cases', …]` e `pathParams` no `client.upload` (complementa 0035 e 0073) | aceita, revisar no checkpoint | 2026-11-25 |
+| [0079](0079-sino-do-incorporado-entra-na-barra-do-tabs-por-portal.md) | Sino do incorporado entra na barra do `Tabs` por portal e `querySelector('.fc-tabs-bar')`, como paliativo até haver slot de ações (complementa 0076) | aceita, revisar no checkpoint | 2026-11-25 |
 
 ## Pendentes (sem ADR ainda)
 

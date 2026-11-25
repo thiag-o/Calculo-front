@@ -1,4 +1,5 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
+import { useState } from 'react';
 import type { UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -16,7 +17,7 @@ import {
   simulateApi,
   type SimulatedApi,
 } from '../api/executions.test-support';
-import { ExecutionList } from '.';
+import { ExecutionList, NO_EXECUTION_LIST_CHOICES, type ExecutionListChoices } from '.';
 
 const LIST = 'GET /v1/executions';
 const WORKFLOWS = 'GET /v1/workflows';
@@ -542,5 +543,91 @@ describe('Execuções: estados do épico 7, agendada, simulação e modo', () =>
 
     expect(await screen.findByText('Bônus de metas')).toBeInTheDocument();
     expect(listQueries().at(-1)!.getAll('status')).toEqual(['awaiting_decision']);
+  });
+});
+
+describe('Execuções: filtro "Entregue" e filtros que ficam com a tela', () => {
+  it('"Entregue" não traz as simulações "Sem entrega": pede só lotes e esconde a simulação que chegar', async () => {
+    api.respond(
+      LIST,
+      page([completed({ workflow_name: 'Lote primeiro' })]),
+      page([
+        completed({ workflow_name: 'Lote entregue' }),
+        completed({ mode: 'simulation', workflow_name: 'Simulação limpa', output: { available: false, expires_at: null, rows: null } }),
+      ]),
+    );
+    const { user } = renderScreen(<ExecutionList />);
+    await screen.findByText('Lote primeiro');
+
+    await choose(user, 'Status', 'Entregue');
+
+    expect(await screen.findByText('Lote entregue')).toBeInTheDocument();
+    const query = listQueries().at(-1)!;
+    expect(query.getAll('status')).toEqual(['completed']);
+    expect(query.get('mode')).toBe('batch');
+    expect(screen.queryByText('Simulação limpa')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sem entrega')).not.toBeInTheDocument();
+  });
+
+  /** The screen that keeps the filters while the list is not on it (the tenant's Execuções and Agendamentos tabs). */
+  function Tabs() {
+    const [shown, setShown] = useState(true);
+    const [choices, setChoices] = useState<ExecutionListChoices>(NO_EXECUTION_LIST_CHOICES);
+    return (
+      <>
+        <button type="button" onClick={() => setShown((current) => !current)}>
+          Alternar
+        </button>
+        {shown ? <ExecutionList choices={choices} onChoicesChange={setChoices} /> : <p>Agendamentos</p>}
+      </>
+    );
+  }
+
+  it('os filtros não zeram ao sair da lista e voltar', async () => {
+    api.respond(LIST, page([completed()]));
+    const { user } = renderScreen(<Tabs />);
+    await screen.findByText('Entregue');
+    await choose(user, 'Status', 'Abortada');
+    await choose(user, 'Modo', 'Simulações');
+
+    await user.click(screen.getByRole('button', { name: 'Alternar' }));
+    expect(screen.getByText('Agendamentos')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Alternar' }));
+
+    expect(await screen.findByRole('combobox', { name: 'Status' })).toHaveTextContent('Abortada');
+    expect(screen.getByRole('combobox', { name: 'Modo' })).toHaveTextContent('Simulações');
+    await waitFor(() => expect(listQueries().at(-1)!.getAll('status')).toEqual(['aborted']));
+    expect(listQueries().at(-1)!.get('mode')).toBe('simulation');
+  });
+});
+
+describe('Execuções: nota de sobreposição do "Executar lote"', () => {
+  it('as execuções da nota viram links que abrem o painel delas, nas duas ocorrências do botão', async () => {
+    const onOpenExecution = vi.fn();
+    const overlap = {
+      id: '6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c01',
+      status: 'completed',
+      created_at: '2026-11-01T05:00:00Z',
+      finished_at: '2026-11-01T05:09:30Z',
+      triggered_by: { id: 'b1b2c3d4-0000-4000-8000-000000000002', name: 'Maria Souza' },
+      schedule: null,
+    };
+    api.respond(LIST, page([]));
+    api.respond(`GET /v1/workflows/${WORKFLOW_ID}/draft`, json(savedDraft(5)));
+    api.respond(`POST /v1/workflows/${WORKFLOW_ID}/executions`, problem(409, 'scope_already_delivered', { overlapping: [overlap] }));
+    const { user } = renderScreen(<ExecutionList workflowId={WORKFLOW_ID} onOpenExecution={onOpenExecution} />);
+
+    // The empty list has the button twice (header and empty state); each one opens a dialog that links the execution.
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Executar lote' })).toHaveLength(2));
+    for (const index of [0, 1]) {
+      await user.click(screen.getAllByRole('button', { name: 'Executar lote' })[index]!);
+      const dialog = await screen.findByRole('dialog', { name: 'Executar lote' });
+      await screen.findByText(/revisão 5/);
+      await user.click(within(dialog).getByRole('button', { name: 'Executar lote' }));
+      await user.click(await within(dialog).findByRole('button', { name: /Abrir a execução de/ }));
+      expect(onOpenExecution).toHaveBeenLastCalledWith(overlap.id);
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    }
+    expect(onOpenExecution).toHaveBeenCalledTimes(2);
   });
 });

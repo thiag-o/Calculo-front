@@ -66,7 +66,7 @@ function sentProblems(error: ApiError): number {
  * What went wrong when saving a schedule, by `code` (ADR 0008), for the note of the dialog. `schedule_name_taken` goes to
  * the name, `missing_parameter` and `invalid_parameter` to the parameter, and `invalid_data` of a known field to that field.
  */
-export function saveErrorMessage(error: unknown): SaveErrorMessage {
+export function saveErrorMessage(error: unknown, editing = false): SaveErrorMessage {
   const title = 'Não foi possível salvar o agendamento';
   if (!(error instanceof ApiError)) return { title, message: UNKNOWN_MESSAGE };
   switch (error.code) {
@@ -77,6 +77,13 @@ export function saveErrorMessage(error: unknown): SaveErrorMessage {
       };
     case 'draft_conflict': {
       const revision = currentRevision(error);
+      if (editing) {
+        return {
+          title: 'O agendamento mudou',
+          message:
+            'Alguém mudou este agendamento ou o rascunho depois que esta janela abriu. A janela já leu a versão atual: confira os campos e salve de novo.',
+        };
+      }
       return {
         title: 'O rascunho foi salvo de novo',
         message:
@@ -114,6 +121,16 @@ export function changeErrorMessage(error: unknown): string {
       return GONE_MESSAGE;
     case 'no_permission':
       return 'Você não tem permissão para mudar os agendamentos deste workflow. Peça acesso a um Admin.';
+    case 'draft_conflict':
+      return 'O agendamento ou o rascunho mudou depois que a lista foi lida. A lista já foi atualizada: confira o agendamento e tente de novo.';
+    case 'draft_has_problems':
+      return 'O rascunho salvo tem problemas e o agendamento não pode ser mudado agora. Corrija-os no editor e salve antes de tentar de novo.';
+    case 'no_batch_source':
+      return 'O rascunho salvo não tem fonte do lote, e o agendamento executa o lote. Escolha a fonte do lote no painel do workflow e salve.';
+    case 'workflow_busy':
+      return 'O workflow está ocupado com outra mudança. Tente de novo em instantes.';
+    case 'schedule_name_taken':
+      return NAME_TAKEN_MESSAGE;
     default:
       return error.message;
   }

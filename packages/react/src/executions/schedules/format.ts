@@ -16,7 +16,9 @@ function formatIn(timeZone: string | undefined): Intl.DateTimeFormat {
     try {
       format = new Intl.DateTimeFormat('pt-BR', { ...options, ...(timeZone ? { timeZone } : {}) });
     } catch {
-      // A time zone the browser does not know: the user's own.
+      // A time zone the browser does not know: the user's own, and the console says so (the hours would otherwise be wrong
+      // without anyone noticing).
+      console.warn(`O navegador não conhece o fuso ${timeZone}: os horários dos agendamentos aparecem no fuso do navegador.`);
       format = new Intl.DateTimeFormat('pt-BR', options);
     }
     formats.set(key, format);

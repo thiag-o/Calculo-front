@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { useDatasetList } from '../../catalog';
 import { Button, Dialog, DialogClose, FieldMessage, Text } from '../../design-system';
 import type { WorkflowProblem } from '../draft';
-import { SegmentedControl } from '../properties';
+import { ChoiceControl } from './ChoiceControl';
+import { useNextFrame } from './useNextFrame';
 import { AllowedValuesQueryFields, UNKNOWN_DATASET } from './AllowedValuesQueryFields';
 import { LiteralList } from './LiteralList';
 import type { ParameterProblems } from './parameterProblems';
@@ -66,6 +67,7 @@ export function AllowedValuesField({ parameter, analyzed, at, type, problems, up
   const [choosing, setChoosing] = useState(false);
   const [confirming, setConfirming] = useState<'list' | 'query' | null>(null);
   const box = useRef<HTMLFieldSetElement>(null);
+  const nextFrame = useNextFrame();
   const pending = choosing && kind !== 'query';
   const shown: AllowedValuesKind = pending ? 'query' : kind;
   const query = allowedQuery(parameter);
@@ -75,9 +77,15 @@ export function AllowedValuesField({ parameter, analyzed, at, type, problems, up
   const listWhole = problems.allowed.filter(({ spot }) => spot === null).map(({ problem }) => problem);
   const analyzedList = Array.isArray(analyzed?.allowed_values) ? analyzed.allowed_values : null;
 
+  // While the Consulta is being chosen the draft still has the list, and the list is not on screen: its problems show above the
+  // query fields, so none is lost (the ones of a value that was changed since the analysis are not shown, ADR 0044).
+  const leftBehind = problems.allowed
+    .filter(({ spot }) => spot === null || analyzedList?.[spot] === literals[spot])
+    .map(({ problem }) => problem);
+
   /** The first value of a list just started: the next thing to type. */
   function focusFirstValue() {
-    requestAnimationFrame(() => box.current?.querySelector<HTMLElement>('.fc-parameters-values input, .fc-parameters-values button')?.focus());
+    nextFrame(() => box.current?.querySelector<HTMLElement>('.fc-parameters-values input, .fc-parameters-values button')?.focus());
   }
 
   function startList() {
@@ -129,7 +137,7 @@ export function AllowedValuesField({ parameter, analyzed, at, type, problems, up
   return (
     <fieldset ref={box} className="fc-properties-group fc-parameters-allowed">
       <legend className="fc-properties-group-title">Valores permitidos</legend>
-      <SegmentedControl
+      <ChoiceControl
         label="Valores permitidos"
         scope={scope}
         className="fc-parameters-allowed-kind"
@@ -138,6 +146,8 @@ export function AllowedValuesField({ parameter, analyzed, at, type, problems, up
         onChange={choose}
       />
       {shown === 'query' ? (
+        <>
+        {pending ? problemList(leftBehind) : null}
         <AllowedValuesQueryFields
           query={query}
           analyzed={allowedQuery(analyzed)}
@@ -148,6 +158,7 @@ export function AllowedValuesField({ parameter, analyzed, at, type, problems, up
           onWrite={writeQuery}
           onChange={changeQuery}
         />
+        </>
       ) : (
         <LiteralList
           itemLabel="Valor permitido"

@@ -47,13 +47,9 @@ export interface TriggerExecutionDialogProps {
 }
 
 /**
- * "Executar lote" (E6-19): runs the **saved** draft in batch. Reads the saved draft at every opening and shows its revision
- * ("Executa o rascunho salvo (revisão N)…"), the parameters form with the defaults (the relative one by its label) and,
- * while the draft has problems, the button disabled with the reason and "Ver problemas". The `409` of the trigger
- * (`draft_conflict`, `draft_has_problems`, `no_batch_source`) are explained in a note; the `422` of a parameter goes to
- * its field. The `409 scope_already_delivered` (E7-22) becomes a note with the executions of the same scope: "Executar lote"
- * then sends `confirm_overlap: true`, until a parameter changes (the note goes away and the next send asks again). While the trigger is in flight the dialog is locked (Cancelar, Esc, "Fechar" and the click outside do not close it),
- * so the batch never goes out twice. Mount it only while open; needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (dialog portal).
+ * "Executar lote" (E6-19): runs the **saved** draft in batch, with the parameters form. The `409` of the trigger are explained
+ * in a note and the `422` of a parameter goes to its field; `scope_already_delivered` (E7-22) asks to confirm, until a
+ * parameter changes. Locked while the trigger is in flight (ADR 0064). Mount it only while open.
  */
 export function TriggerExecutionDialog({
   workflowId,
@@ -78,8 +74,16 @@ export function TriggerExecutionDialog({
       ? triggerErrorMessage(trigger.error)
       : null;
   // The scope already delivered, tied to the values it was asked with: any change to a parameter drops the note (E7-22).
-  const [overlap, setOverlap] = useState<{ executions: OverlappingExecution[]; values: unknown } | null>(null);
-  const overlapNote = overlap && overlap.values === form.formProps.values ? overlap.executions : null;
+  const [overlap, setOverlap] = useState<OverlappingExecution[] | null>(null);
+  const overlapNote = overlap;
+  // The form says explicitly that a parameter changed: that is what takes the note away, not the identity of its values.
+  const formProps = {
+    ...form.formProps,
+    onChange: (values: Parameters<typeof form.formProps.onChange>[0]) => {
+      setOverlap(null);
+      form.formProps.onChange(values);
+    },
+  };
 
   function openProblems() {
     onClose();
@@ -97,7 +101,6 @@ export function TriggerExecutionDialog({
     trigger.reset();
     const reading = form.read();
     if (!reading.ok) return;
-    const values = form.formProps.values;
     trigger.mutate(
       { revision: draft.revision, parameters: reading.parameters, confirm_overlap: overlapNote !== null },
       {
@@ -109,7 +112,7 @@ export function TriggerExecutionDialog({
           if (!isSameSessionData(queryClient, mark) || form.applyError(error)) return;
           const overlapping = overlappingFrom(error);
           if (overlapping) {
-            setOverlap({ executions: overlapping, values });
+            setOverlap(overlapping);
             return;
           }
           // The saved draft is no longer the one on screen: read it again (new revision, parameters or problems).
@@ -158,7 +161,7 @@ export function TriggerExecutionDialog({
             Corrija-os no editor e salve antes de executar o lote.
           </Notice>
         ) : null}
-        <ParameterForm {...form.formProps} disabled={sending} />
+        <ParameterForm {...formProps} disabled={sending} />
         {overlapNote ? <OverlapNote executions={overlapNote} onOpenExecution={onOpenExecution ? openExecution : undefined} /> : null}
         {/* The problems read again are already in the note above. */}
         {triggerError && !(triggerError.showProblems && problems > 0) ? (

@@ -54,6 +54,14 @@ export function overlappingFrom(error: unknown): OverlappingExecution[] | null {
   return Array.isArray(overlapping) ? overlapping : [];
 }
 
+/** "01/12 às 02:00" (estilos.md §10), in the browser's time zone; the raw text when the date is not valid. */
+export function overlapWhen(iso: string): string {
+  const moment = new Date(iso);
+  if (Number.isNaN(moment.getTime())) return iso;
+  const two = (value: number) => String(value).padStart(2, '0');
+  return `${two(moment.getDate())}/${two(moment.getMonth() + 1)} às ${two(moment.getHours())}:${two(moment.getMinutes())}`;
+}
+
 /** Who started an overlapping execution: the person or, when a schedule did, "Agendada". */
 export function overlapOrigin(execution: OverlappingExecution): string {
   if (execution.triggered_by) return `por ${execution.triggered_by.name}`;

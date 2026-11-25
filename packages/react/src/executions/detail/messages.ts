@@ -68,6 +68,17 @@ export function downloadErrorMessage(error: unknown): string {
   }
 }
 
+/** The phases before the calculation starts: nothing was calculated yet when the execution is cancelled in them. */
+const BEFORE_CALCULATION: readonly Schemas['ExecutionStatus'][] = ['pre_validating', 'awaiting_decision'];
+
+/** What the cancel dialog says is lost, by the phase of the execution. */
+export function cancelDescription(status: Schemas['ExecutionStatus']): string {
+  if (BEFORE_CALCULATION.includes(status)) {
+    return 'Nada foi calculado ainda e a execução não gera CSV. Não é possível desfazer.';
+  }
+  return 'Os registros já calculados não são entregues e a execução não gera CSV. Não é possível desfazer.';
+}
+
 /** Reason beside the disabled buttons while the cancel request is in flight (ADR 0064). */
 export const CANCELLING_REASON = 'Aguarde o pedido de cancelamento';
 

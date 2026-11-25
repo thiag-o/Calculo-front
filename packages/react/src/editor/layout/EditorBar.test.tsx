@@ -107,3 +107,40 @@ describe('Editor: Executar lote na barra', () => {
     expect(within(bar()).queryByRole('button', { name: 'Executar lote' })).not.toBeInTheDocument();
   });
 });
+
+describe('Editor: nota de sobreposição do Executar lote', () => {
+  const OVERLAP = {
+    id: '6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c01',
+    status: 'completed',
+    created_at: '2026-11-01T05:00:00Z',
+    finished_at: '2026-11-01T05:09:30Z',
+    triggered_by: ANA,
+    schedule: null,
+  };
+
+  async function triggerOverlap(permissions: string[], onOpenExecution: (id: string) => void) {
+    const { user } = openEditor(permissions, onOpenExecution);
+    api.respond(TRIGGER_ROUTE, json({ type: 'about:blank', title: 'Erro', status: 409, detail: 'x', code: 'scope_already_delivered', overlapping: [OVERLAP] }, 409));
+    await user.click(await within(await screen.findByRole('banner')).findByRole('button', { name: 'Executar lote' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Executar lote' });
+    await within(dialog).findByText(/Executa o rascunho salvo \(revisão/);
+    await user.click(within(dialog).getByRole('button', { name: 'Executar lote' }));
+    return { user, dialog };
+  }
+
+  it('a execução da nota vira um link que abre o painel dela, com executions.view', async () => {
+    const onOpenExecution = vi.fn();
+    const { user, dialog } = await triggerOverlap(['workflows.view', 'executions.view', 'executions.trigger'], onOpenExecution);
+
+    await user.click(await within(dialog).findByRole('button', { name: /Abrir a execução de/ }));
+
+    expect(onOpenExecution).toHaveBeenCalledWith(OVERLAP.id);
+  });
+
+  it('sem executions.view, a nota lista as execuções sem link', async () => {
+    const { dialog } = await triggerOverlap(['workflows.view', 'executions.trigger'], vi.fn());
+
+    expect(await within(dialog).findByText('Este escopo já foi entregue')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: /Abrir a execução de/ })).not.toBeInTheDocument();
+  });
+});

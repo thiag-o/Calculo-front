@@ -405,6 +405,19 @@ describe('Executar lote: erros do disparo', () => {
     expect(onTriggered).not.toHaveBeenCalled();
   });
 
+  it('a data de cada execução da nota é "dd/mm às hh:mm", sem ano nem segundos (estilos §10)', async () => {
+    api.respond(DRAFT, json(savedDraft(5)));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1)] }));
+    const { user } = renderTrigger({ onOpenExecution: vi.fn() });
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+    await user.click(confirmButton(dialog));
+
+    const link = await within(dialog).findByRole('button', { name: /Abrir a execução de/ });
+    expect(link.getAttribute('aria-label')).toMatch(/^Abrir a execução de \d{2}\/\d{2} às \d{2}:\d{2}$/);
+    expect(within(dialog).getByText(/^\d{2}\/\d{2} às \d{2}:\d{2}$/)).toBeInTheDocument();
+  });
+
   it('sem onOpenExecution, as execuções aparecem sem link', async () => {
     api.respond(DRAFT, json(savedDraft(5)));
     api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1)] }));
@@ -429,5 +442,22 @@ describe('Executar lote: erros do disparo', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Você não tem permissão para executar este workflow');
     // Only draft_conflict and draft_has_problems read the saved draft again.
     expect(api.callsTo(DRAFT)).toHaveLength(1);
+  });
+});
+
+describe('Executar lote: a nota de sobreposição e o sinal do formulário', () => {
+  it('passar pelo campo sem mudar o valor não tira a nota (só uma mudança de parâmetro tira)', async () => {
+    api.respond(DRAFT, json(savedDraft(5, [GOAL])));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1)] }));
+    const { user } = renderTrigger();
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+    await user.click(confirmButton(dialog));
+    await within(dialog).findByText('Este escopo já foi entregue');
+
+    await user.click(within(dialog).getByLabelText('meta_minima'));
+    await user.tab();
+
+    expect(within(dialog).getByText('Este escopo já foi entregue')).toBeInTheDocument();
   });
 });

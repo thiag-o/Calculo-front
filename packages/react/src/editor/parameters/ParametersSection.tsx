@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Button, FieldMessage, Text } from '../../design-system';
 import { READ_ONLY_REASON, useDraftEditor } from '../draft';
 import { PlusIcon } from './icons';
+import { useNextFrame } from './useNextFrame';
 import { ParameterItem } from './ParameterItem';
 import { indexOfParameter, parameterKey, updateParameters, withoutParameter } from './parameterIdentity';
 import { parameterPath, parameterProblems, sectionProblems } from './parameterProblems';
@@ -19,6 +20,7 @@ export function ParametersSection() {
   const analyzedParameters = analyzedDefinition.parameters ?? [];
   const list = useRef<HTMLOListElement>(null);
   const addRef = useRef<HTMLButtonElement>(null);
+  const nextFrame = useNextFrame();
 
   const names = new Map<string, number>();
   for (const parameter of parameters) names.set(parameter.name, (names.get(parameter.name) ?? 0) + 1);
@@ -30,7 +32,7 @@ export function ParametersSection() {
   function add() {
     change((current) => updateParameters(current, (all) => [...all, newParameter(current)]));
     // The new parameter comes last: its name is the first thing to change.
-    requestAnimationFrame(() => list.current?.querySelector<HTMLInputElement>(':scope > li:last-child input')?.focus());
+    nextFrame(() => list.current?.querySelector<HTMLInputElement>(':scope > li:last-child input')?.focus());
   }
 
   return (
@@ -65,7 +67,7 @@ export function ParametersSection() {
                 onRemove={() => {
                   change((current) => updateParameters(current, (all) => withoutParameter(all, parameter)));
                   // The removed parameter's button is gone: the focus goes to "Adicionar parâmetro".
-                  requestAnimationFrame(() => addRef.current?.focus());
+                  nextFrame(() => addRef.current?.focus());
                 }}
               />
             );

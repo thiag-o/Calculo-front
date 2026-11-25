@@ -1,6 +1,6 @@
-import { Notice, Status, formatDateTime } from '../../design-system';
+import { Notice, Status } from '../../design-system';
 import { STATUS_PRESENTATION } from '../api';
-import { OVERLAP_MESSAGE, OVERLAP_TITLE, overlapOrigin, type OverlappingExecution } from './messages';
+import { OVERLAP_MESSAGE, OVERLAP_TITLE, overlapOrigin, overlapWhen, type OverlappingExecution } from './messages';
 
 export interface OverlapNoteProps {
   /** The executions of the same scope, newest first (up to 5). */
@@ -21,7 +21,7 @@ export function OverlapNote({ executions, onOpenExecution }: OverlapNoteProps) {
         <ul className="fc-trigger-overlap-list" aria-label="Execuções do mesmo escopo">
           {executions.map((execution) => {
             const presentation = STATUS_PRESENTATION[execution.status];
-            const when = formatDateTime(execution.created_at);
+            const when = overlapWhen(execution.created_at);
             return (
               <li key={execution.id} className="fc-trigger-overlap-item">
                 <Status tone={presentation.tone} pulsing={presentation.pulsing}>

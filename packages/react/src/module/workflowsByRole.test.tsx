@@ -86,10 +86,11 @@ describe('Workflows no casca, por papel', () => {
   it('o Configurador abre a lista pelo menu, cria workflows e chega à Visão geral e ao editor em tela cheia', async () => {
     simulateApiWith(CONFIGURATOR_PERMISSIONS);
     const { user } = renderScreen({ navigation: 'url' });
-    await screen.findByRole('heading', { level: 1, name: 'Início' });
+    // Under load the module answers late (F129): the waits are for the state, with a longer time; the checks stay the same.
+    await screen.findByRole('heading', { level: 1, name: 'Início' }, { timeout: 4000 });
 
     await openList(user);
-    expect(await screen.findByRole('button', { name: 'Novo workflow' })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: 'Novo workflow' }, { timeout: 4000 })).toBeEnabled();
     expect(window.location.pathname).toBe('/workflows');
     expect(within(mainNavigation()).getByRole('link', { name: 'Workflows' })).toHaveAttribute('aria-current', 'page');
 

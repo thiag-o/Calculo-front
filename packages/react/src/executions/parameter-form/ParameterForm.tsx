@@ -92,7 +92,7 @@ function relativeLabel(parameter: WorkflowParameter): string | null {
 function useShownError(parameter: WorkflowParameter, state: ParameterFieldState, error: string | undefined) {
   const [touched, setTouched] = useState(false);
   const shown = error ?? (touched ? (readParameter(parameter, state).error ?? undefined) : undefined);
-  return { shown, markTouched: () => setTouched(true) };
+  return { shown, markTouched: () => setTouched(true), resetTouched: () => setTouched(false) };
 }
 
 function RunParameterField({ workflowId, parameter, state, error, disabled, onChange }: ParameterFieldProps) {
@@ -146,7 +146,9 @@ function RunParameterField({ workflowId, parameter, state, error, disabled, onCh
 /** A parameter of a schedule: Fixo | Relativo when its type has relatives, otherwise just its field. */
 function ScheduleParameterField({ workflowId, parameter, state, error, disabled, onChange }: ParameterFieldProps) {
   const fixed = scheduleFieldState(state);
-  const { shown, markTouched } = useShownError(parameter, fixed, error);
+  const { shown, markTouched, resetTouched } = useShownError(parameter, fixed, error);
+  // The relative chosen before going to Fixo: coming back to Relativo gives it back, not the first one.
+  const [lastRelative, setLastRelative] = useState<RelativeDefault | null>(null);
   const relatives = relativesFor(parameter);
   const help = fieldHelp(parameter);
   const valueField = (
@@ -166,13 +168,19 @@ function ScheduleParameterField({ workflowId, parameter, state, error, disabled,
   const relativeOn = isScheduleRelative(parameter, state);
   const declared = parameter.default?.kind === 'relative' ? parameter.default.value : null;
   const firstRelative: RelativeDefault | undefined = declared !== null && relatives.includes(declared) ? declared : relatives[0];
+  const remembered = lastRelative !== null && relatives.includes(lastRelative) ? lastRelative : null;
   return (
     <div className="fc-parameter-field">
       <ValueKind
         name={parameter.name}
         relative={relativeOn}
         disabled={disabled}
-        onChange={(toRelative) => onChange({ ...fixed, relative: toRelative ? (firstRelative ?? null) : null })}
+        onChange={(toRelative) => {
+          // Each side starts clean: the error of a Fixo left behind does not come back with it.
+          resetTouched();
+          if (!toRelative) setLastRelative(state.relative);
+          onChange({ ...fixed, relative: toRelative ? (remembered ?? firstRelative ?? null) : null });
+        }}
       />
       {relativeOn ? (
         <Select
@@ -264,6 +272,7 @@ function ValueField({ workflowId, parameter, help, state, error, disabled, onCha
         selected={parameter.list ? state.items : state.text === '' ? [] : [state.text]}
         error={error}
         disabled={disabled}
+        onBlur={onBlur}
         onChange={(selected) => patch(parameter.list ? { items: selected } : { text: selected[0] ?? '' })}
       />
     );

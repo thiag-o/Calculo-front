@@ -276,7 +276,8 @@ describe('Editor: salvar e analisar', () => {
     await vi.waitFor(() => expect(formula()).toHaveValue('valor_item * 7'));
     expect(warning).not.toBeInTheDocument();
     expect(screen.getByText('Salvo há instantes')).toBeInTheDocument();
-    expect(editorRegion()).toHaveFocus();
+    // The focus goes to the editor once the reload is rendered: under load it comes a little later (F125).
+    await vi.waitFor(() => expect(editorRegion()).toHaveFocus());
 
     // Saving again goes over the new revision.
     type('valor_item * 8');

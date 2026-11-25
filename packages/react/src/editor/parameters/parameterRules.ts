@@ -6,6 +6,7 @@
 import type { Schemas } from '../../api';
 import { DATA_TYPE_LABELS } from '../../catalog';
 import type { WorkflowDefinition } from '../draft';
+import { relativesFor as executionRelativesFor } from '../../executions';
 import { formatApiNumber, readBrazilianNumber, type SelectOption } from '../../design-system';
 
 export type WorkflowParameter = Schemas['WorkflowParameter'];
@@ -34,23 +35,13 @@ export const PARAMETER_TYPE_LABELS: Readonly<Record<ParameterType, string>> = { 
 
 export const PARAMETER_TYPE_OPTIONS: readonly SelectOption[] = PARAMETER_TYPES.map((value) => ({ value, label: PARAMETER_TYPE_LABELS[value] }));
 
-/** Each relative default serves one type only (the contract's `RelativeDefault`); the other types have none. */
-const RELATIVES: Readonly<Record<ParameterType, readonly RelativeDefault[]>> = {
-  text: [],
-  integer: [],
-  decimal: [],
-  date: ['today', 'yesterday', 'first_day_of_current_month', 'first_day_of_previous_month', 'last_day_of_previous_month'],
-  datetime: ['now'],
-  boolean: [],
-  period: ['current_month', 'previous_month', 'last_7_days', 'last_30_days'],
-};
-
 /**
  * The relative defaults a parameter can take. A list takes none: a relative resolves to one value, and the contract only
- * writes the list default as a list of literals.
+ * writes the list default as a list of literals. The table is the one of the run form, in `executions` (ADR 0062: the
+ * editor reads it from there, never the other way round).
  */
 export function relativesFor(type: ParameterType, list: boolean): readonly RelativeDefault[] {
-  return list ? [] : RELATIVES[type];
+  return executionRelativesFor({ type, list });
 }
 
 /** The `datetime` has no fixed default, only none or the relative `now` (D36): the language has no literal for it. */

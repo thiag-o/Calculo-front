@@ -101,7 +101,7 @@ export function FilterList({
     : created === null
       ? 'O dataset não tem variáveis para filtrar.'
       : filters.length >= max
-        ? `A fonte aceita até ${max} filtros.`
+        ? `${refuseParameters ? 'A consulta' : 'A fonte'} aceita até ${max} filtros.`
         : undefined;
 
   return (

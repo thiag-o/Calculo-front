@@ -39,6 +39,15 @@ function shortId(id: string): string {
   return id.slice(0, 8);
 }
 
+/** What is chosen in the three filters (`ALL` for "Todos"): the screen can keep it while the list is not on screen. */
+export interface ExecutionListChoices {
+  status: string;
+  mode: string;
+  workflow: string;
+}
+
+export const NO_CHOICES: ExecutionListChoices = { status: ALL, mode: ALL, workflow: ALL };
+
 export interface ExecutionListProps {
   /**
    * The list of one workflow (`/workflows/:id/executions`): the workflow filter is fixed and hidden, and "Executar lote"
@@ -52,6 +61,13 @@ export interface ExecutionListProps {
   onOpenExecution?: (id: string) => void;
   /** Opens the Problemas tab of the editor, from the "Executar lote" dialog (see `TriggerExecutionDialogProps`). */
   onOpenProblems?: () => void;
+  /**
+   * The filters chosen, when the screen keeps them (the tenant screen: Execuções and Agendamentos are two tabs of it, and the
+   * list leaves the screen with the tab). Without it the list keeps them itself, and loses them when it leaves.
+   */
+  choices?: ExecutionListChoices;
+  /** A filter changed (always with `choices`). */
+  onChoicesChange?: (choices: ExecutionListChoices) => void;
 }
 
 /**
@@ -62,27 +78,34 @@ export interface ExecutionListProps {
  * Below 1180px of module width, the records column goes away (estilos.md §15). Needs `ApiProvider`, `QueryClientProvider`
  * and `FluxoRoot` (portal of the filter lists and of the dialog).
  */
-export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: ExecutionListProps = {}) {
+export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems, choices, onChoicesChange }: ExecutionListProps = {}) {
   const titleId = useId();
   const section = useRef<HTMLElement>(null);
   const statusFilter = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const session = useSession();
   const narrow = useNarrowModule(section);
-  const [status, setStatus] = useState(ALL);
-  const [chosenWorkflow, setChosenWorkflow] = useState(ALL);
-  const [mode, setMode] = useState(ALL);
+  const [ownChoices, setOwnChoices] = useState<ExecutionListChoices>(NO_CHOICES);
+  const { status, mode, workflow: chosenWorkflow } = choices ?? ownChoices;
+  const choose = (patch: Partial<ExecutionListChoices>) => {
+    const next = { ...(choices ?? ownChoices), ...patch };
+    if (choices) onChoicesChange?.(next);
+    else setOwnChoices(next);
+  };
   const scoped = workflowId !== undefined;
   const workflows = useWorkflowOptions(!scoped);
 
   const chosenMode: ExecutionMode | undefined = MODE_CHOICES.find((choice) => choice.value === mode)?.value;
+  const deliveredOnly = status === 'completed';
+  const effectiveMode = deliveredOnly && chosenMode === undefined ? 'batch' : chosenMode;
   const filter: ExecutionListFilter = {
     ...(scoped ? { workflowId } : chosenWorkflow !== ALL ? { workflowId: chosenWorkflow } : {}),
     ...(status !== ALL ? { statuses: STATUS_CHOICES.find((choice) => choice.value === status)?.statuses ?? [] } : {}),
-    ...(chosenMode ? { mode: chosenMode } : {}),
+    ...(effectiveMode ? { mode: effectiveMode } : {}),
   };
   const list = useExecutionList(filter);
-  const executions = list.data;
+  // "Entregue" is a batch that delivered: a simulation that finished is "Sem entrega", never in that filter.
+  const executions = deliveredOnly ? list.data?.filter((execution) => execution.mode !== 'simulation') : list.data;
   const filtered = status !== ALL || mode !== ALL || (!scoped && chosenWorkflow !== ALL);
   const noDataError = list.isError && executions === undefined ? list.error : null;
   const noPermission = noDataError instanceof ApiError && noDataError.code === 'no_permission';
@@ -95,9 +118,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
   );
 
   function clearFilters() {
-    setStatus(ALL);
-    setMode(ALL);
-    setChosenWorkflow(ALL);
+    choose(NO_CHOICES);
     // The action goes away with the new list: focus goes to the first filter.
     statusFilter.current?.focus();
   }
@@ -216,6 +237,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
         workflowId={workflowId}
         variant="primary"
         onOpenProblems={onOpenProblems}
+        onOpenExecution={onOpenExecution}
         onTriggered={(execution) => onOpenExecution?.(execution.id)}
       />
     ) : null;
@@ -225,6 +247,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
         workflowId={workflowId}
         size="small"
         onOpenProblems={onOpenProblems}
+        onOpenExecution={onOpenExecution}
         onTriggered={(execution) => onOpenExecution?.(execution.id)}
       />
     ) : null;
@@ -261,9 +284,9 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
           label="Status"
           options={STATUS_OPTIONS}
           value={status}
-          onValueChange={setStatus}
+          onValueChange={(value) => choose({ status: value })}
         />
-        <Select className="fc-executions-filter" label="Modo" options={MODE_OPTIONS} value={mode} onValueChange={setMode} />
+        <Select className="fc-executions-filter" label="Modo" options={MODE_OPTIONS} value={mode} onValueChange={(value) => choose({ mode: value })} />
         {!scoped && !workflows.isError ? (
           <Select
             className="fc-executions-filter"
@@ -272,7 +295,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
             options={workflowOptions}
             value={chosenWorkflow}
             disabled={workflows.isPending}
-            onValueChange={setChosenWorkflow}
+            onValueChange={(value) => choose({ workflow: value })}
           />
         ) : null}
       </div>

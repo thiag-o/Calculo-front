@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import { ApiError } from '../../api';
-import { Button, EmptyState, Menu, Notice, Table, Text, textClasses, type TableColumn } from '../../design-system';
+import { Button, EmptyState, Menu, Notice, Status, Table, Text, textClasses, type TableColumn } from '../../design-system';
+import { statusPresentation } from '../../executions';
 import { useSession } from '../../session';
 import { DeleteReferenceFileDialog } from './DeleteReferenceFileDialog';
 import { comparisonSummary, dateTime, fileCount, fileSize, shortHash } from './format';
@@ -151,8 +152,13 @@ export function ReferenceFiles({ workflowId, onOpenExecution }: ReferenceFilesPr
           );
         }
         const text = lastComparisonText(comparison);
+        // The dot and the word of the simulation, as the execution list shows it.
+        const presentation = statusPresentation({ status: comparison.status, mode: 'simulation' });
         return (
           <div className="fc-reference-two-lines">
+            <Status tone={presentation.tone} pulsing={presentation.pulsing}>
+              {presentation.label}
+            </Status>
             <button
               type="button"
               className="fc-reference-link"

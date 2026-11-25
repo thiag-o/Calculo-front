@@ -1,6 +1,6 @@
 # 0076. Vertical `notifications/` importa `workflows/index.ts` e usa `@radix-ui/react-popover`
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0079](0079-sino-do-incorporado-entra-na-barra-do-tabs-por-portal.md))
 - **Data:** 2026-11-25
 - **Quem decidiu:** orquestração (tarefa F130)
 - **Relacionadas:** design.md E7-27, ADRs 0003, 0011, 0049, 0067, 0069, 0070

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent
 import { ApiError } from '../../api';
 import { Button, FieldMessage, Label, Notice, textClasses } from '../../design-system';
 import { SEARCH_DELAY_MS, searchText, useAllowedValues, useDebouncedValue } from './allowedValues';
+import { CloseIcon } from './icons';
 import { displayApiText, type ScalarType } from './literals';
 
 /** The API accepts 1 to 100 values in a list. */
@@ -9,14 +10,6 @@ const MAX_ITEMS = 100;
 
 const READ_ERROR_TITLE = 'Não foi possível ler os valores permitidos';
 const READ_ERROR_FALLBACK = 'Tente de novo em instantes.';
-
-function CloseIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
 
 export interface AllowedValuesFieldProps {
   workflowId: string;
@@ -31,6 +24,8 @@ export interface AllowedValuesFieldProps {
   onChange: (selected: string[]) => void;
   error?: string;
   disabled?: boolean;
+  /** The focus left the field (and its list): the form shows the error of what is chosen from then on. */
+  onBlur?: () => void;
 }
 
 /**
@@ -40,7 +35,7 @@ export interface AllowedValuesFieldProps {
  * novo". The list opens on a click, on typing or on the down arrow (not on the focus alone, so Tab passes by); the
  * arrows move in it, Enter chooses and Esc closes it.
  */
-export function AllowedValuesField({ workflowId, name, type, help, multiple, selected, onChange, error, disabled = false }: AllowedValuesFieldProps) {
+export function AllowedValuesField({ workflowId, name, type, help, multiple, selected, onChange, error, disabled = false, onBlur: onLeave }: AllowedValuesFieldProps) {
   const id = useId();
   const inputId = `${id}-input`;
   const listId = `${id}-list`;
@@ -57,6 +52,10 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
   const search = useDebouncedValue(searchText(typed ?? '', type), SEARCH_DELAY_MS);
   const query = useAllowedValues(workflowId, name, search, open && !disabled);
   const values = query.data?.values ?? [];
+  // While the text is waiting out the debounce or its search is in flight, the list on screen is the one of an older text: it
+  // stays visible, but it is not active (no arrow, no Enter, no click chooses a value that does not match what is typed).
+  const settling = open && (searchText(typed ?? '', type) !== search || query.isPlaceholderData);
+  const selectable = settling ? [] : values;
   const full = multiple && selected.length >= MAX_ITEMS;
 
   const chosen = selected[0];
@@ -100,15 +99,15 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
         setOpen(true);
         return;
       }
-      if (values.length === 0) return;
+      if (selectable.length === 0) return;
       const step = event.key === 'ArrowDown' ? 1 : -1;
       // From no active value, down goes to the first and up to the last.
-      setActive((current) => (current < 0 ? (step > 0 ? 0 : values.length - 1) : (current + step + values.length) % values.length));
+      setActive((current) => (current < 0 || current >= selectable.length ? (step > 0 ? 0 : selectable.length - 1) : (current + step + selectable.length) % selectable.length));
     } else if (event.key === 'Enter') {
       // Enter chooses; it must never submit the dialog that holds the form.
       if (!open) return;
       event.preventDefault();
-      const value = values[active];
+      const value = selectable[active];
       if (value !== undefined) choose(value);
     } else if (event.key === 'Escape' && open) {
       // Esc closes the list, not the dialog around it (see the window listener above).
@@ -125,11 +124,12 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
     if (!multiple && typed !== null && typed.trim() === '' && chosen !== undefined) onChange([]);
     setTyped(null);
     close();
+    onLeave?.();
   }
 
   let status: string | null = null;
-  if (open && query.isPending) status = 'Carregando valores';
-  else if (open && query.isSuccess && values.length === 0) status = typed?.trim() ? 'Nenhum valor encontrado com esse texto' : 'Nenhum valor encontrado';
+  if (open && (query.isPending || settling)) status = 'Carregando valores';
+  else if (open && query.isSuccess && selectable.length === 0) status = typed?.trim() ? 'Nenhum valor encontrado com esse texto' : 'Nenhum valor encontrado';
 
   const describedBy = [error ? errorId : null, helpId].filter(Boolean).join(' ');
 
@@ -148,7 +148,7 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
           aria-autocomplete="list"
           aria-expanded={open}
           aria-controls={open && !disabled ? listId : undefined}
-          aria-activedescendant={open && active >= 0 && active < values.length ? optionId(active) : undefined}
+          aria-activedescendant={open && active >= 0 && active < selectable.length ? optionId(active) : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           aria-busy={open && query.isFetching ? true : undefined}
@@ -174,7 +174,9 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
       </div>
 
       {open && !disabled ? (
-        <div className="fc-parameter-allowed-popup">
+        // The focus stays in the field when a button of the popup is pressed (Safari does not focus a button on a click, so the
+        // field would lose the focus and the list would close before the click).
+        <div className="fc-parameter-allowed-popup" onMouseDown={(event) => event.preventDefault()}>
           {query.isError ? (
             <Notice
               type="error"
@@ -198,7 +200,7 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
           >
             {values.map((value, index) => {
               const isChosen = selected.includes(value);
-              const blocked = full && !isChosen;
+              const blocked = settling || (full && !isChosen);
               return (
                 <li
                   key={value}
@@ -207,7 +209,7 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
                   aria-selected={isChosen}
                   aria-disabled={blocked || undefined}
                   className={`fc-parameter-allowed-option ${textClasses({ variant: 'label-14' })}`}
-                  data-active={index === active || undefined}
+                  data-active={(!settling && index === active) || undefined}
                   // The focus stays in the field: the click chooses without blurring it.
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
@@ -238,7 +240,8 @@ export function AllowedValuesField({ workflowId, name, type, help, multiple, sel
       ) : null}
 
       {multiple && selected.length > 0 ? (
-        <ul className="fc-parameter-tag-list" aria-label={`Valores escolhidos de ${name}`}>
+        // Pressing "Remover" must not blur the field first (Safari: the list would close before the click).
+        <ul className="fc-parameter-tag-list" aria-label={`Valores escolhidos de ${name}`} onMouseDown={(event) => event.preventDefault()}>
           {selected.map((value) => {
             const label = displayApiText(value, type);
             return (

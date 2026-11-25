@@ -36,6 +36,8 @@ export interface DecisionNoteProps {
   canDecide: boolean;
   /** Sends "Prosseguir". */
   onProceed: () => void;
+  /** "Cancelar" was pressed: the panel opens the cancel dialog (see `CancelDialog`). */
+  onCancel: (button: HTMLButtonElement | null) => void;
   /** "Prosseguir" is in flight. */
   proceeding: boolean;
 }
@@ -44,7 +46,7 @@ export interface DecisionNoteProps {
  * The amber note of `awaiting_decision` (E7-21, estilos.md §7.7): the variables above the limit, the deadline and the
  * actions "Prosseguir" (primary) and "Cancelar" (secondary, with the confirmation of E6-21).
  */
-export function DecisionNote({ execution, canDecide, onProceed, proceeding }: DecisionNoteProps) {
+export function DecisionNote({ execution, canDecide, onProceed, onCancel, proceeding }: DecisionNoteProps) {
   const check = execution.pre_validation;
   const alerted = check ? check.empty_values.filter((value) => value.alert) : [];
   const deadline = check?.decision_expires_at ? shortDateTime(check.decision_expires_at) : '';
@@ -59,7 +61,12 @@ export function DecisionNote({ execution, canDecide, onProceed, proceeding }: De
             <Button variant="primary" loading={proceeding} onClick={onProceed}>
               Prosseguir
             </Button>
-            <CancelExecution execution={execution} label="Cancelar" disabledReason={proceeding ? PROCEEDING_REASON : undefined} />
+            <CancelExecution
+              execution={execution}
+              label="Cancelar"
+              disabledReason={proceeding ? PROCEEDING_REASON : undefined}
+              onRequest={onCancel}
+            />
           </>
         ) : undefined
       }

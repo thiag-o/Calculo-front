@@ -28,7 +28,8 @@ const MODE_PATH = `${SETTINGS_PATH}.rounding.mode`;
 // here, not imported: neither side of the cycle with "parameters" uses the other while the module loads (ADR 0052).
 const ERROR_LIMIT_PATH = `${SETTINGS_PATH}.error_limit_percent`;
 const TRACE_LEVEL_PATH = `${SETTINGS_PATH}.trace_level`;
-const SHOWN = new Set([ERROR_POLICY_PATH, SCALE_PATH, MODE_PATH, ERROR_LIMIT_PATH, TRACE_LEVEL_PATH]);
+const PRE_VALIDATION_ALERT_PATH = `${SETTINGS_PATH}.pre_validation_alert_percent`;
+const SHOWN = new Set([ERROR_POLICY_PATH, SCALE_PATH, MODE_PATH, ERROR_LIMIT_PATH, TRACE_LEVEL_PATH, PRE_VALIDATION_ALERT_PATH]);
 
 /** Where the values of each record come from (E5-2, E5-17). */
 type RecordsOrigin = 'declared' | 'batch';

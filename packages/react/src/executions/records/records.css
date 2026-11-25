@@ -9,6 +9,13 @@
   flex-direction: column;
   gap: var(--fc-space-12);
   min-width: 0;
+  position: relative;
+}
+
+/* The live region is out of the flow: anchored at the top of the section, it adds no height and no scroll extent. */
+.fc-records-status {
+  top: 0;
+  left: 0;
 }
 
 .fc-records-top {

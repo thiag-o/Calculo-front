@@ -1,19 +1,12 @@
 import { useState } from 'react';
 import { Button, textClasses } from '../../design-system';
+import { CloseIcon } from './icons';
 import { displayApiText, type ScalarType } from './literals';
 import { readScalar } from './values';
 import { ValueInput } from './ValueInput';
 
 /** The API accepts 1 to 100 values in a list. */
 const MAX_ITEMS = 100;
-
-function CloseIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
 
 export interface TagsFieldProps {
   name: string;
