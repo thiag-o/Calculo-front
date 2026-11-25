@@ -1649,9 +1649,31 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
   - (B144) o exemplo `ExecutionDraftHasProblems` de `e2e/support/contract.ts` passa a trazer o texto novo do `openapi.yaml` do back (o texto do motor, pela D53), validado contra o contrato (ADR 0060).
 - Aceite: `pnpm e2e` verde com os avulsos montados; teste do diálogo de excluir com o 409.
 
+**F135 · Correção da integração do épico 6: editor em branco com os filtros da fonte do lote**
+- dep: F121
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/sources/filters/`, `packages/react/src/formula/parameters.ts`, `packages/react/src/formula/` (só o teste do `readParameterReference`), `e2e/support/contract.ts`, `e2e/epic-6/support/simulation.ts`
+- Fazer: o editor abre o rascunho real da Campanha de referência sem quebrar. No `batch_source` do contrato, os filtros apontam a variável por `variable` (nome), não por `variable_id`, e o `LiteralField` e o `readParameterReference` recebiam `undefined` (`TypeError ... reading 'trim'`).
+  - O filtro da fonte do lote é lido pela forma do contrato.
+  - O `readParameterReference` aceita valor ausente sem quebrar.
+  - A simulação e os exemplos do `contract.ts` passam a ter um `batch_source` com filtros por `variable` e `values` com parâmetro (`["@periodo.inicio"]`), validado contra o `openapi.yaml` (ADR 0060), para o simulado pegar essa forma.
+- Aceite: começa por um teste que monta o editor com o rascunho no formato real e falha antes (tela em branco, `TypeError`) e passa depois; o `declare-parameter` e o `preview-and-calculate` passam no simulado com a forma nova.
+
+**F136 · Correção da integração do épico 6: e2e real com o mês dos dados e o nome da conta (D105-global)**
+- dep: F121
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/epic-6/`, `e2e/README.md`
+- Fazer (D105-global):
+  - os dados da campanha são de fevereiro de 2026 e não mudam (B98 e B100). O `DATA_MONTH` passa a ser fixo, `2026-02-01` a `2026-02-28`, numa constante só. Todo teste que confere totais, erros, trace ou CSV dispara com esse período fixo;
+  - o padrão "Mês anterior" tem um teste próprio, que confere só o período resolvido pela API (o mês anterior ao dia do teste), sem conferir totais;
+  - o `roles.spec.ts` usa o nome da conta que o `prepare-local` cria no modo real ("Admin Demonstração"), e o da simulação no simulado, sem texto fixo duplicado;
+  - o `e2e/README.md` troca o aviso "ajuste as datas" pela regra nova. Cancelar no meio e derrubar o worker continuam cobertos pelo simulado e pelos testes do back (B144), não pelo real.
+- Aceite: o `pnpm e2e:real e2e/epic-6` passa contra o back real em qualquer dia do ano, com os totais da B100 (58 lidos, 44 ok, 4 avisos, 2 erros, 6 ignorados, 2 filtrados); o simulado continua verde.
+
 **F106 · Portão do épico 6**
 - tipo: portao
-- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120, F121
+- dep: F97, F98, F99, F100, F101, F102, F103, F104, F105, F109, F110, F111, F114, F115, F116, F117, F118, F119, F120, F121, F135, F136
 - modelo: sonnet
 - Aceite: o mesmo da F71, com as telas do épico 6 provadas pelo `pnpm e2e:visual`.
 
