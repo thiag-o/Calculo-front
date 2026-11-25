@@ -1,6 +1,6 @@
 # 0036. Testes e2e servem o shell compilado (`vite preview`) e aquecem a página antes dos testes
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0071](0071-e2e-visual-compara-pixels-com-mascara.md))
 - **Data:** 2026-11-18
 - **Quem decidiu:** orquestração (tarefa F35)
 - **Relacionadas:** ADR 0029 (e2e por épico), ADR 0030 (glob com `fallback()`), que esta complementa

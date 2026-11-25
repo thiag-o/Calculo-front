@@ -1,10 +1,12 @@
 // Visual proof of the screens of epics 1 to 4 (project `visual`, simulated mode): each theme (light and dark) at the
-// three widths (1440, 1180 and 900 px) opens the screens, saves a capture of each in __screenshots__/ and checks
+// three widths (1440, 1180 and 900 px) opens the screens, captures each one for __screenshots__/ and checks
 // - no horizontal scroll bar;
 // - the minimum text contrast of estilos.md on the computed colors;
 // - the sidebar: names beside the icons from 1180 px, icons only below it.
-// The captures are overwritten on each run (no pixel comparison: the dates and ids vary); they are read by eye against
-// estilos.md §12 to §16.
+// Pixel comparison (F134, D45 option C): every capture is compared with its baseline in __screenshots__/ (`toHaveScreenshot`,
+// tolerance in playwright.config.ts). Nothing here varies between runs (the simulation fixes the dates, the ids and the
+// "há 1 h" of the draft), so no screen is save-only and no area is masked. A deliberate change of a screen is recorded with
+// `pnpm e2e:visual --update-snapshots`, after `pnpm build` (the shell runs the built @fluxo/react).
 import { mainNavigation } from '../epic-2/support/screens';
 import { SAMPLE_WORKFLOW } from '../epic-4/support/simulation';
 import { signIn } from '../support/screens';

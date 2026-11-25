@@ -66,13 +66,23 @@ export default defineConfig({
       // Selecting `simulated` also runs `simulated-limit`, after it (a teardown runs even if the tests before it fail).
       teardown: 'simulated-limit',
     },
-    // The screens in both themes (`colorScheme`) and at 1440, 1180 and 900 px, on the simulated API; saves the captures in
-    // e2e/visual/__screenshots__/ and checks scroll bar, text contrast and sidebar (e2e/visual/screens.spec.ts).
+    // The screens in both themes (`colorScheme`) and at 1440, 1180 and 900 px, on the simulated API (e2e/visual/). The stable
+    // screens are compared pixel by pixel with the baselines in e2e/visual/__screenshots__/ (`toHaveScreenshot`, F134, D45
+    // option C); the ones that do not stabilize are only saved there (listed in the header of each spec). All of them check
+    // scroll bar, text contrast and sidebar. To record a deliberate change: `pnpm e2e:visual --update-snapshots`.
+    // Tolerance (measured in F134 on this machine): the same screen rendered several times in a row differs by 0 pixels, so
+    // the margin is tiny. A pixel counts as different when its color moves more than 0.2 in the YIQ space (the Playwright
+    // default) and a screen fails past 2 different pixels. For scale: one accent dropped from a heading is 3 to 4 pixels (caught
+    // by a hair), a changed label is 190 to 340 pixels, a moved button thousands. The baselines belong to the platform that
+    // recorded them (fonts); re-record with `--update-snapshots` after `pnpm build` when the platform changes.
     {
       name: 'visual',
       use: { ...devices['Desktop Chrome'] },
       metadata: { mode: 'simulated' },
       testMatch: '**/visual/*.spec.ts',
+      // One baseline per screen, theme and width, with no platform or project suffix: {arg} is the name given in the spec.
+      snapshotPathTemplate: '{testDir}/visual/__screenshots__/{arg}{ext}',
+      expect: { toHaveScreenshot: { threshold: 0.2, maxDiffPixels: 2, animations: 'disabled', caret: 'hide' } },
     },
     // Real only: 60 s timeout per test and per `expect` (global session decision, D8 of F39): the long audit
     // flow (8 sign-ins with argon2, 2 users, the link and 5 filters) took 33 s alone, with this machine loaded.

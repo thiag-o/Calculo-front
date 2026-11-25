@@ -1,7 +1,7 @@
 // Visual proof support (project `visual`): the three automatic checks, run inside the page, and the simulated fixture.
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { Epic2Simulation, type InitialAccount } from '../epic-2/support/simulation';
 import { CatalogSimulation, type SampleDatabase } from '../epic-3/support/simulation';
 import { WorkflowSimulation } from '../epic-4/support/simulation';
@@ -232,11 +232,30 @@ export const test = base.extend<{ simulations: void }>({
 
 const SCREENSHOTS = path.join(import.meta.dirname, '__screenshots__');
 
-/** Saves the capture and runs the checks on what is on screen. */
-export async function inspect(page: Page, name: string, theme: Theme, width: number, options: { menu?: boolean } = {}): Promise<void> {
+export interface InspectOptions {
+  /** Checks the sidebar (names beside the icons from 1180 px, icons only below it). */
+  menu?: boolean;
+  /**
+   * `compare` (default): the capture is compared pixel by pixel with the baseline (`toHaveScreenshot`, tolerance in the
+   * `visual` project of playwright.config.ts). `save`: only overwrites the capture, for a screen that does not stabilize
+   * (the spec lists each one with the reason); it is read by eye.
+   */
+  capture?: 'compare' | 'save';
+  /** Areas that vary between runs (dates, ids, times), painted over in the comparison. Only with `compare`. */
+  mask?: Locator[];
+}
+
+/** Compares (or saves) the capture and runs the checks on what is on screen. */
+export async function inspect(page: Page, name: string, theme: Theme, width: number, options: InspectOptions = {}): Promise<void> {
   const label = `${name} · ${theme} · ${width}px`;
-  mkdirSync(SCREENSHOTS, { recursive: true });
-  await page.screenshot({ path: path.join(SCREENSHOTS, `${name}-${theme}-${width}.png`) });
+  const file = `${name}-${theme}-${width}.png`;
+  if (options.capture === 'save') {
+    mkdirSync(SCREENSHOTS, { recursive: true });
+    await page.screenshot({ path: path.join(SCREENSHOTS, file) });
+  } else {
+    // Soft: a changed screen does not hide the other captures nor the checks below.
+    await expect.soft(page, `${label}: diferença de pixels contra o baseline`).toHaveScreenshot(file, { mask: options.mask ?? [] });
+  }
 
   expect.soft(await horizontalOverflow(page), `${label}: barra de rolagem horizontal`).toBe(0);
   const contrast = await contrastFailures(page, MIN_TEXT_CONTRAST);

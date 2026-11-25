@@ -1,7 +1,7 @@
 // Visual proof of the screens of epic 5 (project `visual`, simulated mode): the "Campanha de referência" editor with the
 // batch source, the Fonte blocks, the group, the "Prévia" tab and the values of the last "Calcular" on the canvas, in each
-// theme and at the three widths, with the same three checks as screens.spec.ts (scroll bar, text contrast; the captures are
-// read by eye against estilos.md §12 to §16).
+// theme and at the three widths, with the same checks as screens.spec.ts (scroll bar, text contrast) and the same pixel
+// comparison with the baselines (F134, D45 option C). Nothing varies between runs here, so no screen is save-only.
 import { signIn } from '../support/screens';
 import { BLOCKS, CAMPAIGN_WORKFLOW } from '../epic-5/support/campaign';
 import { FIRST_RECORD } from '../epic-5/support/expected';

@@ -55,7 +55,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0033](0033-chaves-de-cache-sob-catalogo.md) | Chaves de cache do Catálogo sob `['catalog', …]`, invalidadas pelo prefixo (segue a 0020) | aceita, revisar no checkpoint (complementada por 0034) | 2026-11-17 |
 | [0034](0034-dados-filhos-do-dataset-sob-a-chave-do-detalhe.md) | Dados filhos do dataset (variáveis) sob a chave do detalhe, gravados com `setQueryData` (complementa 0033) | aceita, revisar no checkpoint | 2026-11-17 |
 | [0035](0035-envio-com-progresso-por-xhr-no-cliente-da-api.md) | Envio de arquivo com progresso por `client.upload` (XMLHttpRequest) no cliente da API (complementa 0008) | aceita, revisar no checkpoint | 2026-11-17 |
-| [0036](0036-e2e-serve-o-shell-compilado-com-aquecimento.md) | Testes e2e servem o shell compilado (`vite preview`) e aquecem a página antes dos testes (complementa 0030) | aceita, revisar no checkpoint | 2026-11-18 |
+| [0036](0036-e2e-serve-o-shell-compilado-com-aquecimento.md) | Testes e2e servem o shell compilado (`vite preview`) e aquecem a página antes dos testes (complementa 0030) | aceita, revisar no checkpoint (complementada por 0071) | 2026-11-18 |
 | [0037](0037-monaco-e-react-flow-no-pacote.md) | Monaco e React Flow no pacote, com o Monaco carregado sob demanda | aceita, revisar no checkpoint (complementada por 0040) | 2026-11-19 |
 | [0038](0038-chaves-de-cache-sob-workflows.md) | Chaves de cache dos Workflows sob `['workflows', …]`, com filtro em objeto e limpeza na exclusão (segue a 0033) | aceita, revisar no checkpoint | 2026-11-20 |
 | [0039](0039-recarga-de-conflito-rejeita-e-dialogo-espera.md) | Recarga depois de conflito rejeita quando falha (`throwOnError`), e o diálogo só fecha depois de recarregar | aceita, revisar no checkpoint | 2026-11-20 |
@@ -90,6 +90,7 @@ O backend tem as dele em `../backend/docs/adr/`. O desenho do produto está em `
 | [0068](0068-properties-workflow-importa-editor-parameters.md) | `properties/workflow` importa `editor/parameters/index.ts`, com ciclo permitido entre as duas, mesma regra da 0052 (complementa 0047 e 0052) | aceita, revisar no checkpoint | 2026-11-22 |
 | [0069](0069-formatadores-de-numero-e-data-no-design-system.md) | Formatadores de número e data no padrão brasileiro em `design-system/format/`, sem cópias (complementa 0056 e 0062) | aceita | 2026-11-22 |
 | [0070](0070-interface-publica-do-epico-de-execucoes.md) | Interface pública do épico de execuções: `<Executions>` e `<Workflows>` avulsos, origem do painel em `location.state.from`, sem `executions.view` fica onde está (complementa 0028 e 0063) | aceita, revisar no checkpoint | 2026-11-24 |
+| [0071](0071-e2e-visual-compara-pixels-com-mascara.md) | e2e:visual compara pixels (`toHaveScreenshot`), com máscara nos relógios, baselines da plataforma que gravou e `maxDiffPixels` 2 (complementa 0036) | aceita, revisar no checkpoint | 2026-11-25 |
 
 ## Pendentes (sem ADR ainda)
 
