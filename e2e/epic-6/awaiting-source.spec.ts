@@ -8,7 +8,7 @@ import { signIn } from '../support/screens';
 import { CAMPAIGN_WORKFLOW } from './support/campaign';
 import { WHOLE_MONTH } from './support/expected';
 import { expect, test } from './support/fixtures';
-import { executionPanel, expectStatus, finishRun, openTrigger, phase, phases, stepRun, submitTrigger, total } from './support/screens';
+import { executionPanel, expectStatus, finishRun, openTriggerForDataMonth, phase, phases, stepRun, submitTrigger, total } from './support/screens';
 
 test.beforeEach(({ epic6 }) => {
   test.skip(epic6.mode === 'real', 'Derrubar uma fonte de verdade não cabe no ambiente compartilhado; o modo real fica com o roteiro manual e os testes do back.');
@@ -18,7 +18,7 @@ test('com a fonte fora do ar, a execução aguarda a fonte e depois volta a anda
   const worker = epic6.worker!;
   await signIn(page, epic6.account('admin'));
   await openOverview(page, CAMPAIGN_WORKFLOW);
-  await openTrigger(page);
+  await openTriggerForDataMonth(page);
   expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, CAMPAIGN_WORKFLOW);
 
@@ -56,7 +56,7 @@ test('uma atualização do painel que falha para a atualização automática; Te
   const worker = epic6.worker!;
   await signIn(page, epic6.account('admin'));
   await openOverview(page, CAMPAIGN_WORKFLOW);
-  await openTrigger(page);
+  await openTriggerForDataMonth(page);
   expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, CAMPAIGN_WORKFLOW);
 

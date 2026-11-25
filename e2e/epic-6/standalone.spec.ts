@@ -8,7 +8,7 @@ import { signInForApi } from '../epic-4/support/screens';
 import type { Schemas } from '../support/contract';
 import { CAMPAIGN_WORKFLOW } from './support/campaign';
 import { expect, test } from './support/fixtures';
-import { executionPanel, executionsTable, expectStatus, finishRun, openTrigger, submitTrigger } from './support/screens';
+import { executionPanel, executionsTable, expectStatus, finishRun, openTriggerForDataMonth, submitTrigger } from './support/screens';
 
 const TEST_PAGE = '/embed-test.html';
 
@@ -50,7 +50,7 @@ test('o <Workflows> e o <Executions> avulsos, incorporados, listam, abrem o pain
       await region.getByRole('list', { name: 'Workflows' }).getByRole('button', { name: CAMPAIGN_WORKFLOW, exact: true }).click();
       await expect(hostApp.getByRole('heading', { level: 1, name: CAMPAIGN_WORKFLOW, exact: true })).toBeVisible();
 
-      await openTrigger(hostApp, region);
+      await openTriggerForDataMonth(hostApp, region);
       const response = await submitTrigger(hostApp);
       expect(response.status(), 'disparar o lote').toBe(202);
       expect(await response.request().headerValue('authorization')).toMatch(/^Bearer /);

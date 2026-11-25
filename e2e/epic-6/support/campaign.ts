@@ -5,8 +5,10 @@
 //
 // What the simulation decides where the backend data of B143 is not fixed yet (only the simulated mode depends on it):
 // - the batch source (the invoice items) brings `emissao`, the date of its invoice;
-// - the invoices are dated in the month before the test's clock, on the same day as in B98 (2 to 26), so the default
-//   "Mês anterior" reads the whole campaign and a fixed period (days 1 to 5) reads only invoices 1 to 4.
+// - the invoices are dated in February 2026, on the same day as in B98 (2 to 26), as `prepare-local` seeds them; the data
+//   does not move with the clock, so every flow that checks totals, errors, trace or CSV fires with the fixed
+//   `DATA_MONTH` (the whole campaign) or a fixed period of it (days 1 to 5 read only invoices 1 to 4). The default
+//   "Mês anterior" has its own test, which checks only the period the API resolves.
 import type { Schemas } from '../../support/contract';
 import {
   CAMPAIGN_DEFINITION,
@@ -62,8 +64,8 @@ export function previousMonth(now: Date = new Date()): Period {
   return { start: isoDate(year, month, 1), end: isoDate(year, month, lastDay(year, month)) };
 }
 
-/** The month the campaign invoices are dated in (see the header). */
-export const DATA_MONTH: Period = previousMonth();
+/** The month the campaign invoices are dated in (B98 and B100): fixed, the one constant of the data month. */
+export const DATA_MONTH: Period = { start: '2026-02-01', end: '2026-02-28' };
 
 /** A fixed period of the data month: from day `from` to day `to`. */
 export function dataMonthDays(from: number, to: number): Period {

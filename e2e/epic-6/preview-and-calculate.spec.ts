@@ -1,18 +1,18 @@
 // Epic 6 · the preview and "Calcular" with the parameter (fluxo 2 and roteiro 2 and 3), on the "Campanha de referência"
 // of `prepare-local`: the workflow panel shows `periodo` and the filter of the batch source with `@periodo`; the preview
-// with the default "Mês anterior" counts the whole data month and, with a fixed period, only its first days; "Calcular"
-// shares the values with the preview, so a record out of the period comes back filtered, and back to the default it is
+// with the data month (fixed, February 2026) counts the whole campaign and, with a fixed period, only its first days; "Calcular"
+// shares the values with the preview, so a record out of the period comes back filtered, and with the data month it is
 // calculated (both modes; nothing is saved, so the shared workflow is used as it is).
 import { layers, properties } from '../epic-4/support/screens';
 import { COUNTED_RECORDS } from '../epic-5/support/expected';
 import { calculate, openBottomTab, openWorkflowEditor, previewPanel, runPreview, shownValue, typeRecordKey, unitRunForm } from '../epic-5/support/screens';
 import { signIn } from '../support/screens';
-import { CAMPAIGN_WORKFLOW } from './support/campaign';
+import { CAMPAIGN_WORKFLOW, DATA_MONTH } from './support/campaign';
 import { FIRST_DAYS, FIRST_DAYS_TOTALS } from './support/expected';
 import { expect, test } from './support/fixtures';
-import { declaredParameter, fixPeriod, parametersSection } from './support/screens';
+import { declaredParameter, fixPeriod, parametersSection, setPeriodDates } from './support/screens';
 
-test('a prévia e o Calcular usam o periodo: o padrão lê o mês inteiro e um período fixo só os primeiros dias', async ({ page, epic6 }) => {
+test('a prévia e o Calcular usam o periodo: o mês dos dados lê a campanha inteira e um período fixo só os primeiros dias', async ({ page, epic6 }) => {
   await signIn(page, epic6.account('admin'));
   await openWorkflowEditor(page, CAMPAIGN_WORKFLOW);
 
@@ -28,25 +28,25 @@ test('a prévia e o Calcular usam o periodo: o padrão lê o mês inteiro e um p
   });
 
   const panel = previewPanel(page);
-  await test.step('a prévia com o padrão Mês anterior', async () => {
+  await test.step('a prévia com o mês dos dados conta a campanha inteira', async () => {
     await openBottomTab(page, 'Prévia');
     await expect(panel.getByRole('group', { name: 'periodo', exact: true })).toContainText('Mês anterior');
+    await fixPeriod(panel, 'periodo', DATA_MONTH);
     const response = await runPreview(page);
     expect(response.status(), 'rodar a prévia').toBe(200);
-    // The default goes by name: the execution resolves it.
-    expect(response.request().postDataJSON()).toMatchObject({ parameters: {} });
+    expect(response.request().postDataJSON()).toMatchObject({ parameters: { periodo: DATA_MONTH } });
     await expect(panel.getByRole('status')).toHaveText(`Prévia pronta: ${COUNTED_RECORDS} registros contados`);
   });
 
   await test.step('a prévia com um período fixo conta menos registros', async () => {
-    await fixPeriod(panel, 'periodo', FIRST_DAYS);
+    await setPeriodDates(panel, 'periodo', FIRST_DAYS);
     const response = await runPreview(page);
     expect(response.status(), 'rodar a prévia').toBe(200);
     expect(response.request().postDataJSON()).toMatchObject({ parameters: { periodo: FIRST_DAYS } });
     await expect(panel.getByRole('status')).toHaveText(`Prévia pronta: ${FIRST_DAYS_TOTALS.read} registros contados`);
   });
 
-  await test.step('o Calcular usa os mesmos valores: 20/3 fica fora do período, e com o padrão é calculado', async () => {
+  await test.step('o Calcular usa os mesmos valores: 20/3 fica fora do período, e com o mês dos dados é calculado', async () => {
     await openBottomTab(page, 'Calcular');
     const form = unitRunForm(page);
     const period = form.getByRole('group', { name: 'periodo', exact: true });
@@ -57,7 +57,7 @@ test('a prévia e o Calcular usam o periodo: o padrão lê o mês inteiro e um p
     expect(outside.request().postDataJSON()).toMatchObject({ parameters: { periodo: FIRST_DAYS } });
     await expect(form.getByRole('status')).toHaveText('Resultado do cálculo: filtrado');
 
-    await form.getByRole('button', { name: 'Voltar ao padrão (Mês anterior)', exact: true }).click();
+    await setPeriodDates(form, 'periodo', DATA_MONTH);
     const inside = await calculate(page, form);
     expect(inside.status(), 'calcular').toBe(200);
     await expect(form.getByRole('status')).toHaveText('Resultado do cálculo: ok');

@@ -19,6 +19,8 @@ export type Epic6Account = 'admin' | 'operator' | 'approver' | 'auditor';
 export interface Epic6 {
   mode: E2EMode;
   account(name: Epic6Account): LoginCredentials;
+  /** The name the account shows in the account menu and in the lists: the one `prepare-local` creates, or the simulation's. */
+  accountName(name: Epic6Account): string;
   /** The simulated worker (the test moves each execution); `null` in real mode, where the backend's worker runs alone. */
   worker: SimulatedWorker | null;
   /** What the module sent to the workflow, catalog and execution routes; `null` in real mode. */
@@ -35,6 +37,9 @@ function hostAppOrigin(testInfo: TestInfo): string {
   if (typeof url !== 'string') throw new Error('Defina metadata.hostAppUrl no playwright.config.ts.');
   return new URL(url).origin;
 }
+
+/** The Admin's name: `prepare-local` creates "Admin Demonstração" (B144); the simulation names it in the feminine. */
+const ADMIN_NAME = { real: 'Admin Demonstração', simulated: 'Administradora Demonstração' } as const;
 
 type Other = Exclude<Epic6Account, 'admin'>;
 
@@ -67,7 +72,7 @@ export const test = base.extend<{ epic6: Epic6 }>({
       const shellOrigin = new URL(baseURL ?? 'http://localhost:5173').origin;
       const simulated = api.mode === 'simulated';
       const accounts: InitialAccount[] = [
-        { ...api.account('admin'), name: 'Administradora Demonstração', roles: { Demonstração: 'Admin' } },
+        { ...api.account('admin'), name: ADMIN_NAME.simulated, roles: { Demonstração: 'Admin' } },
         ...Object.values(SIMULATED).map(({ email, password, name, role }) => ({ email, password, name, roles: { Demonstração: role } })),
       ];
       const session = simulated ? new Epic2Simulation(accounts, shellOrigin) : null;
@@ -84,6 +89,7 @@ export const test = base.extend<{ epic6: Epic6 }>({
           const names = REAL[name];
           return { email: variable(names.email, names.defaultEmail), password: variable(names.password) };
         },
+        accountName: (name) => (name === 'admin' ? ADMIN_NAME[api.mode] : SIMULATED[name].name),
         worker: executions?.worker ?? null,
         calls: () => executions?.calls ?? null,
         hostAppOrigin: hostAppOrigin(testInfo),

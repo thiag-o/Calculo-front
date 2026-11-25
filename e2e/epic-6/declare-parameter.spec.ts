@@ -2,7 +2,7 @@
 // in epic 5 (without parameters), the Admin declares `periodo` (Período, default "Mês anterior") in the Parâmetros section
 // of the workflow, uses it in the filter of the invoice date of the batch source ("Usar parâmetro" in "De" fills "Até")
 // and declares `teto` (Decimal, fixed 100,00) used in the formula of "Pontos". The draft saves without problems, and the
-// preview and "Calcular" read the parameters: the default period counts the whole data month and the ceiling of a
+// preview and "Calcular" read the parameters: the data month (fixed) counts the whole campaign and the ceiling of a
 // record goes from the table's 150,00 to the parameter's 100,00.
 import type { Locator, Page } from '@playwright/test';
 import { suffix } from '../epic-2/support/screens';
@@ -11,9 +11,9 @@ import { BLOCKS } from '../epic-5/support/campaign';
 import { COUNTED_RECORDS } from '../epic-5/support/expected';
 import { calculate, escape, openBottomTab, openWorkflowEditor, previewPanel, runPreview, shownValue, typeRecordKey, unitRunForm } from '../epic-5/support/screens';
 import type { Schemas } from '../support/contract';
-import { CAMPAIGN_WORKFLOW } from './support/campaign';
+import { CAMPAIGN_WORKFLOW, DATA_MONTH } from './support/campaign';
 import { expect, test } from './support/fixtures';
-import { chooseOption, copyWorkflow, declaredParameter, parametersSection } from './support/screens';
+import { chooseOption, copyWorkflow, declaredParameter, fixPeriod, parametersSection } from './support/screens';
 
 type Definition = Schemas['WorkflowDefinition'];
 
@@ -104,9 +104,10 @@ test('o Admin declara o periodo, usa no filtro da data de emissão e um parâmet
     await expect(problemCounter(page)).toHaveCount(0);
   });
 
-  await test.step('a prévia com o padrão conta o mês inteiro dos dados', async () => {
+  await test.step('a prévia com o mês dos dados conta a campanha inteira', async () => {
     await openBottomTab(page, 'Prévia');
     await expect(previewPanel(page).getByRole('group', { name: 'periodo', exact: true })).toContainText('Mês anterior');
+    await fixPeriod(previewPanel(page), 'periodo', DATA_MONTH);
     const response = await runPreview(page);
     expect(response.status(), 'rodar a prévia').toBe(200);
     await expect(previewPanel(page).getByRole('status')).toHaveText(`Prévia pronta: ${COUNTED_RECORDS} registros contados`);

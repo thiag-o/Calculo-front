@@ -18,7 +18,7 @@ import {
   expectStatus,
   finishRun,
   keyText,
-  openTrigger,
+  openTriggerForDataMonth,
   recordsSection,
   recordsTable,
   submitTrigger,
@@ -41,7 +41,7 @@ test('com erros dentro do limite, o grupo de erro filtra os registros e o trace 
   const apiOrigin = await signInForApi(page, epic6.account('admin'));
   const id = await copyWorkflow(page, apiOrigin, CAMPAIGN_WORKFLOW, name);
   await openOverview(page, name);
-  await openTrigger(page);
+  await openTriggerForDataMonth(page);
   expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, name);
   finishRun(epic6);

@@ -9,7 +9,7 @@ import { trackCreatedWorkflow } from '../../epic-5/support/created-workflows';
 import { escape } from '../../epic-5/support/screens';
 import type { Schemas } from '../../support/contract';
 import { type Epic6, expect } from './fixtures';
-import type { Period } from './campaign';
+import { DATA_MONTH, type Period } from './campaign';
 
 type Definition = Schemas['WorkflowDefinition'];
 
@@ -60,6 +60,20 @@ export async function fixPeriod(dialog: Locator, name: string, period: Period): 
   const field = dialog.getByRole('group', { name, exact: true });
   await field.getByLabel('Início', { exact: true }).fill(period.start);
   await field.getByLabel('Fim', { exact: true }).fill(period.end);
+}
+
+/** Fills the two dates of a period that is already fixed (the field shows "Início" and "Fim"). */
+export async function setPeriodDates(scope: Locator, name: string, period: Period): Promise<void> {
+  const field = scope.getByRole('group', { name, exact: true });
+  await field.getByLabel('Início', { exact: true }).fill(period.start);
+  await field.getByLabel('Fim', { exact: true }).fill(period.end);
+}
+
+/** Opens "Executar lote" and fixes `periodo` to the data month (DATA_MONTH), so the batch reads the whole campaign. */
+export async function openTriggerForDataMonth(page: Page, from?: Locator): Promise<Locator> {
+  const dialog = await openTrigger(page, from);
+  await fixPeriod(dialog, 'periodo', DATA_MONTH);
+  return dialog;
 }
 
 /** Clicks "Executar lote" in the dialog and returns the `POST …/executions` response; the panel opens. */

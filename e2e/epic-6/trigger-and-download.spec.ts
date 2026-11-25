@@ -1,10 +1,11 @@
 // Epic 6 · "Executar lote" on the "Campanha de referência" (roteiro 4 and 5): with a fixed period, the panel follows the
 // phases Carga → Cálculo → Entrega until "Entregue", shows the resolved period and the totals, and "Baixar CSV" brings the
-// file with the expected values; with the default "Mês anterior", the execution resolves the period itself and reads the
-// whole data month, ending "Com erros" (2 records without a product, under the limit) with the CSV of the others.
+// file with the expected values; with the data month (fixed, February 2026) it reads the whole campaign, ending "Com erros"
+// (2 records without a product, under the limit) with the CSV of the others; the default "Mês anterior" has its own test,
+// which checks only the period the API resolves.
 import { openOverview } from '../epic-4/support/screens';
 import { signIn } from '../support/screens';
-import { CAMPAIGN_WORKFLOW, DATA_MONTH, periodText } from './support/campaign';
+import { CAMPAIGN_WORKFLOW, DATA_MONTH, periodText, previousMonth } from './support/campaign';
 import { CSV_MONTH_RECORDS, CSV_RECORDS, FIRST_DAYS, FIRST_DAYS_TOTALS, WHOLE_MONTH, type ExpectedTotals } from './support/expected';
 import { expect, test } from './support/fixtures';
 import {
@@ -15,6 +16,7 @@ import {
   finishRun,
   fixPeriod,
   openTrigger,
+  openTriggerForDataMonth,
   phase,
   phases,
   resolvedParameter,
@@ -45,7 +47,7 @@ test('com um período fixo, o painel acompanha as fases até Entregue e o CSV tr
   await openOverview(page, CAMPAIGN_WORKFLOW);
 
   const dialog = await openTrigger(page);
-  // The default is relative: shown by its label, the execution resolves it.
+  // The default is relative: shown by its label; the flow fixes the period.
   await expect(dialog.getByRole('group', { name: 'periodo', exact: true })).toContainText('Mês anterior');
   await fixPeriod(dialog, 'periodo', FIRST_DAYS);
   const response = await submitTrigger(page);
@@ -105,15 +107,29 @@ test('com um período fixo, o painel acompanha as fases até Entregue e o CSV tr
   }
 });
 
-test('com o padrão Mês anterior, a execução resolve o período e lê o mês inteiro dos dados', async ({ page, epic6 }) => {
+test('com o padrão Mês anterior, a execução resolve o mês anterior ao dia do teste', async ({ page, epic6 }) => {
   await signIn(page, epic6.account('admin'));
   await openOverview(page, CAMPAIGN_WORKFLOW);
 
   await openTrigger(page);
   const response = await submitTrigger(page);
   expect(response.status(), 'disparar o lote').toBe(202);
-  // The default goes by name: the request does not carry it, the execution resolves and freezes it.
+  // The default goes by name: the request does not carry it, the API resolves and freezes it. Only the resolved period is
+  // checked: the data is fixed in February 2026, so the totals of this run do not count.
   expect(response.request().postDataJSON()).toEqual(expect.objectContaining({ parameters: {} }));
+  const execution = (await response.json()) as { id: string; parameters: Record<string, unknown> };
+  expect(execution.parameters.periodo).toEqual(previousMonth());
+  await expect(resolvedParameter(page, 'periodo')).toHaveText(periodText(previousMonth()));
+});
+
+test('com o mês dos dados, o lote lê a campanha inteira e termina Com erros, com o CSV dos demais', async ({ page, epic6 }) => {
+  await signIn(page, epic6.account('admin'));
+  await openOverview(page, CAMPAIGN_WORKFLOW);
+
+  await openTriggerForDataMonth(page);
+  const response = await submitTrigger(page);
+  expect(response.status(), 'disparar o lote').toBe(202);
+  expect(response.request().postDataJSON()).toMatchObject({ parameters: { periodo: DATA_MONTH } });
   const execution = (await response.json()) as { id: string; parameters: Record<string, unknown> };
   expect(execution.parameters.periodo).toEqual(DATA_MONTH);
 

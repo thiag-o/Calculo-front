@@ -8,7 +8,7 @@ import { openOverview } from '../epic-4/support/screens';
 import { signIn } from '../support/screens';
 import { CAMPAIGN_WORKFLOW } from './support/campaign';
 import { expect, test } from './support/fixtures';
-import { executionPanel, expectStatus, openTrigger, phase, phases, stepRun, submitTrigger } from './support/screens';
+import { executionPanel, expectStatus, openTriggerForDataMonth, phase, phases, stepRun, submitTrigger } from './support/screens';
 
 /** "Cancelar execução" and the confirmation; returns the `POST …/cancel` response. */
 async function cancelExecution(page: Page, panel: Locator) {
@@ -30,7 +30,7 @@ test.beforeEach(({ epic6 }) => {
 test('cancelar no meio do cálculo para no fim do chunk e a execução termina Cancelada, sem CSV', async ({ page, epic6 }) => {
   await signIn(page, epic6.account('admin'));
   await openOverview(page, CAMPAIGN_WORKFLOW);
-  await openTrigger(page);
+  await openTriggerForDataMonth(page);
   expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, CAMPAIGN_WORKFLOW);
 
@@ -58,7 +58,7 @@ test('cancelar no meio do cálculo para no fim do chunk e a execução termina C
 test('uma execução na fila é cancelada na hora', async ({ page, epic6 }) => {
   await signIn(page, epic6.account('admin'));
   await openOverview(page, CAMPAIGN_WORKFLOW);
-  await openTrigger(page);
+  await openTriggerForDataMonth(page);
   expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, CAMPAIGN_WORKFLOW);
   await expectStatus(page, epic6, panel, 'Na fila');
