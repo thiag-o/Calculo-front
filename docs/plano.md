@@ -1807,7 +1807,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F129 · Testes do workflow: arquivo de referência**
 - dep: F122, F124
 - modelo: opus
-- arquivos: `packages/react/src/test-cases/`
+- arquivos: `packages/react/src/test-cases/`, e (ratificado pela global) `packages/react/src/api/client/upload.ts` e o teste dele, só para o `pathParams`
 - Fazer (E7-25): a seção Arquivo de referência (envio com progresso, erros por linha, lista, apagar) e o diálogo **Simular**, que usa o formulário de parâmetros pelo `executions/index.ts` e abre o painel da simulação ao confirmar; a tela exportada pelo `test-cases/index.ts`.
 - Aceite: testes do envio com progresso, do 422 com três erros, do 413, da lista com e sem comparação, do **Simular** com sucesso, com o 409 `reference_file_mismatch` e com o 422 de parâmetro, de apagar e dos controles escondidos sem `test_cases.edit` e sem `simulations.run`; os quatro estados da lista.
 
@@ -1875,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`, `packages/react/src/notifications/`, `packages/react/src/catalog/datasets/DatasetVariables.test.tsx`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`, `packages/react/src/notifications/`, `packages/react/src/catalog/datasets/DatasetVariables.test.tsx`, `packages/react/src/executions/schedules/`, `packages/react/src/executions/index.ts`, `packages/react/src/test-cases/`, `packages/react/src/module/workflowsByRole.test.tsx`, `docs/adr/0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1912,6 +1912,14 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F130) sem portal (`useFluxoPortal` nulo), o popover não abre vazio com `aria-expanded=true`: ele cai no `body` ou não abre;
   - (F130) testes que faltam: marcar como lido com sondagem em voo, troca de sessão e retomada depois de "Tentar de novo";
   - (F130) o `DatasetVariables.test.tsx:103`, que falhou uma vez com a máquina sob carga, passa a esperar o estado certo, sem afrouxar o que confere.
+  - (F128) o 409 `draft_conflict`, o `draft_has_problems` e o `schedule_name_taken` no diálogo de edição invalidam a lista e derivam o agendamento do cache, sem repetir o conflito; o `draft_conflict` tem um texto próprio;
+  - (F128) a troca de `workflowId` com a lista montada limpa o diálogo e o `changeError`;
+  - (F128) o `format.ts` avisa quando o `Intl` não conhece o fuso, em vez de cair em silêncio no fuso do navegador;
+  - (F128) o `useScheduleDraft` não troca a revisão sob o diálogo aberto (sem `refetchOnWindowFocus` enquanto ele estiver aberto);
+  - (F128) o erro de `recurrence.day` aparece sob o dia, não sob o horário;
+  - (F129) o `DeleteReferenceFileDialog` chama `onDeleted` com a marca da sessão (ADR 0015); o diálogo de remoção trava Esc e Cancelar durante a requisição; o cancelamento do envio é anunciado; a "última comparação" ganha o ponto de status (`statusPresentation` exportado pelo `executions/index.ts`);
+  - (F129) a ADR 0073 passa a citar o `useParameterForm`, que é o que a F129 usa;
+  - (F129) o `workflowsByRole.test.tsx:89`, que falhou uma vez com a máquina sob carga, passa a esperar o estado certo, sem afrouxar o que confere.
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F133 · Portão do épico 7**
