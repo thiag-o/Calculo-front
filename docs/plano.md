@@ -1875,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1898,6 +1898,10 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F125) o filtro "Entregue" da lista não traz as simulações "Sem entrega";
   - (F125, D111-global) em Fontes, a cor das contagens segue o valor, com ou sem `traces.view`: `no_match` ou `multiple_rows` > 0 ficam na cor de aviso, e sem a permissão some só o link para os registros;
   - (F125) o `toHaveFocus` de `EditorScreen.test.tsx:279`, que falhou uma vez com a suíte sob carga, passa a esperar o foco (`waitFor`), sem afrouxar o que confere.
+  - (F126) a prop `onOpenExecution` do disparo e do diálogo é passada pelo `EditorBar.tsx`, pelo `WorkflowOverview.tsx` e pelas duas ocorrências do `ExecutionList.tsx`, e as execuções da nota de sobreposição viram links que abrem a execução;
+  - (F126) a nota de sobreposição some ao mudar um parâmetro por um sinal explícito do formulário, e não pela identidade de `form.formProps.values` do `useParameterForm`;
+  - (F126) o JSDoc do `TriggerExecutionDialog` fica curto;
+  - (F126) o e2e `epic-2/configurator-and-reset-link.spec.ts:24` e o `catalog/Catalog.test.tsx`, que falharam uma vez com a máquina sob carga, passam a esperar o estado certo (`waitFor` ou `expect.poll`), sem afrouxar o que conferem.
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F133 · Portão do épico 7**
