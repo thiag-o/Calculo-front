@@ -1652,11 +1652,12 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 **F135 · Correção da integração do épico 6: editor em branco com os filtros da fonte do lote**
 - dep: F121
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/sources/filters/`, `packages/react/src/formula/parameters.ts`, `packages/react/src/formula/` (só o teste do `readParameterReference`), `e2e/support/contract.ts`, `e2e/epic-6/support/simulation.ts`
+- arquivos: `packages/react/src/editor/sources/filters/`, `packages/react/src/formula/parameters.ts`, `packages/react/src/formula/` (só o teste do `readParameterReference`), `e2e/support/contract.ts`, `e2e/epic-6/support/simulation.ts`, e (D44 do front) `packages/react/src/editor/parameters/` e `packages/react/src/design-system/format/` (só o teste do `readBrazilianNumber` com valor ausente)
 - Fazer: o editor abre o rascunho real da Campanha de referência sem quebrar. No `batch_source` do contrato, os filtros apontam a variável por `variable` (nome), não por `variable_id`, e o `LiteralField` e o `readParameterReference` recebiam `undefined` (`TypeError ... reading 'trim'`).
   - O filtro da fonte do lote é lido pela forma do contrato.
   - O `readParameterReference` aceita valor ausente sem quebrar.
   - A simulação e os exemplos do `contract.ts` passam a ter um `batch_source` com filtros por `variable` e `values` com parâmetro (`["@periodo.inicio"]`), validado contra o `openapi.yaml` (ADR 0060), para o simulado pegar essa forma.
+- (D44 do front) A causa real: o rascunho real chega com `settings` sem `error_limit_percent` e sem `trace_level`, e o `readBrazilianNumber` quebra em `readErrorLimit` e `validateLimit`. O editor lê os padrões do contrato quando o campo falta (`"5"` e `standard`) e grava sempre os dois. O back passa a servir os padrões (B193); a leitura tolerante fica no front do mesmo jeito, para rascunhos antigos. O `contract.ts` e a simulação ganham também um rascunho com `settings` incompleto, marcado como forma legada.
 - Aceite: começa por um teste que monta o editor com o rascunho no formato real e falha antes (tela em branco, `TypeError`) e passa depois; o `declare-parameter` e o `preview-and-calculate` passam no simulado com a forma nova.
 
 **F136 · Correção da integração do épico 6: e2e real com o mês dos dados e o nome da conta (D105-global)**
