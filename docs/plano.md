@@ -1872,8 +1872,22 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 - Fazer: o `tsc -p e2e/support/tsconfig.json` dá 9 erros na main e o `pnpm typecheck` não checa o e2e. Corrigir os 9 (8 antigos em epic-4 e epic-5: `settings` e `batch_source` desatualizados e chaves duplicadas; 1 da F135, o cast do `LEGACY_DRAFT_EMPTY` em `e2e/support/contract.ts`); usar o `LEGACY_DRAFT_EMPTY` num teste ou apagá-lo; pôr o tsconfig do e2e no `pnpm typecheck`.
 - Aceite: o `pnpm typecheck` checa o e2e e fica verde; um erro de tipo posto de propósito num spec faz o `pnpm typecheck` falhar.
 
+**F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
+- dep: F131
+- modelo: sonnet
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`
+- Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
+  - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
+  - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
+  - (F123) os problemas de `allowed_values` têm lugar na tela enquanto se escolhe a consulta;
+  - (F123) o `＠` recusado no `LiteralField` não some quando a análise volta;
+  - (F123) o `requestAnimationFrame` do foco é cancelado ao desmontar;
+  - (F123) `pre_validation_alert_percent` entra no `SHOWN` do `WorkflowProperties`;
+  - (F123) na consulta dos valores permitidos, o texto "A fonte aceita até 20 filtros" passa a falar da consulta, não da fonte.
+- Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
+
 **F133 · Portão do épico 7**
 - tipo: portao
-- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137
+- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137, F139
 - modelo: sonnet
 - Aceite: o mesmo da F106, com as telas do épico 7 provadas pelo `pnpm e2e:visual`.
