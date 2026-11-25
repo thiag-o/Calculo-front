@@ -47,6 +47,20 @@ export { ExecutionPanel, TRACES_PERMISSION as EXECUTIONS_TRACES_PERMISSION } fro
 export type { ExecutionPanelProps } from './detail';
 export type { RecordTraceRenderProps, RenderRecordTrace } from './records';
 
+// The schedules (E7-24), for the Agendamentos tab of the two Execuções screens and the workflow Overview (F131): the list
+// (the workflow one with "Novo agendamento"), the dialog, the recurrence in words and the next run of a workflow
+// ("Próxima execução: 01/12 às 02:00 · Fechamento mensal").
+export {
+  NextScheduledRun,
+  ScheduleDialog,
+  ScheduleList,
+  SCHEDULE_PERMISSION as EXECUTIONS_SCHEDULE_PERMISSION,
+  SCHEDULES_KEY,
+  recurrenceText,
+  scheduleListKey,
+} from './schedules';
+export type { NextScheduledRunProps, Recurrence, Schedule, ScheduleDialogProps, ScheduleListProps } from './schedules';
+
 // The execution routes and their cache keys (`['executions', 'list', filter]`, `['executions', id]` and, under it, the
 // records and the trace of each one).
 export {

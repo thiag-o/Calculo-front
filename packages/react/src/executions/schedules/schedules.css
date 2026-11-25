@@ -1,0 +1,297 @@
+/*
+ * Agendamentos (estilos.md §3, §4, §7.2, §7.3, §7.6, §9, §14 and §15). Only fc- classes and --fc-* variables; no global
+ * reset and no full-window measurement (ADR 0002): the narrow layout comes from the module width.
+ */
+
+.fc-schedules {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-schedules-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fc-space-16);
+}
+
+.fc-schedules-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
+.fc-schedules-title h2,
+.fc-schedules-title p {
+  margin: 0;
+}
+
+/* Two lines in a cell: the main text and the secondary one below (estilos.md §7.6). */
+.fc-schedules-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-schedules-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-4) var(--fc-space-8);
+}
+
+.fc-schedules-number {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fc-schedules-nowrap {
+  white-space: nowrap;
+}
+
+.fc-schedules-wrap {
+  overflow-wrap: anywhere;
+}
+
+/* The execution of the last trigger: a link (estilos.md §3: --fc-link, no underline, underline on hover). */
+.fc-schedules-link {
+  box-sizing: border-box;
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-schedules-link:hover {
+  text-decoration: underline;
+}
+
+.fc-schedules-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-schedules-more {
+  display: flex;
+  justify-content: center;
+}
+
+.fc-schedules-next {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Switch, 32×18 pill (estilos.md §7.2): the track in gray-700 when off (3:1 against the surface, estilos.md §11) and in the
+ * primary when on; the knob in the surface color.
+ */
+.fc-schedules-switch {
+  box-sizing: border-box;
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: var(--fc-space-32);
+  height: calc(var(--fc-space-16) + var(--fc-space-2));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--fc-gray-700);
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: background-color 150ms ease-out;
+}
+
+.fc-schedules-switch[aria-checked='true'] {
+  background: var(--fc-primary);
+}
+
+.fc-schedules-switch[aria-busy='true'] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.fc-schedules-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.fc-schedules-switch:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+.fc-schedules-switch-knob {
+  position: absolute;
+  top: var(--fc-space-2);
+  left: var(--fc-space-2);
+  width: calc(var(--fc-space-12) + var(--fc-space-2));
+  height: calc(var(--fc-space-12) + var(--fc-space-2));
+  border-radius: 50%;
+  background: var(--fc-background-100);
+  transition: transform 150ms ease-out;
+}
+
+.fc-schedules-switch[aria-checked='true'] .fc-schedules-switch-knob {
+  transform: translateX(calc(var(--fc-space-12) + var(--fc-space-2)));
+}
+
+.fc-schedules-switch-field {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-8);
+}
+
+.fc-schedules-switch-field label {
+  cursor: pointer;
+}
+
+/* The dialog. */
+.fc-schedules-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-schedules-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+}
+
+.fc-schedules-revision {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+.fc-schedules-revision p {
+  margin: 0;
+}
+
+.fc-schedules-revision-moved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-8) var(--fc-space-12);
+}
+
+.fc-schedules-recurrence,
+.fc-schedules-weekdays {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fc-schedules-recurrence {
+  gap: var(--fc-space-12);
+}
+
+.fc-schedules-legend {
+  margin: 0 0 var(--fc-space-6);
+  padding: 0;
+}
+
+.fc-schedules-recurrence-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--fc-space-12) var(--fc-space-16);
+}
+
+.fc-schedules-time {
+  flex: 0 1 var(--fc-field-width-date);
+}
+
+.fc-schedules-day {
+  flex: 0 1 var(--fc-field-width-date);
+}
+
+.fc-schedules-weekdays-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8) var(--fc-space-16);
+}
+
+/* Diária | Semanal | Mensal, a segmented control (estilos.md §7.2) made of native radios. */
+.fc-schedules-segmented {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: var(--fc-space-2);
+  padding: var(--fc-space-2);
+  border-radius: var(--fc-radius-6);
+  background: var(--fc-hover);
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+.fc-schedules-segment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(var(--fc-space-24) + var(--fc-space-4));
+  padding: 0 var(--fc-space-12);
+  /* An inner item of the 6px track: 4px (estilos.md §4). */
+  border-radius: calc(var(--fc-radius-6) - var(--fc-space-2));
+  color: var(--fc-text-secondary);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.fc-schedules-segment[data-checked] {
+  background: var(--fc-background-100);
+  color: var(--fc-text);
+  font-weight: 500;
+  box-shadow: 0 0 0 1px var(--fc-border);
+}
+
+.fc-schedules-segment[data-disabled] {
+  color: var(--fc-text-tertiary);
+  cursor: not-allowed;
+}
+
+.fc-schedules-segment:has(.fc-schedules-segment-radio:focus-visible) {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* The radio stays in the page for the keyboard and the screen reader; the label is what shows. */
+.fc-schedules-segment-radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-schedules-switch,
+  .fc-schedules-switch-knob,
+  .fc-schedules-segment {
+    transition: none;
+  }
+}
