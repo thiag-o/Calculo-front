@@ -12,6 +12,7 @@ import {
   type RenderRecordTrace,
 } from '../records';
 import { TRIGGER_PERMISSION } from '../trigger';
+import { ReferenceComparison } from '../comparison';
 import { CancelExecution } from './CancelExecution';
 import { DownloadOutput } from './DownloadOutput';
 import {
@@ -59,7 +60,8 @@ export interface ExecutionPanelProps {
 
 /**
  * The panel of one execution (E6-21, E7-21): status and abort reason, the phases Carga → Pré-validação → Cálculo → Entrega
- * (Comparação in a simulation) with the progress bar, the pre-validation alert waiting for "Prosseguir" or "Cancelar", the
+ * (Comparação in a simulation) with the progress bar, the comparison with the reference file at the top of a simulation
+ * (E7-26), the pre-validation alert waiting for "Prosseguir" or "Cancelar", the
  * summary (resolved parameters, the "agora", trace level, error limit, who triggered or the schedule, the overlap), the
  * pre-validation, the counts of the Fonte blocks, the totals, the errors grouped by block and code (a click filters the
  * records) and, with `traces.view`, the records with the trace drawer. "Baixar CSV" (disabled with the reason) and
@@ -183,6 +185,11 @@ export function ExecutionPanel({ executionId, renderRecordTrace, onOpenExecution
       ) : null}
 
       <StatusNotes execution={execution} />
+
+      {/* A simulation with a reference file: the comparison goes at the top (E7-26). */}
+      {execution.mode === 'simulation' && execution.reference_file ? (
+        <ReferenceComparison execution={execution} renderRecordTrace={renderRecordTrace} />
+      ) : null}
 
       <Phases execution={execution} />
 

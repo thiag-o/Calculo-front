@@ -1,0 +1,164 @@
+/*
+ * Execução › Comparação com o arquivo de referência (estilos.md §3, §4, §7.5, §7.6, §11 and §14). Only fc- classes and
+ * --fc-* variables; no global reset and nothing measured on the whole window (ADR 0002).
+ */
+
+.fc-comparison {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-comparison p,
+.fc-comparison h2 {
+  margin: 0;
+}
+
+.fc-comparison-top,
+.fc-comparison-summary,
+.fc-comparison-diff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-12);
+  min-width: 0;
+}
+
+.fc-comparison-top {
+  gap: var(--fc-space-4);
+}
+
+/* The summary is a box (estilos.md §7.6); the diff table below is a card of its own, never inside it. */
+.fc-comparison-summary {
+  box-sizing: border-box;
+  padding: var(--fc-space-16);
+  border: 1px solid var(--fc-border);
+  border-radius: 12px;
+  background-color: var(--fc-background-100);
+}
+
+.fc-comparison-counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: var(--fc-space-12) var(--fc-space-16);
+  margin: 0;
+}
+
+.fc-comparison-count {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+}
+
+.fc-comparison-count dt {
+  color: var(--fc-text-secondary);
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.fc-comparison-count dd {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.fc-comparison-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-comparison-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12) var(--fc-space-16);
+  min-width: 0;
+}
+
+.fc-comparison-filter {
+  flex: 0 1 var(--fc-field-width-select);
+}
+
+.fc-comparison-what {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-width: 0;
+}
+
+.fc-comparison-mono {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The key opens the trace: a link in mono (estilos.md §3: --fc-link, underline on hover). */
+.fc-comparison-key {
+  box-sizing: border-box;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-comparison-key:hover {
+  text-decoration: underline;
+}
+
+.fc-comparison-key:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* One line per different field: the name, then expected × obtained. */
+.fc-comparison-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-comparison-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--fc-space-8);
+  min-width: 0;
+}
+
+.fc-comparison-field-name {
+  color: var(--fc-text-secondary);
+}
+
+.fc-comparison-times {
+  color: var(--fc-text-secondary);
+}
+
+.fc-comparison-nowrap {
+  white-space: nowrap;
+}
+
+.fc-comparison-wrap {
+  overflow-wrap: anywhere;
+}
+
+.fc-comparison-more {
+  display: flex;
+  justify-content: center;
+}

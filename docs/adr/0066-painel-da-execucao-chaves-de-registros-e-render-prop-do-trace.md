@@ -1,6 +1,6 @@
 # 0066. Painel da execução: chaves dos registros sob `['executions', id]` e trace por render prop
 
-- **Status:** aceita, revisar no checkpoint
+- **Status:** aceita, revisar no checkpoint (complementada por [0075](0075-sub-vertical-executions-comparison.md))
 - **Data:** 2026-11-22
 - **Quem decidiu:** orquestração (tarefa F102), com D40 da sessão global
 - **Relacionadas:** ADRs 0003, 0050, 0062, 0063 (complementa a 0062 e a 0063)

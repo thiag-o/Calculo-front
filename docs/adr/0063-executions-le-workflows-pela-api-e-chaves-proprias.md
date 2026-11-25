@@ -1,6 +1,6 @@
 # 0063. `executions` lê workflows direto pela API, com chaves próprias, e `executions/api/` é a peça comum das sub-verticais
 
-- **Status:** aceita, revisar no checkpoint (complementada por [0066](0066-painel-da-execucao-chaves-de-registros-e-render-prop-do-trace.md), que na F118 acrescenta a chave `['executions', id, 'definition']`; também complementada por [0070](0070-interface-publica-do-epico-de-execucoes.md))
+- **Status:** aceita, revisar no checkpoint (complementada por [0066](0066-painel-da-execucao-chaves-de-registros-e-render-prop-do-trace.md), que na F118 acrescenta a chave `['executions', id, 'definition']`; também complementada por [0070](0070-interface-publica-do-epico-de-execucoes.md) e [0075](0075-sub-vertical-executions-comparison.md))
 - **Data:** 2026-11-22
 - **Quem decidiu:** orquestração (tarefa F101), com aprovação da sessão global
 - **Relacionadas:** ADRs 0003, 0020, 0033, 0038, 0062 (complementa a 0062)
