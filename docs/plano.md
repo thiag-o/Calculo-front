@@ -1769,7 +1769,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F124 · Formulário de parâmetros: valores por consulta e modo agendamento**
 - dep: F122
 - modelo: opus
-- arquivos: `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/index.ts`
+- arquivos: `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/index.ts`, e (ratificado pela global) uma linha em `packages/react/src/executions/trigger/TriggerExecutionDialog.tsx` e uma em `packages/react/src/editor/preview/parameters.ts`, só para passar `{ workflowId }`
 - Fazer (E7-23, E7-24):
   - o campo de um parâmetro com consulta vira a busca com os valores de `GET .../allowed-values`, com o `truncated` e, na lista, várias escolhas; os erros de leitura com a mensagem da API;
   - o modo agendamento (`mode="schedule"`): cada parâmetro com Fixo | Relativo (só os relativos que servem ao tipo, pelos `RELATIVE_LABELS`), enviado como `{kind, value}`;
@@ -1875,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1884,6 +1884,13 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F123) o `requestAnimationFrame` do foco é cancelado ao desmontar;
   - (F123) `pre_validation_alert_percent` entra no `SHOWN` do `WorkflowProperties`;
   - (F123) na consulta dos valores permitidos, o texto "A fonte aceita até 20 filtros" passa a falar da consulta, não da fonte.
+  - (F124) durante o debounce e a busca em voo, a lista antiga de valores não fica ativa: Enter e as setas não escolhem um valor que não bate com o texto, o `active` não guarda um índice velho, e aparece "Carregando" mesmo com `keepPreviousData`;
+  - (F124) no Safari, clicar em "Tentar de novo" ou em "Remover" não fecha o popup antes do clique (`onMouseDown` com `preventDefault` no popup);
+  - (F124) o campo de consulta recebe `onBlur` e `touched` como os outros campos;
+  - (F124) ir de Relativo para Fixo e voltar para Relativo mantém o relativo escolhido;
+  - (F124) o erro do Fixo "tocado" não reaparece ao voltar de Relativo;
+  - (F124) o ícone svg usa o token de tamanho, não `14` cru;
+  - (F124) o `relativesFor` duplicado usa o de `editor/parameters/parameterRules.ts`.
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F133 · Portão do épico 7**
