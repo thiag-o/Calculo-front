@@ -1821,7 +1821,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F131 · Integração do épico 7: módulo, menus, sino e interface pública**
 - dep: F123, F125, F126, F127, F128, F129, F130
 - modelo: sonnet
-- arquivos: `packages/react/src/module/`, `packages/react/src/workflows/overview/`, `docs/glossario.md`, `README.md`, `.changeset/`, e (ratificado pela global na tentativa 2) `e2e/support/` (a API simulada responde `GET /v1/notifications` e `GET /v1/schedules` com os exemplos do contrato, como nas D11 e D14) e 6 linhas em `packages/react/src/workflows/Workflows.tsx` (o `tab` repassado ao `WorkflowExecutions`)
+- arquivos: `packages/react/src/module/`, `packages/react/src/workflows/overview/`, `docs/glossario.md`, `README.md`, `.changeset/`, e (ratificado pela global na tentativa 2) `e2e/support/` (a API simulada responde `GET /v1/notifications` e `GET /v1/schedules` com os exemplos do contrato, como nas D11 e D14) e 6 linhas em `packages/react/src/workflows/Workflows.tsx` (o `tab` repassado ao `WorkflowExecutions`); também as simulações `e2e/epic-2/support/simulation.ts` a `e2e/epic-6/support/simulation.ts` (só `GET /v1/notifications` e `GET /v1/schedules` nas rotas conhecidas, e no épico 2 em `AUTHENTICATED_ROUTES`) e `e2e/visual/__screenshots__/` (regravar as 71 baselines que mudam só pela barra do conteúdo com o sino, 56 px; o relatório lista as telas)
 - Fazer:
   - a rota `/workflows/:id/tests` e o item **Testes** no menu do workflow (com `workflows.view`);
   - as abas Execuções | Agendamentos nas duas telas de execuções, com as rotas das abas;
