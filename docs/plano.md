@@ -1664,12 +1664,12 @@ As decisões E6-1 a E6-15, o esquema na versão 3, os parâmetros, os estados da
 - dep: F121
 - modelo: sonnet
 - revisão: não
-- arquivos: `e2e/epic-6/`, `e2e/README.md`
+- arquivos: `e2e/epic-6/`, `README.md` (só a seção do épico 6)
 - Fazer (D105-global):
   - os dados da campanha são de fevereiro de 2026 e não mudam (B98 e B100). O `DATA_MONTH` passa a ser fixo, `2026-02-01` a `2026-02-28`, numa constante só. Todo teste que confere totais, erros, trace ou CSV dispara com esse período fixo;
   - o padrão "Mês anterior" tem um teste próprio, que confere só o período resolvido pela API (o mês anterior ao dia do teste), sem conferir totais;
   - o `roles.spec.ts` usa o nome da conta que o `prepare-local` cria no modo real ("Admin Demonstração"), e o da simulação no simulado, sem texto fixo duplicado;
-  - o `e2e/README.md` troca o aviso "ajuste as datas" pela regra nova. Cancelar no meio e derrubar o worker continuam cobertos pelo simulado e pelos testes do back (B144), não pelo real.
+  - o `README.md` da raiz, na seção do épico 6, troca o aviso "ajuste as datas" pela regra nova. Cancelar no meio e derrubar o worker continuam cobertos pelo simulado e pelos testes do back (B144), não pelo real.
 - Aceite: o `pnpm e2e:real e2e/epic-6` passa contra o back real em qualquer dia do ano, com os totais da B100 (58 lidos, 44 ok, 4 avisos, 2 erros, 6 ignorados, 2 filtrados); o simulado continua verde.
 
 **F106 · Portão do épico 6**
@@ -1849,8 +1849,16 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   Se a tolerância do `e2e:visual` deixou passar 11% de mudança, ajuste-a para um valor que pegue uma mudança real e não pegue ruído de renderização.
 - Aceite: o relatório lista cada baseline com a tarefa que explica a mudança; o `pnpm e2e:visual` fica verde com a tolerância nova e falha numa mudança de tela feita de propósito no teste.
 
+**F137 · Manutenção: tipos do e2e checados no `pnpm typecheck` (achado da F135)**
+- dep: F106
+- modelo: sonnet
+- revisão: não
+- arquivos: `e2e/`, `package.json` (só o script `typecheck`)
+- Fazer: o `tsc -p e2e/support/tsconfig.json` dá 9 erros na main e o `pnpm typecheck` não checa o e2e. Corrigir os 9 (8 antigos em epic-4 e epic-5: `settings` e `batch_source` desatualizados e chaves duplicadas; 1 da F135, o cast do `LEGACY_DRAFT_EMPTY` em `e2e/support/contract.ts`); usar o `LEGACY_DRAFT_EMPTY` num teste ou apagá-lo; pôr o tsconfig do e2e no `pnpm typecheck`.
+- Aceite: o `pnpm typecheck` checa o e2e e fica verde; um erro de tipo posto de propósito num spec faz o `pnpm typecheck` falhar.
+
 **F133 · Portão do épico 7**
 - tipo: portao
-- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134
+- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137
 - modelo: sonnet
 - Aceite: o mesmo da F106, com as telas do épico 7 provadas pelo `pnpm e2e:visual`.
