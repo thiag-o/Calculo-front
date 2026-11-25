@@ -363,10 +363,15 @@ function isDefinition(value: unknown): value is Definition {
  * `settings` fields at their defaults (the error limit of 5 % and the standard trace); what the draft already has is kept.
  */
 function toVersion3(definition: Definition): Definition {
+  const stored: Partial<Definition['settings']> = definition.settings;
   return {
     ...definition,
     schema_version: 3,
-    settings: { error_limit_percent: '5', trace_level: 'standard', ...definition.settings },
+    settings: {
+      ...definition.settings,
+      error_limit_percent: stored.error_limit_percent ?? '5',
+      trace_level: stored.trace_level ?? 'standard',
+    },
     parameters: Array.isArray(definition.parameters) ? definition.parameters : [],
   };
 }

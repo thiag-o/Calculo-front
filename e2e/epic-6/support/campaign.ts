@@ -115,22 +115,24 @@ const DEFECTS_COLUMNS = [
   { name: 'emissao', type: 'date', scale: null, sourceType: 'date' },
 ] as const;
 
+const DEFECTS_ROWS: [string, string | null, string, string, string, string][] = [
+  ['1', '1', '1', 'P01', '10', '389.00'],
+  ['2', '1', '2', 'P03', '2', '578.00'],
+  ['3', '2', '1', 'P02', '4', '110.00'],
+  ['4', '4', '2', 'P04', '6', '388.50'],
+  ['5', '4', '2', 'P04', '1', '64.75'],
+  ['6', null, '1', 'P01', '2', '77.80'],
+  ['7', '7', '1', 'P01', '8', '311.20'],
+  ['8', '8', '3', 'P06', '1', '89.90'],
+];
+
 export const DEFECTS: CatalogDataset = {
   ...ITEMS,
   id: 'c5a00000-0000-4000-8000-000000000008',
   name: 'Itens de nota fiscal com defeitos',
   object: 'itens_nf_defeitos',
   columns: DEFECTS_COLUMNS,
-  rows: [
-    ['1', '1', '1', 'P01', '10', '389.00'],
-    ['2', '1', '2', 'P03', '2', '578.00'],
-    ['3', '2', '1', 'P02', '4', '110.00'],
-    ['4', '4', '2', 'P04', '6', '388.50'],
-    ['5', '4', '2', 'P04', '1', '64.75'],
-    ['6', null, '1', 'P01', '2', '77.80'],
-    ['7', '7', '1', 'P01', '8', '311.20'],
-    ['8', '8', '3', 'P06', '1', '89.90'],
-  ].map(([id, noteId, itemSeq, product, quantity, value]) => ({
+  rows: DEFECTS_ROWS.map(([id, noteId, itemSeq, product, quantity, value]) => ({
     id,
     nota_id: noteId,
     item_seq: itemSeq,

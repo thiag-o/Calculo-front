@@ -5064,13 +5064,13 @@ export type ExampleName = keyof typeof EXAMPLES;
  * (D44 of the front), whatever the schema says; the editor reads their defaults and the first save writes both. The cast is
  * the only way to hold a value the generated type forbids.
  */
+/**
+ * The `Draft` example's definition as the generated type. The contract example has no `root.batch_source` (the schema
+ * requires it, nullable), so the cast goes through `unknown`; `contract-examples.spec.ts` keeps the example equal to the contract.
+ */
+export const EXAMPLE_DRAFT_DEFINITION = EXAMPLES_BASE.Draft.definition as unknown as Schemas['WorkflowDefinition'];
+
 export const LEGACY_SETTINGS = {
   error_policy: 'error',
   rounding: { scale: 2, mode: 'half_up' },
 } as unknown as Schemas['WorkflowDefinition']['settings'];
-
-/** LEGACY FORM: the `DraftEmpty` example with the legacy `settings` (see `LEGACY_SETTINGS`). */
-export const LEGACY_DRAFT_EMPTY: Schemas['Draft'] = {
-  ...EXAMPLES_BASE.DraftEmpty,
-  definition: { ...EXAMPLES_BASE.DraftEmpty.definition, settings: LEGACY_SETTINGS },
-} as Schemas['Draft'];

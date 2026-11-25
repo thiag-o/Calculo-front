@@ -2,7 +2,7 @@
 // user sees. The sign-in ones are in e2e/support/screens.ts; the API call from inside the shell in e2e/epic-2.
 import type { Locator, Page, Response } from '@playwright/test';
 import { callApi, mainNavigation } from '../../epic-2/support/screens';
-import { EXAMPLES, type Schemas } from '../../support/contract';
+import { EXAMPLE_DRAFT_DEFINITION, type Schemas } from '../../support/contract';
 import type { LoginCredentials } from '../../support/fixtures';
 import { apiResponse, signIn } from '../../support/screens';
 import { expect } from './fixtures';
@@ -12,7 +12,7 @@ type Definition = Schemas['WorkflowDefinition'];
 type Draft = Schemas['Draft'];
 
 /** The draft of the contract example (the "Pontuação de exemplo" of `prepare-local`): inputs, the Table and two Calculations. */
-export const EXAMPLE_DEFINITION = EXAMPLES.Draft.definition as Definition;
+export const EXAMPLE_DEFINITION = EXAMPLE_DRAFT_DEFINITION;
 
 /** The formulas of the example (backend plan, Contratos). */
 export const POINTS_FORMULA = 'MÍN(ARRED(valor_item * fator, 2), 1000 - pontos_historico)';

@@ -8,7 +8,7 @@
 // workflow "Pontuação de exemplo" of the backend's `prepare-local`, with the draft of the contract example.
 import { randomUUID } from 'node:crypto';
 import type { BrowserContext, Page, Request, Response, Route } from '@playwright/test';
-import { EXAMPLES, type ErrorBody, type Schemas, type Session } from '../../support/contract';
+import { EXAMPLE_DRAFT_DEFINITION, EXAMPLES, type ErrorBody, type Schemas, type Session } from '../../support/contract';
 import { API_ROUTES, isApiCall } from '../../support/simulated-api';
 import { analyze, runUnit, type Analysis } from './engine';
 
@@ -78,7 +78,7 @@ export class WorkflowSimulation {
     private readonly now: () => number = Date.now,
   ) {
     const created = this.now() - 60 * 60 * 1000;
-    const definition = structuredClone(EXAMPLES.Draft.definition) as Definition;
+    const definition = structuredClone(EXAMPLE_DRAFT_DEFINITION);
     this.workflows.push({
       id: randomUUID(),
       name: SAMPLE_WORKFLOW,
@@ -377,10 +377,15 @@ function isDefinition(value: unknown): value is Definition {
  * `settings` fields at their defaults (the error limit of 5 % and the standard trace); what the draft already has is kept.
  */
 function toVersion3(definition: Definition): Definition {
+  const stored: Partial<Definition['settings']> = definition.settings;
   return {
     ...definition,
     schema_version: 3,
-    settings: { error_limit_percent: '5', trace_level: 'standard', ...definition.settings },
+    settings: {
+      ...definition.settings,
+      error_limit_percent: stored.error_limit_percent ?? '5',
+      trace_level: stored.trace_level ?? 'standard',
+    },
     parameters: Array.isArray(definition.parameters) ? definition.parameters : [],
   };
 }

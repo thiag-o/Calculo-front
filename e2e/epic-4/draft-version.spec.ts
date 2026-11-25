@@ -12,13 +12,14 @@ test('um rascunho gravado em versão 2 volta em versão 3, no PUT e no GET segui
   expect(created.status, 'criar o workflow pela API').toBe(201);
   const workflow = created.body as Workflow;
 
-  const version2: Schemas['WorkflowDefinition'] = {
+  // A version 2 draft is a legacy form (no `batch_source`, two `settings` fields missing): the generated type forbids it.
+  const version2 = {
     schema_version: 2,
     kind: 'batch',
     settings: { error_policy: 'error', rounding: { scale: 2, mode: 'half_up' } },
     root: { inputs: [], nodes: [], output: { fields: [] } },
   };
-  const body: Schemas['DraftUpdate'] = { revision: workflow.draft.revision, definition: version2 };
+  const body = { revision: workflow.draft.revision, definition: version2 };
   const saved = await callApi(page, apiOrigin, 'PUT', `/v1/workflows/${workflow.id}/draft`, body);
   expect(saved.status, `gravar o rascunho em versão 2 (${String(saved.code)})`).toBe(200);
   const expected = {
