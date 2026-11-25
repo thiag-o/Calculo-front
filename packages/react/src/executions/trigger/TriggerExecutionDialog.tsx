@@ -1,11 +1,20 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useId, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { Button, Dialog, DialogClose, Loading, Notice, Skeleton, type DialogProps } from '../../design-system';
 import { ApiError } from '../../api';
 import { isSameSessionData } from '../../session';
 import { useTriggerExecution, type Execution } from '../api';
 import { ParameterForm, parameterErrorsFrom, useParameterForm, type WorkflowParameter } from '../parameter-form';
-import { draftErrorMessage, problemCount, problemsReason, revisionNote, triggerErrorMessage } from './messages';
+import {
+  draftErrorMessage,
+  overlappingFrom,
+  problemCount,
+  problemsReason,
+  revisionNote,
+  triggerErrorMessage,
+  type OverlappingExecution,
+} from './messages';
+import { OverlapNote } from './OverlapNote';
 import { useSavedDraft } from './queries';
 import './trigger.css';
 
@@ -28,6 +37,11 @@ export interface TriggerExecutionDialogProps {
    * the dialog closes before calling it.
    */
   onOpenProblems?: () => void;
+  /**
+   * Opens the panel of an execution. With it, the note of a scope already delivered (E7-22) links each execution of that
+   * scope; the dialog closes before calling it. Without it, the note lists them as text.
+   */
+  onOpenExecution?: (id: string) => void;
   /** Who gets focus on close (the button that opened the dialog). */
   focusOnClose?: DialogProps['focusOnClose'];
 }
@@ -37,10 +51,18 @@ export interface TriggerExecutionDialogProps {
  * ("Executa o rascunho salvo (revisão N)…"), the parameters form with the defaults (the relative one by its label) and,
  * while the draft has problems, the button disabled with the reason and "Ver problemas". The `409` of the trigger
  * (`draft_conflict`, `draft_has_problems`, `no_batch_source`) are explained in a note; the `422` of a parameter goes to
- * its field. While the trigger is in flight the dialog is locked (Cancelar, Esc, "Fechar" and the click outside do not close it),
+ * its field. The `409 scope_already_delivered` (E7-22) becomes a note with the executions of the same scope: "Executar lote"
+ * then sends `confirm_overlap: true`, until a parameter changes (the note goes away and the next send asks again). While the trigger is in flight the dialog is locked (Cancelar, Esc, "Fechar" and the click outside do not close it),
  * so the batch never goes out twice. Mount it only while open; needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (dialog portal).
  */
-export function TriggerExecutionDialog({ workflowId, onClose, onTriggered, onOpenProblems, focusOnClose }: TriggerExecutionDialogProps) {
+export function TriggerExecutionDialog({
+  workflowId,
+  onClose,
+  onTriggered,
+  onOpenProblems,
+  onOpenExecution,
+  focusOnClose,
+}: TriggerExecutionDialogProps) {
   const formId = useId();
   const draftQuery = useSavedDraft(workflowId);
   const trigger = useTriggerExecution(workflowId);
@@ -51,11 +73,22 @@ export function TriggerExecutionDialog({ workflowId, onClose, onTriggered, onOpe
 
   const problems = draft?.problems.length ?? 0;
   // A parameter error is shown at its field; any other error, in the note.
-  const triggerError = trigger.error && parameterErrorsFrom(trigger.error) === null ? triggerErrorMessage(trigger.error) : null;
+  const triggerError =
+    trigger.error && parameterErrorsFrom(trigger.error) === null && overlappingFrom(trigger.error) === null
+      ? triggerErrorMessage(trigger.error)
+      : null;
+  // The scope already delivered, tied to the values it was asked with: any change to a parameter drops the note (E7-22).
+  const [overlap, setOverlap] = useState<{ executions: OverlappingExecution[]; values: unknown } | null>(null);
+  const overlapNote = overlap && overlap.values === form.formProps.values ? overlap.executions : null;
 
   function openProblems() {
     onClose();
     onOpenProblems?.();
+  }
+
+  function openExecution(id: string) {
+    onClose();
+    onOpenExecution?.(id);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -64,8 +97,9 @@ export function TriggerExecutionDialog({ workflowId, onClose, onTriggered, onOpe
     trigger.reset();
     const reading = form.read();
     if (!reading.ok) return;
+    const values = form.formProps.values;
     trigger.mutate(
-      { revision: draft.revision, parameters: reading.parameters, confirm_overlap: false },
+      { revision: draft.revision, parameters: reading.parameters, confirm_overlap: overlapNote !== null },
       {
         // An answer that arrives after the session data was cleared (sign-out, 401, tenant switch) opens nothing (ADR 0015).
         onSuccess: (execution, _body, mark) => {
@@ -73,6 +107,11 @@ export function TriggerExecutionDialog({ workflowId, onClose, onTriggered, onOpe
         },
         onError: (error, _body, mark) => {
           if (!isSameSessionData(queryClient, mark) || form.applyError(error)) return;
+          const overlapping = overlappingFrom(error);
+          if (overlapping) {
+            setOverlap({ executions: overlapping, values });
+            return;
+          }
           // The saved draft is no longer the one on screen: read it again (new revision, parameters or problems).
           if (error instanceof ApiError && DRAFT_CHANGED_CODES.has(error.code)) void draftQuery.refetch();
         },
@@ -120,6 +159,7 @@ export function TriggerExecutionDialog({ workflowId, onClose, onTriggered, onOpe
           </Notice>
         ) : null}
         <ParameterForm {...form.formProps} disabled={sending} />
+        {overlapNote ? <OverlapNote executions={overlapNote} onOpenExecution={onOpenExecution ? openExecution : undefined} /> : null}
         {/* The problems read again are already in the note above. */}
         {triggerError && !(triggerError.showProblems && problems > 0) ? (
           <Notice type="error" title={triggerError.title} actions={triggerError.showProblems ? problemsButton : undefined}>

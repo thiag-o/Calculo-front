@@ -9,6 +9,50 @@
   min-width: 0;
 }
 
+.fc-trigger-overlap-text {
+  margin: 0;
+}
+
+.fc-trigger-overlap-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  margin: var(--fc-space-8) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-trigger-overlap-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-4) var(--fc-space-12);
+}
+
+.fc-trigger-link {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font: inherit;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-trigger-link:hover {
+  text-decoration: underline;
+}
+
+.fc-trigger-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
 .fc-trigger-skeleton {
   display: flex;
   flex-direction: column;

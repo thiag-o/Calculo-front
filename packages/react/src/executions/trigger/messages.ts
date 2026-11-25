@@ -36,6 +36,30 @@ export interface TriggerErrorMessage {
   showProblems?: boolean;
 }
 
+/** An execution of the same scope, delivered or still running (generated from the contract). */
+export type OverlappingExecution = Schemas['OverlappingExecution'];
+
+/** The code of the `409` that says the same scope was already delivered or is running (E7-6). */
+export const OVERLAP_CODE = 'scope_already_delivered';
+
+/** The note on a scope already delivered (E7-22). */
+export const OVERLAP_TITLE = 'Este escopo já foi entregue';
+export const OVERLAP_MESSAGE =
+  'Executar de novo entrega tudo outra vez, com uma revisão nova. O reprocessamento só do que mudou chega depois.';
+
+/** The executions of the same scope in a `scope_already_delivered`, newest first (at most 5); `null` for any other error. */
+export function overlappingFrom(error: unknown): OverlappingExecution[] | null {
+  if (!(error instanceof ApiError) || error.code !== OVERLAP_CODE) return null;
+  const overlapping = (error.body as Partial<Schemas['TriggerConflictProblem']> | undefined)?.overlapping;
+  return Array.isArray(overlapping) ? overlapping : [];
+}
+
+/** Who started an overlapping execution: the person or, when a schedule did, "Agendada". */
+export function overlapOrigin(execution: OverlappingExecution): string {
+  if (execution.triggered_by) return `por ${execution.triggered_by.name}`;
+  return execution.schedule ? `Agendada (${execution.schedule.name})` : 'Agendada';
+}
+
 function sentProblems(error: ApiError): number {
   const problems = (error.body as Partial<Schemas['DraftRunConflictProblem']> | undefined)?.problems;
   return Array.isArray(problems) ? problems.length : 0;

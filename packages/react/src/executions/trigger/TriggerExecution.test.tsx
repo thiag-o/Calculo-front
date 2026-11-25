@@ -15,6 +15,7 @@ import {
 } from '../api/executions.test-support';
 import { clearSessionData } from '../../session';
 import { TriggerExecution } from '.';
+import type { OverlappingExecution } from './messages';
 
 const DRAFT = `GET /v1/workflows/${WORKFLOW_ID}/draft`;
 const TRIGGER = `POST /v1/workflows/${WORKFLOW_ID}/executions`;
@@ -36,10 +37,27 @@ async function bodyOf(request: Request): Promise<unknown> {
   return JSON.parse(await request.clone().text());
 }
 
-function renderTrigger(props: { onTriggered?: () => void; onOpenProblems?: () => void } = {}) {
+/** An execution of the same scope (a `scope_already_delivered` row), by the day it was created. */
+function overlapping(day: number): OverlappingExecution {
+  return {
+    id: `6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c0${day}`,
+    status: 'completed',
+    created_at: `2026-11-0${day}T05:00:00Z`,
+    finished_at: `2026-11-0${day}T05:09:30Z`,
+    triggered_by: { id: 'b1b2c3d4-0000-4000-8000-000000000002', name: 'Maria Souza' },
+    schedule: null,
+  };
+}
+
+function renderTrigger(props: { onTriggered?: () => void; onOpenProblems?: () => void; onOpenExecution?: (id: string) => void } = {}) {
   const onTriggered = props.onTriggered ?? vi.fn();
   const screenResult = renderScreen(
-    <TriggerExecution workflowId={WORKFLOW_ID} onTriggered={onTriggered} onOpenProblems={props.onOpenProblems} />,
+    <TriggerExecution
+      workflowId={WORKFLOW_ID}
+      onTriggered={onTriggered}
+      onOpenProblems={props.onOpenProblems}
+      onOpenExecution={props.onOpenExecution}
+    />,
   );
   return { ...screenResult, onTriggered };
 }
@@ -297,6 +315,106 @@ describe('Executar lote: erros do disparo', () => {
     );
     expect(within(dialog).queryByRole('alert', { name: /Não foi possível executar/ })).not.toBeInTheDocument();
     expect(within(dialog).queryByText('Não foi possível executar o lote')).not.toBeInTheDocument();
+  });
+
+  it('scope_already_delivered não sai como erro: vira a nota do escopo, sem fechar o diálogo', async () => {
+    api.respond(DRAFT, json(savedDraft(5)));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1)] }));
+    const { user, onTriggered } = renderTrigger();
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+
+    await user.click(confirmButton(dialog));
+
+    expect(await within(dialog).findByText('Este escopo já foi entregue')).toBeInTheDocument();
+    expect(within(dialog).getByText(/Executar de novo entrega tudo outra vez, com uma revisão nova/)).toBeInTheDocument();
+    expect(within(dialog).queryByText('Não foi possível executar o lote')).not.toBeInTheDocument();
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(dialog).getByText('Entregue')).toBeInTheDocument();
+    expect(within(dialog).getByText('por Maria Souza')).toBeInTheDocument();
+    expect(onTriggered).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Executar lote' })).toBeInTheDocument();
+  });
+
+  it('scope_already_delivered com cinco execuções: lista as cinco e "Agendada" quando ninguém disparou', async () => {
+    const five = [1, 2, 3, 4].map((day) => overlapping(day));
+    five.push({ ...overlapping(5), triggered_by: null, schedule: { id: 'a1b2c3d4-0000-4000-8000-000000000001', name: 'Fechamento mensal' } });
+    api.respond(DRAFT, json(savedDraft(5)));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: five }));
+    const { user } = renderTrigger();
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+
+    await user.click(confirmButton(dialog));
+
+    expect(await within(dialog).findAllByRole('listitem')).toHaveLength(5);
+    expect(within(dialog).getByText('Agendada (Fechamento mensal)')).toBeInTheDocument();
+    expect(within(dialog).getAllByText('por Maria Souza')).toHaveLength(4);
+  });
+
+  it('Executar lote de novo envia confirm_overlap: true e abre o painel da execução nova', async () => {
+    const created = execution({ id: '6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c07' });
+    api.respond(DRAFT, json(savedDraft(5)));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1)] }), json(created, 202));
+    const { user, onTriggered } = renderTrigger();
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+    await user.click(confirmButton(dialog));
+    await within(dialog).findByText('Este escopo já foi entregue');
+
+    await user.click(confirmButton(dialog));
+
+    await waitFor(() => expect(onTriggered).toHaveBeenCalledWith(created));
+    expect(await bodyOf(api.callsTo(TRIGGER)[0]!)).toEqual({ revision: 5, parameters: {}, confirm_overlap: false });
+    expect(await bodyOf(api.callsTo(TRIGGER)[1]!)).toEqual({ revision: 5, parameters: {}, confirm_overlap: true });
+  });
+
+  it('mudar um parâmetro tira a nota e o próximo envio pergunta de novo (confirm_overlap: false)', async () => {
+    api.respond(DRAFT, json(savedDraft(5, [GOAL])));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1)] }), json(execution(), 202));
+    const { user } = renderTrigger();
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+    await user.click(confirmButton(dialog));
+    await within(dialog).findByText('Este escopo já foi entregue');
+
+    await user.click(within(dialog).getByLabelText('meta_minima'));
+    await user.paste('200');
+
+    expect(within(dialog).queryByText('Este escopo já foi entregue')).not.toBeInTheDocument();
+    await user.click(confirmButton(dialog));
+    await waitFor(() => expect(api.callsTo(TRIGGER)).toHaveLength(2));
+    expect(await bodyOf(api.callsTo(TRIGGER)[1]!)).toEqual({ revision: 5, parameters: { meta_minima: '200' }, confirm_overlap: false });
+  });
+
+  it('o link da execução fecha o diálogo e abre o painel dela', async () => {
+    const onOpenExecution = vi.fn();
+    api.respond(DRAFT, json(savedDraft(5)));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1), overlapping(2)] }));
+    const { user, onTriggered } = renderTrigger({ onOpenExecution });
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+    await user.click(confirmButton(dialog));
+
+    const links = await within(dialog).findAllByRole('button', { name: /Abrir a execução de/ });
+    expect(links).toHaveLength(2);
+    await user.click(links[1]!);
+
+    expect(onOpenExecution).toHaveBeenCalledWith(overlapping(2).id);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onTriggered).not.toHaveBeenCalled();
+  });
+
+  it('sem onOpenExecution, as execuções aparecem sem link', async () => {
+    api.respond(DRAFT, json(savedDraft(5)));
+    api.respond(TRIGGER, problem(409, 'scope_already_delivered', { overlapping: [overlapping(1)] }));
+    const { user } = renderTrigger();
+    const dialog = await openDialog(user);
+    await within(dialog).findByText(/revisão 5/);
+    await user.click(confirmButton(dialog));
+
+    expect(await within(dialog).findAllByRole('listitem')).toHaveLength(1);
+    expect(within(dialog).queryByRole('button', { name: /Abrir a execução de/ })).not.toBeInTheDocument();
   });
 
   it('sem permissão no disparo: diz o que fazer', async () => {
