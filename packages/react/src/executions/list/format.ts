@@ -21,6 +21,25 @@ export function dateTime(iso: string | null): string {
   return `${value('day')}/${value('month')}/${value('year')} às ${value('hour')}:${value('minute')}`;
 }
 
+/** "25/11 às 14:30" (estilos.md §10: absolute dates in dd/mm), in the user's time zone; empty for an invalid date. */
+export function shortDateTime(iso: string | null): string {
+  if (iso === null) return '';
+  const when = new Date(iso);
+  if (Number.isNaN(when.getTime())) return '';
+  const parts = dateTimeFormat.formatToParts(when);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${value('day')}/${value('month')} às ${value('hour')}:${value('minute')}`;
+}
+
+/**
+ * Who triggered the execution: the person or, for a scheduled one (`triggered_by` null), "Agendada · Fechamento mensal"
+ * with the name the schedule had (E7-21, estilos.md §7.6).
+ */
+export function triggeredByText(execution: Pick<Execution, 'triggered_by' | 'schedule'>): string {
+  if (execution.triggered_by) return execution.triggered_by.name;
+  return execution.schedule ? `Agendada · ${execution.schedule.name}` : 'Agendada';
+}
+
 /** "12s", "4m 12s", "1h 05m" (estilos.md §3). */
 export function formatDuration(milliseconds: number): string {
   const seconds = Math.max(0, Math.floor(milliseconds / 1000));

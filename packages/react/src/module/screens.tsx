@@ -227,7 +227,13 @@ export function RoutedExecutions({ standalone = false }: { standalone?: boolean 
       <Button variant="ghost" size="small" className="fc-module-executions-back" onClick={() => void navigate(origin)}>
         {standalone ? originLabel(origin) : 'Voltar para execuções'}
       </Button>
-      <ExecutionPanel key={id} executionId={id} renderRecordTrace={renderRecordTrace} />
+      {/* The overlapped execution opens in the same panel route, keeping where the panel was opened from. */}
+      <ExecutionPanel
+        key={id}
+        executionId={id}
+        renderRecordTrace={renderRecordTrace}
+        onOpenExecution={(opened) => void navigate(executionPath(opened), { state })}
+      />
     </div>
   );
 }

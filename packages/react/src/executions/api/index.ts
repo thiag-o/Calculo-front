@@ -11,9 +11,18 @@ export {
   useTriggerExecution,
 } from './queries';
 export type { Execution, ExecutionListFilter, NewExecution } from './queries';
-export { FINAL_STATUSES, STATUS_CHOICES, STATUS_PRESENTATION, isRunning } from './status';
-export type { ExecutionStatus, StatusChoice, StatusPresentation } from './status';
-// The panel of one execution (F102): the execution refreshed every 2 s until a final state, the cancel and the CSV download.
+export {
+  FINAL_STATUSES,
+  MODE_CHOICES,
+  NO_DELIVERY_PRESENTATION,
+  STATUS_CHOICES,
+  STATUS_PRESENTATION,
+  isRunning,
+  statusPresentation,
+} from './status';
+export type { ExecutionMode, ExecutionStatus, StatusChoice, StatusPresentation } from './status';
+// The panel of one execution (F102): the execution refreshed every 2 s until a final state, the cancel, the decision on
+// the pre-validation alert (F125) and the CSV download.
 export {
   PANEL_REFRESH_MS,
   fallbackFileName,
@@ -21,6 +30,7 @@ export {
   useCancelExecution,
   useDownloadExecutionOutput,
   useExecution,
+  useProceedExecution,
 } from './execution';
 export type { ExecutionOutputFile } from './execution';
 // The records of an execution and the stored trace of each one (F102, `traces.view`).

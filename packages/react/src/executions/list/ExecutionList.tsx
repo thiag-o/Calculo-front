@@ -4,15 +4,17 @@ import { ApiError } from '../../api';
 import { Button, EmptyState, Notice, Select, Status, Table, Text, type SelectOption, type TableColumn } from '../../design-system';
 import { useSession } from '../../session';
 import {
+  MODE_CHOICES,
   STATUS_CHOICES,
-  STATUS_PRESENTATION,
   executionListKey,
+  statusPresentation,
   useExecutionList,
   type Execution,
   type ExecutionListFilter,
+  type ExecutionMode,
 } from '../api';
 import { TRIGGER_PERMISSION, TriggerExecution } from '../trigger';
-import { dateTime, executionDuration, parametersSummary, recordsSummary } from './format';
+import { dateTime, executionDuration, parametersSummary, recordsSummary, triggeredByText } from './format';
 import { EmptyFilterIcon, PlayIcon } from './icons';
 import { filterError, listErrorMessage, listSummary } from './messages';
 import { useWorkflowOptions } from './queries';
@@ -25,6 +27,11 @@ const ALL = 'all';
 const STATUS_OPTIONS: readonly SelectOption[] = [
   { value: ALL, label: 'Todos os status' },
   ...STATUS_CHOICES.map((choice) => ({ value: choice.value, label: choice.label })),
+];
+
+const MODE_OPTIONS: readonly SelectOption[] = [
+  { value: ALL, label: 'Todos os modos' },
+  ...MODE_CHOICES.map((choice) => ({ value: choice.value, label: choice.label })),
 ];
 
 /** The first 8 characters of the id, as the execution is told apart in the list (mono, estilos.md §7.6). */
@@ -48,8 +55,9 @@ export interface ExecutionListProps {
 }
 
 /**
- * Execuções (E6-20): the batch executions, newest first, in a table (workflow, status, who triggered, start, duration,
- * records and parameters), with the status filter (one label at a time) and, in the tenant list, the workflow filter;
+ * Execuções (E6-20, E7-21): the batch executions and the simulations, newest first, in a table (workflow, status, who
+ * triggered or "Agendada · <schedule>", start, duration, records and parameters), with the status filter (one label at a
+ * time), the mode filter (Lotes, Simulações) and, in the tenant list, the workflow filter;
  * "Carregar mais execuções" by cursor. While an execution on screen still runs, the list is fetched again every 5 s.
  * Below 1180px of module width, the records column goes away (estilos.md §15). Needs `ApiProvider`, `QueryClientProvider`
  * and `FluxoRoot` (portal of the filter lists and of the dialog).
@@ -63,16 +71,19 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
   const narrow = useNarrowModule(section);
   const [status, setStatus] = useState(ALL);
   const [chosenWorkflow, setChosenWorkflow] = useState(ALL);
+  const [mode, setMode] = useState(ALL);
   const scoped = workflowId !== undefined;
   const workflows = useWorkflowOptions(!scoped);
 
+  const chosenMode: ExecutionMode | undefined = MODE_CHOICES.find((choice) => choice.value === mode)?.value;
   const filter: ExecutionListFilter = {
     ...(scoped ? { workflowId } : chosenWorkflow !== ALL ? { workflowId: chosenWorkflow } : {}),
     ...(status !== ALL ? { statuses: STATUS_CHOICES.find((choice) => choice.value === status)?.statuses ?? [] } : {}),
+    ...(chosenMode ? { mode: chosenMode } : {}),
   };
   const list = useExecutionList(filter);
   const executions = list.data;
-  const filtered = status !== ALL || (!scoped && chosenWorkflow !== ALL);
+  const filtered = status !== ALL || mode !== ALL || (!scoped && chosenWorkflow !== ALL);
   const noDataError = list.isError && executions === undefined ? list.error : null;
   const noPermission = noDataError instanceof ApiError && noDataError.code === 'no_permission';
   const invalidCursor = list.error instanceof ApiError && list.error.code === 'invalid_cursor';
@@ -85,6 +96,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
 
   function clearFilters() {
     setStatus(ALL);
+    setMode(ALL);
     setChosenWorkflow(ALL);
     // The action goes away with the new list: focus goes to the first filter.
     statusFilter.current?.focus();
@@ -122,7 +134,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
       title: 'Status',
       skeletonWidth: 96,
       cell: (execution) => {
-        const presentation = STATUS_PRESENTATION[execution.status];
+        const presentation = statusPresentation(execution);
         return (
           <Status tone={presentation.tone} pulsing={presentation.pulsing} className="fc-executions-nowrap">
             {presentation.label}
@@ -136,7 +148,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
       skeletonWidth: 120,
       cell: (execution) => (
         <Text variant="label-14" className="fc-executions-wrap">
-          {execution.triggered_by?.name ?? 'Agendada'}
+          {triggeredByText(execution)}
         </Text>
       ),
     },
@@ -251,6 +263,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
           value={status}
           onValueChange={setStatus}
         />
+        <Select className="fc-executions-filter" label="Modo" options={MODE_OPTIONS} value={mode} onValueChange={setMode} />
         {!scoped && !workflows.isError ? (
           <Select
             className="fc-executions-filter"
@@ -298,7 +311,7 @@ export function ExecutionList({ workflowId, onOpenExecution, onOpenProblems }: E
               <EmptyState
                 icon={<EmptyFilterIcon />}
                 title="Nenhuma execução com esses filtros"
-                description="Mude o status ou o workflow, ou limpe os filtros para ver todas as execuções."
+                description="Mude o status, o modo ou o workflow, ou limpe os filtros para ver todas as execuções."
                 action={clearButton}
               />
             ) : (

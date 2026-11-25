@@ -70,3 +70,21 @@ export function downloadErrorMessage(error: unknown): string {
 
 /** Reason beside the disabled buttons while the cancel request is in flight (ADR 0064). */
 export const CANCELLING_REASON = 'Aguarde o pedido de cancelamento';
+
+/** Error of "Prosseguir" on the pre-validation alert, by `code`. */
+export function proceedErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return UNKNOWN_MESSAGE;
+  switch (error.code) {
+    case 'not_awaiting_decision':
+      return 'A execução não está mais aguardando decisão: alguém já decidiu ou o prazo acabou. O painel mostra como ela ficou.';
+    case 'no_permission':
+      return 'Você não tem permissão para decidir sobre esta execução neste tenant. Peça acesso a um Admin.';
+    case 'not_found':
+      return 'Esta execução não existe mais neste tenant.';
+    default:
+      return error.message;
+  }
+}
+
+/** Reason beside "Cancelar" while "Prosseguir" is in flight. */
+export const PROCEEDING_REASON = 'Aguarde a resposta do Prosseguir';

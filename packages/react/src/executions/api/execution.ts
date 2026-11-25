@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, dataOrError, useApiClient } from '../../api';
 import { isSameSessionData, sessionDataMark } from '../../session';
 import { EXECUTION_LISTS_KEY, executionKey, type Execution } from './queries';
@@ -27,6 +27,28 @@ export function useExecution(id: string) {
 }
 
 /**
+ * Before a decision (cancel or proceed) is sent: takes the session data mark (ADR 0015) and cancels the 2 s refresh that may
+ * be in flight, so an answer read before the decision does not overwrite the one the decision brings.
+ */
+async function stopRefresh(queryClient: QueryClient, id: string) {
+  const mark = sessionDataMark(queryClient);
+  await queryClient.cancelQueries({ queryKey: executionKey(id), exact: true });
+  return mark;
+}
+
+/**
+ * Writes the execution the decision returned. A refresh that started while the decision was on its way is cancelled
+ * first, for the same reason. An answer that arrives after the session data was cleared writes nothing (ADR 0015).
+ */
+async function storeDecided(queryClient: QueryClient, id: string, execution: Execution, mark: ReturnType<typeof sessionDataMark>) {
+  if (!isSameSessionData(queryClient, mark)) return;
+  await queryClient.cancelQueries({ queryKey: executionKey(id), exact: true });
+  if (!isSameSessionData(queryClient, mark)) return;
+  queryClient.setQueryData<Execution>(executionKey(id), execution);
+  void queryClient.invalidateQueries({ queryKey: EXECUTION_LISTS_KEY });
+}
+
+/**
  * Asks to cancel the execution (`POST /v1/executions/{id}/cancel`, 202 with the execution as it is now: `cancelled` at
  * once from `pending`; otherwise with `cancel_requested_at`). The answer goes to the cache and the lists are fetched again.
  * `409 execution_finished`: it finished before the request; the execution is fetched again.
@@ -36,17 +58,35 @@ export function useCancelExecution(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => dataOrError(client.POST('/v1/executions/{id}/cancel', { params: { path: { id } } })),
-    onMutate: () => sessionDataMark(queryClient),
-    onSuccess: (execution, _variables, mark) => {
-      // An answer that arrives after the session data was cleared writes nothing (ADR 0015).
-      if (!isSameSessionData(queryClient, mark)) return;
-      queryClient.setQueryData<Execution>(executionKey(id), execution);
-      void queryClient.invalidateQueries({ queryKey: EXECUTION_LISTS_KEY });
-    },
+    onMutate: () => stopRefresh(queryClient, id),
+    onSuccess: (execution, _variables, mark) => storeDecided(queryClient, id, execution, mark),
     onError: (error, _variables, mark) => {
       if (!isSameSessionData(queryClient, mark)) return;
       if (error instanceof ApiError && error.code === 'execution_finished') {
         void queryClient.invalidateQueries({ queryKey: executionKey(id), exact: true });
+      }
+    },
+  });
+}
+
+/**
+ * "Prosseguir" on the pre-validation alert (`POST /v1/executions/{id}/proceed`, 202 with the execution back in the queue and
+ * the decision in `pre_validation.decision`). The answer goes to the cache and the lists are fetched again.
+ * `409 not_awaiting_decision`: someone else decided or the deadline passed; the execution is fetched again, so the panel
+ * shows how it is now. The permission follows the mode: `executions.trigger` (batch) or `simulations.run` (simulation).
+ */
+export function useProceedExecution(id: string) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => dataOrError(client.POST('/v1/executions/{id}/proceed', { params: { path: { id } } })),
+    onMutate: () => stopRefresh(queryClient, id),
+    onSuccess: (execution, _variables, mark) => storeDecided(queryClient, id, execution, mark),
+    onError: (error, _variables, mark) => {
+      if (!isSameSessionData(queryClient, mark)) return;
+      if (error instanceof ApiError && error.code === 'not_awaiting_decision') {
+        void queryClient.invalidateQueries({ queryKey: executionKey(id), exact: true });
+        void queryClient.invalidateQueries({ queryKey: EXECUTION_LISTS_KEY });
       }
     },
   });

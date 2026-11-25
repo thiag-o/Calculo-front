@@ -453,3 +453,94 @@ describe('Execuções do workflow: Executar lote', () => {
     expect(screen.queryByRole('button', { name: 'Executar lote' })).not.toBeInTheDocument();
   });
 });
+
+describe('Execuções: estados do épico 7, agendada, simulação e modo', () => {
+  it('pré-validando e comparando são "Calculando" (pulsa); aguardando decisão é âmbar sem pulsar', async () => {
+    const statuses = [
+      ['pre_validating', 'Calculando', 'fc-status-amber', true],
+      ['comparing', 'Calculando', 'fc-status-amber', true],
+      ['awaiting_decision', 'Aguardando decisão', 'fc-status-amber', false],
+    ] as const;
+    api.respond(LIST, page(statuses.map(([status]) => execution({ status, workflow_name: `Workflow ${status}` }))));
+    renderScreen(<ExecutionList />);
+
+    await screen.findByText('Workflow pre_validating');
+    for (const [status, label, dot, pulsing] of statuses) {
+      const word = within(rowOf(`Workflow ${status}`)).getByText(label);
+      expect(dotOf(word)).toBe(dot);
+      expect(word.closest('.fc-status')!.classList.contains('fc-status-pulsing')).toBe(pulsing);
+    }
+  });
+
+  it('a simulação que termina sem erros é "Sem entrega" (cinza); com erros continua "Com erros"', async () => {
+    api.respond(
+      LIST,
+      page([
+        completed({ mode: 'simulation', workflow_name: 'Simulação limpa', output: { available: false, expires_at: null, rows: null } }),
+        completed({ mode: 'simulation', status: 'completed_with_errors', workflow_name: 'Simulação com erros' }),
+        completed({ workflow_name: 'Lote entregue' }),
+      ]),
+    );
+    renderScreen(<ExecutionList />);
+
+    await screen.findByText('Simulação limpa');
+    const clean = within(rowOf('Simulação limpa')).getByText('Sem entrega');
+    expect(dotOf(clean)).toBe('fc-status-gray');
+    expect(clean.closest('.fc-status')!.classList.contains('fc-status-pulsing')).toBe(false);
+    expect(within(rowOf('Simulação com erros')).getByText('Com erros')).toBeInTheDocument();
+    expect(within(rowOf('Lote entregue')).getByText('Entregue')).toBeInTheDocument();
+  });
+
+  it('a execução agendada mostra "Agendada · <agendamento>" no lugar de quem disparou', async () => {
+    api.respond(
+      LIST,
+      page([
+        completed({ triggered_by: null, schedule: { id: '7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e', name: 'Fechamento mensal' }, workflow_name: 'Lote agendado' }),
+        completed({ workflow_name: 'Manual' }),
+      ]),
+    );
+    renderScreen(<ExecutionList />);
+
+    await screen.findByText('Manual');
+    expect(within(rowOf('Manual')).getByText('Ana Souza')).toBeInTheDocument();
+    expect(screen.getByText('Agendada · Fechamento mensal')).toBeInTheDocument();
+  });
+
+  it('filtra pelo modo (Lotes, Simulações) e limpa os filtros', async () => {
+    api.respond(LIST, (request) => {
+      const mode = new URL(request.url).searchParams.get('mode');
+      if (mode === 'simulation') return page([completed({ mode: 'simulation', workflow_name: 'Só simulação' })]);
+      if (mode === 'batch') return page([]);
+      return page([completed()]);
+    });
+    const { user } = renderScreen(<ExecutionList />);
+    await screen.findByText('Entregue');
+    expect(listQueries()[0]!.get('mode')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Modo' })).toHaveTextContent('Todos os modos');
+
+    await choose(user, 'Modo', 'Simulações');
+    expect(await screen.findByText('Só simulação')).toBeInTheDocument();
+    expect(listQueries().at(-1)!.get('mode')).toBe('simulation');
+    expect(screen.getByText('1 execução com esses filtros')).toBeInTheDocument();
+
+    await choose(user, 'Modo', 'Lotes');
+    expect(await screen.findByText('Nenhuma execução com esses filtros')).toBeInTheDocument();
+    expect(listQueries().at(-1)!.get('mode')).toBe('batch');
+
+    await user.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    await waitFor(() => expect(screen.getByText('Entregue')).toBeInTheDocument());
+    expect(screen.getByRole('combobox', { name: 'Modo' })).toHaveTextContent('Todos os modos');
+    expect(listQueries().at(-1)!.get('mode')).toBeNull();
+  });
+
+  it('filtra por "Aguardando decisão"', async () => {
+    api.respond(LIST, page([completed()]), page([execution({ status: 'awaiting_decision', workflow_name: 'Bônus de metas' })]));
+    const { user } = renderScreen(<ExecutionList />);
+    await screen.findByText('Entregue');
+
+    await choose(user, 'Status', 'Aguardando decisão');
+
+    expect(await screen.findByText('Bônus de metas')).toBeInTheDocument();
+    expect(listQueries().at(-1)!.getAll('status')).toEqual(['awaiting_decision']);
+  });
+});

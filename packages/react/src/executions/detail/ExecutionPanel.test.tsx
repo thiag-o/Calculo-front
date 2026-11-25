@@ -190,7 +190,8 @@ describe('Painel da execução: estados', () => {
     const phases = await screen.findByRole('region', { name: 'Fases' });
     const items = within(phases).getAllByRole('listitem');
     expect(items[0]).toHaveTextContent('Cargaaguardando a fonte');
-    expect(items[1]).toHaveTextContent('Cálculoa fazer');
+    expect(items[1]).toHaveTextContent('Pré-validaçãoa fazer');
+    expect(items[2]).toHaveTextContent('Cálculoa fazer');
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     expect(screen.getByText('Contando os registros do lote')).toBeInTheDocument();
   });
@@ -221,7 +222,8 @@ describe('Painel da execução: estados', () => {
     expect(alert).toHaveTextContent(guidance);
     const items = within(screen.getByRole('region', { name: 'Fases' })).getAllByRole('listitem');
     expect(items[0]).toHaveTextContent('Cargaconcluída');
-    expect(items[1]).toHaveTextContent('Cálculointerrompida');
+    expect(items[1]).toHaveTextContent('Pré-validaçãoconcluída');
+    expect(items[2]).toHaveTextContent('Cálculointerrompida');
   });
 
   it('cancelamento pedido: avisa que a execução para no fim da parte em andamento', async () => {
@@ -243,16 +245,16 @@ describe('Painel da execução: progresso, resumo e totais', () => {
     expect(bar).toHaveAttribute('aria-valuetext', '1.180 de 2.400 registros · 49%');
     expect(screen.getByText('1.180 de 2.400 registros · 49%')).toBeInTheDocument();
     const items = within(screen.getByRole('region', { name: 'Fases' })).getAllByRole('listitem');
-    expect(items.map((item) => item.textContent)).toEqual(['Cargaconcluída', 'Cálculoem andamento', 'Entregaa fazer']);
+    expect(items.map((item) => item.textContent)).toEqual(['Cargaconcluída', 'Pré-validaçãoconcluída', 'Cálculoem andamento', 'Entregaa fazer']);
   });
 
-  it('entregue: as três fases concluídas e a barra cheia', async () => {
+  it('entregue: as quatro fases concluídas e a barra cheia', async () => {
     api.respond(GET, json(finished()));
     renderPanel();
     const bar = await screen.findByRole('progressbar');
     expect(bar).toHaveAttribute('aria-valuetext', '1.180 de 1.180 registros · 100%');
     const items = within(screen.getByRole('region', { name: 'Fases' })).getAllByRole('listitem');
-    expect(items.map((item) => item.textContent)).toEqual(['Cargaconcluída', 'Cálculoconcluída', 'Entregaconcluída']);
+    expect(items.map((item) => item.textContent)).toEqual(['Cargaconcluída', 'Pré-validaçãoconcluída', 'Cálculoconcluída', 'Entregaconcluída']);
   });
 
   it('resumo com os parâmetros resolvidos, o agora, o nível do trace, o limite e quem disparou', async () => {

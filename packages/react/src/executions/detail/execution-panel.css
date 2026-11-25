@@ -122,12 +122,14 @@
 
 .fc-execution-phase-current .fc-execution-phase-label,
 .fc-execution-phase-waiting .fc-execution-phase-label,
+.fc-execution-phase-deciding .fc-execution-phase-label,
 .fc-execution-phase-stopped .fc-execution-phase-label {
   color: var(--fc-text);
   font-weight: 500;
 }
 
-.fc-execution-phase-waiting .fc-execution-phase-state {
+.fc-execution-phase-waiting .fc-execution-phase-state,
+.fc-execution-phase-deciding .fc-execution-phase-state {
   color: var(--fc-amber-900);
 }
 
@@ -315,4 +317,140 @@
 
 .fc-execution-wrap {
   overflow-wrap: anywhere;
+}
+
+/* Overlap line under the title, with the link to the execution it ran again over (estilos.md §3: --fc-link). */
+.fc-execution-overlap {
+  margin: 0;
+}
+
+.fc-execution-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fc-link);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.fc-execution-link:hover {
+  text-decoration: underline;
+}
+
+.fc-execution-link:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--fc-background-100),
+    0 0 0 4px var(--fc-focus);
+}
+
+/* Pre-validation alert (estilos.md §7.7: amber note) and the variables above the limit. */
+.fc-execution-decision-list {
+  margin: var(--fc-space-4) 0 0;
+  padding-left: var(--fc-space-16);
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-execution-decision-line {
+  margin: var(--fc-space-4) 0 0;
+}
+
+/* Section title with its status (dot + word) on the same line. */
+.fc-execution-box-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12);
+}
+
+/* Up to 5 repeated keys, in mono (estilos.md §3). */
+.fc-execution-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-4) var(--fc-space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-execution-key {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.fc-execution-abort-keys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  margin-top: var(--fc-space-4);
+}
+
+.fc-execution-empties {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+}
+
+.fc-execution-empties h3 {
+  margin: 0;
+}
+
+.fc-execution-empty-list,
+.fc-execution-sources,
+.fc-execution-source-counts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-execution-empty {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fc-space-12);
+  min-height: 28px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.fc-execution-empty + .fc-execution-empty,
+.fc-execution-source + .fc-execution-source {
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-execution-empty-name {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* Fontes: one line per Fonte block, with its counts as dot + word (as the Prévia, F66). */
+.fc-execution-source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-6);
+  padding: var(--fc-space-8) 0;
+}
+
+.fc-execution-source-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--fc-space-8);
+}
+
+.fc-execution-source-counts {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--fc-space-4) var(--fc-space-16);
+  font-variant-numeric: tabular-nums;
 }

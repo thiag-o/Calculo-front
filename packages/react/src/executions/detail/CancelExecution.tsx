@@ -8,12 +8,21 @@ import { CANCELLING_REASON, cancelErrorMessage } from './messages';
 /** The reason beside the disabled button once the cancel was asked. */
 export const CANCEL_REQUESTED_REASON = 'O cancelamento já foi pedido';
 
+export interface CancelExecutionProps {
+  execution: Execution;
+  /** The button label: "Cancelar execução" in the header, "Cancelar" in the pre-validation alert (E7-21). */
+  label?: string;
+  /** Another reason to keep the button disabled (e.g. while "Prosseguir" is in flight). */
+  disabledReason?: string;
+}
+
 /**
  * "Cancelar execução" (E6-21), with confirmation, while the execution has not finished. The dialog is locked while the
  * request is in flight (ADR 0064). `409 execution_finished` stays in the dialog, explained, while the panel shows how it
- * ended. The button shows only while the execution runs; render it only with `executions.trigger`.
+ * ended. The button shows only while the execution runs; render it only with the permission of the mode
+ * (`executions.trigger` in the batch, `simulations.run` in the simulation).
  */
-export function CancelExecution({ execution }: { execution: Execution }) {
+export function CancelExecution({ execution, label = 'Cancelar execução', disabledReason }: CancelExecutionProps) {
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const cancel = useCancelExecution(execution.id);
@@ -42,13 +51,13 @@ export function CancelExecution({ execution }: { execution: Execution }) {
       {running ? (
         <Button
           ref={button}
-          disabledReason={requested ? CANCEL_REQUESTED_REASON : undefined}
+          disabledReason={requested ? CANCEL_REQUESTED_REASON : disabledReason}
           onClick={() => {
             cancel.reset();
             setOpen(true);
           }}
         >
-          Cancelar execução
+          {label}
         </Button>
       ) : null}
       {open ? (

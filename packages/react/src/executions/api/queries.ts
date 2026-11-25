@@ -1,7 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dataOrError, useApiClient, type Schemas, type operations } from '../../api';
 import { isSameSessionData, sessionDataMark } from '../../session';
-import { isRunning, type ExecutionStatus } from './status';
+import { isRunning, type ExecutionMode, type ExecutionStatus } from './status';
 
 /** A batch execution (generated from the contract). */
 export type Execution = Schemas['Execution'];
@@ -16,6 +16,8 @@ export interface ExecutionListFilter {
   workflowId?: string;
   /** Only the executions in these states (none: all of them). */
   statuses?: readonly ExecutionStatus[];
+  /** Only the batches or only the simulations (none: both). */
+  mode?: ExecutionMode;
 }
 
 /** While an execution on the loaded pages is still running, the list asks the API again every 5 s (E6-20). */
@@ -31,7 +33,11 @@ export const EXECUTION_LISTS_KEY = [...EXECUTIONS_KEY, 'list'] as const;
 /** The normalized filter: the same choice always gives the same key (statuses without repetition, in order). */
 function normalizedFilter(filter: ExecutionListFilter): ExecutionListFilter {
   const statuses = [...new Set(filter.statuses ?? [])].sort();
-  return { ...(filter.workflowId ? { workflowId: filter.workflowId } : {}), ...(statuses.length > 0 ? { statuses } : {}) };
+  return {
+    ...(filter.workflowId ? { workflowId: filter.workflowId } : {}),
+    ...(statuses.length > 0 ? { statuses } : {}),
+    ...(filter.mode ? { mode: filter.mode } : {}),
+  };
 }
 
 export function executionListKey(filter: ExecutionListFilter = {}) {
@@ -47,6 +53,7 @@ export function buildListQuery(filter: ExecutionListFilter, cursor: string | nul
   const query: ExecutionListQuery = {};
   if (filter.workflowId) query.workflow_id = filter.workflowId;
   if (filter.statuses && filter.statuses.length > 0) query.status = [...filter.statuses];
+  if (filter.mode) query.mode = filter.mode;
   if (cursor) query.cursor = cursor;
   return query;
 }

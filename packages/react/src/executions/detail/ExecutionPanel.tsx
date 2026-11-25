@@ -1,8 +1,8 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { Button, Loading, Notice, Skeleton, Status, Text } from '../../design-system';
 import { useSession } from '../../session';
-import { STATUS_PRESENTATION, isRunning, useExecution, type Execution } from '../api';
-import { dateTime, executionDuration } from '../list/format';
+import { isRunning, statusPresentation, useExecution, useProceedExecution, type Execution, type ExecutionMode } from '../api';
+import { dateTime, executionDuration, shortDateTime, triggeredByText } from '../list/format';
 import {
   ExecutionRecords,
   NO_RECORDS_FILTER,
@@ -25,11 +25,21 @@ import {
   shortId,
 } from './format';
 import { CheckIcon, ChevronIcon } from './icons';
-import { ABORT_GUIDANCE, canRetryExecution, executionErrorMessage } from './messages';
+import { ABORT_GUIDANCE, canRetryExecution, executionErrorMessage, proceedErrorMessage } from './messages';
+import { DecisionNote, DuplicateKeyExamples, PreValidationSummary, duplicateKeysText } from './PreValidation';
+import { SourceCounts } from './SourceCounts';
 import './execution-panel.css';
 
 /** The permission of the records table and of the trace (E6-21). */
 export const TRACES_PERMISSION = 'traces.view';
+/** The permission of the simulations: it also decides on, and cancels, a simulation (E7-21). */
+export const SIMULATIONS_PERMISSION = 'simulations.run';
+
+/** The permission that cancels an execution and decides on its pre-validation alert, by the mode (contract, ADR 0046). */
+export const MODE_PERMISSIONS: Readonly<Record<ExecutionMode, string>> = {
+  batch: TRIGGER_PERMISSION,
+  simulation: SIMULATIONS_PERMISSION,
+};
 
 export interface ExecutionPanelProps {
   /** The execution (`/executions/:id` in the module). */
@@ -40,24 +50,31 @@ export interface ExecutionPanelProps {
    * the outputs and the hashes.
    */
   renderRecordTrace?: RenderRecordTrace;
+  /**
+   * Opens the panel of another execution (`/executions/:id` in the module): the execution this one ran again over (a
+   * confirmed overlap, E7-21). Without it, that execution is plain text.
+   */
+  onOpenExecution?: (id: string) => void;
 }
 
 /**
- * The panel of one execution (E6-21): status and abort reason, the phases Carga → Cálculo → Entrega with the progress
- * bar, the summary (resolved parameters, the "agora", trace level, error limit, who triggered), the totals, the errors
- * grouped by block and code (a click filters the records) and, with `traces.view`, the records with the trace drawer.
- * "Baixar CSV" (disabled with the reason) and "Cancelar execução" (with `executions.trigger`, while it runs). Asks the API
- * again every 2 s until a final state. Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals).
+ * The panel of one execution (E6-21, E7-21): status and abort reason, the phases Carga → Pré-validação → Cálculo → Entrega
+ * (Comparação in a simulation) with the progress bar, the pre-validation alert waiting for "Prosseguir" or "Cancelar", the
+ * summary (resolved parameters, the "agora", trace level, error limit, who triggered or the schedule, the overlap), the
+ * pre-validation, the counts of the Fonte blocks, the totals, the errors grouped by block and code (a click filters the
+ * records) and, with `traces.view`, the records with the trace drawer. "Baixar CSV" (disabled with the reason) and
+ * "Cancelar execução" (with the permission of the mode, while it runs). Asks the API again every 2 s until a final state.
+ * Needs `ApiProvider`, `QueryClientProvider` and `FluxoRoot` (portals).
  */
-export function ExecutionPanel({ executionId, renderRecordTrace }: ExecutionPanelProps) {
+export function ExecutionPanel({ executionId, renderRecordTrace, onOpenExecution }: ExecutionPanelProps) {
   const titleId = useId();
   const session = useSession();
   const query = useExecution(executionId);
   const execution = query.data;
   const recordsHeading = useRef<HTMLHeadingElement>(null);
   const [recordsFilter, setRecordsFilter] = useState<RecordsFilter>(NO_RECORDS_FILTER);
+  const proceed = useProceedExecution(executionId);
   const canViewTraces = session.hasPermission(TRACES_PERMISSION);
-  const canCancel = session.hasPermission(TRIGGER_PERMISSION);
 
   if (!execution) {
     if (query.isPending) {
@@ -94,7 +111,10 @@ export function ExecutionPanel({ executionId, renderRecordTrace }: ExecutionPane
     );
   }
 
-  const presentation = STATUS_PRESENTATION[execution.status];
+  const presentation = statusPresentation(execution);
+  const canDecide = session.hasPermission(MODE_PERMISSIONS[execution.mode]);
+  const awaitingDecision = execution.status === 'awaiting_decision';
+  const canReadDefinition = canViewTraces || (execution.mode === 'simulation' && session.hasPermission(SIMULATIONS_PERMISSION));
 
   function chooseGroup(group: ErrorGroupFilter) {
     setRecordsFilter({ status: null, group });
@@ -122,9 +142,11 @@ export function ExecutionPanel({ executionId, renderRecordTrace }: ExecutionPane
               {`Revisão ${countText(execution.draft_revision)} do rascunho`}
             </Text>
           </div>
+          {execution.overlap_of ? <Overlap overlap={execution.overlap_of} onOpenExecution={onOpenExecution} /> : null}
         </div>
         <div className="fc-execution-actions">
-          {canCancel ? <CancelExecution execution={execution} /> : null}
+          {/* While the alert waits, "Cancelar" is in the alert itself: one button per action. */}
+          {canDecide && !awaitingDecision ? <CancelExecution execution={execution} /> : null}
           <DownloadOutput execution={execution} />
         </div>
       </header>
@@ -144,6 +166,22 @@ export function ExecutionPanel({ executionId, renderRecordTrace }: ExecutionPane
         </Notice>
       ) : null}
 
+      {awaitingDecision ? (
+        <DecisionNote
+          execution={execution}
+          canDecide={canDecide}
+          proceeding={proceed.isPending}
+          onProceed={() => {
+            if (!proceed.isPending) proceed.mutate();
+          }}
+        />
+      ) : null}
+      {proceed.isError ? (
+        <Notice type="error" title="Não foi possível prosseguir">
+          {proceedErrorMessage(proceed.error)}
+        </Notice>
+      ) : null}
+
       <StatusNotes execution={execution} />
 
       <Phases execution={execution} />
@@ -154,6 +192,10 @@ export function ExecutionPanel({ executionId, renderRecordTrace }: ExecutionPane
         </Text>
         <Summary execution={execution} />
       </section>
+
+      {execution.pre_validation ? <PreValidationSummary check={execution.pre_validation} /> : null}
+
+      <SourceCounts execution={execution} canReadDefinition={canReadDefinition} />
 
       <section className="fc-execution-box" aria-label="Totais">
         <Text as="h2" variant="heading-16">
@@ -188,6 +230,12 @@ function StatusNotes({ execution }: { execution: Execution }) {
       <Notice type="error" title="Execução abortada">
         <span className="fc-execution-code">{execution.abort_reason.code}</span> {execution.abort_reason.message}{' '}
         {ABORT_GUIDANCE[execution.abort_reason.code]}
+        {execution.abort_reason.code === 'duplicate_record_key' && execution.pre_validation ? (
+          <span className="fc-execution-abort-keys">
+            {`${duplicateKeysText(execution.pre_validation.duplicate_keys.count)}. Exemplos:`}
+            <DuplicateKeyExamples keys={execution.pre_validation.duplicate_keys.examples} label="Chaves repetidas: exemplos" />
+          </span>
+        ) : null}
       </Notice>
     );
   }
@@ -210,7 +258,24 @@ function StatusNotes({ execution }: { execution: Execution }) {
   return null;
 }
 
-/** Carga → Cálculo → Entrega, with the progress bar once the batch was counted. */
+/** "Executada de novo sobre a execução de 03/11 às 02:00", with the link to it (a confirmed overlap, E7-21). */
+function Overlap({ overlap, onOpenExecution }: { overlap: NonNullable<Execution['overlap_of']>; onOpenExecution?: (id: string) => void }) {
+  const what = `execução de ${shortDateTime(overlap.created_at)}`;
+  return (
+    <Text as="p" variant="label-13" emphasis="secondary" className="fc-execution-overlap">
+      Executada de novo sobre a{' '}
+      {onOpenExecution ? (
+        <button type="button" className="fc-execution-link" onClick={() => onOpenExecution(overlap.id)}>
+          {what}
+        </button>
+      ) : (
+        what
+      )}
+    </Text>
+  );
+}
+
+/** The phases with the progress bar once the batch was counted. */
 function Phases({ execution }: { execution: Execution }) {
   const phases = executionPhases(execution);
   const progress = executionProgress(execution);
@@ -222,7 +287,7 @@ function Phases({ execution }: { execution: Execution }) {
           <li
             key={phase.key}
             className={`fc-execution-phase fc-execution-phase-${phase.state}`}
-            aria-current={phase.state === 'current' || phase.state === 'waiting' ? 'step' : undefined}
+            aria-current={phase.state === 'current' || phase.state === 'waiting' || phase.state === 'deciding' ? 'step' : undefined}
           >
             {index > 0 ? (
               <span className="fc-execution-phase-arrow">
@@ -291,7 +356,7 @@ function Summary({ execution }: { execution: Execution }) {
         <Pair label="Agora">{dateTime(execution.now)}</Pair>
         <Pair label="Nível do trace">{TRACE_LEVEL_LABELS[execution.trace_level]}</Pair>
         <Pair label="Limite de erro">{percentText(execution.error_limit_percent)}</Pair>
-        <Pair label="Disparado por">{`${execution.triggered_by?.name ?? 'Agendada'} em ${dateTime(execution.created_at)}`}</Pair>
+        <Pair label="Disparado por">{`${triggeredByText(execution)} em ${dateTime(execution.created_at)}`}</Pair>
         <Pair label="Início">{dateTime(execution.started_at)}</Pair>
         <Pair label="Dados lidos em">{dateTime(execution.data_read_at)}</Pair>
         <Pair label="Duração">{duration}</Pair>

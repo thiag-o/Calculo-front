@@ -330,6 +330,14 @@ describe('Executions avulso e Workflows com execuções', () => {
       totals: { read: 0, ok: 0, ok_with_warnings: 0, error: 0, ignored: 0, filtered: 0 },
       error_groups: [],
       output: { available: false, expires_at: null, rows: null },
+      // The fields the contract requires since epic 7 (the panel reads the mode and the counts of the Fonte blocks).
+      mode: 'batch',
+      schedule: null,
+      pre_validation: null,
+      source_counts: [],
+      overlap_of: null,
+      reference_file: null,
+      comparison: null,
     };
     const DRAFT = {
       workflow_id: WORKFLOW.id,

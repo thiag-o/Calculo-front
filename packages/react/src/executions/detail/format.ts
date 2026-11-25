@@ -5,10 +5,10 @@ import { isRunning, type Execution } from '../api';
 import { dateTime } from '../list/format';
 import { formatApiNumber, formatDate } from '../../design-system';
 
-export type PhaseState = 'done' | 'current' | 'waiting' | 'stopped' | 'todo';
+export type PhaseState = 'done' | 'current' | 'waiting' | 'deciding' | 'stopped' | 'todo';
 
 export interface Phase {
-  key: 'load' | 'calculate' | 'deliver';
+  key: 'load' | 'pre_validate' | 'calculate' | 'deliver' | 'compare';
   label: string;
   state: PhaseState;
 }
@@ -18,27 +18,46 @@ export const PHASE_STATE_WORDS: Readonly<Record<PhaseState, string>> = {
   done: 'concluída',
   current: 'em andamento',
   waiting: 'aguardando a fonte',
+  deciding: 'aguardando decisão',
   stopped: 'interrompida',
   todo: 'a fazer',
 };
 
-const PHASES: readonly Omit<Phase, 'state'>[] = [
-  { key: 'load', label: 'Carga' },
-  { key: 'calculate', label: 'Cálculo' },
-  { key: 'deliver', label: 'Entrega' },
-];
-
-/**
- * Where the execution stopped or waits: the load while the batch was not counted yet (`total_records` null), the
- * calculation while records are missing, otherwise the delivery.
- */
-function reachedPhase(execution: Execution): number {
-  if (execution.total_records === null) return 0;
-  return execution.progress.records_done < execution.total_records ? 1 : 2;
+/** Carga → Pré-validação → Cálculo, then Entrega in the batch or Comparação in the simulation (E7-21). */
+function phasesOf(execution: Execution): readonly Omit<Phase, 'state'>[] {
+  return [
+    { key: 'load', label: 'Carga' },
+    { key: 'pre_validate', label: 'Pré-validação' },
+    { key: 'calculate', label: 'Cálculo' },
+    execution.mode === 'simulation' ? { key: 'compare', label: 'Comparação' } : { key: 'deliver', label: 'Entrega' },
+  ];
 }
 
-/** Carga → Cálculo → Entrega, each with its state (E6-8: `awaiting_source` takes the place of `loading` or `calculating`). */
+const LOAD = 0;
+const PRE_VALIDATE = 1;
+const CALCULATE = 2;
+const LAST = 3;
+
+/**
+ * Where the execution stopped or waits: the load while the batch was not counted yet (`total_records` null); the
+ * pre-validation while it has no result and nothing was calculated, when it blocked the batch (repeated key) or when the
+ * alert was cancelled or expired; the calculation while records are missing; otherwise the last phase.
+ */
+function reachedPhase(execution: Execution): number {
+  if (execution.total_records === null) return LOAD;
+  const check = execution.pre_validation;
+  if (check === null && execution.progress.records_done === 0) return PRE_VALIDATE;
+  if (check?.status === 'blocked') return PRE_VALIDATE;
+  if (check?.decision?.choice === 'cancel' || check?.decision?.choice === 'expired') return PRE_VALIDATE;
+  return execution.progress.records_done < execution.total_records ? CALCULATE : LAST;
+}
+
+/**
+ * The phases, each with its state (E6-8 and E7-21): `awaiting_source` takes the place of `loading`, `pre_validating` or
+ * `calculating`; `awaiting_decision` holds the pre-validation.
+ */
 export function executionPhases(execution: Execution): Phase[] {
+  const phases = phasesOf(execution);
   let at = -1;
   let state: PhaseState = 'current';
   switch (execution.status) {
@@ -46,21 +65,29 @@ export function executionPhases(execution: Execution): Phase[] {
       at = -1;
       break;
     case 'loading':
-      at = 0;
+      at = LOAD;
+      break;
+    case 'pre_validating':
+      at = PRE_VALIDATE;
+      break;
+    case 'awaiting_decision':
+      at = PRE_VALIDATE;
+      state = 'deciding';
       break;
     case 'calculating':
-      at = 1;
+      at = CALCULATE;
       break;
     case 'delivering':
-      at = 2;
+    case 'comparing':
+      at = LAST;
       break;
     case 'awaiting_source':
-      at = execution.total_records === null ? 0 : 1;
+      at = Math.min(reachedPhase(execution), CALCULATE);
       state = 'waiting';
       break;
     case 'completed':
     case 'completed_with_errors':
-      at = PHASES.length;
+      at = phases.length;
       break;
     case 'aborted':
     case 'cancelled':
@@ -68,7 +95,7 @@ export function executionPhases(execution: Execution): Phase[] {
       state = 'stopped';
       break;
   }
-  return PHASES.map((phase, index) => ({ ...phase, state: index < at ? 'done' : index === at ? state : 'todo' }));
+  return phases.map((phase, index) => ({ ...phase, state: index < at ? 'done' : index === at ? state : 'todo' }));
 }
 
 function count(value: number): string {
@@ -129,8 +156,15 @@ export function outputExpired(execution: Execution, now: Date): boolean {
   return !Number.isNaN(until) && until <= now.getTime();
 }
 
-/** Why "Baixar CSV" is disabled (E6-21: running, aborted, cancelled or expired); `undefined` when it can download. */
+/** Why "Baixar CSV" is disabled in a simulation, always (E7-21, E7-26). */
+export const SIMULATION_DOWNLOAD_REASON = 'A simulação não entrega arquivo';
+
+/**
+ * Why "Baixar CSV" is disabled (E6-21: running, aborted, cancelled or expired; E7-21: a simulation never delivers);
+ * `undefined` when it can download.
+ */
 export function downloadReason(execution: Execution, now: Date): string | undefined {
+  if (execution.mode === 'simulation') return SIMULATION_DOWNLOAD_REASON;
   if (isRunning(execution.status)) return 'O CSV fica disponível quando a execução terminar';
   if (execution.status === 'aborted') return 'Execução abortada não entrega CSV';
   if (execution.status === 'cancelled') return 'Execução cancelada não entrega CSV';
