@@ -23,6 +23,18 @@ const VALIDATED_ROUTES: ReadonlyArray<{ method: string; path: string }> = [
   { method: 'GET', path: '/v1/executions/{id}/output' },
   { method: 'GET', path: '/v1/executions/{id}/records' },
   { method: 'GET', path: '/v1/executions/{id}/records/{result_key}' },
+  // Epic 7 (F132): the decision, the comparison, the schedules, the reference files, the allowed values and the bell.
+  { method: 'POST', path: '/v1/executions/{id}/proceed' },
+  { method: 'GET', path: '/v1/executions/{id}/comparison/records' },
+  { method: 'GET', path: '/v1/schedules' },
+  { method: 'GET', path: '/v1/schedules/{id}' },
+  { method: 'PUT', path: '/v1/schedules/{id}' },
+  { method: 'POST', path: '/v1/workflows/{id}/schedules' },
+  { method: 'GET', path: '/v1/workflows/{id}/reference-files' },
+  { method: 'POST', path: '/v1/workflows/{id}/reference-files' },
+  { method: 'POST', path: '/v1/workflows/{id}/reference-files/{file_id}/simulations' },
+  { method: 'GET', path: '/v1/workflows/{id}/parameters/{name}/allowed-values' },
+  { method: 'GET', path: '/v1/notifications' },
 ];
 
 /**

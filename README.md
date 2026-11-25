@@ -84,9 +84,9 @@ pnpm dev
 | `pnpm test` | Testes (Vitest) |
 | `pnpm changeset` | Registra uma mudança do pacote para a próxima versão |
 | `pnpm generate:api` | Gera os tipos da API a partir do OpenAPI do backend (ADR 0005), em `packages/react/src/api/generated/` |
-| `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** (no épico 5, com a campanha de referência: catálogo, prévia e Calcular por registro, em `e2e/epic-5/support/`; no épico 6, com os parâmetros e as execuções em lote, em `e2e/epic-6/support/`) |
+| `pnpm e2e` | Testes ponta a ponta (Playwright) contra a API **simulada** (no épico 5, com a campanha de referência: catálogo, prévia e Calcular por registro, em `e2e/epic-5/support/`; no épico 6, com os parâmetros e as execuções em lote, em `e2e/epic-6/support/`; no épico 7, com a pré-validação, a sobreposição, os agendamentos, o arquivo de referência e o sino, em `e2e/epic-7/support/`) |
 | `pnpm e2e:real` | Os mesmos testes contra o back de verdade (veja abaixo) |
-| `pnpm e2e:visual` | Prova visual das telas dos épicos 1 a 6, nos dois temas e em 1440, 1180 e 900 px, contra a API simulada (veja abaixo) |
+| `pnpm e2e:visual` | Prova visual das telas dos épicos 1 a 7, nos dois temas e em 1440, 1180 e 900 px, contra a API simulada, comparando pixels com os baselines (veja abaixo) |
 
 ## Testes em paralelo (worktrees)
 
@@ -109,9 +109,9 @@ No PowerShell: `$env:FLUXO_TEST_ISOLATION_ID='F62'; pnpm e2e`.
 
 ## Prova visual das telas
 
-O `pnpm e2e:visual` roda o projeto `visual` do Playwright (`e2e/visual/`), **fora do `pnpm e2e`**, e entra no portão de cada épico. Ele usa a API simulada (a mesma do `pnpm e2e`, com a conta Admin, o catálogo e a "Pontuação de exemplo") e, para cada tema (`colorScheme` claro e escuro) e cada largura (1440, 1180 e 900 px), abre: entrar, Início, Administração, Catálogo (Conexões, Datasets e Arquivos), lista de workflows, Visão geral e o editor (canvas, propriedades, grade da Tabela de Decisão e Calcular com o resultado). Do épico 5, a campanha de referência no editor (`epic-5-screens.spec.ts`); do épico 6 (`epic-6-screens.spec.ts`), as seções Parâmetros e Execução do painel do workflow, o diálogo "Executar lote", o painel da execução calculando e terminado com erros, a gaveta do trace e a lista de execuções do tenant (com o menu lateral).
+O `pnpm e2e:visual` roda o projeto `visual` do Playwright (`e2e/visual/`), **fora do `pnpm e2e`**, e entra no portão de cada épico. Ele usa a API simulada (a mesma do `pnpm e2e`, com a conta Admin, o catálogo e a "Pontuação de exemplo") e, para cada tema (`colorScheme` claro e escuro) e cada largura (1440, 1180 e 900 px), abre: entrar, Início, Administração, Catálogo (Conexões, Datasets e Arquivos), lista de workflows, Visão geral e o editor (canvas, propriedades, grade da Tabela de Decisão e Calcular com o resultado). Do épico 5, a campanha de referência no editor (`epic-5-screens.spec.ts`); do épico 6 (`epic-6-screens.spec.ts`), as seções Parâmetros e Execução do painel do workflow, o diálogo "Executar lote", o painel da execução calculando e terminado com erros, a gaveta do trace e a lista de execuções do tenant (com o menu lateral); do épico 7 (`epic-7-screens.spec.ts`), a tela Testes com o arquivo de referência, o painel da simulação com a comparação, o diálogo "Executar lote" com a nota de sobreposição, o painel aguardando a decisão da pré-validação, o diálogo "Novo agendamento", a aba Agendamentos e o sino aberto sobre a barra do conteúdo.
 
-- As capturas ficam em `e2e/visual/__screenshots__/<tela>-<tema>-<largura>.png` e são regravadas a cada execução; não há comparação de pixels (datas e ids variam). Quem verifica confere as imagens a olho contra o estilos §12 a §16.
+- **Comparação de pixels (F134, ADR 0071).** Cada captura é comparada com o seu baseline em `e2e/visual/__screenshots__/<tela>-<tema>-<largura>.png` (`toHaveScreenshot`), com a tolerância do projeto `visual` do `playwright.config.ts`: uma mudança de tela feita de propósito reprova. As áreas que mudam de uma rodada para outra (data, hora, duração e id da execução) levam máscara, pintadas por cima na comparação; cada spec lista no cabeçalho as suas máscaras e as telas que só salvam a captura, com o motivo. Uma mudança de tela que se quer manter é regravada com `pnpm e2e:visual --update-snapshots`, depois do `pnpm build`, e conferida a olho contra o estilos §12 a §16 antes de entrar.
 - Três checagens automáticas, em cada captura: nenhuma barra de rolagem horizontal; contraste de texto de pelo menos 4,5:1 (estilos §11) nas cores calculadas; e o menu lateral com nomes e 240 px a partir de 1180 px, só com ícones (64 px) abaixo disso (o menu só é conferido nas telas do casca).
 - O texto na cor terciária (`--fc-text-tertiary`, gray-700, 3,23:1 no claro) não reprova: o estilos §11 o permite só para informação não essencial, o que uma máquina não julga. Ele aparece como anotação `terciário · <tela>` do teste (no relatório do Playwright), para quem verifica conferir.
 - Rode `pnpm build` antes, como no `pnpm e2e`, e use `FLUXO_TEST_ISOLATION_ID` numa worktree. O projeto sobe o mesmo casca do `pnpm e2e`; não rode os dois ao mesmo tempo com o mesmo id.
@@ -163,6 +163,20 @@ uv run python -m fluxo.bootstrap api
 
    No simulado, ninguém roda o worker sozinho: o teste avança cada execução (`epic6.worker` em `e2e/epic-6/support/fixtures.ts`), um passo por vez (carga, contagem, um chunk de 25 registros por passo, entrega), e o painel vê cada passo na atualização seguinte (a cada 2 s), sem tempo fixo. Os dados da campanha são de fevereiro de 2026 e não mudam (B98 e B100): todo teste que confere totais, erros, trace ou CSV dispara com o período fixo `DATA_MONTH` (`2026-02-01` a `2026-02-28`, em `e2e/epic-6/support/campaign.ts`), no simulado e no real, em qualquer dia do ano; o padrão "Mês anterior" tem um teste próprio, que confere só o período que a API resolve, sem totais. A simulação data as notas nesse mês; os totais esperados estão em `e2e/epic-6/support/expected.ts`. No modo real, os totais e as linhas do CSV vêm dos dados da B143 e do aceite da B144 (`../backend/tests/reference_campaign/`).
 
+   Desde o épico 7, o `prepare-local` também cria a "Campanha de referência — vazios" (B184, sobre o `campanha.itens_nf_vazios`), e os testes de `e2e/epic-7/` precisam, além do worker, **do agendador no ar** (`uv run fluxo scheduler`, com as mesmas variáveis da API e `FLUXO_SCHEDULER_INTERVAL_SECONDS=5`, para o agendamento do teste disparar em segundos). Rode o `migrate` e o comando de dados da campanha do `../backend/docs/campanha-de-referencia.md` (que carrega o `itens_nf_vazios`) antes do `prepare-local`, num banco recém-preparado. Exporte também:
+   - `FLUXO_BACKEND_DIR`, a pasta do back: o arquivo de referência da campanha é o `tests/fixtures/reference_campaign/expected.csv` dele (sem a variável, vale o `../backend`);
+   - `E2E_BUSINESS_TIMEZONE`, com o mesmo valor do `FLUXO_BUSINESS_TIMEZONE` do back (padrão `America/Sao_Paulo`): o teste marca o agendamento para o minuto seguinte nesse fuso e espera até 3 minutos pelo disparo;
+   - `E2E_CONFIGURATOR_PASSWORD` (e, se mudar, `E2E_CONFIGURATOR_EMAIL`), a conta do Configurador de demonstração.
+
+   O que os testes do épico 7 fazem no modo real:
+   - cada fluxo trabalha numa cópia própria do workflow do `prepare-local` (campanha, defeitos ou vazios), criada pela API com " e2e " no nome, para que os escopos não cruzem a sobreposição com os testes do épico 6 nem entre si. No fim, o teste apaga os agendamentos que criou (senão eles disparariam todo dia) e as cópias; a cópia que foi executada fica, como no épico 6;
+   - `reference-file.spec.ts` envia o `expected.csv`, simula com fevereiro de 2026 e espera "100% iguais"; depois envia uma cópia com um `pontos` mudado e uma linha a menos, e uma com uma coluna desconhecida e um número com vírgula;
+   - `schedules.spec.ts` cria agendamentos diários para o minuto seguinte (fixo em fevereiro de 2026, relativo "Mês anterior" e um segundo sobre o período já entregue, que não executa e avisa no sino) e espera o agendador;
+   - `pre-validation.spec.ts`, `overlap.spec.ts`, `allowed-values.spec.ts`, `bell.spec.ts` e `roles.spec.ts` disparam pela tela ou pela API e esperam o worker. Os papéis usam o Operador, o Configurador, o Aprovador e o Auditor do `prepare-local`; o Admin prepara o que cada um olha numa janela própria do navegador.
+   - No épico 6, o `defects-and-abort.spec.ts` passa a esperar, no modo real, o bloqueio da pré-validação pela chave repetida (`duplicate_record_key`, E7-2), e prova o limite de erro de 0% numa cópia da campanha; um disparo que repete um período já entregue no mesmo workflow confirma a sobreposição.
+
+   No simulado, `e2e/epic-7/support/simulation.ts` responde o que o épico 7 acrescenta (pré-validação com a decisão, contagens por bloco Fonte, sobreposição, agendamentos, arquivos de referência com a simulação e a comparação, valores permitidos por consulta e o sino). Ninguém roda o agendador sozinho: o teste dispara cada agendamento no horário marcado (`epic7.scheduler`), como o `fluxo scheduler --once`, e move as execuções com `epic7.worker`, como no épico 6. O `expected.csv` simulado tem as mesmas colunas do back (a chave, `pontos`, `elegivel` e `status`), com um registro por item de fevereiro de 2026, calculado pela simulação da campanha (`e2e/epic-7/support/reference-file.ts`).
+
    O modo real precisa do SQL Server no ar (`docker compose --profile sqlserver up -d`), porque o bloco "Produto" lê dele. Os valores esperados estão em `e2e/epic-5/support/expected.ts`, calculados à mão a partir das regras (`../backend/docs/campanha-de-referencia.md`) e dos dados da B98; os mesmos registros estão no aceite da B100 (`../backend/tests/reference_campaign/`). Os nomes dos blocos que os testes procuram ("Nota", "Loja", "Produto na campanha", "Produto", "Parâmetros", "Pontuação", "Fator da categoria", "Multiplicador", "Pontos base" e "Pontos") são os títulos das regras do documento da campanha. Das contagens da prévia, o modo real confere só as que não dependem de como um registro já ignorado, filtrado ou com erro conta nos blocos seguintes (o contrato não fixa isso); as outras ficam para o simulado.
 
 2. Exporte o endereço da API (sem o `/v1`) e as contas que o `prepare-local` imprime (também em `../backend/docs/ambientes.md`):
@@ -177,6 +191,9 @@ export E2E_AUDITOR_EMAIL=auditor@demo.local
 export E2E_AUDITOR_PASSWORD=demo-auditor-local
 export E2E_APPROVER_PASSWORD=demo-aprovador-local
 export E2E_OPERATOR_PASSWORD=demo-operador-local
+export E2E_CONFIGURATOR_PASSWORD=demo-configurador-local
+export E2E_BUSINESS_TIMEZONE=America/Sao_Paulo
+export FLUXO_BACKEND_DIR=../backend
 export E2E_SAMPLE_READ_PASSWORD=exemplo_leitura_local
 export E2E_SAMPLE_WRITE_PASSWORD=exemplo_escrita_local
 ```
@@ -195,6 +212,10 @@ No PowerShell: `$env:E2E_API_URL='http://localhost:8000'`, e assim por diante.
 | `E2E_APPROVER_PASSWORD` | sim | Senha do Aprovador de demonstração (`demo-aprovador-local` no ambiente local). |
 | `E2E_OPERATOR_EMAIL` | não (padrão `operador@demo.local`) | E-mail do Operador de demonstração (dispara e acompanha execuções, épico 6). |
 | `E2E_OPERATOR_PASSWORD` | sim | Senha do Operador de demonstração (`demo-operador-local` no ambiente local). |
+| `E2E_CONFIGURATOR_EMAIL` | não (padrão `configurador@demo.local`) | E-mail do Configurador de demonstração (envia o arquivo de referência e simula, épico 7). |
+| `E2E_CONFIGURATOR_PASSWORD` | sim, no épico 7 | Senha do Configurador de demonstração (`demo-configurador-local` no ambiente local). |
+| `E2E_BUSINESS_TIMEZONE` | não (padrão `America/Sao_Paulo`) | O fuso dos agendamentos, igual ao `FLUXO_BUSINESS_TIMEZONE` do back: o teste marca o agendamento para o minuto seguinte nele. |
+| `FLUXO_BACKEND_DIR` | não (padrão `../backend`) | A pasta do back: o contrato e, no épico 7, o `tests/fixtures/reference_campaign/expected.csv`. |
 | `E2E_SHELL_URL` | não (padrão `http://localhost:5173`) | Endereço do casca que o Playwright abre. |
 | `E2E_SAMPLE_HOST` | não (padrão `127.0.0.1`) | Host do banco de exemplo (`postgres-sample`), visto pela **API** (é ela que conecta, não o navegador). |
 | `E2E_SAMPLE_PORT` | não (padrão `5434`) | Porta do banco de exemplo (`FLUXO_SAMPLE_POSTGRES_PORT` do back). |
