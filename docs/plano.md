@@ -1821,7 +1821,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F131 · Integração do épico 7: módulo, menus, sino e interface pública**
 - dep: F123, F125, F126, F127, F128, F129, F130
 - modelo: sonnet
-- arquivos: `packages/react/src/module/`, `packages/react/src/workflows/overview/`, `docs/glossario.md`, `README.md`, `.changeset/`
+- arquivos: `packages/react/src/module/`, `packages/react/src/workflows/overview/`, `docs/glossario.md`, `README.md`, `.changeset/`, e (ratificado pela global na tentativa 2) `e2e/support/` (a API simulada responde `GET /v1/notifications` e `GET /v1/schedules` com os exemplos do contrato, como nas D11 e D14) e 6 linhas em `packages/react/src/workflows/Workflows.tsx` (o `tab` repassado ao `WorkflowExecutions`)
 - Fazer:
   - a rota `/workflows/:id/tests` e o item **Testes** no menu do workflow (com `workflows.view`);
   - as abas Execuções | Agendamentos nas duas telas de execuções, com as rotas das abas;
@@ -1875,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`, `packages/react/src/notifications/`, `packages/react/src/catalog/datasets/DatasetVariables.test.tsx`, `packages/react/src/executions/schedules/`, `packages/react/src/executions/index.ts`, `packages/react/src/test-cases/`, `packages/react/src/module/workflowsByRole.test.tsx`, `e2e/epic-2/api-key-and-embed.spec.ts`, `docs/adr/0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`, `packages/react/src/notifications/`, `packages/react/src/catalog/datasets/DatasetVariables.test.tsx`, `packages/react/src/executions/schedules/`, `packages/react/src/executions/index.ts`, `packages/react/src/test-cases/`, `packages/react/src/module/workflowsByRole.test.tsx`, `e2e/epic-2/api-key-and-embed.spec.ts`, `packages/react/src/module/`, `docs/adr/0073-formulario-de-parametros-exige-workflow-id-e-modo-agendamento-irmao.md`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1923,6 +1923,11 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F128) o switch Ativo da lista não mostra a mensagem crua da API num 409: o `changeErrorMessage` ganha os códigos de conflito do contrato, com texto próprio;
   - (F129) teste de que o cancelamento do envio no desmonte não invalida a lista quando a marca da sessão muda;
   - (F130) o e2e `epic-2/api-key-and-embed`, que falhou uma vez com a máquina sob carga, passa a esperar o estado certo, sem afrouxar o que confere.
+  - (F131) os filtros da `ExecutionList` não zeram ao trocar entre as abas Execuções e Agendamentos;
+  - (F131) o "Voltar" do painel volta à origem: `state.from` também em `/executions/schedules` e nos links do sino;
+  - (F131) no incorporado, o sino fica na barra das abas (`margin-left: auto`), e não em overlay absoluto que cobre abas em largura estreita;
+  - (F131) no incorporado, as duas fileiras de abas com painéis focáveis seguem o fluxo de Tab da ADR 0027;
+  - (F131) depois de abrir um alerta, o foco vai para a tela de destino, não volta ao sino (`onCloseAutoFocus` no `notifications/`).
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F133 · Portão do épico 7**
