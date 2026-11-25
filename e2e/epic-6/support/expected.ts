@@ -30,11 +30,11 @@ export const FIRST_DAYS = dataMonthDays(1, 5);
 export const FIRST_DAYS_TOTALS: ExpectedTotals = { read: 11, ok: 10, warnings: 1, errors: 0, ignored: 0, filtered: 0, rows: 11 };
 
 /**
- * "Campanha de referência — defeitos": the items without P14 (56 not cancelled), the null key and 1/1 repeated: 58 read,
- * the 6 ignored and 2 filtered as above, and the 2 key errors (4 % of the 50 eligible). With the limit at 0 %, the first
- * chunk (with the repeated 1/1) already passes it: "Abortada", without CSV.
+ * "Campanha de referência — defeitos" in the data month (rule 10 of the reference campaign): the 8 rows of
+ * `campanha.itens_nf_defeitos`, 6 ok (the 5 own keys and the first 4/2) and 2 key errors (the repeated 4/2 and the null
+ * `nota_id`). 2 of 8 is 25 %, over the default limit of 5 %: the execution ends "Abortada" (`error_limit_exceeded`), without CSV.
  */
-export const DEFECTS_TOTALS: ExpectedTotals = { read: 58, ok: 44, warnings: 4, errors: 2, ignored: 6, filtered: 2, rows: 48 };
+export const DEFECTS_TOTALS: ExpectedTotals = { read: 8, ok: 6, warnings: 0, errors: 2, ignored: 0, filtered: 0, rows: 0 };
 
 /** CSV lines of the campaign checked against the epic 5 expected records (the values with a point, as the API writes them). */
 export const CSV_RECORDS: readonly { key: [string, string]; status: string; pontos: string; elegivel: string; warnings: string }[] = [

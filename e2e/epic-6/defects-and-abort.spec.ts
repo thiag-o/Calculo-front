@@ -1,7 +1,7 @@
 // Epic 6 · the defects of the batch (fluxo 5 and roteiro 7): the "Campanha de referência — defeitos" of `prepare-local`
-// shows the null key and the repeated key as errors of the batch key, without trace, and ends "Com erros" (under the
-// limit); on a copy with the error limit at 0 % (Execução section of the workflow), the execution aborts by the limit,
-// says why and what to do, and has no CSV.
+// shows the null key and the repeated key as errors of the batch key, without trace; 2 errors in 8 records pass the default
+// limit of 5 %, so the execution ends "Abortada" without CSV; on a copy with the error limit at 0 % (Execução section of
+// the workflow), it aborts by the limit the same way, says why and what to do. Both fire with the data month (February 2026).
 import { suffix } from '../epic-2/support/screens';
 import { draftSaved, openOverview, signInForApi } from '../epic-4/support/screens';
 import { openEditor } from '../epic-5/support/screens';
@@ -16,7 +16,7 @@ import {
   expectStatus,
   finishRun,
   keyText,
-  openTrigger,
+  openTriggerForDataMonth,
   phase,
   recordsTable,
   submitTrigger,
@@ -27,11 +27,11 @@ import {
 test('a campanha de defeitos mostra a chave nula e a repetida como erros da chave do lote, sem trace', async ({ page, epic6 }) => {
   await signIn(page, epic6.account('admin'));
   await openOverview(page, DEFECTS_WORKFLOW);
-  await openTrigger(page);
+  await openTriggerForDataMonth(page);
   expect((await submitTrigger(page)).status(), 'disparar o lote').toBe(202);
   const panel = executionPanel(page, DEFECTS_WORKFLOW);
   finishRun(epic6);
-  await expectStatus(page, epic6, panel, 'Com erros');
+  await expectStatus(page, epic6, panel, 'Abortada');
   await expect(total(page, 'Lidos')).toHaveText(String(DEFECTS_TOTALS.read));
   await expect(total(page, 'Com erro')).toHaveText(String(DEFECTS_TOTALS.errors));
 
@@ -53,8 +53,10 @@ test('a campanha de defeitos mostra a chave nula e a repetida como erros da chav
   await groups.getByRole('button', { name: /^Chave do lote, duplicate_record_key/ }).click();
   const repeated = recordsTable(page).getByRole('row').filter({ hasText: 'duplicate_record_key' });
   await expect(repeated).toHaveCount(1);
-  await expect(repeated).toContainText(keyText({ nota_id: '1', item_seq: '1' }));
-  await expect(panel.getByRole('button', { name: 'Baixar CSV', exact: true })).toBeEnabled();
+  await expect(repeated).toContainText(keyText({ nota_id: '4', item_seq: '2' }));
+  // The limit passed (25 % over 5 %): nothing is delivered.
+  await expect(panel).toContainText('error_limit_exceeded');
+  await expect(panel.getByRole('button', { name: 'Baixar CSV', exact: true })).toBeDisabled();
 });
 
 test('com o limite de erro em 0%, a execução aborta pelo limite e não entrega CSV', async ({ page, epic6 }) => {
@@ -72,7 +74,7 @@ test('com o limite de erro em 0%, a execução aborta pelo limite e não entrega
   await saved;
 
   // "Executar lote" in the editor bar runs the saved draft.
-  await openTrigger(page, page.getByRole('region', { name: `Editor de ${name}`, exact: true }));
+  await openTriggerForDataMonth(page, page.getByRole('region', { name: `Editor de ${name}`, exact: true }));
   const response = await submitTrigger(page);
   expect(response.status(), 'disparar o lote').toBe(202);
   expect(((await response.json()) as { error_limit_percent: string }).error_limit_percent).toBe('0');
@@ -84,7 +86,9 @@ test('com o limite de erro em 0%, a execução aborta pelo limite e não entrega
   await expect(panel).toContainText('error_limit_exceeded');
   await expect(panel).toContainText('Os erros passaram do limite de erro do workflow. Nada foi entregue.');
   await expect(panel).toContainText('Veja os erros agrupados abaixo');
-  await expect(phase(page, 'Cálculo')).toContainText('interrompida');
+  // The 8 records are calculated in one chunk, so the final check over the errors is what stops the run: the delivery.
+  await expect(phase(page, 'Cálculo')).toContainText('concluída');
+  await expect(phase(page, 'Entrega')).toContainText('interrompida');
   await expect(panel.getByRole('button', { name: 'Baixar CSV', exact: true })).toBeDisabled();
   await expect(panel).toContainText('Execução abortada não entrega CSV');
   await expect(errorGroups(page)).toContainText('duplicate_record_key');

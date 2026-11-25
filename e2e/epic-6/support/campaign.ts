@@ -103,18 +103,43 @@ export const ITEMS_WITH_DATE: CatalogDataset = {
   rows: ITEMS.rows.map((row) => ({ ...row, emissao: INVOICE_DATES.get(String(row.nota_id)) ?? null })),
 };
 
-/** `campanha.itens_nf_defeitos` (B143): the campaign items less the two of P14, with a null key and a repeated key. */
+/**
+ * `campanha.itens_nf_defeitos` (B143, rule 10 of the reference campaign): 8 rows without a primary key, all dated in the
+ * data month. The ids 1, 2, 3, 7 and 8 have their own key (1/1, 1/2, 2/1, 7/1, 8/3); 4 and 5 repeat the key 4/2 (the first
+ * one counts, `duplicate_record_key`); 6 has a null `nota_id` (`null_record_key`). The simulation reads the items of the
+ * campaign that have the same key (see `bindDefinition`), so the values of the repeated rows do not matter.
+ */
+const DEFECTS_COLUMNS = [
+  { name: 'id', type: 'integer', scale: null, sourceType: 'integer' },
+  ...ITEMS.columns,
+  { name: 'emissao', type: 'date', scale: null, sourceType: 'date' },
+] as const;
+
 export const DEFECTS: CatalogDataset = {
   ...ITEMS,
   id: 'c5a00000-0000-4000-8000-000000000008',
   name: 'Itens de nota fiscal com defeitos',
   object: 'itens_nf_defeitos',
+  columns: DEFECTS_COLUMNS,
   rows: [
-    ...ITEMS.rows.filter((row) => row.cod_produto !== 'P14'),
-    // The null key (`null_record_key`) and the repeated 1/1 (`duplicate_record_key`, the first one counts).
-    { nota_id: null, item_seq: '1', cod_produto: 'P01', quantidade: '2', valor_item: '77.80', cancelado: false },
-    { nota_id: '1', item_seq: '1', cod_produto: 'P01', quantidade: '10', valor_item: '389.00', cancelado: false },
-  ] satisfies Record<string, CellValue>[],
+    ['1', '1', '1', 'P01', '10', '389.00'],
+    ['2', '1', '2', 'P03', '2', '578.00'],
+    ['3', '2', '1', 'P02', '4', '110.00'],
+    ['4', '4', '2', 'P04', '6', '388.50'],
+    ['5', '4', '2', 'P04', '1', '64.75'],
+    ['6', null, '1', 'P01', '2', '77.80'],
+    ['7', '7', '1', 'P01', '8', '311.20'],
+    ['8', '8', '3', 'P06', '1', '89.90'],
+  ].map(([id, noteId, itemSeq, product, quantity, value]) => ({
+    id,
+    nota_id: noteId,
+    item_seq: itemSeq,
+    cod_produto: product,
+    quantidade: quantity,
+    valor_item: value,
+    cancelado: false,
+    emissao: '2026-02-10',
+  })) satisfies Record<string, CellValue>[],
 };
 
 /** The catalog variables of the defects dataset, one per column, like the items' (dataset 8 of the epic 5 scheme). */
@@ -126,6 +151,9 @@ export const DEFECTS_VARIABLES: Schemas['Variable'][] = DEFECTS.columns.map((col
   type: column.type,
   scale: column.scale,
 }));
+
+/** The id of the `emissao` variable of the defects dataset. */
+export const DEFECTS_DATE_VARIABLE_ID = DEFECTS_VARIABLES.find((variable) => variable.name === 'emissao')!.id;
 
 /** The variables of a dataset of the epic 6 catalog. */
 export function epic6VariablesOf(dataset: CatalogDataset): Schemas['Variable'][] {
@@ -148,8 +176,11 @@ export const PERIOD_PARAMETER: Parameter = {
   description: 'Mês de emissão das notas',
 };
 
-/** The filter of the invoice date by the period. */
-export const PERIOD_FILTER = { variable: 'emissao', operator: 'between', values: ['@periodo.inicio', '@periodo.fim'] } as const;
+/** The filters of the invoice date by the period, as the editor shows them: two filters, `>=` the start and `<=` the end. */
+export const PERIOD_FILTERS = [
+  { variable: 'emissao', operator: '>=', values: ['@periodo.inicio'] },
+  { variable: 'emissao', operator: '<=', values: ['@periodo.fim'] },
+] as const;
 
 const BATCH = CAMPAIGN_DEFINITION.root.batch_source!;
 
@@ -161,22 +192,23 @@ export const CAMPAIGN_DEFINITION_6: Definition = {
     ...CAMPAIGN_DEFINITION.root,
     batch_source: {
       ...BATCH,
-      filters: [...BATCH.filters, { ...PERIOD_FILTER, values: [...PERIOD_FILTER.values] }],
+      filters: [...BATCH.filters, ...PERIOD_FILTERS.map((filter) => ({ ...filter, values: [...filter.values] }))],
       outputs: [...BATCH.outputs, { variable_id: ITEMS_DATE_VARIABLE.id, name: 'emissao' }],
     },
   },
 };
 
-/** The defects workflow: the campaign rules over the items with defects, without parameters. */
+/** The defects workflow: the campaign rules over the items with defects, with the same `periodo`. */
 export const DEFECTS_DEFINITION: Definition = {
   ...CAMPAIGN_DEFINITION,
-  parameters: [],
+  parameters: [PERIOD_PARAMETER],
   root: {
     ...CAMPAIGN_DEFINITION.root,
     batch_source: {
       ...BATCH,
       dataset_id: DEFECTS.id,
-      outputs: BATCH.outputs.map((output) => ({
+      filters: [...BATCH.filters, ...PERIOD_FILTERS.map((filter) => ({ ...filter, values: [...filter.values] }))],
+      outputs: [...BATCH.outputs, { variable_id: ITEMS_DATE_VARIABLE.id, name: 'emissao' }].map((output) => ({
         name: output.name,
         variable_id: DEFECTS_VARIABLES.find((variable) => variable.name === output.name)!.id,
       })),

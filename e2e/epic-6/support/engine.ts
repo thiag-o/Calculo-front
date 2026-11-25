@@ -13,7 +13,7 @@ import { createHash } from 'node:crypto';
 import { ITEMS, variableId, variablesOf } from '../../epic-5/support/campaign';
 import { analyze, findRecord, preview, runRecord, type Analysis, type Preview, type UnitRunTrace } from '../../epic-5/support/engine';
 import { EXAMPLES, type ErrorBody, type Schemas } from '../../support/contract';
-import { DEFECTS, DEFECTS_VARIABLES, INVOICE_DATES, ITEMS_DATE_VARIABLE, businessToday, isoDate, previousMonth, type Period } from './campaign';
+import { DEFECTS, DEFECTS_VARIABLES, DEFECTS_DATE_VARIABLE_ID, INVOICE_DATES, ITEMS_DATE_VARIABLE, businessToday, isoDate, previousMonth, type Period } from './campaign';
 
 type Definition = Schemas['WorkflowDefinition'];
 type WorkflowNode = Definition['root']['nodes'][number];
@@ -273,14 +273,13 @@ export function bindDefinition(definition: Definition, values: ParameterValues, 
   const source = definition.root.batch_source;
   let batch = source ?? null;
   if (source) {
-    const items = variablesOf(ITEMS);
-    const outputs = source.outputs
-      .map((output) => {
-        const defect = DEFECTS_VARIABLES.find((variable) => variable.id === output.variable_id);
-        return defect ? { ...output, variable_id: items.find((item) => item.column === defect.column)?.id ?? output.variable_id } : output;
-      })
-      .filter((output) => output.variable_id !== ITEMS_DATE_VARIABLE.id);
-    const dateName = source.outputs.find((output) => output.variable_id === ITEMS_DATE_VARIABLE.id)?.name;
+    const items = [...variablesOf(ITEMS), ITEMS_DATE_VARIABLE];
+    const mapped = source.outputs.map((output) => {
+      const defect = DEFECTS_VARIABLES.find((variable) => variable.id === output.variable_id);
+      return defect ? { ...output, variable_id: items.find((item) => item.column === defect.column)?.id ?? output.variable_id } : output;
+    });
+    const outputs = mapped.filter((output) => output.variable_id !== ITEMS_DATE_VARIABLE.id);
+    const dateName = mapped.find((output) => output.variable_id === ITEMS_DATE_VARIABLE.id)?.name;
     const invoiceName = outputs.find((output) => output.variable_id === variableId(ITEMS, 'nota_id'))?.name ?? 'nota_id';
     const filters = source.filters.flatMap((filter) => {
       if (filter.variable !== dateName) return [{ ...filter, values: bindValues(filter.values, declared, bound) }];
@@ -351,7 +350,7 @@ function referenceProblems(definition: Definition): Problem[] {
 export function analyzeDefinition(definition: Definition): Analysis {
   const analysis = analyze(bindDefinition(definition, {}, true));
   const symbols = [...analysis.symbols];
-  const date = definition.root.batch_source?.outputs.find((output) => output.variable_id === ITEMS_DATE_VARIABLE.id);
+  const date = definition.root.batch_source?.outputs.find((output) => output.variable_id === ITEMS_DATE_VARIABLE.id || output.variable_id === DEFECTS_DATE_VARIABLE_ID);
   if (date) {
     symbols.push({ name: date.name, type: 'date', scale: null, cardinality: 'linear', list: null, origin: 'batch_source', node_id: null, group_id: null });
   }

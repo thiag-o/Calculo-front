@@ -23,8 +23,9 @@ test('a prévia e o Calcular usam o periodo: o mês dos dados lê a campanha int
     await expect(parametersSection(page)).toBeVisible();
     await layers(page).getByRole('treeitem', { name: /^Fonte do lote/ }).click();
     const filters = properties(page).getByRole('region', { name: 'Fonte do lote', exact: true }).getByRole('group', { name: 'Filtros', exact: true }).last();
-    await expect(filters.getByRole('textbox', { name: 'De (filtro 2)', exact: true })).toHaveValue('@periodo.inicio');
-    await expect(filters.getByRole('textbox', { name: 'Até (filtro 2)', exact: true })).toHaveValue('@periodo.fim');
+    // The period is two filters on `emissao`: `>=` the start and `<=` the end.
+    await expect(filters.getByRole('textbox', { name: 'Valor (filtro 2)', exact: true })).toHaveValue('@periodo.inicio');
+    await expect(filters.getByRole('textbox', { name: 'Valor (filtro 3)', exact: true })).toHaveValue('@periodo.fim');
   });
 
   const panel = previewPanel(page);
