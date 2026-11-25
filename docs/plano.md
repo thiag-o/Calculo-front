@@ -1740,6 +1740,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 - modelo: sonnet
 - arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, `e2e/epic-4/support/`, `e2e/epic-5/support/`, `e2e/epic-6/support/`, `packages/react/src/editor/draft/` (só a versão gravada passar a 4, com `pre_validation_alert_percent`, como a F117), `packages/react/src/executions/api/` (só o ajuste mínimo de tipo: os estados novos com os rótulos da E7-21 e o `triggered_by` nulo)
 - Fazer: gerar os tipos do contrato da B166 (`pnpm generate:api`); acrescentar os exemplos do épico 7 ao contrato simulado do e2e; passar **todas** as definições do simulado (épicos 4 a 6) à versão 4, validadas contra o esquema (ADR 0060); o editor lê rascunhos nas versões 1 a 4 e grava sempre a 4, pela constante única da F117. Nada de mascarar no componente com `?? []`.
+- (D99 do back, B194) os tipos também trazem o motivo de aborto novo `excel_file_unreadable`; o painel da execução mostra a mensagem da API para ele, como para os outros motivos, com um teste.
 - Aceite: `pnpm typecheck` e o `contract-examples` verdes; o `pnpm e2e` dos épicos 4 a 6 verde no simulado; um teste que abre um rascunho v3 e grava v4, com `pre_validation_alert_percent: "1"`; `git grep` não acha outra versão gravada fixa no editor.
 
 **F123 · Editor: valores permitidos por consulta e alerta da pré-validação**
