@@ -1875,7 +1875,7 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 **F139 · Manutenção: acabamentos agrupados do épico 7 (achados médios e baixos)**
 - dep: F131
 - modelo: sonnet
-- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`
+- arquivos: `packages/react/src/editor/parameters/`, `packages/react/src/editor/sources/filters/`, `packages/react/src/editor/properties/workflow/`, `packages/react/src/executions/parameter-form/`, `packages/react/src/executions/detail/`, `packages/react/src/executions/list/`, `packages/react/src/editor/layout/EditorScreen.test.tsx`, `packages/react/src/editor/layout/EditorBar.tsx`, `packages/react/src/workflows/overview/WorkflowOverview.tsx`, `packages/react/src/executions/trigger/`, `packages/react/src/catalog/Catalog.test.tsx`, `e2e/epic-2/configurator-and-reset-link.spec.ts`, `packages/react/src/executions/comparison/`, `packages/react/src/notifications/`, `packages/react/src/catalog/datasets/DatasetVariables.test.tsx`
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente):
   - (F123) as setas do seletor Nenhum | Lista | Consulta não gravam no rascunho nem tiram o foco; só a escolha confirmada grava;
   - (F123) as marcas de problema velhas no dataset e na variável da consulta somem quando a análise volta (ADR 0044);
@@ -1907,6 +1907,11 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
   - (F127) o erro `invalid_data` do filtro oferece "Ver as divergências" (volta ao filtro padrão), e não só "Tentar de novo";
   - (F127) sem `aria-label` no `<dl>` (o mesmo padrão do `RecordTraceDrawer` fica para o épico 14);
   - (F127) testes que faltam: cursor com troca de filtro e resposta tardia, `invalid_cursor`, erro em "Carregar mais" e a gaveta só com `simulations.run`.
+  - (F130) a sondagem de 30 s fica pausada enquanto houver um "marcar como lido" pendente, para não desfazer o "lido" otimista;
+  - (F130) o `invalidate` do `onSettled` não retoma a sondagem com a lista em erro; só "Tentar de novo" retoma (ADR 0067);
+  - (F130) sem portal (`useFluxoPortal` nulo), o popover não abre vazio com `aria-expanded=true`: ele cai no `body` ou não abre;
+  - (F130) testes que faltam: marcar como lido com sondagem em voo, troca de sessão e retomada depois de "Tentar de novo";
+  - (F130) o `DatasetVariables.test.tsx:103`, que falhou uma vez com a máquina sob carga, passa a esperar o estado certo, sem afrouxar o que confere.
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F133 · Portão do épico 7**
