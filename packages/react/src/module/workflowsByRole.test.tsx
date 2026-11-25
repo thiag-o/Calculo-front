@@ -116,7 +116,7 @@ describe('Workflows no casca, por papel', () => {
     const { user } = renderScreen({ navigation: 'url' });
 
     await screen.findByRole('heading', { level: 1, name: SCORING.name });
-    expect(menuLinks()).toEqual(['Visão geral', 'Execuções']);
+    expect(menuLinks()).toEqual(['Visão geral', 'Execuções', 'Testes']);
     expect(within(mainNavigation()).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' })).toBeInTheDocument();
 
@@ -223,7 +223,7 @@ describe('Workflows no casca, por papel', () => {
     simulateApiWith(CONFIGURATOR_PERMISSIONS);
     const { user } = renderScreen({ navigation: 'url' });
     await screen.findByRole('heading', { level: 1, name: SCORING.name });
-    expect(menuLinks()).toEqual(['Visão geral', 'Execuções']);
+    expect(menuLinks()).toEqual(['Visão geral', 'Execuções', 'Testes']);
 
     const home = screen.getByRole('link', { name: 'Início de Matriz' });
     home.focus();

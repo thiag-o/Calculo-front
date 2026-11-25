@@ -4,4 +4,4 @@
 export { WorkflowOverview, EXECUTIONS_VIEW_PERMISSION } from './WorkflowOverview';
 export type { WorkflowOverviewProps } from './WorkflowOverview';
 export { WorkflowExecutions } from './WorkflowExecutions';
-export type { WorkflowExecutionsProps } from './WorkflowExecutions';
+export type { WorkflowExecutionsProps, WorkflowExecutionsTab } from './WorkflowExecutions';

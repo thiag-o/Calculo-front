@@ -89,6 +89,33 @@
   align-self: flex-start;
 }
 
+/* Tabs Execuções | Agendamentos (E7-24) with the screen content below them. */
+.fc-workflow-executions-tabs {
+  gap: var(--fc-space-24);
+}
+
+/* The Agendamentos tab keeps the screen's h1 for the screen reader only: the tab and the list title already say where it is. */
+.fc-workflow-executions-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The text of the Execuções section: what the list is and the next scheduled run (estilos.md §16). */
+.fc-workflow-overview-executions-text {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-width: 0;
+}
+
 /* "Ver execuções" in the Execuções section of the Overview. */
 .fc-workflow-overview-executions {
   display: flex;

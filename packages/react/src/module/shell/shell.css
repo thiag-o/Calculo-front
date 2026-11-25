@@ -350,6 +350,34 @@
   padding: 24px 20px;
 }
 
+/* The column beside the sidebar: the content bar (56px, estilos.md §9) over the scrolling content. */
+.fc-shell-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.fc-shell-body > .fc-module-content {
+  flex: 1 1 auto;
+}
+
+/* Born with the bell only (E7-27): the path and the Ctrl K search come later. The bell is on the right, aligned with the content padding. */
+.fc-content-bar {
+  box-sizing: border-box;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  height: 56px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-shell-narrow .fc-content-bar {
+  padding: 0 20px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fc-sidebar-item,
   .fc-tenant-selector-button,

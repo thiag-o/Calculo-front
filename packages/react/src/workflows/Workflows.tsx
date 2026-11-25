@@ -7,7 +7,7 @@ import { EXECUTIONS_VIEW_PERMISSION, WorkflowExecutions, WorkflowOverview } from
 export type WorkflowsLocation =
   | { view: 'list' }
   | { view: 'overview'; id: string }
-  | { view: 'executions'; id: string }
+  | { view: 'executions'; id: string; tab?: 'executions' | 'schedules' }
   | { view: 'editor'; id: string };
 
 /** What `renderEditor` receives: the workflow to edit and the two ways out of the editor. */
@@ -62,6 +62,8 @@ export function Workflows({ location, onLocationChange, renderEditor, renderUnsa
         onOpenExecution={(executionId) => onOpenExecution?.(executionId)}
         onBack={() => onLocationChange({ view: 'overview', id })}
         onOpenProblems={() => openEditor(id)}
+        tab={location.tab}
+        onTabChange={(tab) => onLocationChange({ view: 'executions', id, tab })}
       />
     );
   }

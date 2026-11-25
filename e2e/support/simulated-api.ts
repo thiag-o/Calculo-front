@@ -129,6 +129,11 @@ export class SimulatedApi {
       case 'GET /v1/workflows':
         // The Início lists the recent workflows (F57); these tests do not look at them.
         return this.session ? json(200, EMPTY_WORKFLOW_LIST) : problem(EXAMPLES.NoSession);
+      case 'GET /v1/notifications':
+        // The bell (F130) and the "Próxima execução" of the overview (F131) read these two; the contract's examples serve.
+        return this.session ? json(200, EXAMPLES.NotificationList) : problem(EXAMPLES.NoSession);
+      case 'GET /v1/schedules':
+        return this.session ? json(200, EXAMPLES.ScheduleList) : problem(EXAMPLES.NoSession);
       default:
         this.unexpected.push(route);
         return problem({ type: 'about:blank', title: 'Rota fora da simulação', status: 501, detail: route, code: 'route_not_simulated' });

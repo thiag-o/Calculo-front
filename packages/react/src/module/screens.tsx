@@ -5,10 +5,12 @@ import { Audit } from '../audit';
 import { Catalog, CATALOG_PERMISSION, type CatalogLocation, type CatalogTab } from '../catalog';
 import { Button } from '../design-system';
 import { Editor, UnitRunResult, UnsavedChangesNotice } from '../editor';
-import { ExecutionList, ExecutionPanel, type RenderRecordTrace } from '../executions';
+import { ExecutionList, ExecutionPanel, ScheduleList, type RenderRecordTrace } from '../executions';
 import { Home } from '../home';
 import { useSession } from '../session';
+import { TestCases } from '../test-cases';
 import { EXECUTIONS_VIEW_PERMISSION, Workflows, type WorkflowsLocation } from '../workflows';
+import { ExecutionsTabs } from './ExecutionsTabs';
 import { AdminIcon, AuditIcon, CatalogIcon, ExecutionsIcon, HomeIcon, WorkflowsIcon } from './icons';
 
 /** Sidebar sections (estilos.md §9). Screens without a section stay at the top of the menu. */
@@ -121,16 +123,22 @@ export const WORKFLOW_EDITOR_PATH = `${WORKFLOWS_PATH}/:id/${EDITOR_SEGMENT}`;
 
 const EXECUTIONS_SEGMENT = 'executions';
 const EXECUTIONS_PATH = 'executions';
+const SCHEDULES_SEGMENT = 'schedules';
+const TESTS_SEGMENT = 'tests';
 
 /**
- * Reads the Workflows location from the address: `/workflows`, `/workflows/:id`, `/workflows/:id/executions` and
- * `/workflows/:id/editor`.
+ * Reads the Workflows location from the address: `/workflows`, `/workflows/:id`, `/workflows/:id/executions`,
+ * `/workflows/:id/executions/schedules` (the Agendamentos tab) and `/workflows/:id/editor`. `/workflows/:id/tests` is the module's
+ * own route (see `RoutedWorkflows`).
  */
 function workflowsLocation(pathname: string): WorkflowsLocation {
-  const [, , id, segment] = pathname.split('/');
+  const [, , id, segment, tab] = pathname.split('/');
   if (!id) return { view: 'list' };
   if (segment === EDITOR_SEGMENT) return { view: 'editor', id: safeDecode(id) };
-  return { view: segment === EXECUTIONS_SEGMENT ? 'executions' : 'overview', id: safeDecode(id) };
+  if (segment === EXECUTIONS_SEGMENT) {
+    return { view: 'executions', id: safeDecode(id), tab: tab === SCHEDULES_SEGMENT ? 'schedules' : 'executions' };
+  }
+  return { view: 'overview', id: safeDecode(id) };
 }
 
 /** Route path of a Workflows location. */
@@ -138,13 +146,22 @@ function workflowsPath(location: WorkflowsLocation): string {
   if (location.view === 'list') return `/${WORKFLOWS_PATH}`;
   const base = `/${WORKFLOWS_PATH}/${encodeURIComponent(location.id)}`;
   if (location.view === 'editor') return `${base}/${EDITOR_SEGMENT}`;
-  return location.view === 'executions' ? `${base}/${EXECUTIONS_SEGMENT}` : base;
+  if (location.view === 'executions') {
+    return location.tab === 'schedules' ? `${base}/${EXECUTIONS_SEGMENT}/${SCHEDULES_SEGMENT}` : `${base}/${EXECUTIONS_SEGMENT}`;
+  }
+  return base;
 }
 
 /** Route path of the panel of an execution. */
-function executionPath(id: string): string {
+export function executionPath(id: string): string {
   return `/${EXECUTIONS_PATH}/${encodeURIComponent(id)}`;
 }
+
+/** Route path of the Agendamentos tab of a workflow, or of the tenant when the person has no access to Workflows. */
+export function schedulesPath(workflowId: string, workflowsAllowed: boolean): string {
+  return workflowsAllowed ? workflowsPath({ view: 'executions', id: workflowId, tab: 'schedules' }) : `/${EXECUTIONS_PATH}/${SCHEDULES_SEGMENT}`;
+}
+
 
 /**
  * The `<Workflows>` inside the module: the list, the Overview, the workflow executions and the editor are the route. The
@@ -155,8 +172,18 @@ function executionPath(id: string): string {
 export function RoutedWorkflows({ executions = false }: { executions?: boolean }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const canViewExecutions = useSession().hasPermission(EXECUTIONS_VIEW_PERMISSION);
   // The panel remembers where it was opened from, so the standalone screen can go back there.
   const openExecution = executions ? (id: string) => void navigate(executionPath(id), { state: { from: pathname } }) : undefined;
+  // `/workflows/:id/tests` is the module's own screen, not the workflows' one: `workflows` does not import `test-cases`.
+  const [, , testsId, segment] = pathname.split('/');
+  if (executions && openExecution && testsId && segment === TESTS_SEGMENT) {
+    // A simulation opens the panel of its execution, which takes `executions.view`; without it the screen stays where it is.
+    const open = (id: string) => {
+      if (canViewExecutions) openExecution(id);
+    };
+    return <TestCases key={testsId} workflowId={safeDecode(testsId)} onOpenExecution={open} />;
+  }
   return (
     <Workflows
       location={workflowsLocation(pathname)}
@@ -198,7 +225,8 @@ function panelOrigin(state: unknown): string | null {
 /** The "Voltar" of the standalone panel, by the screen it goes back to. */
 function originLabel(from: string): string {
   if (from.endsWith(`/${EDITOR_SEGMENT}`)) return 'Voltar para o editor';
-  if (from.endsWith(`/${EXECUTIONS_SEGMENT}`)) return 'Voltar para as execuções do workflow';
+  if (from.endsWith(`/${TESTS_SEGMENT}`)) return 'Voltar para os testes';
+  if (from.includes(`/${EXECUTIONS_SEGMENT}`)) return 'Voltar para as execuções do workflow';
   return from === `/${WORKFLOWS_PATH}` ? 'Voltar para workflows' : 'Voltar para a visão geral';
 }
 
@@ -209,17 +237,27 @@ function executionId(pathname: string): string | null {
 }
 
 /**
- * The Execuções inside the module: the tenant list at `/executions` and the panel of one at `/executions/:id`, with the trace
- * of the record drawn by the editor. The workflow of each row and a new batch open the panel; the panel goes back to the list.
- * In the standalone `<Workflows>` (`standalone`) there is no tenant list: the panel goes back to where it was opened from (the
- * Overview, the workflow executions or the editor) or, without that, to the workflow list.
+ * The Execuções inside the module: the tenant list at `/executions`, the schedules at `/executions/schedules` (the two tabs,
+ * E7-24) and the panel of one at `/executions/:id`, with the trace of the record drawn by the editor. The workflow of each row
+ * and a new batch open the panel; the panel goes back to the list. In the standalone `<Workflows>` (`standalone`) there is no
+ * tenant list nor schedules: the panel goes back to where it was opened from (the Overview, the workflow executions or the
+ * editor) or, without that, to the workflow list.
  */
 export function RoutedExecutions({ standalone = false }: { standalone?: boolean }) {
   const { pathname, state } = useLocation();
   const navigate = useNavigate();
   const id = executionId(pathname);
-  if (id === null) {
-    return <ExecutionList onOpenExecution={(opened) => void navigate(executionPath(opened))} />;
+  const openExecution = (opened: string) => void navigate(executionPath(opened));
+  if (id === null || (!standalone && id === SCHEDULES_SEGMENT)) {
+    const tab = id === null ? 'executions' : 'schedules';
+    return (
+      <ExecutionsTabs
+        tab={tab}
+        onTabChange={(next) => void navigate(next === 'schedules' ? `/${EXECUTIONS_PATH}/${SCHEDULES_SEGMENT}` : `/${EXECUTIONS_PATH}`)}
+      >
+        {tab === 'schedules' ? <ScheduleList onOpenExecution={openExecution} /> : <ExecutionList onOpenExecution={openExecution} />}
+      </ExecutionsTabs>
+    );
   }
   const origin = standalone ? (panelOrigin(state) ?? `/${WORKFLOWS_PATH}`) : `/${EXECUTIONS_PATH}`;
   return (

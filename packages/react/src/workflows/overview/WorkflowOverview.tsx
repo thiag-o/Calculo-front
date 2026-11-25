@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { Badge, Button, Card, EmptyState, Loading, Menu, Notice, Skeleton, Text } from '../../design-system';
-import { TriggerExecution } from '../../executions';
+import { NextScheduledRun, TriggerExecution } from '../../executions';
 import { useSession } from '../../session';
 import { EDIT_PERMISSION, relativeTime } from '../list';
 import { useWorkflow, type Workflow } from '../queries';
@@ -247,9 +247,12 @@ function LoadedOverview({
         <Card>
           {onOpenExecutions && canViewExecutions ? (
             <div className="fc-workflow-overview-executions">
-              <Text as="p" variant="label-14" emphasis="secondary">
-                Os lotes deste workflow, do mais novo para o mais antigo, com o andamento de cada um.
-              </Text>
+              <div className="fc-workflow-overview-executions-text">
+                <Text as="p" variant="label-14" emphasis="secondary">
+                  Os lotes deste workflow, do mais novo para o mais antigo, com o andamento de cada um.
+                </Text>
+                <NextScheduledRun workflowId={workflow.id} />
+              </div>
               <Button size="small" onClick={onOpenExecutions}>
                 Ver execuções
               </Button>

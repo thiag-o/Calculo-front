@@ -233,6 +233,31 @@ Nomes nascidos já em inglês no épico 6, pelo vocabulário do back (`backend/d
 | ícone do menu | `ExecutionsIcon` (`module/icons.tsx`) |
 | item Execuções do menu do workflow | `allowsExecutions` (`module/shell/ShellLayout.tsx`) |
 
+## Pré-validação, agendamento e arquivo de referência (épico 7, F122 a F131)
+
+Nomes nascidos já em inglês no épico 7, pelo vocabulário do back (`backend/docs/glossario.md`). A coluna da esquerda é o conceito. As verticais novas são `test-cases` e `notifications` (já previstas na tabela de verticais), e as sub-verticais `executions/schedules` e `executions/comparison` (ADRs 0075 e 0077).
+
+| Conceito | Nome no código |
+|---|---|
+| agendamento (`Schedule`) e recorrência (`Recurrence`: `daily`, `weekly`, `monthly`) | `Schedule`, `Recurrence`, `recurrenceText` (`executions/schedules`) |
+| aba Agendamentos (global e do workflow, o mesmo componente) | `<ScheduleList>` (`workflowId`, `onOpenExecution`), `ScheduleListProps` |
+| diálogo de Novo agendamento e de Editar agendamento | `<ScheduleDialog>`, `ScheduleDialogProps`, `DeleteScheduleDialog` |
+| "Próxima execução: 01/12 às 02:00 · Fechamento mensal" na Visão geral | `<NextScheduledRun>` (`workflowId`), `NextScheduledRunProps` |
+| permissão de agendar | `EXECUTIONS_SCHEDULE_PERMISSION` (`executions.schedule`) |
+| chaves de cache dos agendamentos | `SCHEDULES_KEY` (`['executions', 'schedules']`), `scheduleListKey` |
+| abas Execuções \| Agendamentos da tela de execuções | `ExecutionsTabs` (`module/ExecutionsTabs.tsx`, a do cliente), `WorkflowExecutionsTab` (`workflows/overview`, a do workflow: `executions` ou `schedules`), `WorkflowsLocation` com `view: 'executions'` e `tab` |
+| rotas da aba Agendamentos | `/executions/schedules`, `/workflows/:id/executions/schedules` |
+| tela Testes do workflow (arquivo de referência) | `<TestCases>` (`workflowId`, `onOpenExecution`), `TestCasesProps`, `test-cases/reference-files` (`ReferenceFiles`, `UploadArea`, `SimulateDialog`, `DeleteReferenceFileDialog`) |
+| arquivo de referência | `ReferenceFile`, `referenceFilesKey` (`['test-cases', workflowId, 'reference-files']`), `TEST_CASES_KEY` |
+| permissões do arquivo e da simulação | `TEST_CASES_EDIT` (`test_cases.edit`), `SIMULATIONS_RUN` (`simulations.run`) |
+| rota da tela Testes | `/workflows/:id/tests` (`workflows.view`) |
+| item Testes do menu do workflow | `TestsIcon` (`module/icons.tsx`), `SidebarItem` (`module/shell/ShellLayout.tsx`) |
+| comparação com o arquivo de referência no painel | `<ReferenceComparison>`, `executions/comparison` |
+| sino de alertas | `<NotificationBell>` (`onOpenExecution`, `onOpenSchedules`), `NotificationBellProps`, `NOTIFICATIONS_KEY`, `NOTIFICATION_LIST_KEY`, `NOTIFICATIONS_REFRESH_MS` |
+| onde o módulo põe o sino (só com `executions.view`) | `NotificationBellSlot`, `hasNotificationBell` (`module/NotificationBellSlot.tsx`); classes `fc-content-bar` (casca) e `fc-embedded-bell` (incorporado) |
+| destinos dos links do sino | `executionPath`, `schedulesPath` (`module/screens.tsx`): a execução (`/executions/:id`) e a aba Agendamentos |
+| barra do conteúdo do casca (56 px, só com o sino neste épico) | `.fc-shell-body`, `.fc-content-bar` (`module/shell/shell.css`) |
+
 ## Chaves de cache (TanStack Query)
 
 | Português | Inglês |

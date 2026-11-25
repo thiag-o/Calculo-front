@@ -55,9 +55,11 @@ describe('<FluxoCalculo>', () => {
     expect(within(mainNavigation()).getByRole('link', { name: 'Início' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('button', { name: 'Trocar cliente. Atual: Matriz' })).toBeInTheDocument();
 
-    // The Início also lists the recent workflows (the session has `workflows.view`).
+    // The Início also lists the recent workflows (the session has `workflows.view`), and the bell asks for the alerts
+    // (`executions.view`, E7-27).
     await waitFor(() => expect(api.calls()).toContain('GET /v1/workflows'));
-    expect(new Set(api.calls())).toEqual(new Set(['GET /v1/session', 'GET /v1/workflows']));
+    await waitFor(() => expect(api.calls()).toContain('GET /v1/notifications'));
+    expect(new Set(api.calls())).toEqual(new Set(['GET /v1/session', 'GET /v1/workflows', 'GET /v1/notifications']));
     expect(api.request(0).credentials).toBe('include');
     expect(api.request(0).headers.get('Authorization')).toBeNull();
   });

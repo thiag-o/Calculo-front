@@ -2,7 +2,8 @@ import { useId, useRef, useState, type ReactNode } from 'react';
 import { Navigate, NavLink, Outlet, useMatch } from 'react-router';
 import { Notice, Button, Tooltip } from '../../design-system';
 import { useSessionGeneration, type Session } from '../../session';
-import { ExpandMenuIcon, CollapseMenuIcon, ExecutionsIcon, OverviewIcon } from '../icons';
+import { ExpandMenuIcon, CollapseMenuIcon, ExecutionsIcon, OverviewIcon, TestsIcon } from '../icons';
+import { NotificationBellSlot, hasNotificationBell } from '../NotificationBellSlot';
 import { groupBySection, type ScreenDefinition } from '../screens';
 import { signOutErrorMessage, switchErrorMessage } from './messages';
 import { UserMenu } from './UserMenu';
@@ -93,6 +94,11 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
                   compact={compact}
                 />
               ) : null}
+              {/* Testes (E7-25): `workflows.view`, which the whole workflow menu already needs (`workflowId` only exists with it). */}
+              <SidebarItem
+                item={{ label: 'Testes', path: `workflows/${encodeURIComponent(workflowId)}/tests`, icon: <TestsIcon /> }}
+                compact={compact}
+              />
             </>
           ) : (
             <>
@@ -129,27 +135,35 @@ export function ShellLayout({ session, screens }: ShellLayoutProps) {
         </div>
       </aside>
 
-      <main className="fc-module-content">
-        <div className="fc-module-page">
-          {notice ? (
-            <Notice
-              type="error"
-              actions={
-                <Button size="small" onClick={() => setNotice(null)}>
-                  Fechar aviso
-                </Button>
-              }
-            >
-              {notice}
-            </Notice>
-          ) : null}
-          {redirecting ? (
-            <Navigate to={destination} replace />
-          ) : (
-            <Outlet key={generation} />
-          )}
-        </div>
-      </main>
+      <div className="fc-shell-body">
+        {/* The content bar (estilos.md §9) is born with the bell only: without `executions.view` there is nothing to put in it. */}
+        {hasNotificationBell(screens) ? (
+          <div className="fc-content-bar">
+            <NotificationBellSlot screens={screens} />
+          </div>
+        ) : null}
+        <main className="fc-module-content">
+          <div className="fc-module-page">
+            {notice ? (
+              <Notice
+                type="error"
+                actions={
+                  <Button size="small" onClick={() => setNotice(null)}>
+                    Fechar aviso
+                  </Button>
+                }
+              >
+                {notice}
+              </Notice>
+            ) : null}
+            {redirecting ? (
+              <Navigate to={destination} replace />
+            ) : (
+              <Outlet key={generation} />
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

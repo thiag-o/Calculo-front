@@ -32,13 +32,16 @@ frontend/
 |---|---|---|
 | Início | `/home` | todos |
 | Catálogo | `/catalog`, `/catalog/<aba>/:id` | `connections.view` |
-| Workflows | `/workflows`, `/workflows/:id`, `/workflows/:id/executions`, `/workflows/:id/editor` | `workflows.view` |
-| Execuções | `/executions`, `/executions/:id` | `executions.view` |
+| Workflows | `/workflows`, `/workflows/:id`, `/workflows/:id/executions`, `/workflows/:id/executions/schedules`, `/workflows/:id/tests`, `/workflows/:id/editor` | `workflows.view` (a aba Agendamentos e o sino pedem também `executions.view`) |
+| Execuções | `/executions`, `/executions/schedules`, `/executions/:id` | `executions.view` |
 | Auditoria | `/audit` | `audit.view` |
 | Administração | `/admin/<área>` | uma permissão por área |
 
 - **Executar lote** fica no cabeçalho do editor, na Visão geral e na lista de execuções do workflow, só com `executions.trigger`; ao disparar, abre o painel da execução nova (sem `executions.view`, a pessoa fica onde está, com o aviso de que o lote foi criado, e `/workflows/:id/executions` cai na Visão geral). O Aprovador e o Auditor não têm o botão nem o "Cancelar execução".
-- O menu do workflow (com um workflow aberto) tem Visão geral e Execuções.
+- O menu do workflow (com um workflow aberto) tem Visão geral, Execuções (com `executions.view`) e Testes (com `workflows.view`).
+- **Execuções** tem duas abas, Execuções e Agendamentos, nas duas telas (do cliente e do workflow), cada uma com a rota dela. Agendar (Novo agendamento, o switch Ativo, editar e remover) pede `executions.schedule`; sem ela, a aba só lê. A Visão geral do workflow mostra a "Próxima execução".
+- **Testes** (`/workflows/:id/tests`): o arquivo de referência. Enviar e remover pedem `test_cases.edit`; **Simular** pede `simulations.run` e abre o painel da simulação, com a comparação com o arquivo.
+- **Sino de alertas**, com `executions.view`: na barra do conteúdo do casca (56 px, à direita) e, no modo incorporado, no fim da linha das abas. Abrir um alerta leva à execução ou à aba Agendamentos do workflow. Sem `executions.view`, não há sino nem barra.
 - O trace de um registro, no painel da execução (com `traces.view`), é o mesmo componente do "Calcular" do editor; o módulo o entrega ao painel (as verticais `executions` e `editor` não se importam).
 - A prop `screen` aceita `'executions'`. Avulsas, cada uma funcionando sozinha: `<Executions>` (lista e painel, pede `executions.view`) e `<Workflows>` (lista, Visão geral, editor e execuções, com "Executar lote" e "Ver execuções" pelas permissões do papel).
 

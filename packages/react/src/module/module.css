@@ -64,6 +64,11 @@
   align-self: flex-start;
 }
 
+/* Tabs Execuções | Agendamentos (E7-24) with the screen content below them. */
+.fc-module-executions-tabs {
+  gap: var(--fc-space-24);
+}
+
 /* Text for the screen reader only. */
 .fc-module-hidden {
   position: absolute;

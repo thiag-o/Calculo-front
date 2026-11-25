@@ -39,6 +39,28 @@ function savedDraftOf(workflowId: string) {
   };
 }
 
+const SCHEDULES = 'GET /v1/schedules';
+/** A schedule of the workflow, monthly at 02:00 (contract example `Schedule`, in short). */
+function scheduleOf(name: string, nextRunAt: string) {
+  return {
+    id: `7b8c9d0e-1f2a-4b3c-8d4e-${name.length.toString().padStart(12, '0')}`,
+    workflow_id: SCORING.id,
+    workflow_name: SCORING.name,
+    name,
+    enabled: true,
+    recurrence: { kind: 'monthly', time: '02:00', day: 1 },
+    timezone: 'America/Sao_Paulo',
+    parameters: {},
+    draft_revision: 3,
+    current_draft_revision: 3,
+    next_run_at: nextRunAt,
+    last_run: null,
+    created_by: SCORING.created_by,
+    created_at: '2026-10-20T13:00:00Z',
+    updated_at: '2026-10-20T13:00:00Z',
+  };
+}
+
 const UPDATE = `PUT /v1/workflows/${SCORING.id}`;
 const REMOVE = `DELETE /v1/workflows/${SCORING.id}`;
 
@@ -473,6 +495,36 @@ describe('Visão geral do workflow: execuções', () => {
     await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
 
     expect(within(section('Execuções')).queryByRole('button', { name: 'Ver execuções' })).not.toBeInTheDocument();
+  });
+
+  it('mostra a próxima execução agendada na seção Execuções', async () => {
+    api = simulateApi(['workflows.view', 'executions.view']);
+    api.respond(DETAIL, json(SCORING));
+    api.respond(SCHEDULES, json({ items: [scheduleOf('Fechamento mensal', '2026-12-01T05:00:00Z'), scheduleOf('Conferência', '2026-12-08T11:00:00Z')], next_cursor: null }));
+    renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions: vi.fn() });
+    await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
+
+    expect(await within(section('Execuções')).findByText('Próxima execução: 01/12 às 02:00 · Fechamento mensal')).toBeInTheDocument();
+  });
+
+  it('sem agendamento ativo, diz que nenhuma execução está agendada', async () => {
+    api = simulateApi(['workflows.view', 'executions.view']);
+    api.respond(DETAIL, json(SCORING));
+    api.respond(SCHEDULES, json({ items: [{ ...scheduleOf('Fechamento mensal', '2026-12-01T05:00:00Z'), enabled: false }], next_cursor: null }));
+    renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions: vi.fn() });
+    await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
+
+    expect(await within(section('Execuções')).findByText('Nenhuma execução agendada')).toBeInTheDocument();
+  });
+
+  it('sem executions.view, não mostra nem pede a próxima execução', async () => {
+    api = simulateApi(['workflows.view']);
+    api.respond(DETAIL, json(SCORING));
+    renderOverview({ onOpenExecution: vi.fn(), onOpenExecutions: vi.fn() });
+    await screen.findByRole('heading', { level: 1, name: 'Pontuação de exemplo' });
+
+    expect(screen.queryByText(/Próxima execução|Nenhuma execução agendada/)).not.toBeInTheDocument();
+    expect(api.callsTo(SCHEDULES)).toHaveLength(0);
   });
 
   it('workflow_busy ao executar o lote mostra a mensagem da API no diálogo, sem fechá-lo', async () => {

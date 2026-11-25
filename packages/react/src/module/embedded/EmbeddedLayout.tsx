@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Tabs } from '../../design-system';
 import { useSessionGeneration } from '../../session';
+import { NotificationBellSlot, hasNotificationBell } from '../NotificationBellSlot';
 import { groupBySection, type ScreenDefinition } from '../screens';
 import './embedded.css';
 
@@ -29,6 +30,7 @@ export function EmbeddedLayout({ screens }: EmbeddedLayoutProps) {
   ];
   // The open tab is the one whose route contains the current address (a section tab stays open on any of its screens).
   const open = tabs.find((tab) => pathname === `/${tab.path}` || pathname.startsWith(`/${tab.path}/`));
+  const withBell = hasNotificationBell(screens);
 
   return (
     <section className="fc-embedded" aria-label="Fluxo de Cálculo">
@@ -41,13 +43,21 @@ export function EmbeddedLayout({ screens }: EmbeddedLayoutProps) {
           if (tab) void navigate(`/${tab.path}`);
         }}
         className="fc-embedded-tabs"
-        listClassName="fc-embedded-tabs-list"
+        listClassName={withBell ? 'fc-embedded-tabs-list fc-embedded-tabs-list-with-bell' : 'fc-embedded-tabs-list'}
         panelClassName="fc-module-content fc-embedded-panel"
       >
         <div className="fc-module-page">
           <Outlet key={generation} />
         </div>
       </Tabs>
+      {/* The bell (E7-27) at the end of the tab row, over the room the list leaves for it. */}
+      {withBell ? (
+        <div className="fc-embedded-bell">
+          <div className="fc-embedded-bell-slot">
+            <NotificationBellSlot screens={screens} />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -205,12 +205,12 @@ describe('Execuções no casca, por papel', () => {
     expect(api.calls().filter((call) => call === `POST /v1/workflows/${WORKFLOW_ID}/executions`)).toHaveLength(1);
   });
 
-  it('a Visão geral leva à lista do workflow, e o menu do workflow tem Visão geral e Execuções', async () => {
+  it('a Visão geral leva à lista do workflow, e o menu do workflow tem Visão geral, Execuções e Testes', async () => {
     window.history.replaceState(null, '', `/workflows/${WORKFLOW_ID}`);
     simulateApiWith(OPERATOR);
     const { user } = renderScreen();
     await screen.findByRole('heading', { level: 1, name: WORKFLOW.name });
-    expect(menuLinks()).toEqual(['Visão geral', 'Execuções']);
+    expect(menuLinks()).toEqual(['Visão geral', 'Execuções', 'Testes']);
     expect(within(mainNavigation()).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page');
 
     await user.click(within(mainNavigation()).getByRole('link', { name: 'Execuções' }));
@@ -307,7 +307,7 @@ describe('Execuções: executions.view e troca de cliente', () => {
     renderScreen();
 
     expect(await screen.findByRole('heading', { level: 1, name: WORKFLOW.name })).toBeInTheDocument();
-    expect(menuLinks()).toEqual(['Visão geral']);
+    expect(menuLinks()).toEqual(['Visão geral', 'Testes']);
     expect(screen.queryByRole('button', { name: 'Ver execuções' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Executar lote' })).toBeInTheDocument();
     expect(api.calls().filter((call) => call === 'GET /v1/executions')).toHaveLength(0);

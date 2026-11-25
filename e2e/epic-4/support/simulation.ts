@@ -180,6 +180,11 @@ export class WorkflowSimulation {
     switch (route) {
       case 'GET /v1/formula-language':
         return view ?? json(200, EXAMPLES.FormulaLanguage);
+      case 'GET /v1/notifications':
+        // The bell (F130, mounted by F131) and the "Próxima execução" of the overview read these two; the contract's examples serve.
+        return json(200, EXAMPLES.NotificationList);
+      case 'GET /v1/schedules':
+        return json(200, EXAMPLES.ScheduleList);
       case 'GET /v1/workflows':
         return view ?? this.list(url);
       case 'POST /v1/workflows':
