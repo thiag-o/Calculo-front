@@ -2002,6 +2002,7 @@ As decisões E8-1 a E8-16, o esquema na versão 5, o modo Múltiplo, os filtros 
 - modelo: sonnet
 - arquivos: `packages/react/src/api/generated/`, `e2e/support/contract.ts`, `e2e/epic-4/support/`, `e2e/epic-5/support/`, `e2e/epic-6/support/`, `e2e/epic-7/support/`, `packages/react/src/editor/draft/` (só a versão gravada passar a 5, como a F122)
 - Fazer: gerar os tipos do contrato da B198 (`pnpm generate:api`); acrescentar os exemplos do épico 8 ao contrato simulado do e2e; passar **todas** as definições do simulado (épicos 4 a 7) à versão 5, validadas contra o esquema (ADR 0060); o editor lê rascunhos nas versões 1 a 5 e grava sempre a 5, pela constante única da F117. Nada de mascarar no componente com `?? []`.
+  - (achado da B185, D53 do back) a B185 mudou o texto de 3 exemplos dos valores permitidos no `contracts/openapi.yaml`; se o simulado ou o `e2e/support/contract.ts` copia esses exemplos, alinhar com o contrato novo.
 - Aceite: `pnpm typecheck` e o `contract-examples` verdes; o `pnpm e2e` dos épicos 4 a 7 verde no simulado; um teste que abre um rascunho v4 e grava v5; `git grep` não acha outra versão gravada fixa no editor.
 
 **F142 · Editor: bloco Fonte no modo Múltiplo**
