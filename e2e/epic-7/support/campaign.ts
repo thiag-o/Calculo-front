@@ -111,6 +111,9 @@ export const STATE_PARAMETER = 'uf_loja';
 /** The dataset and the variable of the query, as the editor shows them. */
 export const STATE_QUERY = { dataset: STORES.name, variable: 'uf' } as const;
 
+/** The name of the stores dataset in the real backend's catalog (the simulated one calls it `STORES.name`). */
+export const REAL_STORES_DATASET_NAME = 'Campanha: lojas';
+
 /** The distinct states of the stores, in ascending order: what the form offers. */
 export const STORE_STATES: readonly string[] = [...new Set(STORES.rows.map((row) => String(row.uf)))].sort();
 

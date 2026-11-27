@@ -114,23 +114,33 @@ export function changedFile(source: string): ChangedFile {
   return { text: writeCsv({ header: table.header, rows }), changedKey: keyOf(table, changed), expected, obtained, removedKey: keyOf(table, removed), records: rows.length };
 }
 
-/** The file with errors of roteiro 5: an unknown column (`observacao`) and a number with a comma in `pontos`. */
-export interface BrokenFile {
+/**
+ * The files with errors of roteiro 5. The backend reads the lines only when the header is valid (D102, D121-global), so
+ * each error comes in its own file: the header error alone, and the line error alone.
+ */
+export function unknownColumnFile(source: string): string {
+  const table = parseCsv(source);
+  const rows = table.rows.map((row) => [...row, 'conferido']);
+  return writeCsv({ header: [...table.header, 'observacao'], rows });
+}
+
+export interface CommaFile {
   text: string;
   /** "linha 3, coluna pontos": the line of the comma (the header is line 1). */
   where: string;
 }
 
-export function brokenFile(source: string): BrokenFile {
+/** A valid header with a number with a comma in `pontos` on one calculated line. */
+export function commaNumberFile(source: string): CommaFile {
   const table = parseCsv(source);
   const column = table.header.indexOf('pontos');
   const target = calculatedRows(table)[0];
   if (!target) throw new Error('O arquivo de referência não tem registro calculado.');
   const line = table.rows.indexOf(target) + 2;
-  const rows = table.rows.map((row) => [...(row === target ? row.map((cell, index) => (index === column ? cell.replace('.', ',') : cell)) : row), 'conferido']);
+  const rows = table.rows.map((row) => (row === target ? row.map((cell, index) => (index === column ? cell.replace('.', ',') : cell)) : row));
   // The comma would split the cell: the value goes between quotes (RFC 4180), as a spreadsheet saves it.
   const quoted = rows.map((row) => row.map((cell) => (cell.includes(',') ? `"${cell}"` : cell)));
-  return { text: writeCsv({ header: [...table.header, 'observacao'], rows: quoted }), where: `linha ${line}, coluna pontos` };
+  return { text: writeCsv({ header: table.header, rows: quoted }), where: `linha ${line}, coluna pontos` };
 }
 
 /** The data lines of a file. */

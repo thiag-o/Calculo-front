@@ -2,13 +2,14 @@
 // Testes, uploads the campaign's `expected.csv` and runs "Simular" with the data month (February 2026): the simulation
 // compares every record of the file, "100% iguais", and delivers no CSV. The same file with one `pontos` changed and one
 // line removed gives 1 different (expected × obtained, with the trace of the record) and 1 out of the file. A file with an
-// unknown column and a number with a comma shows the errors by line and column, and nothing is saved.
+// unknown column shows only the header error, and one with a number with a comma shows the error by line and column (the
+// backend reads the lines only with a valid header, D102): nothing is saved.
 // Real mode: the file is the backend's (FLUXO_BACKEND_DIR/tests/fixtures/reference_campaign/expected.csv, B184).
 import { suffix } from '../epic-2/support/screens';
 import { CAMPAIGN_WORKFLOW } from './support/campaign';
 import { truncatedPercent } from './support/engine';
 import { expect, test } from './support/fixtures';
-import { REFERENCE_FILE_NAME, brokenFile, campaignReferenceFile, changedFile, recordCount } from './support/reference-file';
+import { REFERENCE_FILE_NAME, campaignReferenceFile, changedFile, commaNumberFile, recordCount, unknownColumnFile } from './support/reference-file';
 import {
   comparisonCount,
   comparisonSection,
@@ -125,22 +126,43 @@ test('um pontos mudado e uma linha a menos dão 1 diferente e 1 fora do arquivo,
   await expect(traceDrawer(page)).toHaveCount(0);
 });
 
-test('um arquivo com uma coluna desconhecida e um número com vírgula mostra os erros por linha e coluna, e nada é gravado', async ({ page, epic7 }) => {
-  const name = `Campanha arquivo com erros e2e ${suffix()}`;
+test('um arquivo com uma coluna desconhecida mostra só o erro de cabeçalho, e nada é gravado', async ({ page, epic7 }) => {
+  const name = `Campanha arquivo cabeçalho e2e ${suffix()}`;
   await copyAsAdmin(page, epic7, CAMPAIGN_WORKFLOW, name);
-  const broken = brokenFile(campaignReferenceFile(epic7.mode));
-  const fileName = 'expected-com-erros.csv';
+  const fileName = 'expected-com-coluna-desconhecida.csv';
 
   await openWorkflowItem(page, name, 'Testes');
-  const response = await uploadReferenceFile(page, fileName, broken.text);
-  expect(response.status(), 'o arquivo com erros é recusado').toBe(422);
+  const response = await uploadReferenceFile(page, fileName, unknownColumnFile(campaignReferenceFile(epic7.mode)));
+  expect(response.status(), 'o arquivo com coluna desconhecida é recusado').toBe(422);
   expect(((await response.json()) as { code: string }).code).toBe('invalid_reference_file');
 
   await expect(page.getByText(`Não foi possível enviar ${fileName}`, { exact: true })).toBeVisible();
   await expect(page.getByText('O arquivo tem erros. Corrija o que está abaixo e envie de novo.', { exact: true })).toBeVisible();
   const errors = page.getByRole('list', { name: 'Erros do arquivo', exact: true });
+  await expect(errors.getByRole('listitem')).toHaveCount(1);
   await expect(errors.getByRole('listitem').filter({ hasText: /^Cabeçalho/ })).toContainText('observacao');
+  // Nothing saved: the list stays empty.
+  await expect(referenceFilesTable(page)).toContainText('Nenhum arquivo de referência');
+  await page.reload();
+  await expect(referenceFilesTable(page)).toContainText('Nenhum arquivo de referência');
+});
+
+test('um arquivo com um número com vírgula mostra o erro por linha e coluna, e nada é gravado', async ({ page, epic7 }) => {
+  const name = `Campanha arquivo linha e2e ${suffix()}`;
+  await copyAsAdmin(page, epic7, CAMPAIGN_WORKFLOW, name);
+  const broken = commaNumberFile(campaignReferenceFile(epic7.mode));
+  const fileName = 'expected-com-virgula.csv';
+
+  await openWorkflowItem(page, name, 'Testes');
+  const response = await uploadReferenceFile(page, fileName, broken.text);
+  expect(response.status(), 'o arquivo com vírgula é recusado').toBe(422);
+  expect(((await response.json()) as { code: string }).code).toBe('invalid_reference_file');
+
+  await expect(page.getByText(`Não foi possível enviar ${fileName}`, { exact: true })).toBeVisible();
+  await expect(page.getByText('O arquivo tem erros. Corrija o que está abaixo e envie de novo.', { exact: true })).toBeVisible();
+  const errors = page.getByRole('list', { name: 'Erros do arquivo', exact: true });
   await expect(errors.getByRole('listitem').filter({ hasText: new RegExp(`^${broken.where}`) })).toHaveCount(1);
+  await expect(errors.getByRole('listitem').filter({ hasText: /^Cabeçalho/ })).toHaveCount(0);
   // Nothing saved: the list stays empty.
   await expect(referenceFilesTable(page)).toContainText('Nenhum arquivo de referência');
   await page.reload();
