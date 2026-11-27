@@ -2093,6 +2093,7 @@ As decisões E8-1 a E8-16, o esquema na versão 5, o modo Múltiplo, os filtros 
 - modelo: sonnet
 - arquivos: (a global preenche ao acrescentar cada item, sem sobrepor uma tarefa do épico que ainda esteja rodando)
 - Fazer (a global acrescenta itens aqui enquanto a tarefa estiver pendente): os achados médios e baixos dos verificadores e revisores das tarefas F141 a F150, um item por achado, com a tarefa de origem entre parênteses.
+  - (achados do portão F133, rodada 2) o comentário do cast via `unknown` do `EXAMPLE_DRAFT_DEFINITION` em `e2e/support/contract.ts` sai, porque o `Draft` já traz `batch_source`; o `e2e/epic-4/connection-test-limit.spec.ts` (projeto `real-limit`), que falhou duas vezes no modo real, é investigado: corrigir se for do teste, registrar no relatório se for ambiente.
 - Aceite: um teste por item, que falha antes e passa depois; `pnpm typecheck`, `pnpm lint` e `pnpm build` verdes.
 
 **F152 · Portão do épico 8**
