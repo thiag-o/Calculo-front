@@ -1939,9 +1939,18 @@ As decisões E7-1 a E7-19, o esquema na versão 4, a pré-validação, a sobrepo
 - Fazer: no modo real, os specs do épico 6 que disparam fevereiro na "Campanha de referência" compartilhada (`trigger-and-download`, `roles`, `awaiting-source`, `cancel`, e o `errors-and-trace`, que já usa cópia) deixam de falhar com `409 scope_already_delivered` depois do épico 7: cada um usa uma cópia própria da campanha ou confirma a sobreposição, como o `defects-and-abort.spec.ts` da F132.
 - Aceite: `pnpm e2e:real e2e/epic-6` verde duas vezes seguidas no mesmo banco, com o back do épico 7; o modo simulado continua verde.
 
+**F153 · Correção da integração do épico 7: testes reais do arquivo de referência e dos valores permitidos**
+- dep: F140
+- modelo: sonnet
+- arquivos: `e2e/epic-7/reference-file.spec.ts`, `e2e/epic-7/allowed-values.spec.ts`, `e2e/epic-7/support/`
+- Fazer: a integração do épico 7 reprovou em dois testes do front no modo real:
+  - `reference-file.spec.ts:128` mandava um arquivo com coluna desconhecida e número com vírgula e esperava os dois erros. Pela D102 do back, com erro de cabeçalho as linhas não são lidas (D121-global confirma). O teste passa a usar dois arquivos: um com a coluna desconhecida (só o erro de cabeçalho) e outro com o número com vírgula (o erro por linha e coluna);
+  - `allowed-values.spec.ts:45` procurava o dataset "Lojas", mas no back real o nome é "Campanha: lojas". O teste usa o nome real no modo real (o simulado pode manter o próprio).
+- Aceite: os dois specs verdes no simulado e no modo real contra o back da `main`; nenhum outro spec muda.
+
 **F133 · Portão do épico 7**
 - tipo: portao
-- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137, F139, F140
+- dep: F122, F123, F124, F125, F126, F127, F128, F129, F130, F131, F132, F134, F137, F139, F140, F153
 - modelo: sonnet
 - Aceite: o mesmo da F106, com as telas do épico 7 provadas pelo `pnpm e2e:visual`.
 
