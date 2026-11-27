@@ -845,6 +845,7 @@ const EXAMPLES_BASE = {
       },
       parameters: [],
       root: {
+        batch_source: null,
         inputs: [
           {
             name: 'valor_item',
@@ -7118,6 +7119,20 @@ const EXAMPLES_BASE = {
     detail: 'Este workflow não tem fonte do lote. Escolha a fonte do lote para enviar um arquivo de referência.',
     code: 'no_batch_source',
   },
+  ReferenceFileUnreadable: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Não foi possível ler o arquivo de referência guardado. Tente de novo ou envie o arquivo de novo.',
+    code: 'reference_file_unreadable',
+  },
+  NotificationsBusy: {
+    type: 'about:blank',
+    title: 'Conflito',
+    status: 409,
+    detail: 'Os alertas estão sendo atualizados. Tente de novo em instantes.',
+    code: 'notifications_busy',
+  },
   TooManyReferenceFiles: {
     type: 'about:blank',
     title: 'Conflito',
@@ -7199,7 +7214,7 @@ const EXAMPLES_BASE = {
     problems: [
       {
         code: 'allowed_values_type_mismatch',
-        message: 'A variável dos valores permitidos de uf não é do tipo texto.',
+        message: 'Os valores permitidos de @campanha vêm de codigo, que é do tipo inteiro, mas @campanha é do tipo texto.',
         path: 'parameters[0].allowed_values.variable_id',
         node_id: null,
         start: null,
@@ -7212,14 +7227,14 @@ const EXAMPLES_BASE = {
     type: 'about:blank',
     title: 'Origem mudou',
     status: 422,
-    detail: 'Uma coluna da consulta dos valores permitidos mudou ou não existe mais na origem.',
+    detail: '`Campanhas.codigo` não existe mais na origem.',
     code: 'schema_drift',
   },
   AllowedValuesSourceReadDenied: {
     type: 'about:blank',
     title: 'Sem permissão de leitura',
     status: 422,
-    detail: 'O usuário da conexão não pode ler o dataset dos valores permitidos. Peça a permissão de leitura (SELECT) a quem cuida do banco.',
+    detail: 'O usuário da conexão não tem permissão de leitura (SELECT) numa tabela do dataset `Campanhas`.',
     code: 'source_read_denied',
   },
   WorkflowHasSchedules: {
